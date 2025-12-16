@@ -252,32 +252,32 @@
 @layer components {
   /* Status Badge Variants */
   .status-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-sm font-medium;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium;
   }
   
   .status-badge--compliant {
-    @apply bg-success/15 text-success;
+    @apply bg-success/10 text-success;
   }
   
   .status-badge--non-compliant {
-    @apply bg-destructive/15 text-destructive;
+    @apply bg-destructive/10 text-destructive;
   }
   
   .status-badge--pending {
-    @apply bg-warning/15 text-warning;
+    @apply bg-warning/10 text-warning;
   }
   
   .status-badge--info {
-    @apply bg-info/15 text-info;
+    @apply bg-info/10 text-info;
   }
 
-  /* Stat Card */
+  /* Stat Card - Refined */
   .stat-card {
-    @apply bg-card border border-border rounded-lg p-5;
+    @apply bg-card border border-border rounded-lg p-5 transition-shadow hover:shadow-md;
   }
   
   .stat-card__value {
-    @apply text-3xl font-bold text-foreground;
+    @apply text-3xl font-bold text-foreground tracking-tight;
   }
   
   .stat-card__label {
@@ -289,30 +289,34 @@
     @apply flex flex-wrap items-center gap-3 p-4 bg-card border border-border rounded-lg;
   }
 
-  /* Data Table */
+  /* Data Table - Refined */
   .data-table {
-    @apply w-full bg-card border border-border rounded-lg overflow-hidden;
+    @apply w-full;
   }
   
   .data-table th {
-    @apply px-4 py-3 bg-muted text-muted-foreground text-sm font-semibold text-left border-b border-border;
+    @apply px-4 py-3 bg-muted/50 text-muted-foreground text-xs font-semibold uppercase tracking-wider text-left border-b border-border;
   }
   
   .data-table td {
-    @apply px-4 py-3 text-sm border-b border-border;
+    @apply px-4 py-3.5 text-sm border-b border-border/50;
   }
   
-  .data-table tr:hover {
-    @apply bg-muted/50;
+  .data-table tbody tr {
+    @apply transition-colors;
   }
   
-  .data-table tr:focus-within {
-    @apply bg-accent/10;
+  .data-table tbody tr:hover {
+    @apply bg-muted/30;
+  }
+  
+  .data-table tbody tr:focus-within {
+    @apply bg-accent/5 outline-none;
   }
 
-  /* Panel */
+  /* Panel - Refined */
   .panel {
-    @apply bg-card border border-border rounded-lg;
+    @apply bg-card border border-border rounded-lg overflow-hidden;
   }
   
   .panel__header {
@@ -320,24 +324,20 @@
   }
   
   .panel__title {
-    @apply text-lg font-semibold text-foreground;
+    @apply text-base font-semibold text-foreground;
   }
   
   .panel__content {
     @apply p-5;
   }
 
-  /* Accessibility Panel */
+  /* Accessibility Panel Controls */
   .a11y-control {
-    @apply flex items-center justify-between py-3 border-b border-border last:border-0;
+    @apply flex items-center justify-between py-3 border-b border-border/50 last:border-0;
   }
   
   .a11y-control__label {
     @apply text-sm font-medium text-foreground;
-  }
-  
-  .a11y-control__description {
-    @apply text-xs text-muted-foreground mt-0.5;
   }
 }
 
