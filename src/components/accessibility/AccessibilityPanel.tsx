@@ -52,11 +52,11 @@ export function AccessibilityPanel() {
               <DialogTitle>{t('accessibility.help')}</DialogTitle>
               <DialogDescription asChild>
                 <div className="space-y-3 text-sm text-muted-foreground mt-4">
-                  <p><strong>Font Size:</strong> Adjust text size for better readability. Scales up to 200% without breaking layout.</p>
-                  <p><strong>Greyscale View:</strong> Removes colors for users who prefer or need grayscale display.</p>
+                  <p><strong>Font Size:</strong> Adjust text size for better readability.</p>
+                  <p><strong>Greyscale View:</strong> Display content without colors.</p>
                   <p><strong>Underline Links:</strong> Makes all links underlined for easier identification.</p>
-                  <p><strong>Dark Mode:</strong> Switches between light and dark color schemes.</p>
-                  <p><strong>High Contrast:</strong> Increases contrast ratios for users with low vision.</p>
+                  <p><strong>Dark Mode:</strong> Switch between light and dark color schemes.</p>
+                  <p><strong>High Contrast:</strong> Increases contrast for better visibility.</p>
                   <p><strong>Read Aloud:</strong> Uses text-to-speech to read page content.</p>
                 </div>
               </DialogDescription>
@@ -68,17 +68,14 @@ export function AccessibilityPanel() {
       <div className="space-y-1">
         {/* Font Size Control */}
         <div className="a11y-control">
-          <div>
-            <p className="a11y-control__label">{t('accessibility.fontSize')}</p>
-            <p className="a11y-control__description">WCAG SC 1.4.4 - Resize Text</p>
-          </div>
+          <span className="a11y-control__label">{t('accessibility.fontSize')}</span>
           <div className="flex items-center gap-1" role="radiogroup" aria-label="Font size selection">
             <Button
               variant={settings.fontSize === 'small' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFontSize('small')}
               aria-pressed={settings.fontSize === 'small'}
-              className="text-xs px-2"
+              className="text-xs px-2.5 h-8"
             >
               A-
             </Button>
@@ -87,7 +84,7 @@ export function AccessibilityPanel() {
               size="sm"
               onClick={() => setFontSize('medium')}
               aria-pressed={settings.fontSize === 'medium'}
-              className="text-sm px-2"
+              className="text-sm px-2.5 h-8"
             >
               A
             </Button>
@@ -96,7 +93,7 @@ export function AccessibilityPanel() {
               size="sm"
               onClick={() => setFontSize('large')}
               aria-pressed={settings.fontSize === 'large'}
-              className="text-base px-2"
+              className="text-base px-2.5 h-8"
             >
               A+
             </Button>
@@ -105,10 +102,7 @@ export function AccessibilityPanel() {
 
         {/* Greyscale Toggle */}
         <div className="a11y-control">
-          <div>
-            <p className="a11y-control__label">{t('accessibility.greyscale')}</p>
-            <p className="a11y-control__description">WCAG SC 1.4.1 - Use of Color</p>
-          </div>
+          <span className="a11y-control__label">{t('accessibility.greyscale')}</span>
           <Switch
             checked={settings.greyscale}
             onCheckedChange={toggleGreyscale}
@@ -118,10 +112,7 @@ export function AccessibilityPanel() {
 
         {/* Underline Links Toggle */}
         <div className="a11y-control">
-          <div>
-            <p className="a11y-control__label">{t('accessibility.underlineLinks')}</p>
-            <p className="a11y-control__description">WCAG SC 1.4.1 - Link Identification</p>
-          </div>
+          <span className="a11y-control__label">{t('accessibility.underlineLinks')}</span>
           <Switch
             checked={settings.underlineLinks}
             onCheckedChange={toggleUnderlineLinks}
@@ -131,10 +122,7 @@ export function AccessibilityPanel() {
 
         {/* Dark Mode Toggle */}
         <div className="a11y-control">
-          <div>
-            <p className="a11y-control__label">{t('accessibility.darkMode')}</p>
-            <p className="a11y-control__description">Reduces eye strain</p>
-          </div>
+          <span className="a11y-control__label">{t('accessibility.darkMode')}</span>
           <Switch
             checked={settings.darkMode}
             onCheckedChange={toggleDarkMode}
@@ -144,10 +132,7 @@ export function AccessibilityPanel() {
 
         {/* High Contrast Toggle */}
         <div className="a11y-control">
-          <div>
-            <p className="a11y-control__label">{t('accessibility.highContrast')}</p>
-            <p className="a11y-control__description">WCAG SC 1.4.11 - Non-text Contrast</p>
-          </div>
+          <span className="a11y-control__label">{t('accessibility.highContrast')}</span>
           <Switch
             checked={settings.highContrast}
             onCheckedChange={toggleHighContrast}
@@ -157,17 +142,15 @@ export function AccessibilityPanel() {
 
         {/* Read Aloud Button */}
         <div className="a11y-control">
-          <div>
-            <p className="a11y-control__label">{t('accessibility.readAloud')}</p>
-            <p className="a11y-control__description">Text-to-Speech (TTS)</p>
-          </div>
+          <span className="a11y-control__label">{t('accessibility.readAloud')}</span>
           <Button
             variant="outline"
             size="sm"
             onClick={handleReadAloud}
             aria-label="Read page content aloud"
+            className="h-8"
           >
-            <Volume2 className="w-4 h-4 mr-1" aria-hidden="true" />
+            <Volume2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
             Play
           </Button>
         </div>
@@ -176,7 +159,7 @@ export function AccessibilityPanel() {
         <div className="pt-3 mt-3 border-t border-border">
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full h-9"
             onClick={resetToDefaults}
             aria-label="Reset all accessibility settings to default values"
           >
