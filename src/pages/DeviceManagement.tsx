@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { 
   Monitor, 
   Smartphone, 
-  Laptop, 
+  Laptop,
   Server,
   Wifi,
   WifiOff,
@@ -90,6 +91,7 @@ export default function DeviceManagement() {
   };
 
   return (
+    <MainLayout>
     <div className="space-y-6">
       {/* Page Header */}
       <header>
@@ -248,5 +250,6 @@ export default function DeviceManagement() {
         </div>
       </section>
     </div>
+    </MainLayout>
   );
 }
