@@ -35,7 +35,6 @@ import {
 
 const mainNavItems = [
   { titleKey: 'nav.dashboard', url: '/', icon: LayoutDashboard },
-  { titleKey: 'nav.deviceManagement', url: '/device-management', icon: Monitor },
   { titleKey: 'nav.enrollment', url: '/enrollment', icon: UserPlus },
   { titleKey: 'nav.devices', url: '/devices', icon: Monitor },
   { titleKey: 'nav.applications', url: '/applications', icon: AppWindow },

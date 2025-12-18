@@ -8,7 +8,6 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
 import Applications from "./pages/Applications";
 import Devices from "./pages/Devices";
-import DeviceManagement from "./pages/DeviceManagement";
 import Enrollment from "./pages/Enrollment";
 import NotFound from "./pages/NotFound";
 
@@ -25,7 +24,6 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/applications" element={<Applications />} />
-              <Route path="/device-management" element={<DeviceManagement />} />
               <Route path="/enrollment" element={<Enrollment />} />
               <Route path="/devices" element={<Devices />} />
               <Route path="/devices/:platform" element={<Devices />} />
