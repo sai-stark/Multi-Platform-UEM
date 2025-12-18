@@ -16,55 +16,55 @@
     /* Primary: Dark Navy Blue */
     --primary: 212 57% 25%;
     --primary-foreground: 0 0% 100%;
-    
+
     /* Background & Surfaces */
     --background: 210 20% 98%;
     --foreground: 212 57% 15%;
-    
+
     /* Cards & Elevated Surfaces */
     --card: 0 0% 100%;
     --card-foreground: 212 57% 15%;
-    
+
     /* Popover */
     --popover: 0 0% 100%;
     --popover-foreground: 212 57% 15%;
-    
+
     /* Secondary: Lighter Navy */
     --secondary: 210 25% 93%;
     --secondary-foreground: 212 57% 20%;
-    
+
     /* Muted */
     --muted: 210 20% 96%;
     --muted-foreground: 212 15% 45%;
-    
+
     /* Accent: Steel Blue */
     --accent: 207 44% 49%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Destructive: Accessible Red */
     --destructive: 0 65% 45%;
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Success: Accessible Green */
     --success: 142 55% 35%;
     --success-foreground: 0 0% 100%;
-    
+
     /* Warning: Accessible Orange */
     --warning: 32 95% 44%;
     --warning-foreground: 0 0% 100%;
-    
+
     /* Info: Steel Blue */
     --info: 207 44% 49%;
     --info-foreground: 0 0% 100%;
-    
+
     /* Borders & Inputs */
     --border: 210 20% 85%;
     --input: 210 20% 90%;
     --ring: 212 57% 25%;
-    
+
     /* Radius */
     --radius: 0.375rem;
-    
+
     /* Sidebar */
     --sidebar-background: 212 57% 18%;
     --sidebar-foreground: 210 20% 95%;
@@ -74,10 +74,10 @@
     --sidebar-accent-foreground: 210 20% 95%;
     --sidebar-border: 212 40% 25%;
     --sidebar-ring: 207 44% 55%;
-    
+
     /* Focus Ring - High Visibility */
     --focus-ring: 207 90% 54%;
-    
+
     /* Chart Colors - Distinguishable in Greyscale */
     --chart-1: 212 57% 25%;
     --chart-2: 207 44% 49%;
@@ -90,52 +90,52 @@
     /* Primary: Light Navy */
     --primary: 207 44% 65%;
     --primary-foreground: 212 57% 10%;
-    
+
     /* Background: Deep Navy */
     --background: 212 57% 10%;
     --foreground: 210 20% 95%;
-    
+
     /* Cards */
     --card: 212 50% 14%;
     --card-foreground: 210 20% 95%;
-    
+
     /* Popover */
     --popover: 212 50% 14%;
     --popover-foreground: 210 20% 95%;
-    
+
     /* Secondary */
     --secondary: 212 45% 20%;
     --secondary-foreground: 210 20% 95%;
-    
+
     /* Muted */
     --muted: 212 45% 18%;
     --muted-foreground: 210 15% 65%;
-    
+
     /* Accent */
     --accent: 207 44% 55%;
     --accent-foreground: 0 0% 100%;
-    
+
     /* Destructive */
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
-    
+
     /* Success */
     --success: 142 55% 45%;
     --success-foreground: 0 0% 100%;
-    
+
     /* Warning */
     --warning: 32 95% 54%;
     --warning-foreground: 0 0% 0%;
-    
+
     /* Info */
     --info: 207 44% 55%;
     --info-foreground: 0 0% 100%;
-    
+
     /* Borders */
     --border: 212 40% 25%;
     --input: 212 45% 22%;
     --ring: 207 44% 55%;
-    
+
     /* Sidebar */
     --sidebar-background: 212 57% 8%;
     --sidebar-foreground: 210 20% 95%;
@@ -145,10 +145,10 @@
     --sidebar-accent-foreground: 210 20% 95%;
     --sidebar-border: 212 40% 18%;
     --sidebar-ring: 207 44% 60%;
-    
+
     /* Focus Ring */
     --focus-ring: 207 90% 60%;
-    
+
     /* Chart Colors - Dark Mode Adjusted */
     --chart-1: 207 44% 60%;
     --chart-2: 212 57% 45%;
@@ -166,7 +166,7 @@
     --border: 0 0% 0%;
     --muted-foreground: 0 0% 20%;
   }
-  
+
   .dark.high-contrast {
     --primary: 207 100% 70%;
     --primary-foreground: 0 0% 0%;
@@ -204,7 +204,7 @@
     @apply absolute -top-10 left-4 z-50 bg-primary text-primary-foreground px-4 py-2 rounded;
     transition: top 0.2s;
   }
-  
+
   .skip-link:focus {
     @apply top-4;
   }
@@ -232,13 +232,14 @@
   table {
     @apply w-full border-collapse;
   }
-  
+
   th {
     @apply text-left font-semibold;
   }
 
   /* Reduced Motion */
   @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -250,23 +251,24 @@
 }
 
 @layer components {
+
   /* Status Badge Variants */
   .status-badge {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium;
   }
-  
+
   .status-badge--compliant {
     @apply bg-success/10 text-success;
   }
-  
+
   .status-badge--non-compliant {
     @apply bg-destructive/10 text-destructive;
   }
-  
+
   .status-badge--pending {
     @apply bg-warning/10 text-warning;
   }
-  
+
   .status-badge--info {
     @apply bg-info/10 text-info;
   }
@@ -275,11 +277,11 @@
   .stat-card {
     @apply bg-card border border-border rounded-lg p-5 transition-shadow hover:shadow-md;
   }
-  
+
   .stat-card__value {
     @apply text-3xl font-bold text-foreground tracking-tight;
   }
-  
+
   .stat-card__label {
     @apply text-sm text-muted-foreground mt-1;
   }
@@ -293,23 +295,23 @@
   .data-table {
     @apply w-full;
   }
-  
+
   .data-table th {
     @apply px-4 py-3 bg-muted/50 text-muted-foreground text-xs font-semibold uppercase tracking-wider text-left border-b border-border;
   }
-  
+
   .data-table td {
     @apply px-4 py-3.5 text-sm border-b border-border/50;
   }
-  
+
   .data-table tbody tr {
     @apply transition-colors;
   }
-  
+
   .data-table tbody tr:hover {
     @apply bg-muted/30;
   }
-  
+
   .data-table tbody tr:focus-within {
     @apply bg-accent/5 outline-none;
   }
@@ -318,15 +320,15 @@
   .panel {
     @apply bg-card border border-border rounded-lg overflow-hidden;
   }
-  
+
   .panel__header {
     @apply px-5 py-4 border-b border-border;
   }
-  
+
   .panel__title {
     @apply text-base font-semibold text-foreground;
   }
-  
+
   .panel__content {
     @apply p-5;
   }
@@ -335,22 +337,23 @@
   .a11y-control {
     @apply flex items-center justify-between py-3 border-b border-border/50 last:border-0;
   }
-  
+
   .a11y-control__label {
     @apply text-sm font-medium text-foreground;
   }
 }
 
 @layer utilities {
+
   /* Font Size Scale */
   .text-scale-sm {
     font-size: 0.875rem;
   }
-  
+
   .text-scale-base {
     font-size: 1rem;
   }
-  
+
   .text-scale-lg {
     font-size: 1.25rem;
   }

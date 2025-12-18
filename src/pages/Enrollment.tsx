@@ -1,24 +1,6 @@
-import { useState } from 'react';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { 
-  Smartphone, 
-  Laptop, 
-  Server,
-  Download,
-  Copy,
-  Check,
-  Info,
-  UserPlus,
-  QrCode,
-  FileText,
-  Settings2,
-  Search,
-  Filter
-} from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -26,7 +8,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
+import {
+  Check,
+  Copy,
+  Download,
+  FileText,
+  Info,
+  Laptop,
+  QrCode,
+  Server,
+  Settings2,
+  Smartphone,
+  UserPlus
+} from 'lucide-react';
+import { useState } from 'react';
 
 type Platform = 'android' | 'ios' | 'windows' | 'macos' | 'linux';
 
@@ -198,15 +196,15 @@ export default function Enrollment() {
       enrollmentUrl: `https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`,
       timestamp: new Date().toISOString(),
     };
-    
+
     await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     setCopied(true);
-    
+
     toast({
       title: t('enrollment.copied'),
       description: t('enrollment.copiedDesc'),
     });
-    
+
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -240,95 +238,38 @@ export default function Enrollment() {
               {t('enrollment.subtitle')}
             </p>
           </div>
-          <Button className="gap-2">
-            <UserPlus className="w-4 h-4" aria-hidden="true" />
-            New Enrollment
-          </Button>
         </header>
 
         {/* Stats Cards */}
+        {/* Stats Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Enrollment statistics">
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-info" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.totalProfiles}</p>
-                <p className="text-sm text-muted-foreground">Total Profiles</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <Settings2 className="w-5 h-5 text-success" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.platforms}</p>
-                <p className="text-sm text-muted-foreground">Platforms</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <UserPlus className="w-5 h-5 text-warning" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.pendingEnrollments}</p>
-                <p className="text-sm text-muted-foreground">Pending</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <QrCode className="w-5 h-5 text-primary" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.completedToday}</p>
-                <p className="text-sm text-muted-foreground">Completed Today</p>
-              </div>
-            </div>
-          </article>
+          <StatCard
+            title="Total Profiles"
+            value={stats.totalProfiles}
+            icon={FileText}
+            variant="info"
+          />
+          <StatCard
+            title="Platforms"
+            value={stats.platforms}
+            icon={Settings2}
+            variant="success"
+          />
+          <StatCard
+            title="Pending"
+            value={stats.pendingEnrollments}
+            icon={UserPlus}
+            variant="warning"
+          />
+          <StatCard
+            title="Completed Today"
+            value={stats.completedToday}
+            icon={QrCode}
+            variant="default"
+          />
         </section>
 
-        {/* Filters */}
-        <section className="filter-bar" aria-label="Enrollment filters">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Filter className="w-4 h-4" aria-hidden="true" />
-            <span className="text-sm font-medium">Filters:</span>
-          </div>
-          
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              type="search"
-              placeholder="Search profiles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-background"
-              aria-label="Search profiles"
-            />
-          </div>
 
-          <div className="flex items-center gap-2">
-            <label htmlFor="profile-filter" className="text-sm text-muted-foreground">Profile:</label>
-            <Select value={selectedProfile} onValueChange={setSelectedProfile}>
-              <SelectTrigger id="profile-filter" className="w-48 bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                {currentProfiles.map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    {profile.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </section>
 
         {/* Platform Tabs */}
         <Tabs value={selectedPlatform} onValueChange={handlePlatformChange} className="w-full">
@@ -336,8 +277,8 @@ export default function Enrollment() {
             {(['android', 'ios', 'windows', 'macos', 'linux'] as Platform[]).map((platform) => {
               const Icon = platformIcons[platform];
               return (
-                <TabsTrigger 
-                  key={platform} 
+                <TabsTrigger
+                  key={platform}
                   value={platform}
                   className="flex items-center gap-2 data-[state=active]:bg-background"
                 >
@@ -350,121 +291,123 @@ export default function Enrollment() {
             })}
           </TabsList>
 
+          {/* Filters */}
+          {/* Profile Selection */}
+          <div className="mt-6">
+            <Select value={selectedProfile} onValueChange={setSelectedProfile}>
+              <SelectTrigger id="profile-filter" className="w-[300px] bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {currentProfiles.map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {(['android', 'ios', 'windows', 'macos', 'linux'] as Platform[]).map((platform) => (
             <TabsContent key={platform} value={platform} className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column: QR Code & Actions */}
-                <div className="space-y-6">
+              <div className="space-y-6">
+                {/* Top Row: QR Code & Profile Info */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* QR Code Display */}
                   <section className="panel" aria-label="QR Code">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <QrCode className="w-5 h-5" aria-hidden="true" />
-                      {t('enrollment.qrCode')}
-                    </h3>
-                    <div className="text-center">
-                      <div 
-                        className="mx-auto w-48 h-48 bg-background border-2 border-border rounded-lg flex items-center justify-center"
-                        role="img"
-                        aria-label={`${t('enrollment.qrCodeAlt')} ${currentProfile.name}`}
-                      >
-                        <div className="w-40 h-40 bg-foreground p-2">
-                          <div className="w-full h-full bg-background grid grid-cols-8 gap-0.5">
-                            {Array.from({ length: 64 }).map((_, i) => (
-                              <div 
-                                key={i} 
-                                className={`${Math.random() > 0.5 ? 'bg-foreground' : 'bg-background'}`}
-                              />
-                            ))}
+                    <div className="panel__header">
+                      <h3 className="panel__title flex items-center gap-2">
+                        <QrCode className="w-5 h-5" aria-hidden="true" />
+                        {t('enrollment.qrCode')}
+                      </h3>
+                    </div>
+                    <div className="panel__content">
+                      <div className="text-center">
+                        <div
+                          className="mx-auto w-48 h-48 bg-background border-2 border-border rounded-lg flex items-center justify-center"
+                          role="img"
+                          aria-label={`${t('enrollment.qrCodeAlt')} ${currentProfile.name}`}
+                        >
+                          <div className="w-40 h-40 bg-foreground p-2">
+                            <div className="w-full h-full bg-background grid grid-cols-8 gap-0.5">
+                              {Array.from({ length: 64 }).map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={`${Math.random() > 0.5 ? 'bg-foreground' : 'bg-background'}`}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
+                          {qrCodeData}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
-                        {qrCodeData}
-                      </p>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                      <Button 
-                        onClick={handleDownloadQR}
-                        className="flex-1"
-                        variant="outline"
-                      >
-                        <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-                        {t('enrollment.downloadQR')}
-                      </Button>
-                      <Button 
-                        onClick={handleCopyEnrollmentData}
-                        className="flex-1"
-                        variant="outline"
-                        aria-live="polite"
-                      >
-                        {copied ? (
-                          <Check className="w-4 h-4 mr-2" aria-hidden="true" />
-                        ) : (
-                          <Copy className="w-4 h-4 mr-2" aria-hidden="true" />
-                        )}
-                        {copied ? t('enrollment.copied') : t('enrollment.copyData')}
-                      </Button>
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                        <Button
+                          onClick={handleDownloadQR}
+                          className="flex-1"
+                          variant="outline"
+                        >
+                          <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+                          {t('enrollment.downloadQR')}
+                        </Button>
+                        <Button
+                          onClick={handleCopyEnrollmentData}
+                          className="flex-1"
+                          variant="outline"
+                          aria-live="polite"
+                        >
+                          {copied ? (
+                            <Check className="w-4 h-4 mr-2" aria-hidden="true" />
+                          ) : (
+                            <Copy className="w-4 h-4 mr-2" aria-hidden="true" />
+                          )}
+                          {copied ? t('enrollment.copied') : t('enrollment.copyData')}
+                        </Button>
+                      </div>
                     </div>
                   </section>
 
                   {/* Profile Configuration */}
                   <section className="panel" aria-label="Profile configuration">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Info className="w-5 h-5" aria-hidden="true" />
-                      {t('enrollment.profileInfo')}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">{currentProfile.description}</p>
-                    <dl className="space-y-3 text-sm">
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <dt className="text-muted-foreground">{t('enrollment.wifiSSID')}</dt>
-                        <dd className="font-mono">{currentProfile.config.wifiSSID}</dd>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <dt className="text-muted-foreground">{t('enrollment.vpnStatus')}</dt>
-                        <dd>{currentProfile.config.vpnEnabled ? t('enrollment.enabled') : t('enrollment.disabled')}</dd>
-                      </div>
-                      {currentProfile.config.vpnServer && (
+                    <div className="panel__header">
+                      <h3 className="panel__title flex items-center gap-2">
+                        <Info className="w-5 h-5" aria-hidden="true" />
+                        {t('enrollment.profileInfo')}
+                      </h3>
+                    </div>
+                    <div className="panel__content">
+                      <p className="text-sm text-muted-foreground mb-4">{currentProfile.description}</p>
+                      <dl className="space-y-3 text-sm">
                         <div className="flex justify-between py-2 border-b border-border">
-                          <dt className="text-muted-foreground">{t('enrollment.vpnServer')}</dt>
-                          <dd className="font-mono">{currentProfile.config.vpnServer}</dd>
+                          <dt className="text-muted-foreground">{t('enrollment.wifiSSID')}</dt>
+                          <dd className="font-mono">{currentProfile.config.wifiSSID}</dd>
                         </div>
-                      )}
-                    </dl>
+                        <div className="flex justify-between py-2 border-b border-border">
+                          <dt className="text-muted-foreground">{t('enrollment.vpnStatus')}</dt>
+                          <dd>{currentProfile.config.vpnEnabled ? t('enrollment.enabled') : t('enrollment.disabled')}</dd>
+                        </div>
+                        {currentProfile.config.vpnServer && (
+                          <div className="flex justify-between py-2 border-b border-border">
+                            <dt className="text-muted-foreground">{t('enrollment.vpnServer')}</dt>
+                            <dd className="font-mono">{currentProfile.config.vpnServer}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    </div>
                   </section>
                 </div>
 
-                {/* Right Column: Steps & Apps */}
-                <div className="space-y-6">
-                  {/* Enrollment Steps */}
-                  <section className="panel" aria-label="Enrollment steps">
-                    <h3 className="text-lg font-semibold mb-4">
-                      {t('enrollment.stepsTitle')}
-                    </h3>
-                    <ol className="space-y-3" role="list">
-                      {steps.map((step, index) => (
-                        <li 
-                          key={index} 
-                          className="flex gap-3 text-sm"
-                        >
-                          <span 
-                            className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium"
-                            aria-hidden="true"
-                          >
-                            {index + 1}
-                          </span>
-                          <span className="pt-0.5 text-foreground leading-relaxed">
-                            {language === 'hi' ? step.hi : step.en}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  </section>
-
+                {/* Middle Row: Apps & Restrictions */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Mandatory Apps */}
                   <section className="panel" aria-label="Mandatory applications">
-                    <h3 className="text-lg font-semibold mb-4">{t('enrollment.mandatoryApps')}</h3>
+                    <div className="panel__header">
+                      <h3 className="panel__title">{t('enrollment.mandatoryApps')}</h3>
+                    </div>
                     <div className="overflow-x-auto">
                       <table className="data-table" role="table">
                         <thead>
@@ -492,17 +435,51 @@ export default function Enrollment() {
 
                   {/* Restrictions */}
                   <section className="panel" aria-label="Restrictions">
-                    <h3 className="text-lg font-semibold mb-4">{t('enrollment.restrictions')}</h3>
-                    <ul className="space-y-2">
-                      {currentProfile.config.restrictions.map((restriction, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true" />
-                          {restriction}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="panel__header">
+                      <h3 className="panel__title">{t('enrollment.restrictions')}</h3>
+                    </div>
+                    <div className="panel__content">
+                      <ul className="space-y-2">
+                        {currentProfile.config.restrictions.map((restriction, i) => (
+                          <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true" />
+                            {restriction}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </section>
                 </div>
+
+                {/* Bottom Row: Steps */}
+                {/* Enrollment Steps */}
+                <section className="panel" aria-label="Enrollment steps">
+                  <div className="panel__header">
+                    <h3 className="panel__title">
+                      {t('enrollment.stepsTitle')}
+                    </h3>
+                  </div>
+                  <div className="panel__content">
+                    <ol className="space-y-3" role="list">
+                      {steps.map((step, index) => (
+                        <li
+                          key={index}
+                          className="flex gap-3 text-sm"
+                        >
+                          <span
+                            className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium"
+                            aria-hidden="true"
+                          >
+                            {index + 1}
+                          </span>
+                          <span className="pt-0.5 text-foreground leading-relaxed">
+                            {language === 'hi' ? step.hi : step.en}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </section>
               </div>
             </TabsContent>
           ))}
