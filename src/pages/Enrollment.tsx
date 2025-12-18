@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MainLayout } from '@/components/layout/MainLayout';
 import { 
   Smartphone, 
   Laptop, 
@@ -213,6 +214,7 @@ export default function Enrollment() {
   const qrCodeData = `https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`;
 
   return (
+    <MainLayout>
     <div className="space-y-6">
       {/* Page Header */}
       <header>
@@ -396,5 +398,6 @@ export default function Enrollment() {
         ))}
       </Tabs>
     </div>
+    </MainLayout>
   );
 }
