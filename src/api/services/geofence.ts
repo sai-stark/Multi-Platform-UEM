@@ -2,6 +2,7 @@ import {
     Geofence,
     GeofenceAlert,
     GeofencePolicy,
+    GeoFenceWholeMappingDetails,
     Pageable,
     PagedResponse
 } from '@/types/models';
@@ -64,5 +65,32 @@ export const GeofenceService = {
         const params = { ...pageable, deviceId };
         const response = await apiClient.get<PagedResponse<GeofenceAlert>>('/geofences/alerts', { params });
         return response.data;
+    },
+
+    // Mappings
+    getDeviceMappings: async (deviceId: string) => {
+        const response = await apiClient.get<GeoFenceWholeMappingDetails>(`/geofence-management/mappings/devices/${deviceId}`);
+        return response.data;
+    },
+
+    getGroupMappings: async (groupId: string) => {
+        const response = await apiClient.get<GeoFenceWholeMappingDetails>(`/geofence-management/mappings/groups/${groupId}`);
+        return response.data;
+    },
+
+    assignGeofenceToDevice: async (geofenceId: string, deviceId: string) => {
+        await apiClient.put(`/geofence-management/mappings/devices/${deviceId}/geofences/${geofenceId}`);
+    },
+
+    assignGeofenceToGroup: async (geofenceId: string, groupId: string) => {
+        await apiClient.put(`/geofence-management/mappings/groups/${groupId}/geofences/${geofenceId}`);
+    },
+
+    removeGeofenceFromDevice: async (geofenceId: string, deviceId: string) => {
+        await apiClient.delete(`/geofence-management/mappings/devices/${deviceId}/geofences/${geofenceId}`);
+    },
+
+    removeGeofenceFromGroup: async (geofenceId: string, groupId: string) => {
+        await apiClient.delete(`/geofence-management/mappings/groups/${groupId}/geofences/${geofenceId}`);
     }
 };

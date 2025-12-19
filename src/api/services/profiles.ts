@@ -8,6 +8,11 @@ import {
     DisplayRestriction,
     EnrollmentPolicy,
     FullProfile,
+    IosAppNotificationSetting,
+    IosLockScreenMessage,
+    IosMailPolicy,
+    // iOS Policies
+    IosWiFiConfiguration,
     KioskRestriction,
     LocationRestriction,
     MiscellaneousRestriction,
@@ -209,6 +214,54 @@ export const ProfileService = {
     // Connectivity
     createConnectivityRestriction: async (profileId: string, policy: ConnectivityRestriction) => {
         const response = await apiClient.post(`${CORE_PATH}/${profileId}/restrictions/connectivity`, policy);
+        return response.data;
+    },
+
+    // --- iOS Specific Policies ---
+
+    // WiFi
+    createIosWiFiConfiguration: async (profileId: string, policy: IosWiFiConfiguration) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/wifi`, policy);
+        return response.data;
+    },
+
+    // Mail
+    createIosMailPolicy: async (profileId: string, policy: IosMailPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/mail`, policy);
+        return response.data;
+    },
+
+    // App Notifications
+    createIosAppNotificationPolicy: async (profileId: string, policy: IosAppNotificationSetting) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/notifications`, policy);
+        return response.data;
+    },
+
+    // Lock Screen Message
+    createIosLockScreenMessage: async (profileId: string, policy: IosLockScreenMessage) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/lockScreenMessage`, policy);
+        return response.data;
+    },
+
+    // MDM Config
+    getIosMdmConfiguration: async (profileId: string) => {
+        const response = await apiClient.get(`/ios${CORE_PATH}/${profileId}/policies/mdm`);
+        return response.data;
+    },
+
+    // Certificates (Get only as per spec for now, or maybe create?)
+    getIosRootCertificate: async (profileId: string) => {
+        const response = await apiClient.get(`/ios${CORE_PATH}/${profileId}/policies/rootCertificate`);
+        return response.data;
+    },
+
+    getIosScepConfiguration: async (profileId: string) => {
+        const response = await apiClient.get(`/ios${CORE_PATH}/${profileId}/policies/scep`);
+        return response.data;
+    },
+
+    getIosAcmeConfiguration: async (profileId: string) => {
+        const response = await apiClient.get(`/ios${CORE_PATH}/${profileId}/policies/acme`);
         return response.data;
     }
 };

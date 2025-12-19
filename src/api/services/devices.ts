@@ -69,7 +69,26 @@ export const DeviceService = {
         await apiClient.post(`/devices/${deviceId}/actions/sync`);
     },
 
+
     getGPS: async (deviceId: string) => {
         await apiClient.post(`/devices/${deviceId}/actions/get-gps`);
+    },
+
+    // iOS Specific Commands
+    removePassCode: async (deviceId: string) => {
+        await apiClient.post(`/ios/devices/${deviceId}/commands/removePassCode`);
+    },
+
+    removeRestrictionPassword: async (deviceId: string) => {
+        await apiClient.post(`/ios/devices/${deviceId}/commands/removeRestrictionPassword`);
+    },
+
+    unlockUserAccount: async (deviceId: string) => {
+        await apiClient.post(`/ios/devices/${deviceId}/commands/unlockUserAccount`);
+    },
+
+    // APNS
+    sendApns: async (deviceId: string) => {
+        await apiClient.post(`/devices/${deviceId}/apns/send`);
     }
 };
