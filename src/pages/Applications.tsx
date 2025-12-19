@@ -11,7 +11,10 @@ import {
   MoreVertical,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Smartphone,
+  Apple,
+  Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +32,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { ApplicationCategoryChart } from '@/components/applications/ApplicationCategoryChart';
+import { ApplicationPlatformChart } from '@/components/applications/ApplicationPlatformChart';
+import { AddApplicationDialog } from '@/components/applications/AddApplicationDialog';
+
+type Platform = 'all' | 'android' | 'ios' | 'windows';
 
 interface Application {
   id: string;
@@ -38,20 +46,22 @@ interface Application {
   category: string;
   deployedDevices: number;
   status: 'approved' | 'blocked' | 'pending';
-  platform: string;
+  platform: Platform;
   size: string;
   lastUpdated: string;
 }
 
 const mockApplications: Application[] = [
-  { id: '1', name: 'Microsoft Teams', packageName: 'com.microsoft.teams', version: '24.1.0', category: 'Productivity', deployedDevices: 4520, status: 'approved', platform: 'Multi-platform', size: '156 MB', lastUpdated: '2024-01-12' },
-  { id: '2', name: 'Slack', packageName: 'com.slack', version: '23.12.10', category: 'Communication', deployedDevices: 3890, status: 'approved', platform: 'Multi-platform', size: '98 MB', lastUpdated: '2024-01-10' },
-  { id: '3', name: 'Adobe Acrobat Reader', packageName: 'com.adobe.reader', version: '24.1.2', category: 'Productivity', deployedDevices: 5200, status: 'approved', platform: 'Multi-platform', size: '245 MB', lastUpdated: '2024-01-14' },
-  { id: '4', name: 'Zoom', packageName: 'us.zoom.videomeetings', version: '5.17.0', category: 'Communication', deployedDevices: 4100, status: 'approved', platform: 'Multi-platform', size: '178 MB', lastUpdated: '2024-01-11' },
-  { id: '5', name: 'WhatsApp', packageName: 'com.whatsapp', version: '2.24.1.6', category: 'Communication', deployedDevices: 120, status: 'blocked', platform: 'Mobile', size: '65 MB', lastUpdated: '2024-01-08' },
-  { id: '6', name: 'TikTok', packageName: 'com.zhiliaoapp.musically', version: '33.0.5', category: 'Social Media', deployedDevices: 0, status: 'blocked', platform: 'Mobile', size: '280 MB', lastUpdated: '2024-01-05' },
-  { id: '7', name: 'SAP Fiori', packageName: 'com.sap.fiori', version: '2.8.4', category: 'Enterprise', deployedDevices: 2340, status: 'approved', platform: 'Multi-platform', size: '89 MB', lastUpdated: '2024-01-13' },
-  { id: '8', name: 'Custom ERP Client', packageName: 'in.cdot.erpclient', version: '1.2.0', category: 'Enterprise', deployedDevices: 0, status: 'pending', platform: 'Android', size: '45 MB', lastUpdated: '2024-01-15' },
+  { id: '1', name: 'Microsoft Teams', packageName: 'com.microsoft.teams', version: '24.1.0', category: 'Productivity', deployedDevices: 4520, status: 'approved', platform: 'android', size: '156 MB', lastUpdated: '2024-01-12' },
+  { id: '2', name: 'Slack', packageName: 'com.slack', version: '23.12.10', category: 'Communication', deployedDevices: 3890, status: 'approved', platform: 'android', size: '98 MB', lastUpdated: '2024-01-10' },
+  { id: '3', name: 'Adobe Acrobat Reader', packageName: 'com.adobe.reader', version: '24.1.2', category: 'Productivity', deployedDevices: 5200, status: 'approved', platform: 'ios', size: '245 MB', lastUpdated: '2024-01-14' },
+  { id: '4', name: 'Zoom', packageName: 'us.zoom.videomeetings', version: '5.17.0', category: 'Communication', deployedDevices: 4100, status: 'approved', platform: 'ios', size: '178 MB', lastUpdated: '2024-01-11' },
+  { id: '5', name: 'WhatsApp', packageName: 'com.whatsapp', version: '2.24.1.6', category: 'Communication', deployedDevices: 120, status: 'blocked', platform: 'android', size: '65 MB', lastUpdated: '2024-01-08' },
+  { id: '6', name: 'TikTok', packageName: 'com.zhiliaoapp.musically', version: '33.0.5', category: 'Social Media', deployedDevices: 0, status: 'blocked', platform: 'ios', size: '280 MB', lastUpdated: '2024-01-05' },
+  { id: '7', name: 'SAP Fiori', packageName: 'com.sap.fiori', version: '2.8.4', category: 'Enterprise', deployedDevices: 2340, status: 'approved', platform: 'windows', size: '89 MB', lastUpdated: '2024-01-13' },
+  { id: '8', name: 'Custom ERP Client', packageName: 'in.cdot.erpclient', version: '1.2.0', category: 'Enterprise', deployedDevices: 0, status: 'pending', platform: 'windows', size: '45 MB', lastUpdated: '2024-01-15' },
+  { id: '9', name: 'Microsoft Office', packageName: 'com.microsoft.office', version: '16.0.1', category: 'Productivity', deployedDevices: 3200, status: 'approved', platform: 'windows', size: '520 MB', lastUpdated: '2024-01-14' },
+  { id: '10', name: 'Outlook Mobile', packageName: 'com.microsoft.outlook', version: '4.2.1', category: 'Communication', deployedDevices: 2800, status: 'approved', platform: 'android', size: '110 MB', lastUpdated: '2024-01-13' },
 ];
 
 const statusConfig = {
@@ -60,25 +70,57 @@ const statusConfig = {
   pending: { label: 'Pending Review', icon: Clock, className: 'status-badge--pending' },
 };
 
+const platformConfig: Record<Platform, { label: string; icon: React.ElementType; color: string }> = {
+  all: { label: 'All Platforms', icon: AppWindow, color: 'text-primary' },
+  android: { label: 'Android', icon: Smartphone, color: 'text-success' },
+  ios: { label: 'iOS', icon: Apple, color: 'text-muted-foreground' },
+  windows: { label: 'Windows', icon: Monitor, color: 'text-info' },
+};
+
 const Applications = () => {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [platformFilter, setPlatformFilter] = useState<Platform>('all');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const filteredApps = mockApplications.filter(app => {
     const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           app.packageName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
     const matchesCategory = categoryFilter === 'all' || app.category === categoryFilter;
-    return matchesSearch && matchesStatus && matchesCategory;
+    const matchesPlatform = platformFilter === 'all' || app.platform === platformFilter;
+    return matchesSearch && matchesStatus && matchesCategory && matchesPlatform;
   });
 
+  // Stats based on current platform filter
+  const platformApps = platformFilter === 'all' ? mockApplications : mockApplications.filter(a => a.platform === platformFilter);
   const stats = {
-    total: mockApplications.length,
-    approved: mockApplications.filter(a => a.status === 'approved').length,
-    blocked: mockApplications.filter(a => a.status === 'blocked').length,
-    pending: mockApplications.filter(a => a.status === 'pending').length,
+    total: platformApps.length,
+    approved: platformApps.filter(a => a.status === 'approved').length,
+    blocked: platformApps.filter(a => a.status === 'blocked').length,
+    pending: platformApps.filter(a => a.status === 'pending').length,
+  };
+
+  // Chart data
+  const categoryData = [
+    { name: 'Productivity', value: platformApps.filter(a => a.category === 'Productivity').length, color: 'hsl(var(--primary))' },
+    { name: 'Communication', value: platformApps.filter(a => a.category === 'Communication').length, color: 'hsl(var(--info))' },
+    { name: 'Enterprise', value: platformApps.filter(a => a.category === 'Enterprise').length, color: 'hsl(var(--success))' },
+    { name: 'Social Media', value: platformApps.filter(a => a.category === 'Social Media').length, color: 'hsl(var(--warning))' },
+  ].filter(d => d.value > 0);
+
+  const platformChartData = [
+    { name: 'Android', count: mockApplications.filter(a => a.platform === 'android').length, fill: 'hsl(var(--success))' },
+    { name: 'iOS', count: mockApplications.filter(a => a.platform === 'ios').length, fill: 'hsl(var(--muted-foreground))' },
+    { name: 'Windows', count: mockApplications.filter(a => a.platform === 'windows').length, fill: 'hsl(var(--info))' },
+  ];
+
+  const getPlatformIcon = (platform: Platform) => {
+    const config = platformConfig[platform];
+    const Icon = config.icon;
+    return <Icon className={cn('w-4 h-4', config.color)} />;
   };
 
   return (
@@ -94,11 +136,32 @@ const Applications = () => {
               Manage and deploy applications across your device fleet
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
             <Download className="w-4 h-4" aria-hidden="true" />
             Add Application
           </Button>
         </header>
+
+        {/* Platform Tabs */}
+        <section className="flex gap-2" aria-label="Platform filter">
+          {(Object.keys(platformConfig) as Platform[]).map((platform) => {
+            const config = platformConfig[platform];
+            const Icon = config.icon;
+            const isActive = platformFilter === platform;
+            return (
+              <Button
+                key={platform}
+                variant={isActive ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPlatformFilter(platform)}
+                className={cn('gap-2', isActive && 'shadow-md')}
+              >
+                <Icon className={cn('w-4 h-4', isActive ? '' : config.color)} />
+                {config.label}
+              </Button>
+            );
+          })}
+        </section>
 
         {/* Stats Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Application statistics">
@@ -146,6 +209,12 @@ const Applications = () => {
               </div>
             </div>
           </article>
+        </section>
+
+        {/* Charts Section */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4" aria-label="Application analytics">
+          <ApplicationCategoryChart data={categoryData} />
+          <ApplicationPlatformChart data={platformChartData} />
         </section>
 
         {/* Filters */}
@@ -223,7 +292,7 @@ const Applications = () => {
                       <td>
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                            <AppWindow className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+                            {getPlatformIcon(app.platform)}
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{app.name}</p>
@@ -232,7 +301,12 @@ const Applications = () => {
                         </div>
                       </td>
                       <td className="text-muted-foreground">{app.category}</td>
-                      <td className="text-muted-foreground">{app.platform}</td>
+                      <td>
+                        <span className="flex items-center gap-1.5">
+                          {getPlatformIcon(app.platform)}
+                          <span className="text-muted-foreground">{platformConfig[app.platform].label}</span>
+                        </span>
+                      </td>
                       <td className="font-mono text-muted-foreground">{app.version}</td>
                       <td className="font-mono">{app.deployedDevices.toLocaleString()}</td>
                       <td>
@@ -277,7 +351,7 @@ const Applications = () => {
           {/* Pagination Footer */}
           <div className="px-4 py-3 border-t border-border flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredApps.length} of {mockApplications.length} applications
+              Showing {filteredApps.length} of {platformApps.length} applications
             </p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled>Previous</Button>
@@ -286,6 +360,13 @@ const Applications = () => {
           </div>
         </section>
       </div>
+
+      {/* Add Application Dialog */}
+      <AddApplicationDialog 
+        open={addDialogOpen} 
+        onOpenChange={setAddDialogOpen} 
+        platform={platformFilter} 
+      />
     </MainLayout>
   );
 };
