@@ -10,7 +10,8 @@ import {
   Smartphone,
   Laptop,
   Server,
-  UserPlus
+  UserPlus,
+  Globe
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -38,6 +39,7 @@ const mainNavItems = [
   { titleKey: 'nav.enrollment', url: '/enrollment', icon: UserPlus },
   { titleKey: 'nav.devices', url: '/devices', icon: Monitor },
   { titleKey: 'nav.applications', url: '/applications', icon: AppWindow },
+  { titleKey: 'nav.webApplications', url: '/web-applications', icon: Globe },
   { titleKey: 'nav.policies', url: '/policies', icon: Shield },
   { titleKey: 'nav.users', url: '/users', icon: Users },
   { titleKey: 'nav.reports', url: '/reports', icon: FileBarChart },
