@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import Applications from "./pages/Applications";
 import Devices from "./pages/Devices";
 import Enrollment from "./pages/Enrollment";
+import Policies from "./pages/Policies";
+import WebApplications from "./pages/WebApplications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/applications" element={<Applications />} />
+              <Route path="/web-applications" element={<WebApplications />} />
+              <Route path="/policies" element={<Policies />} />
               <Route path="/enrollment" element={<Enrollment />} />
               <Route path="/devices" element={<Devices />} />
               <Route path="/devices/:platform" element={<Devices />} />

@@ -306,6 +306,11 @@ export interface EndpointVulnerabilityResponse {
     vulnerabilities: Vulnerability[];
 }
 
+export interface SoftwareVulnerabilityResponse {
+    softwareId: string;
+    vulnerabilities: Vulnerability[];
+}
+
 // iOS Specific Policies
 
 export interface IosAppNotificationSetting {

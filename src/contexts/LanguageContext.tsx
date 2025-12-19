@@ -16,6 +16,7 @@ const translations: Translations = {
   'nav.deviceManagement': { en: 'Device Management', hi: 'उपकरण प्रबंधन' },
   'nav.enrollment': { en: 'Enrollment', hi: 'नामांकन' },
   'nav.applications': { en: 'Applications', hi: 'अनुप्रयोग' },
+  'nav.webApplications': { en: 'Web Applications', hi: 'वेब अनुप्रयोग' },
   'nav.policies': { en: 'Policies', hi: 'नीतियाँ' },
   'nav.users': { en: 'Users', hi: 'उपयोगकर्ता' },
   'nav.reports': { en: 'Reports', hi: 'रिपोर्ट' },
