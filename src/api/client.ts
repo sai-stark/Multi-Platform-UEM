@@ -1,0 +1,37 @@
+import axios from 'axios';
+
+const API_BASE_URL = 'https://192.168.71.51:8090'; // Default from spec
+
+const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Request interceptor for auth token (placeholder)
+apiClient.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// Response interceptor for error handling
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Handle specific error codes here (e.g., 401 logout)
+        if (error.response?.status === 401) {
+            // Redirect to login or clear storage
+            console.warn('Unauthorized access - redirecting to login');
+        }
+        return Promise.reject(error);
+    }
+);
+
+export default apiClient;
