@@ -20,11 +20,13 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   AppWindow,
+  Box,
   ChevronDown,
   FileBarChart,
   Globe,
   Laptop,
   LayoutDashboard,
+  MapPin,
   Monitor,
   Server,
   Settings,
