@@ -1,38 +1,38 @@
-import { 
-  LayoutDashboard, 
-  Monitor, 
-  AppWindow, 
-  Shield, 
-  Users, 
-  FileBarChart,
-  Settings,
-  ChevronDown,
-  Smartphone,
-  Laptop,
-  Server,
-  UserPlus,
-  Globe
-} from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useLanguage } from '@/contexts/LanguageContext';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-  useSidebar,
-} from '@/components/ui/sidebar';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { useLanguage } from '@/contexts/LanguageContext';
+import {
+  AppWindow,
+  ChevronDown,
+  FileBarChart,
+  Globe,
+  Laptop,
+  LayoutDashboard,
+  Monitor,
+  Server,
+  Settings,
+  Shield,
+  Smartphone,
+  UserPlus,
+  Users
+} from 'lucide-react';
 
 const mainNavItems = [
   { titleKey: 'nav.dashboard', url: '/', icon: LayoutDashboard },
@@ -42,6 +42,8 @@ const mainNavItems = [
   { titleKey: 'nav.webApplications', url: '/web-applications', icon: Globe },
   { titleKey: 'nav.policies', url: '/policies', icon: Shield },
   { titleKey: 'nav.users', url: '/users', icon: Users },
+  { titleKey: 'Inventory', url: '/inventory', icon: Box },
+  { titleKey: 'Geofences', url: '/geofences', icon: MapPin },
   { titleKey: 'nav.reports', url: '/reports', icon: FileBarChart },
 ];
 
@@ -59,13 +61,13 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
 
   return (
-    <Sidebar 
+    <Sidebar
       className="border-r border-sidebar-border"
       collapsible="icon"
     >
       <SidebarHeader className="px-4 py-5 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div 
+          <div
             className="w-9 h-9 rounded bg-sidebar-primary flex items-center justify-center"
             aria-hidden="true"
           >
@@ -96,7 +98,7 @@ export function AppSidebar() {
                   {item.titleKey === 'nav.devices' ? (
                     <Collapsible defaultOpen className="w-full">
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton 
+                        <SidebarMenuButton
                           className="w-full justify-between hover:bg-sidebar-accent"
                           aria-expanded="true"
                         >

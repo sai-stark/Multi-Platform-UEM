@@ -256,9 +256,11 @@ export interface Geofence {
     id?: string;
     name: string;
     description?: string;
-    latitude: number;
-    longitude: number;
-    radius: number;
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+    type?: 'CIRCLE' | 'POLYGON';
+    coordinates?: Array<{ lat: number; lng: number }>;
 }
 
 export interface GeofencePolicy {
