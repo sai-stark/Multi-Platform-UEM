@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import Policies from "./pages/Policies";
 import ProfileDetails from "./pages/ProfileDetails";
 import Profiles from "./pages/Profiles";
+import Repositories from "./pages/Repositories";
 import WebApplications from "./pages/WebApplications";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/profiles" element={<Profiles />} />
               <Route path="/profiles/:platform/:id" element={<ProfileDetails />} />
               <Route path="/profiles/:platform/:id/policies" element={<EditProfilePolicies />} />
+              <Route path="/repositories" element={<Repositories />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

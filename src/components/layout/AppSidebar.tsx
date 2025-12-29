@@ -49,6 +49,7 @@ const mainNavItems = [
   { titleKey: 'nav.policies', url: '/policies', icon: Shield },
   { titleKey: 'nav.users', url: '/users', icon: Users },
   { titleKey: 'Inventory', url: '/inventory', icon: Box },
+  { titleKey: 'Repositories', url: '/repositories', icon: Server },
   { titleKey: 'Geofences', url: '/geofences', icon: MapPin },
   { titleKey: 'nav.reports', url: '/reports', icon: FileBarChart },
 ];
