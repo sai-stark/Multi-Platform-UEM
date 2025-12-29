@@ -4,54 +4,22 @@ import {
     Card,
     CardContent
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
 import { mockInventory } from "@/data/mockInventory";
 import { InventoryDevice } from "@/types/models";
-import { Box, Filter, Laptop, Monitor, Pencil, Plus, Search, Trash2, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { DataTable, Column } from "@/components/ui/data-table";
+import { Box, Laptop, Monitor, Pencil, Plus, Trash2, User } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Inventory = () => {
-    // Initialize with mock data
     const [devices, setDevices] = useState<InventoryDevice[]>(mockInventory);
-    const [loading, setLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [manufacturerFilter, setManufacturerFilter] = useState("all");
     const navigate = useNavigate();
     const { toast } = useToast();
-
-    // Effect to handle search filtering
-    useEffect(() => {
-        const lowerTerm = searchTerm.toLowerCase();
-        const filtered = mockInventory.filter(d => {
-            const matchesSearch =
-                d.serialNumber.toLowerCase().includes(lowerTerm) ||
-                d.modelNumber.toLowerCase().includes(lowerTerm) ||
-                (d.assetTag && d.assetTag.toLowerCase().includes(lowerTerm)) ||
-                (d.assignedUser && d.assignedUser.toLowerCase().includes(lowerTerm));
-
-            const matchesManufacturer = manufacturerFilter === 'all' || d.manufacturer === manufacturerFilter;
-
-            return matchesSearch && matchesManufacturer;
-        });
-        setDevices(filtered);
-    }, [searchTerm, manufacturerFilter]);
 
     const stats = {
         total: mockInventory.length,
@@ -72,6 +40,95 @@ const Inventory = () => {
 
     // Extract unique manufacturers for filter
     const manufacturers = Array.from(new Set(mockInventory.map(d => d.manufacturer)));
+
+    const columns: Column<InventoryDevice>[] = [
+        {
+            key: 'serialNumber',
+            header: 'Serial Number',
+            accessor: (item) => item.serialNumber,
+            sortable: true,
+            searchable: true,
+            render: (value, item) => (
+                <div
+                    className="flex items-center gap-2 cursor-pointer hover:underline text-primary"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/inventory/${item.id}`);
+                    }}
+                >
+                    <Laptop className="h-4 w-4" />
+                    {value}
+                </div>
+            ),
+        },
+        {
+            key: 'modelNumber',
+            header: 'Model',
+            accessor: (item) => item.modelNumber,
+            sortable: true,
+            searchable: true,
+        },
+        {
+            key: 'manufacturer',
+            header: 'Manufacturer',
+            accessor: (item) => item.manufacturer,
+            sortable: true,
+            filterable: true,
+        },
+        {
+            key: 'assetTag',
+            header: 'Asset Tag',
+            accessor: (item) => item.assetTag || '-',
+            sortable: true,
+            searchable: true,
+            render: (value) => (
+                <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                    {value}
+                </span>
+            ),
+        },
+        {
+            key: 'location',
+            header: 'Location',
+            accessor: (item) => item.location || '-',
+            sortable: true,
+            filterable: true,
+        },
+        {
+            key: 'assignedUser',
+            header: 'Assigned User',
+            accessor: (item) => item.assignedUser || '',
+            sortable: true,
+            searchable: true,
+            render: (value) => (
+                value ? (
+                    <div className="flex items-center gap-1.5">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        <span>{value}</span>
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground italic">Unassigned</span>
+                )
+            ),
+        },
+    ];
+
+    const rowActions = (device: InventoryDevice) => (
+        <>
+            <DropdownMenuItem onClick={() => navigate(`/inventory/${device.id}`)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+                className="text-destructive"
+                onClick={() => handleDelete(device.id!)}
+            >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+            </DropdownMenuItem>
+        </>
+    );
 
     return (
         <MainLayout>
@@ -133,117 +190,19 @@ const Inventory = () => {
                     </Card>
                 </section>
 
-                {/* Filter and Search Bar */}
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground min-w-fit">
-                        <Filter className="w-4 h-4" />
-                        <span className="text-sm font-medium">Filters:</span>
-                    </div>
-
-                    <div className="flex-1 w-full md:w-auto flex flex-col md:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by Serial, Model, Asset Tag..."
-                                className="pl-9"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <Select value={manufacturerFilter} onValueChange={setManufacturerFilter}>
-                            <SelectTrigger className="w-full md:w-[200px]">
-                                <SelectValue placeholder="Manufacturer" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Manufacturers</SelectItem>
-                                {manufacturers.map(m => (
-                                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="rounded-md border bg-card shadow-sm">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Serial Number</TableHead>
-                                <TableHead>Model</TableHead>
-                                <TableHead>Manufacturer</TableHead>
-                                <TableHead>Asset Tag</TableHead>
-                                <TableHead>Location</TableHead>
-                                <TableHead>Assigned User</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8">
-                                        Loading...
-                                    </TableCell>
-                                </TableRow>
-                            ) : devices.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                        No devices found
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                devices.map((device) => (
-                                    <TableRow key={device.id}>
-                                        <TableCell className="font-medium">
-                                            <div
-                                                className="flex items-center gap-2 cursor-pointer hover:underline text-primary"
-                                                onClick={() => navigate(`/inventory/${device.id}`)}
-                                            >
-                                                <Laptop className="h-4 w-4" />
-                                                {device.serialNumber}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{device.modelNumber}</TableCell>
-                                        <TableCell>{device.manufacturer}</TableCell>
-                                        <TableCell>
-                                            <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                                                {device.assetTag || "-"}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>{device.location || "-"}</TableCell>
-                                        <TableCell>
-                                            {device.assignedUser ? (
-                                                <div className="flex items-center gap-1.5">
-                                                    <User className="h-3 w-3 text-muted-foreground" />
-                                                    <span>{device.assignedUser}</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-muted-foreground italic">Unassigned</span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => navigate(`/inventory/${device.id}`)}
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(device.id!)}
-                                                    className="text-destructive hover:text-destructive"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                {/* Inventory Table */}
+                <div className="rounded-md border bg-card shadow-sm p-4">
+                    <DataTable
+                        data={devices}
+                        columns={columns}
+                        globalSearchPlaceholder="Search by Serial, Model, Asset Tag..."
+                        emptyMessage="No devices found"
+                        rowActions={rowActions}
+                        defaultPageSize={10}
+                        showExport={true}
+                        exportTitle="Inventory Report"
+                        exportFilename="inventory"
+                    />
                 </div>
             </div>
         </MainLayout>

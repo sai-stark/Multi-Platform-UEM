@@ -1,4 +1,3 @@
-
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,12 +10,9 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,15 +20,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Group } from '@/types/models';
+import { DataTable, Column } from '@/components/ui/data-table';
 import {
     AlertTriangle,
     CheckCircle,
     Edit,
-    Filter,
     Folder,
-    MoreVertical,
     Plus,
-    Search,
     Trash2,
     Users
 } from 'lucide-react';
@@ -54,7 +48,6 @@ export default function Groups() {
     const { toast } = useToast();
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [newGroup, setNewGroup] = useState({ name: '', description: '' });
 
@@ -103,11 +96,6 @@ export default function Groups() {
         }
     };
 
-    const filteredGroups = groups.filter(group =>
-        group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        group.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     // Stats
     const stats = {
         total: groups.length,
@@ -115,6 +103,71 @@ export default function Groups() {
         empty: groups.filter(g => !g.deviceCount || g.deviceCount === 0).length,
         active: groups.filter(g => (g.deviceCount || 0) > 0).length
     };
+
+    const columns: Column<Group>[] = [
+        {
+            key: 'name',
+            header: 'Name',
+            accessor: (item) => item.name,
+            sortable: true,
+            searchable: true,
+            render: (_, item) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                        <Folder className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+                    </div>
+                    <button
+                        className="font-medium hover:underline text-left text-foreground hover:text-primary"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/groups/${item.id}`);
+                        }}
+                    >
+                        {item.name}
+                    </button>
+                </div>
+            ),
+        },
+        {
+            key: 'description',
+            header: 'Description',
+            accessor: (item) => item.description || '-',
+            sortable: true,
+            searchable: true,
+            render: (value) => <span className="text-muted-foreground">{value}</span>,
+        },
+        {
+            key: 'deviceCount',
+            header: 'Devices',
+            accessor: (item) => item.deviceCount || 0,
+            sortable: true,
+            align: 'center',
+            render: (value) => (
+                <div className="flex items-center gap-2 justify-center">
+                    <Users className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                    <span className="font-mono">{value}</span>
+                </div>
+            ),
+        },
+    ];
+
+    const rowActions = (group: Group) => (
+        <>
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => navigate(`/groups/${group.id}`)}>
+                View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { }}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteGroup(group)}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+            </DropdownMenuItem>
+        </>
+    );
 
     return (
         <MainLayout>
@@ -217,109 +270,21 @@ export default function Groups() {
                     </article>
                 </section>
 
-                {/* Filter Bar */}
-                <section className="filter-bar" aria-label="Group filters">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Filter className="w-4 h-4" aria-hidden="true" />
-                        <span className="text-sm font-medium">Filters:</span>
-                    </div>
-
-                    <div className="relative flex-1 max-w-xs">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                        <Input
-                            type="search"
-                            placeholder="Search groups..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 bg-background"
-                            aria-label="Search groups"
-                        />
-                    </div>
-                </section>
-
                 {/* Groups Table */}
-                <section className="panel" aria-label="Groups list">
-                    <div className="overflow-x-auto">
-                        <table className="data-table" role="table" aria-label="Device groups">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Description</th>
-                                    <th scope="col">Devices</th>
-                                    <th scope="col" className="w-12"><span className="sr-only">Actions</span></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredGroups.map((group) => (
-                                    <tr key={group.id} className="group" tabIndex={0}>
-                                        <td className="font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                                                    <Folder className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
-                                                </div>
-                                                <button
-                                                    className="font-medium hover:underline text-left text-foreground hover:text-primary"
-                                                    onClick={() => navigate(`/groups/${group.id}`)}
-                                                >
-                                                    {group.name}
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td className="text-muted-foreground">{group.description || '-'}</td>
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                <Users className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                                                <span className="font-mono">{group.deviceCount || 0}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Actions for ${group.name}`}>
-                                                        <MoreVertical className="w-4 h-4" aria-hidden="true" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="bg-popover border-border">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => navigate(`/groups/${group.id}`)}>
-                                                        View Details
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => { }}>
-                                                        <Edit className="w-4 h-4 mr-2" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteGroup(group)}>
-                                                        <Trash2 className="w-4 h-4 mr-2" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {filteredGroups.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                                            {loading ? 'Loading...' : 'No groups match your search.'}
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination Footer */}
-                    <div className="px-4 py-3 border-t border-border flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                            Showing {filteredGroups.length} of {groups.length} groups
-                        </p>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" disabled>Previous</Button>
-                            <Button variant="outline" size="sm" disabled>Next</Button>
-                        </div>
-                    </div>
-                </section>
+                <div className="rounded-md border bg-card shadow-sm p-4">
+                    <DataTable
+                        data={groups}
+                        columns={columns}
+                        loading={loading}
+                        globalSearchPlaceholder="Search groups..."
+                        emptyMessage="No groups found."
+                        rowActions={rowActions}
+                        defaultPageSize={10}
+                        showExport={true}
+                        exportTitle="Groups Report"
+                        exportFilename="groups"
+                    />
+                </div>
             </div>
         </MainLayout>
     );
