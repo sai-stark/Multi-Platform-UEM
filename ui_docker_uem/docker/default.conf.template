@@ -1,0 +1,48 @@
+server {
+    listen 80;
+    server_name _;
+    # keep root for other locations if you want, but ${DEPLOYMENT_PREFIX_PATH}/ will use alias
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Redirect bare "/" to ${DEPLOYMENT_PREFIX_PATH}/
+    location = / {
+        return 301 ${DEPLOYMENT_PREFIX_PATH}/;
+    }
+
+    # Normalize ${DEPLOYMENT_PREFIX_PATH} (no trailing slash) → ${DEPLOYMENT_PREFIX_PATH}/
+    location = ${DEPLOYMENT_PREFIX_PATH} {
+        return 301 ${DEPLOYMENT_PREFIX_PATH}/;
+    }
+
+    # Serve the SPA under ${DEPLOYMENT_PREFIX_PATH}/ (alias maps ${DEPLOYMENT_PREFIX_PATH}/... -> /usr/share/nginx/html/...)
+    location ^~ ${DEPLOYMENT_PREFIX_PATH}/ {
+        alias /usr/share/nginx/html/;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # (Optional) If you also serve the app at root paths outside ${DEPLOYMENT_PREFIX_PATH}/
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Security - hide nginx version
+    server_tokens off;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # API proxy (ensure VITE_API_BASE_URL is templated/replaced)
+    location /api/ {
+        proxy_pass ${VITE_API_BASE_URL}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+

@@ -1,0 +1,10 @@
+services:
+  uem-dashboard:
+    image: uem-dashboard
+    build:
+      context: ./
+    env_file:
+      - ./.env.production
+    ports:
+      - "80:80"
+    restart: unless-stopped
