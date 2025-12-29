@@ -1,4 +1,4 @@
-import { ProfileService } from '@/api/services/profiles';
+import { PolicyService } from '@/api/services/policies';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,11 +28,11 @@ export function PasscodePolicy({ profileId, initialData, onSave, onCancel }: Pas
         setLoading(true);
         try {
             if (initialData?.id) {
-                // If we have an ID, it implies update, but ProfileService usually updates by profileId and policy type endpoint
+                // If we have an ID, it implies update, but PolicyService usually updates by profileId and policy type endpoint
                 // checking services: updatePasscodeRestriction(profileId, policy)
-                await ProfileService.updatePasscodeRestriction(profileId, formData);
+                await PolicyService.updatePasscodeRestriction(profileId, formData);
             } else {
-                await ProfileService.createPasscodeRestriction(profileId, formData);
+                await PolicyService.createPasscodeRestriction(profileId, formData);
             }
             onSave();
         } catch (error) {

@@ -10,41 +10,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType } from "@/types/models";
-import { Layout } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Pencil } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 
-// Platform configuration with asset images
-const PLATFORM_CONFIG = {
-  android: {
-    label: "Android",
-    image: "/Assets/android.png",
-  },
-  ios: {
-    label: "iOS",
-    image: "/Assets/apple.png",
-  },
-  windows: {
-    label: "Windows",
-    image: "/Assets/microsoft.png",
-    disabled: true,
-  },
-};
-
-interface AddProfileDialogProps {
+interface EditProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProfileAdded: () => void;
-  defaultPlatform?: "android" | "ios";
+  onProfileUpdated: () => void;
+  profile: Profile | null;
 }
 
 // Validation constants from OpenAPI spec
@@ -56,45 +32,74 @@ const DESC_MIN_LENGTH = 5;
 const DESC_MAX_LENGTH = 100;
 const DESC_PATTERN = /^[a-zA-Z0-9\- ]{5,100}$/;
 
-// Map platform to profileType as per OpenAPI spec
-const PROFILE_TYPE_MAP: Record<string, ProfileType> = {
-  android: "AndroidProfile",
-  ios: "IosProfile",
+// Platform configuration with asset images
+const PLATFORM_CONFIG: Record<string, { label: string; image: string }> = {
+  android: {
+    label: "Android",
+    image: "/Assets/android.png",
+  },
+  ios: {
+    label: "iOS",
+    image: "/Assets/apple.png",
+  },
+  windows: {
+    label: "Windows",
+    image: "/Assets/microsoft.png",
+  },
 };
 
 interface FormErrors {
   name?: string;
   description?: string;
-  platform?: string;
 }
 
 interface FormData {
   name: string;
   description: string;
-  platform: "android" | "ios";
 }
 
-export function AddProfileDialog({
+export function EditProfileDialog({
   open,
   onOpenChange,
-  onProfileAdded,
-  defaultPlatform = "android",
-}: AddProfileDialogProps) {
+  onProfileUpdated,
+  profile,
+}: EditProfileDialogProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
-    platform: defaultPlatform,
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  // Sync platform with defaultPlatform when dialog opens
+  // Store original values for comparison
+  const originalValues = useMemo(
+    () => ({
+      name: profile?.name || "",
+      description: profile?.description || "",
+    }),
+    [profile]
+  );
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    return (
+      formData.name !== originalValues.name ||
+      formData.description !== originalValues.description
+    );
+  }, [formData, originalValues]);
+
+  // Sync form data when profile changes or dialog opens
   useEffect(() => {
-    if (open) {
-      setFormData((prev) => ({ ...prev, platform: defaultPlatform }));
+    if (open && profile) {
+      setFormData({
+        name: profile.name || "",
+        description: profile.description || "",
+      });
+      setErrors({});
+      setTouched({});
     }
-  }, [open, defaultPlatform]);
+  }, [open, profile]);
 
   const validateName = (value: string): string | undefined => {
     if (!value || value.trim() === "") {
@@ -132,7 +137,6 @@ export function AddProfileDialog({
     const newErrors: FormErrors = {
       name: validateName(formData.name || ""),
       description: validateDescription(formData.description || ""),
-      platform: !formData.platform ? "Platform is required" : undefined,
     };
 
     setErrors(newErrors);
@@ -171,7 +175,7 @@ export function AddProfileDialog({
     e.preventDefault();
 
     // Mark all fields as touched
-    setTouched({ name: true, description: true, platform: true });
+    setTouched({ name: true, description: true });
 
     if (!validateForm()) {
       toast({
@@ -182,31 +186,53 @@ export function AddProfileDialog({
       return;
     }
 
-    setLoading(true);
-    try {
-      // Build the profile payload with profileType as per OpenAPI spec
-      const profileType = PROFILE_TYPE_MAP[formData.platform];
-      const profilePayload: Profile = {
-        name: formData.name,
-        description: formData.description,
-        profileType: profileType,
-      };
-
-      await ProfileService.createProfile(formData.platform, profilePayload);
-
+    if (!hasChanges) {
       toast({
-        title: "Profile Created",
-        description: `Profile "${formData.name}" has been created successfully.`,
+        title: "No Changes",
+        description: "No changes were made to the profile.",
       });
+      return;
+    }
 
-      onProfileAdded();
-      onOpenChange(false);
-      resetForm();
-    } catch (error) {
-      console.error("Failed to create profile:", error);
+    if (!profile?.id || !profile?.platform) {
       toast({
         title: "Error",
-        description: "Failed to create profile. Please try again.",
+        description: "Profile information is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Map platform to profileType for API payload
+      const profileTypeMap: Record<string, ProfileType> = {
+        android: "AndroidProfile",
+        ios: "IosProfile",
+      };
+
+      await ProfileService.updateProfile(
+        profile.platform as Platform,
+        profile.id,
+        {
+          name: formData.name,
+          description: formData.description,
+          profileType: profileTypeMap[profile.platform],
+        }
+      );
+
+      toast({
+        title: "Profile Updated",
+        description: `Profile "${formData.name}" has been updated successfully.`,
+      });
+
+      onProfileUpdated();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -214,35 +240,32 @@ export function AddProfileDialog({
     }
   };
 
-  const resetForm = () => {
-    setFormData({ name: "", description: "", platform: defaultPlatform });
-    setErrors({});
-    setTouched({});
-  };
-
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
-      resetForm();
+      setErrors({});
+      setTouched({});
     }
     onOpenChange(isOpen);
   };
+
+  const platformConfig = PLATFORM_CONFIG[profile?.platform || "android"];
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-background">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Layout className="w-5 h-5" />
-            Create New Profile
+            <Pencil className="w-5 h-5" />
+            Edit Profile
           </DialogTitle>
           <DialogDescription>
-            Create a new device profile to apply policies and configurations.
+            Update the profile name and description. Platform cannot be changed.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
-            <Label htmlFor="name" className="flex items-center gap-1">
+            <Label htmlFor="edit-name" className="flex items-center gap-1">
               Profile Name
               <span className="text-destructive" aria-hidden="true">
                 *
@@ -250,13 +273,13 @@ export function AddProfileDialog({
               <span className="sr-only">(required)</span>
             </Label>
             <Input
-              id="name"
+              id="edit-name"
               placeholder="e.g., Corporate Android Policy"
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
               onBlur={() => handleBlur("name")}
               aria-invalid={touched.name && !!errors.name}
-              aria-describedby={errors.name ? "name-error" : "name-hint"}
+              aria-describedby={errors.name ? "edit-name-error" : "edit-name-hint"}
               className={
                 touched.name && errors.name
                   ? "border-destructive focus-visible:ring-destructive"
@@ -267,14 +290,14 @@ export function AddProfileDialog({
             <div className="flex justify-between items-center">
               {touched.name && errors.name ? (
                 <p
-                  id="name-error"
+                  id="edit-name-error"
                   className="text-sm text-destructive"
                   role="alert"
                 >
                   {errors.name}
                 </p>
               ) : (
-                <p id="name-hint" className="text-xs text-muted-foreground">
+                <p id="edit-name-hint" className="text-xs text-muted-foreground">
                   {NAME_MIN_LENGTH}-{NAME_MAX_LENGTH} characters, alphanumeric
                   with hyphens and spaces
                 </p>
@@ -286,65 +309,28 @@ export function AddProfileDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="platform" className="flex items-center gap-1">
-              Platform
-              <span className="text-destructive" aria-hidden="true">
-                *
+            <Label className="flex items-center gap-1">Platform</Label>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/50 cursor-not-allowed">
+              {platformConfig && (
+                <>
+                  <img
+                    src={platformConfig.image}
+                    alt={platformConfig.label}
+                    className="w-5 h-5 object-contain"
+                  />
+                  <span className="text-muted-foreground">
+                    {platformConfig.label}
+                  </span>
+                </>
+              )}
+              <span className="text-xs text-muted-foreground ml-auto">
+                (Cannot be changed)
               </span>
-              <span className="sr-only">(required)</span>
-            </Label>
-            <Select
-              value={formData.platform}
-              onValueChange={(v) =>
-                setFormData({ ...formData, platform: v as "android" | "ios" })
-              }
-            >
-              <SelectTrigger id="platform" aria-describedby="platform-hint">
-                <SelectValue placeholder="Select platform" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                <SelectItem value="android">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={PLATFORM_CONFIG.android.image}
-                      alt={PLATFORM_CONFIG.android.label}
-                      className="w-5 h-5 object-contain"
-                    />
-                    {PLATFORM_CONFIG.android.label}
-                  </div>
-                </SelectItem>
-                <SelectItem value="ios">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={PLATFORM_CONFIG.ios.image}
-                      alt={PLATFORM_CONFIG.ios.label}
-                      className="w-5 h-5 object-contain"
-                    />
-                    {PLATFORM_CONFIG.ios.label}
-                  </div>
-                </SelectItem>
-                <SelectItem value="windows" disabled>
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={PLATFORM_CONFIG.windows.image}
-                      alt={PLATFORM_CONFIG.windows.label}
-                      className="w-5 h-5 object-contain opacity-50"
-                    />
-                    {PLATFORM_CONFIG.windows.label}
-                    <span className="text-xs text-muted-foreground ml-1">
-                      (Coming soon)
-                    </span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p id="platform-hint" className="text-xs text-muted-foreground">
-              Select the target device platform
-            </p>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="flex items-center gap-1">
+            <Label htmlFor="edit-description" className="flex items-center gap-1">
               Description
               <span className="text-destructive" aria-hidden="true">
                 *
@@ -352,14 +338,14 @@ export function AddProfileDialog({
               <span className="sr-only">(required)</span>
             </Label>
             <Textarea
-              id="description"
+              id="edit-description"
               placeholder="Describe the purpose of this profile..."
               value={formData.description}
               onChange={(e) => handleDescriptionChange(e.target.value)}
               onBlur={() => handleBlur("description")}
               aria-invalid={touched.description && !!errors.description}
               aria-describedby={
-                errors.description ? "description-error" : "description-hint"
+                errors.description ? "edit-description-error" : "edit-description-hint"
               }
               className={
                 touched.description && errors.description
@@ -372,7 +358,7 @@ export function AddProfileDialog({
             <div className="flex justify-between items-center">
               {touched.description && errors.description ? (
                 <p
-                  id="description-error"
+                  id="edit-description-error"
                   className="text-sm text-destructive"
                   role="alert"
                 >
@@ -380,7 +366,7 @@ export function AddProfileDialog({
                 </p>
               ) : (
                 <p
-                  id="description-hint"
+                  id="edit-description-hint"
                   className="text-xs text-muted-foreground"
                 >
                   {DESC_MIN_LENGTH}-{DESC_MAX_LENGTH} characters, alphanumeric
@@ -402,8 +388,8 @@ export function AddProfileDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Profile"}
+            <Button type="submit" disabled={loading || !hasChanges}>
+              {loading ? "Updating..." : "Update Profile"}
             </Button>
           </DialogFooter>
         </form>
@@ -411,3 +397,4 @@ export function AddProfileDialog({
     </Dialog>
   );
 }
+
