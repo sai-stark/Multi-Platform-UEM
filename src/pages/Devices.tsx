@@ -1,25 +1,12 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { 
-  Monitor, 
-  Smartphone, 
-  Laptop, 
-  Server,
-  Search,
-  Filter,
-  MoreVertical,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Wifi,
-  WifiOff,
-  Battery,
-  HardDrive,
-  RefreshCw
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -28,14 +15,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import {
+  Battery,
+  CheckCircle,
+  Filter,
+  HardDrive,
+  Laptop,
+  Monitor,
+  MoreVertical,
+  RefreshCw,
+  Search,
+  Server,
+  Smartphone,
+  Wifi,
+  WifiOff,
+  XCircle
+} from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface Device {
   id: string;
@@ -79,6 +78,7 @@ const complianceConfig = {
 
 const Devices = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { platform } = useParams<{ platform?: string }>();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -87,14 +87,14 @@ const Devices = () => {
   const filteredDevices = mockDevices.filter(device => {
     const matchesPlatform = !platform || device.platform === platform;
     const matchesSearch = device.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          device.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          device.owner.toLowerCase().includes(searchQuery.toLowerCase());
+      device.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      device.owner.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || device.complianceStatus === statusFilter;
     const matchesConnection = connectionFilter === 'all' || device.connectionStatus === connectionFilter;
     return matchesPlatform && matchesSearch && matchesStatus && matchesConnection;
   });
 
-  const pageTitle = platform 
+  const pageTitle = platform
     ? `${platformConfig[platform as keyof typeof platformConfig]?.label || 'Unknown'} Devices`
     : t('nav.devices');
 
@@ -176,7 +176,7 @@ const Devices = () => {
             <Filter className="w-4 h-4" aria-hidden="true" />
             <span className="text-sm font-medium">Filters:</span>
           </div>
-          
+
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -241,7 +241,7 @@ const Devices = () => {
                   const PlatformIcon = platformInfo.icon;
                   const compliance = complianceConfig[device.complianceStatus];
                   const storagePercent = Math.round((device.storageUsed / device.storageTotal) * 100);
-                  
+
                   return (
                     <tr key={device.id} tabIndex={0}>
                       <td>
@@ -250,7 +250,12 @@ const Devices = () => {
                             <PlatformIcon className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                           </div>
                           <div>
-                            <p className="font-medium text-foreground">{device.name}</p>
+                            <p
+                              className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
+                              onClick={() => navigate(`/devices/${device.platform}/${device.id}`)}
+                            >
+                              {device.name}
+                            </p>
                             <p className="text-xs text-muted-foreground">{device.model}</p>
                           </div>
                         </div>
@@ -305,7 +310,9 @@ const Devices = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover border-border">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate(`/devices/${device.platform}/${device.id}`)}>
+                              View Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem>Sync Device</DropdownMenuItem>
                             <DropdownMenuItem>Send Message</DropdownMenuItem>
                             <DropdownMenuSeparator />

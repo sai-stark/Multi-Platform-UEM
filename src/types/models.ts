@@ -43,6 +43,8 @@ export interface Profile {
     platform?: Platform; // Inferred as it's common in paths
     createdTime?: string;
     updatedTime?: string;
+    status?: 'active' | 'draft' | 'archived';
+    category?: 'Corporate' | 'BYOD' | 'Kiosk' | 'Specialized';
 }
 
 export interface FullProfile extends Profile {

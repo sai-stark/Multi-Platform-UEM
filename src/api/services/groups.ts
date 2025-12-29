@@ -12,6 +12,13 @@ export const GroupService = {
         return response.data;
     },
 
+    getGroupDevices: async (groupId: string, pageable?: Pageable, search?: string) => {
+        const params = { ...pageable, search };
+        // Assuming the endpoint returns basic device info for the list
+        const response = await apiClient.get<PagedResponse<any>>(`/groups/${groupId}/devices`, { params });
+        return response.data;
+    },
+
     getGroup: async (groupId: string) => {
         const response = await apiClient.get<Group>(`/groups/${groupId}`);
         return response.data;
