@@ -1,12 +1,14 @@
+import { DeviceService } from '@/api/services/devices';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
+import { Column, DataTable } from '@/components/ui/data-table';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { DataTable, Column } from '@/components/ui/data-table';
+import { Platform } from '@/types/models';
 import {
   Battery,
   CheckCircle,
@@ -20,6 +22,7 @@ import {
   WifiOff,
   XCircle
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface Device {
@@ -36,17 +39,6 @@ interface Device {
   storageUsed: number;
   storageTotal: number;
 }
-
-const mockDevices: Device[] = [
-  { id: '1', name: 'CDOT-AND-001', model: 'Samsung Galaxy S23', platform: 'android', osVersion: 'Android 14', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 14:32', complianceStatus: 'compliant', connectionStatus: 'online', batteryLevel: 85, storageUsed: 45, storageTotal: 128 },
-  { id: '2', name: 'CDOT-AND-002', model: 'Google Pixel 8', platform: 'android', osVersion: 'Android 14', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 13:45', complianceStatus: 'compliant', connectionStatus: 'online', batteryLevel: 72, storageUsed: 38, storageTotal: 128 },
-  { id: '3', name: 'CDOT-IOS-042', model: 'iPhone 15 Pro', platform: 'ios', osVersion: 'iOS 17.2', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 12:18', complianceStatus: 'compliant', connectionStatus: 'online', batteryLevel: 92, storageUsed: 98, storageTotal: 256 },
-  { id: '4', name: 'CDOT-IOS-043', model: 'iPad Pro 12.9"', platform: 'ios', osVersion: 'iPadOS 17.2', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 11:02', complianceStatus: 'pending', connectionStatus: 'offline', batteryLevel: 45, storageUsed: 156, storageTotal: 256 },
-  { id: '5', name: 'CDOT-WIN-103', model: 'Dell Latitude 5540', platform: 'windows', osVersion: 'Windows 11 Pro', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-14 23:55', complianceStatus: 'non-compliant', connectionStatus: 'offline', batteryLevel: 100, storageUsed: 320, storageTotal: 512 },
-  { id: '6', name: 'CDOT-WIN-104', model: 'HP EliteBook 840', platform: 'windows', osVersion: 'Windows 11 Pro', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 08:30', complianceStatus: 'compliant', connectionStatus: 'online', batteryLevel: 67, storageUsed: 245, storageTotal: 512 },
-  { id: '7', name: 'CDOT-MAC-067', model: 'MacBook Pro 14"', platform: 'macos', osVersion: 'macOS Sonoma 14.2', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 10:15', complianceStatus: 'compliant', connectionStatus: 'online', batteryLevel: 88, storageUsed: 380, storageTotal: 512 },
-  { id: '8', name: 'CDOT-LNX-021', model: 'ThinkPad X1 Carbon', platform: 'linux', osVersion: 'Ubuntu 22.04 LTS', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-14 22:30', complianceStatus: 'compliant', connectionStatus: 'offline', batteryLevel: 23, storageUsed: 180, storageTotal: 256 },
-];
 
 const platformConfig = {
   android: { label: 'Android', icon: Smartphone },
@@ -66,20 +58,87 @@ const Devices = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { platform } = useParams<{ platform?: string }>();
+  const [data, setData] = useState<Device[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredByPlatform = platform 
-    ? mockDevices.filter(d => d.platform === platform) 
-    : mockDevices;
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      let responseData: any[] = [];
+      if (platform) {
+        const res = await DeviceService.getDevices(platform as Platform, { page: 0, size: 100 });
+        responseData = res.content || [];
+      } else {
+        const platforms: Platform[] = ['android', 'ios', 'windows', 'macos', 'linux'];
+        const results = await Promise.all(
+          platforms.map(async (p) => {
+            try {
+              const res = await DeviceService.getDevices(p, { page: 0, size: 20 });
+              return res.content || [];
+            } catch (err) {
+              console.warn(`Failed to fetch devices for platform ${p}`, err);
+              return [];
+            }
+          })
+        );
+        responseData = results.flat();
+      }
+
+      // Map API response to Device interface
+      // Map API response to Device interface
+      const mappedData: Device[] = responseData.map(item => {
+        const platform = (item.platform || item.opSysInfo?.osType?.toLowerCase() || 'android') as any;
+
+        // Calculate storage percentage
+        let storageUsed = 0;
+        let storageTotal = 0;
+        if (item.storageCapacity) {
+          // Android usually returns bytes or similar, need to normalize if needed. 
+          // Assuming simple mapping for now based on JSON example values (which were just '1')
+          storageTotal = item.storageCapacity;
+          storageUsed = item.storageUsed || 0;
+        } else if (item.deviceCapacity) {
+          // iOS
+          storageTotal = item.deviceCapacity;
+          storageUsed = (item.deviceCapacity - (item.availableDeviceCapacity || 0));
+        }
+
+        return {
+          id: item.id,
+          name: item.deviceName || item.name || item.model || 'Unknown',
+          model: item.model || item.modelName || 'Unknown',
+          platform: platform,
+          osVersion: item.osVersion || (item.opSysInfo ? item.opSysInfo.version : '-'),
+          owner: item.deviceUser || item.userEmail || '-',
+          lastSync: item.lastSyncTime ? new Date(item.lastSyncTime).toLocaleString() : (item.modificationTime ? new Date(item.modificationTime).toLocaleString() : '-'),
+          complianceStatus: 'compliant', // Placeholder
+          connectionStatus: (item.status === 'ONLINE' || item.connectionStatus === 'online') ? 'online' : 'offline',
+          batteryLevel: item.batteryLevel ?? 0,
+          storageUsed: storageUsed, // Placeholder logic needs refinement based on unit
+          storageTotal: storageTotal
+        };
+      });
+      setData(mappedData);
+    } catch (error) {
+      console.error("Failed to fetch devices", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [platform]);
 
   const pageTitle = platform
     ? `${platformConfig[platform as keyof typeof platformConfig]?.label || 'Unknown'} Devices`
     : t('nav.devices');
 
   const stats = {
-    total: filteredByPlatform.length,
-    online: filteredByPlatform.filter(d => d.connectionStatus === 'online').length,
-    compliant: filteredByPlatform.filter(d => d.complianceStatus === 'compliant').length,
-    nonCompliant: filteredByPlatform.filter(d => d.complianceStatus === 'non-compliant').length,
+    total: data.length,
+    online: data.filter(d => d.connectionStatus === 'online').length,
+    compliant: data.filter(d => d.complianceStatus === 'compliant').length,
+    nonCompliant: data.filter(d => d.complianceStatus === 'non-compliant').length,
   };
 
   const columns: Column<Device>[] = [
@@ -91,7 +150,7 @@ const Devices = () => {
       searchable: true,
       render: (_, item) => {
         const platformInfo = platformConfig[item.platform];
-        const PlatformIcon = platformInfo.icon;
+        const PlatformIcon = platformInfo ? platformInfo.icon : Smartphone;
         return (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
@@ -123,7 +182,7 @@ const Devices = () => {
         const platformInfo = platformConfig[item.platform];
         return (
           <div>
-            <p className="text-foreground">{platformInfo.label}</p>
+            <p className="text-foreground">{platformInfo ? platformInfo.label : item.platform}</p>
             <p className="text-xs text-muted-foreground">{item.osVersion}</p>
           </div>
         );
@@ -179,10 +238,10 @@ const Devices = () => {
     {
       key: 'storage',
       header: 'Storage',
-      accessor: (item) => Math.round((item.storageUsed / item.storageTotal) * 100),
+      accessor: (item) => item.storageTotal > 0 ? Math.round((item.storageUsed / item.storageTotal) * 100) : 0,
       sortable: true,
       render: (_, item) => {
-        const storagePercent = Math.round((item.storageUsed / item.storageTotal) * 100);
+        const storagePercent = item.storageTotal > 0 ? Math.round((item.storageUsed / item.storageTotal) * 100) : 0;
         return (
           <div className="flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -234,7 +293,7 @@ const Devices = () => {
               {platform ? `Manage ${platformConfig[platform as keyof typeof platformConfig]?.label} devices` : 'View and manage all enrolled devices'}
             </p>
           </div>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={fetchData}>
             <RefreshCw className="w-4 h-4" aria-hidden="true" />
             Sync All
           </Button>
@@ -291,10 +350,10 @@ const Devices = () => {
         {/* Devices Table */}
         <div className="rounded-md border bg-card shadow-sm p-4">
           <DataTable
-            data={filteredByPlatform}
+            data={data}
             columns={columns}
             globalSearchPlaceholder="Search devices..."
-            emptyMessage="No devices match your filters."
+            emptyMessage={loading ? "Loading devices..." : "No devices match your filters."}
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}

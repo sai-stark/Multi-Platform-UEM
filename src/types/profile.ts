@@ -1,10 +1,10 @@
 import { Platform } from './common';
-import { 
-    IosMailPolicy, 
-    IosWiFiConfiguration, 
-    IosMdmConfiguration, 
+import {
     IosAcmeConfiguration,
-    IosAppNotificationSetting 
+    IosAppNotificationSetting,
+    IosMailPolicy,
+    IosMdmConfiguration,
+    IosWiFiConfiguration
 } from './ios';
 
 // Profile types as per OpenAPI spec
@@ -27,7 +27,7 @@ export interface Profile {
     createdBy?: string;
     lastModifiedBy?: string;
     profileType?: ProfileType; // Required for API payload
-    
+
     // UI-specific fields (not in API response, used for routing/display)
     platform?: Platform; // Used for URL path routing
 }

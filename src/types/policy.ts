@@ -54,7 +54,6 @@ export interface PasscodeRestrictionPolicy {
 export interface SyncStorageRestriction {
     id?: string;
     allowUsbMassStorage?: boolean;
-    allowUsbMassStorage?: boolean;
 }
 
 // 9. Kiosk
@@ -113,8 +112,106 @@ export interface NetworkRestriction {
     allowWifi?: boolean;
 }
 
-// 18. Connectivity
-export interface ConnectivityRestriction {
-    id?: string;
-    allowBluetooth?: boolean;
+// iOS Mail Policy
+export interface MailPolicy {
+    id: string;
+    name: string;
+    policyType: string; // 'IosMail'
+    emailAccountDescription?: string;
+    emailAccountName?: string;
+    emailAccountType: string;
+    emailAddress: string;
+    incomingMailServerHostName: string;
+    incomingMailServerUsername: string;
+    // ... add other specific fields from JSON as needed
+}
+
+// iOS Passcode Policy
+export interface PasscodePolicy {
+    id: string;
+    name: string;
+    policyType: string; // 'IosPasscodeRestrictionPolicy'
+    minLength?: number;
+    allowSimple?: boolean;
+    requirePassCode?: boolean;
+    requireAlphanumericPasscode?: boolean;
+    requireComplexPasscode?: boolean;
+    minimumComplexCharacters?: number;
+    maximumFailedAttempts?: number;
+    maximumGracePeriodInMinutes?: number;
+    maximumInactivityInMinutes?: number;
+    maximumPasscodeAgeInDays?: number;
+    passCodeReuseLimit?: number;
+    changeAtNextAuth?: boolean;
+}
+
+// iOS SCEP Policy
+export interface ScepPolicy {
+    id: string;
+    policyType: string; // 'IosScepPolicyRes'
+    url: string;
+    scepName?: string;
+    challenge?: string;
+    keySize?: number;
+    keyType?: string;
+    subject?: string[][][]; // Complex subject structure
+}
+
+// iOS WebClip Policy
+export interface WebClipPolicy {
+    id: string;
+    name: string;
+    label: string;
+    url: string;
+    fullScreen?: boolean;
+    isRemovable?: boolean;
+    precomposed?: boolean;
+    icon?: string; // If available
+}
+
+// iOS MDM Policy
+export interface MdmPolicy {
+    policyType: string; // 'IosMdmConfiguration'
+    serverURL: string;
+    checkInURL: string;
+    topic: string;
+    accessRights: number;
+    enrollmentMode: string;
+}
+
+// iOS ACME Policy
+export interface AcmePolicy {
+    id: string;
+    name: string;
+    policyType: string; // 'IosAcmeConfiguration'
+    directoryURL: string;
+    clientIdentifier: string;
+    keySize?: number;
+    keyType?: string;
+    usageFlags?: number;
+}
+
+// iOS Notification Policy
+export interface NotificationPolicy {
+    id: string;
+    name: string;
+    policyType: string; // 'IosNotificationSettings'
+    bundleIdentifier: string;
+    notificationsEnabled?: boolean;
+    showInNotificationCenter?: boolean;
+    showInLockScreen?: boolean;
+    alertType?: number;
+}
+
+// iOS WiFi Policy
+export interface WifiPolicy {
+    id: string;
+    name: string;
+    policyType: string; // 'IosWiFiConfiguration'
+    ssid: string;
+    autoJoin?: boolean;
+    hiddenNetwork?: boolean;
+    encryptionType: string;
+    password?: string;
+    proxyType?: string;
 }

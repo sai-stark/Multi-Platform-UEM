@@ -1,49 +1,185 @@
 import {
-    BriefDeviceInfo,
     DeviceInfo,
     FullProfile,
     MobileApplication,
     Pageable,
-    PagedResponse,
-    Platform,
-    WebApplication
+    Platform
 } from '@/types/models';
 import apiClient from '../client';
 
 export const DeviceService = {
     getDevices: async (platform: Platform, pageable?: Pageable, search?: string) => {
-        const params = { ...pageable, search };
-        const response = await apiClient.get<PagedResponse<DeviceInfo>>(`/${platform}/devices`, { params });
-        return response.data;
-    },
+        // Mock Data Implementation
+        console.log(`[Mock] Fetching devices for ${platform}`);
+        const mockDevices: DeviceInfo[] = [
+            {
+                id: '1',
+                udid: '00008030-001A2B3C4D5E6F',
+                deviceName: 'iPhone 15 Pro',
+                model: 'iPhone 15 Pro',
+                modelName: 'iPhone 15 Pro',
+                platform: 'ios',
+                osVersion: '17.4',
+                serialNo: 'C02XD12345',
+                imei: '354890061234567',
+                status: 'ONLINE',
+                complianceStatus: 'compliant',
+                connectionStatus: 'online',
+                batteryLevel: 85,
+                deviceCapacity: 256,
+                availableDeviceCapacity: 120,
+                userEmail: 'john.doe@example.com',
+                enrollmentTime: '2024-03-15T10:30:00Z',
+                lastSyncTime: new Date().toISOString(),
+                wifiInfo: { ipAddress: '192.168.1.105', macId: '00:1A:2B:3C:4D:5E' }
+            },
+            {
+                id: '2',
+                deviceName: 'Pixel 8',
+                model: 'Pixel 8',
+                manufacturer: 'Google',
+                platform: 'android',
+                osVersion: '14.0',
+                serialNo: '8A9X1234Z',
+                status: 'ONLINE',
+                complianceStatus: 'compliant',
+                connectionStatus: 'online',
+                batteryLevel: 62,
+                storageCapacity: 128,
+                storageUsed: 45,
+                ramCapacity: 8,
+                ramUsed: 4.2,
+                deviceUser: 'jane.doe@example.com',
+                enrollmentTime: '2024-02-20T09:15:00Z',
+                lastSyncTime: new Date().toISOString(),
+                opSysInfo: { osType: 'ANDROID', name: 'Android', version: '14' },
+                wifiInfo: { ipAddress: '192.168.1.106' }
+            },
+            {
+                id: '3',
+                deviceName: 'Windows Workstation',
+                model: 'Dell XPS 15',
+                platform: 'windows',
+                osVersion: '11 Pro',
+                serialNo: 'ABC123XYZ',
+                status: 'OFFLINE',
+                complianceStatus: 'non-compliant',
+                connectionStatus: 'offline',
+                userEmail: 'admin@example.com',
+                enrollmentTime: '2023-11-10T08:00:00Z',
+                lastSyncTime: '2024-03-25T16:00:00Z'
+            }
+        ];
 
-    getBriefDevices: async (pageable?: Pageable, search?: string) => {
-        const params = { ...pageable, search };
-        const response = await apiClient.get<PagedResponse<BriefDeviceInfo>>('/brief-devices', { params });
-        return response.data;
+        // Filter if platform matches (though UI calls per platform usually)
+        const filtered = mockDevices.filter(d => d.platform === platform);
+
+        return {
+            content: filtered,
+            pageable: {
+                pageNumber: 0,
+                pageSize: 20,
+                sort: { empty: true, sorted: false, unsorted: true },
+                offset: 0,
+                paged: true,
+                unpaged: false
+            },
+            last: true,
+            totalPages: 1,
+            totalElements: filtered.length,
+            first: true,
+            size: 20,
+            number: 0,
+            sort: { empty: true, sorted: false, unsorted: true },
+            numberOfElements: filtered.length,
+            empty: filtered.length === 0
+        };
+        // End Mock
+
+        // const params = { ...pageable, search };
+        // const response = await apiClient.get<PagedResponse<DeviceInfo>>(`/${platform}/devices`, { params });
+        // return response.data;
     },
 
     getDevice: async (platform: Platform, deviceId: string) => {
-        const response = await apiClient.get<DeviceInfo>(`/${platform}/devices/${deviceId}`);
-        return response.data;
+        // Mock Data
+        console.log(`[Mock] Fetching device details for ${deviceId}`);
+        return {
+            id: deviceId,
+            udid: '00008030-001A2B3C4D5E6F',
+            deviceName: 'Mock iPhone 15 Pro',
+            model: 'iPhone 15 Pro',
+            modelName: 'iPhone 15 Pro',
+            platform: platform || 'ios',
+            osVersion: '17.4',
+            serialNo: 'C02XD12345',
+            imei: '354890061234567',
+            status: 'ONLINE',
+            complianceStatus: 'compliant',
+            connectionStatus: 'online',
+            batteryLevel: 85,
+            deviceCapacity: 256,
+            availableDeviceCapacity: 120,
+            userEmail: 'mock.user@example.com',
+            enrollmentTime: '2024-03-15T10:30:00Z',
+            lastSyncTime: new Date().toISOString(),
+            wifiInfo: { ipAddress: '192.168.1.105', macId: '00:1A:2B:3C:4D:5E' }
+        } as DeviceInfo;
+
+        // const response = await apiClient.get<DeviceInfo>(`/${platform}/devices/${deviceId}`);
+        // return response.data;
     },
 
     deleteDevice: async (platform: Platform, deviceId: string) => {
-        await apiClient.delete(`/${platform}/devices/${deviceId}`);
+        console.log('[Mock] Deleting device', deviceId);
+        // await apiClient.delete(`/${platform}/devices/${deviceId}`);
     },
 
-    getEffectiveProfile: async (platform: Platform, deviceId: string) => {
-        const response = await apiClient.get<FullProfile>(`/${platform}/devices/${deviceId}/effective-profile`);
-        return response.data;
+    getEffectiveProfile: async (deviceId: string) => {
+        // Mock Data
+        return {
+            id: "profile-1",
+            name: "Corporate Default Profile",
+            description: "Standard corporate profile",
+            status: "ACTIVE",
+            version: 1,
+            deviceCount: 10,
+            creationTime: "2024-01-01T00:00:00Z",
+            modificationTime: "2024-01-01T00:00:00Z",
+            createdBy: "admin",
+            lastModifiedBy: "admin",
+            profileType: "IosFullProfile",
+            mailPolicy: {
+                id: "mail-1",
+                name: "Corporate Email",
+                policyType: "IosMail",
+                emailAccountType: "EmailTypeIMAP",
+                emailAddress: "employee@company.com",
+                incomingMailServerHostName: "imap.company.com",
+                incomingMailServerUsername: "employee"
+            },
+            passCodePolicy: {
+                id: "pass-1",
+                name: "Strong Passcode",
+                policyType: "IosPasscodeRestrictionPolicy",
+                minLength: 6,
+                requirePassCode: true
+            },
+            wifiPolicy: {
+                id: "wifi-1",
+                name: "Office WiFi",
+                policyType: "IosWiFiConfiguration",
+                ssid: "Office-Secure",
+                encryptionType: "WPA2"
+            }
+        } as FullProfile;
+
+        // const response = await apiClient.get<FullProfile>(`/devices/${deviceId}/effective-profile`);
+        // return response.data;
     },
 
     getDeviceApplications: async (platform: Platform, deviceId: string) => {
         const response = await apiClient.get<MobileApplication[]>(`/${platform}/devices/${deviceId}/applications`);
-        return response.data;
-    },
-
-    getDeviceWebApplications: async (deviceId: string) => {
-        const response = await apiClient.get<WebApplication[]>(`/devices/${deviceId}/web-applications`);
         return response.data;
     },
 
@@ -54,21 +190,24 @@ export const DeviceService = {
 
     // Commands
     rebootDevice: async (platform: Platform, deviceId: string) => {
-        await apiClient.post(`/${platform}/devices/${deviceId}/commands/reboot`);
+        const payload = platform === 'ios' ? { command: 'RestartDevice' } : {};
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/reboot`, payload);
     },
 
     factoryResetDevice: async (platform: Platform, deviceId: string) => {
-        await apiClient.post(`/${platform}/devices/${deviceId}/commands/factory-reset`);
+        const payload = platform === 'ios' ? { command: 'EraseDevice' } : {};
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/factory-reset`, payload);
     },
 
     lockDevice: async (platform: Platform, deviceId: string) => {
-        await apiClient.post(`/${platform}/devices/${deviceId}/commands/lock`);
+        const payload = platform === 'ios' ? { command: 'DeviceLock' } : {};
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/lock`, payload);
     },
 
+    // default actions
     syncDevice: async (deviceId: string) => {
         await apiClient.post(`/devices/${deviceId}/actions/sync`);
     },
-
 
     getGPS: async (deviceId: string) => {
         await apiClient.post(`/devices/${deviceId}/actions/get-gps`);
@@ -88,7 +227,7 @@ export const DeviceService = {
     },
 
     // APNS
-    sendApns: async (deviceId: string) => {
-        await apiClient.post(`/devices/${deviceId}/apns/send`);
+    sendApns: async (udid: string) => {
+        await apiClient.post(`/ios/apns/send`, { udid });
     }
 };

@@ -13,22 +13,26 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
-import { DeviceInfo } from '@/types/models';
+import { cn } from '@/lib/utils';
+import { DeviceInfo, Platform } from '@/types/models';
 import {
     Apple,
     ArrowLeft,
     Battery,
+    ChevronDown,
     Cpu,
+    FileText,
     HardDrive,
     Laptop,
     Layout,
     Lock,
     MapPin,
     Monitor,
-    MoreVertical,
     Power,
+    Radio,
     RefreshCw,
     Shield,
+    ShieldAlert,
     Smartphone,
     Trash2,
     Wifi
@@ -40,7 +44,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 const mockDevice: DeviceInfo = {
     id: '1',
     udid: '00008030-001A2B3C4D5E6F',
-    serialNumber: 'C02XD12345',
+    serialNo: 'C02XD12345',
     macAddress: '00:1A:2B:3C:4D:5E',
     imei: '354890061234567',
     model: 'Pixel 7 Pro',
@@ -61,26 +65,21 @@ export default function DeviceDetails() {
 
     const fetchDevice = async () => {
         setLoading(true);
-        // Simulate API call or use service
-        setTimeout(() => {
-            console.log('Using mock device data');
-            setDevice(mockDevice);
-            setLoading(false);
-        }, 500);
-
-        /* 
-        // Real API implementation
         try {
             if (platform && id) {
-                 const data = await DeviceService.getDevice(platform as any, id);
-                 setDevice(data);
+                const data = await DeviceService.getDevice(platform as Platform, id);
+                setDevice(data);
             }
         } catch (error) {
             console.error("Failed to fetch device", error);
+            toast({
+                title: "Error",
+                description: "Failed to fetch device details.",
+                variant: "destructive"
+            });
         } finally {
             setLoading(false);
         }
-        */
     };
 
     useEffect(() => {
@@ -97,19 +96,24 @@ export default function DeviceDetails() {
 
         try {
             // Mapping actions to service calls
+            // Note: Actions require platform which might be missing in restricted API response, 
+            // but we can use the URL param 'platform' or try to infer.
+            // Using logic from Devices.tsx mapping:
+            const devicePlatform = (device.platform || platform || 'android') as Platform;
+
             switch (action) {
                 case 'reboot':
-                    await DeviceService.rebootDevice(device.platform, device.id);
+                    await DeviceService.rebootDevice(devicePlatform, device.id);
                     break;
                 case 'sync':
                     await DeviceService.syncDevice(device.id);
                     break;
                 case 'lock':
-                    await DeviceService.lockDevice(device.platform, device.id);
+                    await DeviceService.lockDevice(devicePlatform, device.id);
                     break;
                 case 'factory_reset':
                     if (confirm("Are you sure you want to factory reset this device? This action is irreversible.")) {
-                        await DeviceService.factoryResetDevice(device.platform, device.id);
+                        await DeviceService.factoryResetDevice(devicePlatform, device.id);
                     } else {
                         return; // Cancelled
                     }
@@ -123,7 +127,7 @@ export default function DeviceDetails() {
                 description: `Command ${label} sent successfully.`,
             });
         } catch (error) {
-            console.error(`Failed to execute ${action}`, error);
+            console.error(`Failed to execute ${action} `, error);
             toast({
                 title: "Action Failed",
                 description: "Could not send command to device. Check console/network.",
@@ -133,15 +137,44 @@ export default function DeviceDetails() {
     };
 
     const getPlatformIcon = (plat?: string) => {
-        switch (plat) {
-            case 'android': return <Smartphone className="w-5 h-5 text-success" />;
-            case 'ios': return <Apple className="w-5 h-5 text-muted-foreground" />;
-            case 'windows': return <Monitor className="w-5 h-5 text-info" />;
-            case 'macos': return <Laptop className="w-5 h-5 text-zinc-400" />;
+        switch (plat?.toLowerCase()) {
+            case 'android': return <Smartphone className="w-5 h-5 text-green-500" />;
+            case 'ios': return <Apple className="w-5 h-5 text-gray-400" />;
+            case 'windows': return <Monitor className="w-5 h-5 text-blue-500" />;
+            case 'macos': return <Laptop className="w-5 h-5 text-gray-400" />;
             case 'linux': return <Monitor className="w-5 h-5 text-orange-500" />;
             default: return <Layout className="w-5 h-5 text-primary" />;
         }
     };
+
+    // Helper for formatting bytes to GB/MB
+    const formatBytes = (bytes?: number) => {
+        if (bytes === undefined || bytes === null) return '-';
+        if (bytes === 0) return '0 B';
+        // Assume input might be bytes if large, or GB if small (based on previous logic/mock).
+        // Let's stick to the previous mock assumption that values are in GB for now, 
+        // but label it clearly or handle "0.x" as likely GB.
+        // If the value is > 10000, it's probably MB or KB? 
+        // Reverting to simple string append for consistency with previous mock data approach.
+        return `${bytes} GB`;
+    };
+
+    // Helper for Battery Color
+    const getBatteryColor = (level?: number) => {
+        if (level === undefined) return 'text-muted-foreground';
+        if (level <= 20) return 'text-destructive';
+        if (level <= 50) return 'text-warning';
+        return 'text-success';
+    };
+
+    const InfoRow = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string }) => (
+        <div className={cn("flex flex-col gap-1", className)}>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+            <span className="text-sm font-medium text-foreground truncate" title={typeof value === 'string' ? value : undefined}>
+                {value || '-'}
+            </span>
+        </div>
+    );
 
     if (loading) {
         return (
@@ -164,183 +197,270 @@ export default function DeviceDetails() {
         );
     }
 
+    // Ensure we have fallback for boolean checks if they are undefined in type (though we just added them)
+    const isTethered = device.isNetworkTethered ?? false;
+    const isRoaming = device.dataRoamingEnabled ?? false;
+
     return (
         <MainLayout>
-            <div className="space-y-6">
-                {/* Header */}
+            <div className="space-y-6 pb-10">
+                {/* Top Navigation */}
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate('/devices')}>
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/devices')} className="gap-2 pl-0 hover:pl-2 transition-all">
                         <ArrowLeft className="w-4 h-4" />
+                        Back to Devices
                     </Button>
-                    <div className="flex-1">
-                        <h1 className="text-2xl font-bold flex items-center gap-3">
+                </div>
+
+                {/* Hero / Header Section */}
+                <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between bg-card p-6 rounded-xl border shadow-sm">
+                    <div className="flex gap-6">
+                        {/* Device Icon / Image Placeholder */}
+                        <div className="w-24 h-24 rounded-2xl bg-muted/30 border flex items-center justify-center shrink-0">
                             {getPlatformIcon(device.platform)}
-                            {device.model || 'Unknown Device'}
-                        </h1>
-                        <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={device.status === 'active' ? 'default' : 'secondary'} className="capitalize">
-                                {device.status}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground font-mono">{device.serialNumber}</span>
+                        </div>
+
+                        {/* Title & Key Identity */}
+                        <div className="space-y-2">
+                            <div>
+                                <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                                    {device.deviceName || device.model || 'Unknown Device'}
+                                </h1>
+                                <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                                    <span className="font-medium text-foreground">{device.modelName || device.model}</span>
+                                    <span>•</span>
+                                    <span>{device.opSysInfo?.name || device.platform} {device.osVersion}</span>
+                                    {device.buildVersion && (
+                                        <>
+                                            <span>•</span>
+                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
+                                                Build {device.buildVersion}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 text-sm pt-2">
+                                <Badge variant={device.status === 'ONLINE' || device.connectionStatus === 'online' ? 'default' : 'secondary'} className={cn(
+                                    "px-3 py-1 gap-1.5",
+                                    (device.status === 'ONLINE' || device.connectionStatus === 'online') ? "bg-success hover:bg-success/90" : "bg-muted-foreground/50"
+                                )}>
+                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                                    {device.connectionStatus === 'online' ? 'Online' : 'Offline'}
+                                </Badge>
+
+                                <Badge variant="outline" className={cn(
+                                    "px-3 py-1 border-transparent bg-opacity-10",
+                                    device.complianceStatus === 'compliant' ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                                )}>
+                                    {device.complianceStatus === 'compliant' ? <Shield className="w-3 h-3 mr-1.5" /> : <ShieldAlert className="w-3 h-3 mr-1.5" />}
+                                    {device.complianceStatus === 'compliant' ? 'Compliant' : 'Non-Compliant'}
+                                </Badge>
+
+                                {device.isSupervised && (
+                                    <Badge variant="secondary" className="px-3 py-1 bg-purple-500/10 text-purple-600 border-purple-200">
+                                        Supervised
+                                    </Badge>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Action Buttons Toolbar */}
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" className="gap-2" onClick={() => handleAction('sync', 'Sync')}>
-                            <RefreshCw className="w-4 h-4" />
-                            Sync
-                        </Button>
-                        <Button variant="outline" size="sm" className="gap-2" onClick={() => handleAction('lock', 'Lock')}>
-                            <Lock className="w-4 h-4" />
-                            Lock
-                        </Button>
-                        <Button variant="outline" size="sm" className="gap-2" onClick={() => handleAction('reboot', 'Reboot')}>
-                            <Power className="w-4 h-4" />
-                            Reboot
-                        </Button>
+                    {/* Quick Action Toolbar */}
+                    <div className="flex items-center gap-2 self-start md:self-center">
+                        <div className="flex items-center bg-muted/50 p-1 rounded-lg border">
+                            <Button variant="ghost" size="sm" onClick={() => handleAction('sync', 'Sync')} title="Sync Device">
+                                <RefreshCw className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleAction('lock', 'Lock')} title="Lock Device">
+                                <Lock className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleAction('reboot', 'Reboot')} title="Reboot Device">
+                                <Power className="w-4 h-4" />
+                            </Button>
+                        </div>
+
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <MoreVertical className="w-4 h-4" />
+                                <Button variant="outline" className="gap-2">
+                                    More Actions
+                                    <ChevronDown className="w-4 h-4 opacity-50" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Advanced Actions</DropdownMenuLabel>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>Management</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handleAction('gps', 'Get GPS')}>
-                                    <MapPin className="w-4 h-4 mr-2" />
-                                    Locate Device
+                                    <MapPin className="w-4 h-4 mr-2" /> Locate Device
                                 </DropdownMenuItem>
                                 {device.platform === 'ios' && (
-                                    <>
-                                        <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
-                                            <Shield className="w-4 h-4 mr-2" />
-                                            Clear Passcode
-                                        </DropdownMenuItem>
-                                    </>
+                                    <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
+                                        <Shield className="w-4 h-4 mr-2" /> Clear Passcode
+                                    </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleAction('factory_reset', 'Factory Reset')}>
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Factory Reset
+                                    <Trash2 className="w-4 h-4 mr-2" /> Factory Reset
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 </div>
 
-                {/* Info Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                    {/* General Info */}
+                {/* Quick Stats Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-base font-medium flex items-center gap-2">
-                                <Smartphone className="w-4 h-4 text-muted-foreground" />
-                                Device Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Model:</span>
-                                <span className="font-medium">{device.model}</span>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className={cn("p-2 rounded-lg bg-opacity-10", getBatteryColor(device.batteryLevel).replace('text-', 'bg-'))}>
+                                <Battery className={cn("w-6 h-6", getBatteryColor(device.batteryLevel))} />
                             </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">OS Version:</span>
-                                <span className="font-medium">{device.platform} {device.osVersion}</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Serial No:</span>
-                                <span className="font-mono">{device.serialNumber}</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">IMEI:</span>
-                                <span className="font-mono">{device.imei || '-'}</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">UDID:</span>
-                                <span className="font-mono text-xs truncate" title={device.udid}>{device.udid || '-'}</span>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Battery</p>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold">{device.batteryLevel ?? '-'}%</span>
+                                    {device.isBatteryCharging && <span className="text-xs text-success animate-pulse">Charging</span>}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Network Info */}
                     <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-base font-medium flex items-center gap-2">
-                                <Wifi className="w-4 h-4 text-muted-foreground" />
-                                Network & Connectivity
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">MAC Address:</span>
-                                <span className="font-mono">{device.macAddress || '-'}</span>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="p-2 rounded-lg bg-blue-500/10">
+                                <HardDrive className="w-6 h-6 text-blue-600" />
                             </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">IP Address:</span>
-                                <span>-</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Carrier:</span>
-                                <span>-</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Data Roaming:</span>
-                                <span>Enabled</span>
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-muted-foreground">Storage</p>
+                                <p className="text-2xl font-bold">{formatBytes(device.storageUsed)} <span className="text-sm font-normal text-muted-foreground">/ {formatBytes(device.storageCapacity || device.deviceCapacity)}</span></p>
+                                {/* Simple Progress Bar */}
+                                <div className="h-1.5 w-full bg-muted rounded-full mt-2 overflow-hidden">
+                                    <div
+                                        className="h-full bg-blue-600 rounded-full"
+                                        style={{ width: `${Math.min(100, ((device.storageUsed || 0) / (device.storageCapacity || device.deviceCapacity || 1)) * 100)}% ` }}
+                                    />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Enrollment & Status */}
                     <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-base font-medium flex items-center gap-2">
-                                <Shield className="w-4 h-4 text-muted-foreground" />
-                                Security & Enrollment
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Enrolled User:</span>
-                                <span>{device.userEmail || '-'}</span>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="p-2 rounded-lg bg-orange-500/10">
+                                <Cpu className="w-6 h-6 text-orange-600" />
                             </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Enrollment Date:</span>
-                                <span>{device.enrollmentTime ? new Date(device.enrollmentTime).toLocaleDateString() : '-'}</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Last Sync:</span>
-                                <span>{device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleString() : '-'}</span>
-                            </div>
-                            <div className="grid grid-cols-[120px_1fr] gap-2 text-sm">
-                                <span className="text-muted-foreground">Compliance:</span>
-                                <Badge variant="outline" className="w-fit text-success border-success">Compliant</Badge>
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-muted-foreground">RAM</p>
+                                <p className="text-2xl font-bold">{device.ramUsed || '-'} <span className="text-sm font-normal text-muted-foreground">/ {device.ramCapacity || '-'} GB</span></p>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Hardware (Mock / Placeholder) */}
                     <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-base font-medium flex items-center gap-2">
-                                <Cpu className="w-4 h-4 text-muted-foreground" />
-                                Hardware Stats
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="p-2 rounded-lg bg-zinc-500/10">
+                                <Radio className="w-6 h-6 text-zinc-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Last Sync</p>
+                                <p className="text-lg font-bold truncate">
+                                    {device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleDateString() : '-'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleTimeString() : ''}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Detailed Info Sections */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+                    {/* Identity Card */}
+                    <Card className="md:col-span-1 border-l-4 border-l-primary">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Smartphone className="w-5 h-5 text-primary" />
+                                Device Identity
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground flex items-center gap-2"><Battery className="w-4 h-4" /> Battery</span>
-                                <span className="font-medium">84%</span>
+                        <CardContent className="grid gap-4">
+                            <InfoRow label="Serial Number" value={<span className="font-mono">{device.serialNo}</span>} />
+                            <InfoRow label="UDID" value={<span className="font-mono break-all">{device.udid}</span>} />
+                            <InfoRow label="IMEI" value={<span className="font-mono">{device.imei || (device.imeis?.join(', '))}</span>} />
+                            <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} />
+                            <InfoRow label="Model Identifier" value={device.modelInfo?.modelName || device.model} />
+                        </CardContent>
+                    </Card>
+
+                    {/* Network Card */}
+                    <Card className="md:col-span-1 border-l-4 border-l-info">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Wifi className="w-5 h-5 text-info" />
+                                Connectivity
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            <InfoRow label="WiFi IP Address" value={<span className="font-mono">{device.wifiInfo?.ipAddress}</span>} />
+                            <InfoRow label="WiFi MAC" value={<span className="font-mono">{device.wifiMAC || device.wifiInfo?.macId}</span>} />
+                            <InfoRow label="Bluetooth MAC" value={<span className="font-mono">{device.bluetoothMAC}</span>} />
+                            <InfoRow label="Current SSID" value={device.wifiInfo?.ssid} />
+                            <div className="flex gap-4 pt-2">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <div className={cn("w-2 h-2 rounded-full", isTethered ? "bg-success" : "bg-muted")} />
+                                    Tethering
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <div className={cn("w-2 h-2 rounded-full", isRoaming ? "bg-success" : "bg-muted")} />
+                                    Roaming
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground flex items-center gap-2"><HardDrive className="w-4 h-4" /> Storage</span>
-                                <span className="font-medium">45GB / 128GB</span>
+                        </CardContent>
+                    </Card>
+
+                    {/* Security & OS Card */}
+                    <Card className="md:col-span-1 border-l-4 border-l-indigo-500">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Shield className="w-5 h-5 text-indigo-500" />
+                                Security & OS
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <InfoRow label="OS Version" value={device.osVersion} />
+                                <InfoRow label="Build Version" value={device.buildVersion} />
                             </div>
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground flex items-center gap-2"><Cpu className="w-4 h-4" /> RAM</span>
-                                <span className="font-medium">3.2GB / 8GB</span>
+                            <InfoRow label="Supervised" value={device.isSupervised ? 'Yes' : 'No'} />
+                            <InfoRow label="Locator Service" value={device.isDeviceLocatorServiceEnabled ? 'Enabled' : 'Disabled'} />
+                            <InfoRow label="Do Not Disturb" value={device.isDoNotDisturbInEffect ? 'Active' : 'Inactive'} />
+                            <div className="pt-2">
+                                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-2">Effective Policies</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {/* Placeholder mainly, would probably loop policies if array existed */}
+                                    <Badge variant="outline">Passcode</Badge>
+                                    <Badge variant="outline">WiFi</Badge>
+                                    <Badge variant="outline">Email</Badge>
+                                </div>
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Ownership & Enrollment */}
+                    <Card className="md:col-span-1 xl:col-span-3 border-l-4 border-l-emerald-500">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <FileText className="w-5 h-5 text-emerald-500" />
+                                Enrollment Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <InfoRow label="Enrolled User" value={device.userEmail || device.deviceUser} />
+                            <InfoRow label="Organization" value={device.organizationName} />
+                            <InfoRow label="Enrollment Date" value={device.enrollmentTime ? new Date(device.enrollmentTime).toLocaleString() : '-'} />
+                            <InfoRow label="Last Sync" value={device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleString() : '-'} />
+                            <InfoRow label="Creation Time" value={device.creationTime ? new Date(device.creationTime).toLocaleString() : '-'} />
                         </CardContent>
                     </Card>
 
