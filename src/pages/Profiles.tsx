@@ -1,6 +1,8 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AddProfileDialog } from "@/components/profiles/AddProfileDialog";
+import { DeleteProfileDialog } from "@/components/profiles/DeleteProfileDialog";
 import { EditProfileDialog } from "@/components/profiles/EditProfileDialog";
+import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
 import { ProfilePlatformChart } from "@/components/profiles/ProfilePlatformChart";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -15,7 +17,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Apple,
-  Archive,
   CheckCircle,
   Edit,
   FileText,
@@ -26,6 +27,7 @@ import {
   Send,
   Shield,
   Smartphone,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -36,70 +38,91 @@ const mockProfiles: Profile[] = [
     name: "Corporate Android Default",
     description: "Standard policy for all Android devices",
     platform: "android",
-    createdTime: "2024-01-15T10:00:00Z",
-    updatedTime: "2024-01-20T14:30:00Z",
-    status: "active",
-    category: "Corporate",
+    creationTime: "2024-01-15T10:00:00Z",
+    modificationTime: "2024-01-20T14:30:00Z",
+    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    status: "PUBLISHED",
+    version: 1,
+    deviceCount: 5,
   },
   {
     id: "2",
     name: "iOS Executive Policy",
     description: "High security policy for executives",
     platform: "ios",
-    createdTime: "2024-01-10T09:00:00Z",
-    updatedTime: "2024-01-22T11:15:00Z",
-    status: "active",
-    category: "Specialized",
+    creationTime: "2024-01-10T09:00:00Z",
+    modificationTime: "2024-01-22T11:15:00Z",
+    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    status: "PUBLISHED",
+    version: 2,
+    deviceCount: 12,
   },
   {
     id: "3",
     name: "Windows Kiosk Mode",
     description: "Locked down kiosk for public terminals",
     platform: "windows",
-    createdTime: "2024-01-05T16:20:00Z",
-    updatedTime: "2024-01-18T09:45:00Z",
-    status: "active",
-    category: "Kiosk",
+    creationTime: "2024-01-05T16:20:00Z",
+    modificationTime: "2024-01-18T09:45:00Z",
+    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    status: "PUBLISHED",
+    version: 1,
+    deviceCount: 8,
   },
   {
     id: "4",
     name: "Field Workers Android",
     description: "Optimized for battery and location tracking",
     platform: "android",
-    createdTime: "2024-01-12T11:30:00Z",
-    updatedTime: "2024-01-21T15:20:00Z",
-    status: "draft",
-    category: "Specialized",
+    creationTime: "2024-01-12T11:30:00Z",
+    modificationTime: "2024-01-21T15:20:00Z",
+    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    status: "DRAFT",
+    version: 1,
+    deviceCount: 0,
   },
   {
     id: "5",
     name: "BYOD Limited Access",
     description: "Restriction policy for personal devices",
     platform: "ios",
-    createdTime: "2024-01-08T13:45:00Z",
-    updatedTime: "2024-01-19T10:10:00Z",
-    status: "active",
-    category: "BYOD",
+    creationTime: "2024-01-08T13:45:00Z",
+    modificationTime: "2024-01-19T10:10:00Z",
+    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    status: "PUBLISHED",
+    version: 3,
+    deviceCount: 25,
   },
   {
     id: "6",
     name: "Sales Tablet Configuration",
     description: "iPad setup for sales team",
     platform: "ios",
-    createdTime: "2024-01-14T10:00:00Z",
-    updatedTime: "2024-01-23T12:00:00Z",
-    status: "archived",
-    category: "Corporate",
+    creationTime: "2024-01-14T10:00:00Z",
+    modificationTime: "2024-01-23T12:00:00Z",
+    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    status: "DRAFT",
+    version: 1,
+    deviceCount: 0,
   },
   {
     id: "7",
     name: "Development Windows Workstation",
     description: "Developer machine defaults",
     platform: "windows",
-    createdTime: "2024-01-02T08:15:00Z",
-    updatedTime: "2024-01-16T16:50:00Z",
-    status: "draft",
-    category: "Corporate",
+    creationTime: "2024-01-02T08:15:00Z",
+    modificationTime: "2024-01-16T16:50:00Z",
+    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    status: "DRAFT",
+    version: 1,
+    deviceCount: 0,
   },
 ];
 
@@ -138,6 +161,20 @@ const platformConfig: Record<
     disabled: true,
     image: "/Assets/microsoft.png",
   },
+  macos: {
+    label: "macOS",
+    icon: Monitor,
+    color: "text-info",
+    disabled: true,
+    image: "/Assets/mac_os.png",
+  },
+  linux: {
+    label: "Linux",
+    icon: Monitor,
+    color: "text-info",
+    disabled: true,
+    image: "/Assets/linux.png",
+  },
 };
 
 const Profiles = () => {
@@ -146,7 +183,13 @@ const Profiles = () => {
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [selectedPublishProfile, setSelectedPublishProfile] =
+    useState<Profile | null>(null);
+  const [selectedDeleteProfile, setSelectedDeleteProfile] =
+    useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -154,9 +197,8 @@ const Profiles = () => {
     android: 0,
     ios: 0,
     windows: 0,
-    active: 0,
+    published: 0,
     draft: 0,
-    archived: 0,
   });
 
   const fetchProfiles = async () => {
@@ -177,9 +219,8 @@ const Profiles = () => {
         android: allData.filter((p) => p.platform === "android").length,
         ios: allData.filter((p) => p.platform === "ios").length,
         windows: allData.filter((p) => p.platform === "windows").length,
-        active: allData.filter((p) => p.status === "active").length,
-        draft: allData.filter((p) => p.status === "draft").length,
-        archived: allData.filter((p) => p.status === "archived").length,
+        published: allData.filter((p) => p.status === "PUBLISHED").length,
+        draft: allData.filter((p) => p.status === "DRAFT").length,
       });
     } catch (error) {
       console.error("Error fetching profiles:", error);
@@ -213,7 +254,7 @@ const Profiles = () => {
       searchable: true,
       render: (_, item) => (
         <p
-          className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
+          className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/profiles/${item.platform}/${item.id}`);
@@ -268,7 +309,7 @@ const Profiles = () => {
     {
       key: "status",
       header: "Status",
-      accessor: (item) => item.status || "active",
+      accessor: (item) => item.status || "DRAFT",
       sortable: true,
       filterable: true,
       render: (value) => {
@@ -276,23 +317,18 @@ const Profiles = () => {
           string,
           { icon: React.ElementType; color: string; label: string }
         > = {
-          active: {
+          PUBLISHED: {
             icon: CheckCircle,
             color: "text-success",
-            label: "Active",
+            label: "Published",
           },
-          draft: {
+          DRAFT: {
             icon: FileText,
             color: "text-warning",
             label: "Draft",
           },
-          archived: {
-            icon: Archive,
-            color: "text-muted-foreground",
-            label: "Archived",
-          },
         };
-        const config = statusConfig[value] || statusConfig.draft;
+        const config = statusConfig[value] || statusConfig.DRAFT;
         const Icon = config.icon;
         return (
           <Tooltip>
@@ -309,21 +345,70 @@ const Profiles = () => {
       },
     },
     {
-      key: "category",
-      header: "Category",
-      accessor: (item) => item.category || "-",
-      sortable: true,
-      filterable: true,
-      render: (value) => <span className="text-muted-foreground">{value}</span>,
-    },
-    {
-      key: "updatedTime",
-      header: "Last Modified",
-      accessor: (item) => item.updatedTime || "",
+      key: "version",
+      header: "Version",
+      accessor: (item) => item.version || 0,
       sortable: true,
       render: (value) => (
         <span className="text-muted-foreground font-mono text-sm">
+          {value || "-"}
+        </span>
+      ),
+    },
+    {
+      key: "deviceCount",
+      header: "Devices",
+      accessor: (item) => item.deviceCount || 0,
+      sortable: true,
+      render: (value) => (
+        <span className="text-muted-foreground">{value || 0}</span>
+      ),
+    },
+    {
+      key: "modificationTime",
+      header: "Last Modified",
+      accessor: (item) => item.modificationTime || "",
+      sortable: true,
+      hidden: true,
+      render: (value) => (
+        <span className="text-muted-foreground font-mono text-sm">
           {value ? new Date(value).toLocaleDateString() : "-"}
+        </span>
+      ),
+    },
+    {
+      key: "creationTime",
+      header: "Created",
+      accessor: (item) => item.creationTime || "",
+      sortable: true,
+      hidden: true,
+      render: (value) => (
+        <span className="text-muted-foreground font-mono text-sm">
+          {value ? new Date(value).toLocaleDateString() : "-"}
+        </span>
+      ),
+    },
+    {
+      key: "createdBy",
+      header: "Created By",
+      accessor: (item) => item.createdBy || "",
+      sortable: true,
+      hidden: true,
+      render: (value) => (
+        <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
+          {value || "-"}
+        </span>
+      ),
+    },
+    {
+      key: "lastModifiedBy",
+      header: "Last Modified By",
+      accessor: (item) => item.lastModifiedBy || "",
+      sortable: true,
+      hidden: true,
+      render: (value) => (
+        <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
+          {value || "-"}
         </span>
       ),
     },
@@ -335,28 +420,51 @@ const Profiles = () => {
   };
 
   const handlePublishProfile = (profile: Profile) => {
-    // TODO: Implement publish profile
-    console.log("Publish profile:", profile.id);
+    setSelectedPublishProfile(profile);
+    setPublishDialogOpen(true);
   };
 
-  const rowActions = (profile: Profile) => (
-    <>
-      <DropdownMenuItem onClick={() => handleEditProfile(profile)}>
-        <Pencil className="w-4 h-4 mr-2" />
-        Edit Profile
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        onClick={() => navigate(`/profiles/${profile.platform}/${profile.id}`)}
-      >
-        <Edit className="w-4 h-4 mr-2" />
-        Edit Policies
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => handlePublishProfile(profile)}>
-        <Send className="w-4 h-4 mr-2" />
-        Publish Profile
-      </DropdownMenuItem>
-    </>
-  );
+  const handleDeleteProfile = (profile: Profile) => {
+    setSelectedDeleteProfile(profile);
+    setDeleteDialogOpen(true);
+  };
+
+  const rowActions = (profile: Profile) => {
+    const isDraft = profile.status === "DRAFT";
+    const canDelete = (profile.deviceCount || 0) === 0;
+
+    return (
+      <>
+        <DropdownMenuItem onClick={() => handleEditProfile(profile)}>
+          <Pencil className="w-4 h-4 mr-2" />
+          Edit Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handlePublishProfile(profile)}
+          disabled={!isDraft}
+        >
+          <Send className="w-4 h-4 mr-2" />
+          Publish Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            navigate(`/profiles/${profile.platform}/${profile.id}`)
+          }
+        >
+          <Edit className="w-4 h-4 mr-2" />
+          Edit Policies
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handleDeleteProfile(profile)}
+          disabled={!canDelete}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Delete Profile
+        </DropdownMenuItem>
+      </>
+    );
+  };
 
   return (
     <MainLayout>
@@ -426,7 +534,7 @@ const Profiles = () => {
         </section>
 
         {/* Stats Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <article className="stat-card">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -445,8 +553,8 @@ const Profiles = () => {
                 <CheckCircle className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.active}</p>
-                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="stat-card__value text-2xl">{stats.published}</p>
+                <p className="text-sm text-muted-foreground">Published</p>
               </div>
             </div>
           </article>
@@ -459,18 +567,6 @@ const Profiles = () => {
               <div>
                 <p className="stat-card__value text-2xl">{stats.draft}</p>
                 <p className="text-sm text-muted-foreground">Draft</p>
-              </div>
-            </div>
-          </article>
-
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <Archive className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.archived}</p>
-                <p className="text-sm text-muted-foreground">Archived</p>
               </div>
             </div>
           </article>
@@ -539,6 +635,20 @@ const Profiles = () => {
         onOpenChange={setEditDialogOpen}
         onProfileUpdated={fetchProfiles}
         profile={selectedProfile}
+      />
+
+      <PublishProfileDialog
+        open={publishDialogOpen}
+        onOpenChange={setPublishDialogOpen}
+        onProfilePublished={fetchProfiles}
+        profile={selectedPublishProfile}
+      />
+
+      <DeleteProfileDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onProfileDeleted={fetchProfiles}
+        profile={selectedDeleteProfile}
       />
     </MainLayout>
   );

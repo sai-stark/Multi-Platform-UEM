@@ -36,5 +36,9 @@ export const ProfileService = {
     getProfileQR: async (platform: Platform, profileId: string) => {
         const response = await apiClient.get(`/${platform}${CORE_PATH}/${profileId}/qr`);
         return response.data;
+    },
+
+    deleteProfile: async (platform: Platform, profileId: string) => {
+        await apiClient.delete(`/${platform}${CORE_PATH}/${profileId}`);
     }
 };

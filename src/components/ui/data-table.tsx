@@ -56,6 +56,7 @@ export interface Column<T> {
   render?: (value: any, item: T) => React.ReactNode;
   align?: "left" | "center" | "right";
   exportable?: boolean;
+  hidden?: boolean; // Hide column by default (can be toggled via column visibility menu)
 }
 
 export interface DataTableProps<T> {
@@ -144,7 +145,7 @@ export function DataTable<T extends Record<string, any>>({
   }, [externalPageSize, serverSidePagination]);
 
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(columns.map((col) => col.key))
+    new Set(columns.filter((col) => !col.hidden).map((col) => col.key))
   );
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
     columns.reduce(
