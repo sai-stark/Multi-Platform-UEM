@@ -16,25 +16,37 @@ import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { DeviceInfo, Platform } from '@/types/models';
 import {
-    Apple,
     ArrowLeft,
+    Barcode,
     Battery,
+    Bluetooth,
+    Building2,
+    Calendar,
     ChevronDown,
+    Cloud,
     Cpu,
     FileText,
+    Globe,
     HardDrive,
-    Laptop,
+    Hash,
     Layout,
     Lock,
     MapPin,
+
     Monitor,
+    Network,
     Power,
     Radio,
     RefreshCw,
+    ScanBarcode,
+    Settings,
     Shield,
     ShieldAlert,
+
     Smartphone,
+    Tag,
     Trash2,
+    User,
     Wifi
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -137,13 +149,20 @@ export default function DeviceDetails() {
     };
 
     const getPlatformIcon = (plat?: string) => {
-        switch (plat?.toLowerCase()) {
-            case 'android': return <Smartphone className="w-5 h-5 text-green-500" />;
-            case 'ios': return <Apple className="w-5 h-5 text-gray-400" />;
-            case 'windows': return <Monitor className="w-5 h-5 text-blue-500" />;
-            case 'macos': return <Laptop className="w-5 h-5 text-gray-400" />;
-            case 'linux': return <Monitor className="w-5 h-5 text-orange-500" />;
-            default: return <Layout className="w-5 h-5 text-primary" />;
+        const p = plat?.toLowerCase();
+        let assetSrc = null;
+
+        if (p === 'android') assetSrc = '/Assets/android.png';
+        else if (p === 'ios' || p === 'macos') assetSrc = '/Assets/apple.png';
+        else if (p === 'windows') assetSrc = '/Assets/microsoft.png';
+
+        if (assetSrc) {
+            return <img src={assetSrc} alt={plat} className="w-16 h-16 object-contain" />;
+        }
+
+        switch (p) {
+            case 'linux': return <Monitor className="w-12 h-12 text-orange-500" />;
+            default: return <Layout className="w-12 h-12 text-primary" />;
         }
     };
 
@@ -167,12 +186,19 @@ export default function DeviceDetails() {
         return 'text-success';
     };
 
-    const InfoRow = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string }) => (
-        <div className={cn("flex flex-col gap-1", className)}>
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-            <span className="text-sm font-medium text-foreground truncate" title={typeof value === 'string' ? value : undefined}>
-                {value || '-'}
-            </span>
+    const InfoRow = ({ label, value, className, icon: Icon }: { label: string, value: React.ReactNode, className?: string, icon?: React.ElementType }) => (
+        <div className={cn("flex items-start gap-3", className)}>
+            {Icon && (
+                <div className="mt-1 p-1.5 rounded-md bg-muted/50 shrink-0">
+                    <Icon className="w-4 h-4 text-muted-foreground" />
+                </div>
+            )}
+            <div className="flex flex-col gap-0.5 overflow-hidden">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+                <span className="text-sm font-medium text-foreground truncate block" title={typeof value === 'string' ? value : undefined}>
+                    {value || '-'}
+                </span>
+            </div>
         </div>
     );
 
@@ -216,9 +242,9 @@ export default function DeviceDetails() {
                 <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between bg-card p-6 rounded-xl border shadow-sm">
                     <div className="flex gap-6">
                         {/* Device Icon / Image Placeholder */}
-                        <div className="w-24 h-24 rounded-2xl bg-muted/30 border flex items-center justify-center shrink-0">
-                            {getPlatformIcon(device.platform)}
-                        </div>
+                        {/* <div className="w-24 h-24 rounded-2xl bg-muted/30 border flex items-center justify-center shrink-0 p-4"> */}
+                        {getPlatformIcon(device.platform)}
+                        {/* </div> */}
 
                         {/* Title & Key Identity */}
                         <div className="space-y-2">
@@ -385,11 +411,12 @@ export default function DeviceDetails() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4">
-                            <InfoRow label="Serial Number" value={<span className="font-mono">{device.serialNo}</span>} />
-                            <InfoRow label="UDID" value={<span className="font-mono break-all">{device.udid}</span>} />
-                            <InfoRow label="IMEI" value={<span className="font-mono">{device.imei || (device.imeis?.join(', '))}</span>} />
-                            <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} />
-                            <InfoRow label="Model Identifier" value={device.modelInfo?.modelName || device.model} />
+                            <InfoRow label="Serial Number" value={<span className="font-mono">{device.serialNo}</span>} icon={Barcode} />
+                            <InfoRow label="UDID" value={<span className="font-mono break-all text-xs">{device.udid}</span>} icon={Hash} />
+                            <InfoRow label="IMEI" value={<span className="font-mono">{device.imei || (device.imeis?.join(', '))}</span>} icon={ScanBarcode} />
+                            <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} icon={Building2} />
+                            <InfoRow label="Model Identifier" value={device.modelInfo?.modelName || device.model} icon={Smartphone} />
+                            <InfoRow label="Product Name" value={device.productName} icon={Tag} />
                         </CardContent>
                     </Card>
 
@@ -402,11 +429,11 @@ export default function DeviceDetails() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4">
-                            <InfoRow label="WiFi IP Address" value={<span className="font-mono">{device.wifiInfo?.ipAddress}</span>} />
-                            <InfoRow label="WiFi MAC" value={<span className="font-mono">{device.wifiMAC || device.wifiInfo?.macId}</span>} />
-                            <InfoRow label="Bluetooth MAC" value={<span className="font-mono">{device.bluetoothMAC}</span>} />
-                            <InfoRow label="Current SSID" value={device.wifiInfo?.ssid} />
-                            <div className="flex gap-4 pt-2">
+                            <InfoRow label="WiFi IP Address" value={<span className="font-mono">{device.wifiInfo?.ipAddress}</span>} icon={Globe} />
+                            <InfoRow label="WiFi MAC" value={<span className="font-mono">{device.wifiMAC || device.wifiInfo?.macId}</span>} icon={Network} />
+                            <InfoRow label="Bluetooth MAC" value={<span className="font-mono">{device.bluetoothMAC}</span>} icon={Bluetooth} />
+                            <InfoRow label="Current SSID" value={device.wifiInfo?.ssid} icon={Wifi} />
+                            <div className="flex gap-4 pt-2 pl-[3.25rem]">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <div className={cn("w-2 h-2 rounded-full", isTethered ? "bg-success" : "bg-muted")} />
                                     Tethering
@@ -429,13 +456,13 @@ export default function DeviceDetails() {
                         </CardHeader>
                         <CardContent className="grid gap-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <InfoRow label="OS Version" value={device.osVersion} />
-                                <InfoRow label="Build Version" value={device.buildVersion} />
+                                <InfoRow label="OS Version" value={device.osVersion} icon={Layout} />
+                                <InfoRow label="Build Version" value={device.buildVersion} icon={Settings} />
                             </div>
-                            <InfoRow label="Supervised" value={device.isSupervised ? 'Yes' : 'No'} />
-                            <InfoRow label="Locator Service" value={device.isDeviceLocatorServiceEnabled ? 'Enabled' : 'Disabled'} />
-                            <InfoRow label="Do Not Disturb" value={device.isDoNotDisturbInEffect ? 'Active' : 'Inactive'} />
-                            <div className="pt-2">
+                            <InfoRow label="Supervised" value={device.isSupervised ? 'Yes' : 'No'} icon={Shield} />
+                            <InfoRow label="Locator Service" value={device.isDeviceLocatorServiceEnabled ? 'Enabled' : 'Disabled'} icon={MapPin} />
+                            <InfoRow label="Do Not Disturb" value={device.isDoNotDisturbInEffect ? 'Active' : 'Inactive'} icon={Cloud} />
+                            <div className="pt-2 pl-[3.25rem]">
                                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-2">Effective Policies</span>
                                 <div className="flex flex-wrap gap-2">
                                     {/* Placeholder mainly, would probably loop policies if array existed */}
@@ -456,11 +483,11 @@ export default function DeviceDetails() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <InfoRow label="Enrolled User" value={device.userEmail || device.deviceUser} />
-                            <InfoRow label="Organization" value={device.organizationName} />
-                            <InfoRow label="Enrollment Date" value={device.enrollmentTime ? new Date(device.enrollmentTime).toLocaleString() : '-'} />
-                            <InfoRow label="Last Sync" value={device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleString() : '-'} />
-                            <InfoRow label="Creation Time" value={device.creationTime ? new Date(device.creationTime).toLocaleString() : '-'} />
+                            <InfoRow label="Enrolled User" value={device.userEmail || device.deviceUser} icon={User} />
+                            <InfoRow label="Organization" value={device.organizationName} icon={Building2} />
+                            <InfoRow label="Enrollment Date" value={device.enrollmentTime ? new Date(device.enrollmentTime).toLocaleString() : '-'} icon={Calendar} />
+                            <InfoRow label="Last Sync" value={device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleString() : '-'} icon={RefreshCw} />
+                            <InfoRow label="Creation Time" value={device.creationTime ? new Date(device.creationTime).toLocaleString() : '-'} icon={FileText} />
                         </CardContent>
                     </Card>
 

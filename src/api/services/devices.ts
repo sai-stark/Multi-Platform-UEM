@@ -109,21 +109,66 @@ export const DeviceService = {
             udid: '00008030-001A2B3C4D5E6F',
             deviceName: 'Mock iPhone 15 Pro',
             model: 'iPhone 15 Pro',
-            modelName: 'iPhone 15 Pro',
+            modelName: 'iPhone 15 Pro', // Matches model generally
+            manufacturer: 'Apple Inc.',
+            productName: 'iPhone16,1',
             platform: platform || 'ios',
             osVersion: '17.4',
+            buildVersion: '21E219',
             serialNo: 'C02XD12345',
             imei: '354890061234567',
+            imeis: ['354890061234567', '354890061234568'], // Dual SIM
+            macAddress: '00:1A:2B:3C:4D:5E',
+            wifiMAC: '00:1A:2B:3C:4D:5E',
+            bluetoothMAC: '00:1A:2B:3C:4D:5F',
+
+            // Status & State
             status: 'ONLINE',
             complianceStatus: 'compliant',
             connectionStatus: 'online',
-            batteryLevel: 85,
-            deviceCapacity: 256,
-            availableDeviceCapacity: 120,
-            userEmail: 'mock.user@example.com',
-            enrollmentTime: '2024-03-15T10:30:00Z',
             lastSyncTime: new Date().toISOString(),
-            wifiInfo: { ipAddress: '192.168.1.105', macId: '00:1A:2B:3C:4D:5E' }
+            enrollmentTime: '2024-03-15T10:30:00Z',
+            creationTime: '2024-03-15T10:25:00Z',
+            modificationTime: '2024-03-20T14:45:00Z',
+
+            // Hardware
+            batteryLevel: 85,
+            isBatteryCharging: true,
+            deviceCapacity: 256, // iOS
+            availableDeviceCapacity: 120, // iOS
+            storageCapacity: 256, // Android/General
+            storageUsed: 136, // Calculated from above
+            ramCapacity: 8,
+            ramUsed: 4.2,
+
+            // User/Org
+            organizationName: 'Acme Corp',
+            userEmail: 'mock.user@example.com',
+            deviceUser: 'mock.user',
+
+            // Detailed Objects
+            opSysInfo: {
+                osType: platform === 'android' ? 'ANDROID' : 'IOS',
+                name: platform === 'android' ? 'Android' : 'iOS',
+                version: '17.4',
+                fullVersion: '17.4 (21E219)'
+            },
+            modelInfo: {
+                manufacturer: 'Apple Inc.',
+                modelName: 'iPhone 15 Pro'
+            },
+            wifiInfo: {
+                ssid: 'Acme-Corp-Secure',
+                macId: '00:1A:2B:3C:4D:5E',
+                ipAddress: '192.168.1.105'
+            },
+
+            // Misc
+            isSupervised: true,
+            isDeviceLocatorServiceEnabled: true,
+            isDoNotDisturbInEffect: false,
+            isNetworkTethered: false,
+            dataRoamingEnabled: true
         } as DeviceInfo;
 
         // const response = await apiClient.get<DeviceInfo>(`/${platform}/devices/${deviceId}`);
@@ -141,14 +186,14 @@ export const DeviceService = {
             id: "profile-1",
             name: "Corporate Default Profile",
             description: "Standard corporate profile",
-            status: "ACTIVE",
+            status: "active",
             version: 1,
             deviceCount: 10,
             creationTime: "2024-01-01T00:00:00Z",
             modificationTime: "2024-01-01T00:00:00Z",
             createdBy: "admin",
             lastModifiedBy: "admin",
-            profileType: "IosFullProfile",
+            profileType: "IosProfile",
             mailPolicy: {
                 id: "mail-1",
                 name: "Corporate Email",

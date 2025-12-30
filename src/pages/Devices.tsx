@@ -6,6 +6,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
@@ -41,11 +46,11 @@ interface Device {
 }
 
 const platformConfig = {
-  android: { label: 'Android', icon: Smartphone },
-  ios: { label: 'iOS', icon: Smartphone },
-  windows: { label: 'Windows', icon: Laptop },
-  macos: { label: 'macOS', icon: Laptop },
-  linux: { label: 'Linux', icon: Server },
+  android: { label: 'Android', asset: '/Assets/android.png', icon: Smartphone },
+  ios: { label: 'iOS', asset: '/Assets/apple.png', icon: Smartphone },
+  windows: { label: 'Windows', asset: '/Assets/microsoft.png', icon: Laptop },
+  macos: { label: 'macOS', asset: '/Assets/apple.png', icon: Laptop },
+  linux: { label: 'Linux', asset: null, icon: Server },
 };
 
 const complianceConfig = {
@@ -153,9 +158,13 @@ const Devices = () => {
         const PlatformIcon = platformInfo ? platformInfo.icon : Smartphone;
         return (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-              <PlatformIcon className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
-            </div>
+            {/* <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden p-2">
+              {platformInfo?.asset ? (
+                <img src={platformInfo.asset} alt={platformInfo.label} className="w-full h-full object-contain" />
+              ) : (
+                <PlatformIcon className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+              )}
+            </div> */}
             <div>
               <p
                 className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
@@ -175,16 +184,35 @@ const Devices = () => {
     {
       key: 'platform',
       header: 'Platform',
-      accessor: (item) => platformConfig[item.platform].label,
+      accessor: (item) => platformConfig[item.platform]?.label || item.platform,
       sortable: true,
       filterable: true,
       render: (_, item) => {
         const platformInfo = platformConfig[item.platform];
+        const PlatformIcon = platformInfo?.icon || Smartphone;
+
         return (
-          <div>
-            <p className="text-foreground">{platformInfo ? platformInfo.label : item.platform}</p>
-            <p className="text-xs text-muted-foreground">{item.osVersion}</p>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center justify-center cursor-default">
+                {platformInfo?.asset ? (
+                  <img
+                    src={platformInfo.asset}
+                    alt={platformInfo.label}
+                    className="w-6 h-6 object-contain"
+                  />
+                ) : (
+                  <PlatformIcon
+                    className="w-5 h-5 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                )}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{platformInfo?.label || item.platform}</p>
+            </TooltipContent>
+          </Tooltip>
         );
       },
     },
