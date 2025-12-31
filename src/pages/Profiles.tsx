@@ -2,19 +2,19 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { AddProfileDialog } from "@/components/profiles/AddProfileDialog";
 import { DeleteProfileDialog } from "@/components/profiles/DeleteProfileDialog";
 import { EditProfileDialog } from "@/components/profiles/EditProfileDialog";
-import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
 import { ProfilePlatformChart } from "@/components/profiles/ProfilePlatformChart";
+import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
 import { Button } from "@/components/ui/button";
+import { Column, DataTable } from "@/components/ui/data-table";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { cn } from "@/lib/utils";
-import { Profile } from "@/types/models";
-import { DataTable, Column } from "@/components/ui/data-table";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
+import { Profile } from "@/types/models";
 import {
   Apple,
   CheckCircle,
@@ -448,7 +448,7 @@ const Profiles = () => {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() =>
-            navigate(`/profiles/${profile.platform}/${profile.id}`)
+            navigate(`/profiles/${profile.platform}/${profile.id}/policies`)
           }
         >
           <Edit className="w-4 h-4 mr-2" />
@@ -507,10 +507,10 @@ const Profiles = () => {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isActive && "bg-background text-foreground shadow-sm",
                   !isActive &&
-                    !isDisabled &&
-                    "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                  !isDisabled &&
+                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   isDisabled &&
-                    "text-muted-foreground/50 cursor-not-allowed opacity-50"
+                  "text-muted-foreground/50 cursor-not-allowed opacity-50"
                 )}
               >
                 {config.image ? (

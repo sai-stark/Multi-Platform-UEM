@@ -24,15 +24,22 @@ export interface EnrollmentPolicy {
 export interface ApplicationPolicy {
     id?: string;
     applicationId: string;
+    packageName?: string;
     permission?: 'GRANT' | 'DENY' | 'PROMPT';
     configuration?: Record<string, any>;
+    installType?: 'REQUIRED' | 'AVAILABLE' | 'BLOCKED' | 'FORCE_INSTALLED';
+    autoUpdateMode?: 'WIFI_ONLY' | 'ALWAYS' | 'NEVER' | 'CHOICE_TO_THE_USER';
+    disabled?: boolean;
 }
 
 // 5. Web Application Policy
 export interface WebApplicationPolicy {
     id?: string;
     webApplicationId: string;
+    label?: string;
+    url?: string;
     allowCookies?: boolean;
+    isAllowed?: boolean;
 }
 
 // 6. Security Restriction
@@ -106,7 +113,13 @@ export interface ApplicationsRestriction {
     allowedApps?: string[];
 }
 
-// 17. Network
+// 17. Connectivity
+export interface ConnectivityRestriction {
+    id?: string;
+    allowBluetooth?: boolean;
+}
+
+// 18. Network
 export interface NetworkRestriction {
     id?: string;
     allowWifi?: boolean;

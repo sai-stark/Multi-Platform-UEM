@@ -3,58 +3,45 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { FullProfile } from '@/types/models';
-import { Apple, ArrowLeft, Ban, Calendar, CheckCircle, Clock, Edit, Layout, Loader2, Monitor, Shield, Smartphone, Users, Wifi } from 'lucide-react';
+
+import { Apple, ArrowLeft, Calendar, CheckCircle, Clock, Edit, Layout, Monitor, Shield, Smartphone, Users, Wifi } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const mockFullProfile: FullProfile & {
     deployedDevices: number;
     complianceRate: number;
-    createdBy: string;
-    lastModifiedBy: string;
-    version: number;
+    category?: string; // Add optional category if needed locally
 } = {
     id: '1',
     name: 'Corporate Android Default',
     description: 'Standard policy for all Android devices. Enforces passcode, encryption, and basic app restrictions.',
     platform: 'android',
-    createdTime: '2024-01-15T10:00:00Z',
-    updatedTime: '2024-01-20T14:30:00Z',
-    status: 'active',
+    creationTime: '2024-01-15T10:00:00Z',
+    modificationTime: '2024-01-20T14:30:00Z',
+    status: 'PUBLISHED',
     category: 'Corporate',
     deployedDevices: 142,
     complianceRate: 98,
     createdBy: 'admin@company.com',
     lastModifiedBy: 'security-ops@company.com',
     version: 3,
-    policies: [
-        {
-            id: 'p1',
-            type: 'PASSCODE', // Using type property to identify policy type manually for now
-            minLength: 6,
-            requireAlphanumeric: true,
-            maxFailedAttempts: 5
-        },
-        {
-            id: 'w1',
-            type: 'WIFI',
-            ssid: 'Corp-Secure-Net',
-            securityType: 'WPA2',
-            password: 'securepassword123'
-        },
-        {
-            id: 'r1',
-            type: 'RESTRICTIONS',
-            restrictions: {
-                security: { allowCamera: true, allowScreenCapture: false },
-                connectivity: { allowBluetooth: true },
-                storage: { allowUsbMassStorage: false },
-                location: { forceGps: true },
-                misc: { allowFactoryReset: false }
-            }
-        }
-    ]
+    passCodePolicy: {
+        id: 'p1',
+        minLength: 6,
+        requireAlphanumericPasscode: true,
+        maximumFailedAttempts: 5
+    },
+    wifiPolicy: {
+        ssid: 'Corp-Secure-Net',
+        securityType: 'WPA2', // Note: IosWiFiConfiguration might expect enum
+        password: 'securepassword123'
+    },
+    // We might need to mock generic policies if the UI expects them in a list, 
+    // but the UI logic shows iterating them. 
+    // Let's create a helper to transform FullProfile to list for display if needed.
 };
 
 export default function ProfileDetails() {
@@ -84,7 +71,7 @@ export default function ProfileDetails() {
         return (
             <MainLayout>
                 <div className="flex h-full items-center justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <LoadingAnimation message="Loading profile details..." />
                 </div>
             </MainLayout>
         );
@@ -224,7 +211,7 @@ export default function ProfileDetails() {
                                     <span className="text-sm font-medium text-muted-foreground">Created On</span>
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                                        {profile.createdTime ? new Date(profile.createdTime).toLocaleString() : '-'}
+                                        {profile.creationTime ? new Date(profile.creationTime).toLocaleString() : '-'}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
@@ -235,7 +222,7 @@ export default function ProfileDetails() {
                                     <span className="text-sm font-medium text-muted-foreground">Last Modified</span>
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                                        {profile.updatedTime ? new Date(profile.updatedTime).toLocaleString() : '-'}
+                                        {profile.modificationTime ? new Date(profile.modificationTime).toLocaleString() : '-'}
                                     </div>
                                 </div>
                             </CardContent>
@@ -247,95 +234,62 @@ export default function ProfileDetails() {
                 <div className="space-y-4">
                     <h2 className="text-lg font-semibold">Configured Policies</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {profile.policies?.map((policy: any) => {
-                            if (policy.type === 'PASSCODE' || policy.minLength !== undefined) {
-                                return (
-                                    <Card key={policy.id}>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-base font-medium flex items-center gap-2">
-                                                <Shield className="w-4 h-4 text-primary" />
-                                                Passcode Policy
-                                            </CardTitle>
-                                            <Badge variant="secondary">Active</Badge>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-sm text-muted-foreground space-y-1">
-                                                <div className="flex justify-between">
-                                                    <span>Min Length:</span>
-                                                    <span className="font-medium text-foreground">{policy.minLength}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Alphanumeric:</span>
-                                                    <span className="font-medium text-foreground">{policy.requireAlphanumeric ? 'Yes' : 'No'}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Max Attempts:</span>
-                                                    <span className="font-medium text-foreground">{policy.maxFailedAttempts}</span>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            }
-                            if (policy.type === 'WIFI') {
-                                return (
-                                    <Card key={policy.id}>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-base font-medium flex items-center gap-2">
-                                                <Wifi className="w-4 h-4 text-info" />
-                                                WiFi Configuration
-                                            </CardTitle>
-                                            <Badge variant="secondary">Active</Badge>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-sm text-muted-foreground space-y-1">
-                                                <div className="flex justify-between">
-                                                    <span>SSID:</span>
-                                                    <span className="font-medium text-foreground">{policy.ssid}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Security:</span>
-                                                    <span className="font-medium text-foreground">{policy.securityType}</span>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            }
-                            if (policy.type === 'RESTRICTIONS') {
-                                const r = policy.restrictions;
-                                return (
-                                    <Card key={policy.id}>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-base font-medium flex items-center gap-2">
-                                                <Ban className="w-4 h-4 text-destructive" />
-                                                Device Restrictions
-                                            </CardTitle>
-                                            <Badge variant="secondary">Active</Badge>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-sm text-muted-foreground space-y-1">
-                                                <div className="flex justify-between">
-                                                    <span>Camera:</span>
-                                                    <span className="font-medium text-foreground">{r.security?.allowCamera ? 'Allowed' : 'Blocked'}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Bluetooth:</span>
-                                                    <span className="font-medium text-foreground">{r.connectivity?.allowBluetooth ? 'Allowed' : 'Blocked'}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Factory Reset:</span>
-                                                    <span className="font-medium text-foreground">{r.misc?.allowFactoryReset ? 'Allowed' : 'Blocked'}</span>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            }
-                            return null;
-                        })}
+                        {/* Passcode Policy */}
+                        {profile.passCodePolicy && (
+                            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate(`/profiles/policies/${profile.id}?type=passcode`)}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                                        <Shield className="w-4 h-4 text-primary" />
+                                        Passcode Policy
+                                    </CardTitle>
+                                    <Badge variant="secondary">Active</Badge>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                        <div className="flex justify-between">
+                                            <span>Min Length:</span>
+                                            <span className="font-medium text-foreground">{profile.passCodePolicy.minLength}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Alphanumeric:</span>
+                                            <span className="font-medium text-foreground">{profile.passCodePolicy.requireAlphanumericPasscode ? 'Yes' : 'No'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Max Attempts:</span>
+                                            <span className="font-medium text-foreground">{profile.passCodePolicy.maximumFailedAttempts}</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
-                        {(!profile.policies || profile.policies.length === 0) && (
+                        {/* WiFi Policy */}
+                        {profile.wifiPolicy && (
+                            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate(`/profiles/policies/${profile.id}?type=wifi`)}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                                        <Wifi className="w-4 h-4 text-info" />
+                                        WiFi Configuration
+                                    </CardTitle>
+                                    <Badge variant="secondary">Active</Badge>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                        <div className="flex justify-between">
+                                            <span>SSID:</span>
+                                            <span className="font-medium text-foreground">{profile.wifiPolicy.ssid}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Security:</span>
+                                            <span className="font-medium text-foreground">{profile.wifiPolicy.securityType}</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Empty State */}
+                        {(!profile.passCodePolicy && !profile.wifiPolicy) && (
                             <div className="col-span-full text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                                 No policies configured.
                             </div>

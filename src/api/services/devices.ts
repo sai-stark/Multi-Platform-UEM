@@ -186,7 +186,7 @@ export const DeviceService = {
             id: "profile-1",
             name: "Corporate Default Profile",
             description: "Standard corporate profile",
-            status: "active",
+            status: "PUBLISHED",
             version: 1,
             deviceCount: 10,
             creationTime: "2024-01-01T00:00:00Z",
@@ -196,12 +196,10 @@ export const DeviceService = {
             profileType: "IosProfile",
             mailPolicy: {
                 id: "mail-1",
-                name: "Corporate Email",
-                policyType: "IosMail",
-                emailAccountType: "EmailTypeIMAP",
+                accountDescription: "Corporate Email",
+                accountType: "EMAIL",
                 emailAddress: "employee@company.com",
-                incomingMailServerHostName: "imap.company.com",
-                incomingMailServerUsername: "employee"
+                incomingMailServerHostName: "imap.company.com"
             },
             passCodePolicy: {
                 id: "pass-1",
@@ -212,10 +210,8 @@ export const DeviceService = {
             },
             wifiPolicy: {
                 id: "wifi-1",
-                name: "Office WiFi",
-                policyType: "IosWiFiConfiguration",
                 ssid: "Office-Secure",
-                encryptionType: "WPA2"
+                securityType: "WPA2"
             }
         } as FullProfile;
 

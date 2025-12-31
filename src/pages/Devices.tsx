@@ -1,4 +1,5 @@
 import { DeviceService } from '@/api/services/devices';
+import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Column, DataTable } from '@/components/ui/data-table';
@@ -312,84 +313,88 @@ const Devices = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        {/* Page Header */}
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
-            <p className="text-muted-foreground mt-1">
-              {platform ? `Manage ${platformConfig[platform as keyof typeof platformConfig]?.label} devices` : 'View and manage all enrolled devices'}
-            </p>
+      {loading ? (
+        <LoadingAnimation message="Fetching enrolled devices..." />
+      ) : (
+        <div className="space-y-6">
+          {/* Page Header */}
+          <header className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
+              <p className="text-muted-foreground mt-1">
+                {platform ? `Manage ${platformConfig[platform as keyof typeof platformConfig]?.label} devices` : 'View and manage all enrolled devices'}
+              </p>
+            </div>
+            <Button variant="outline" className="gap-2" onClick={fetchData}>
+              <RefreshCw className="w-4 h-4" aria-hidden="true" />
+              Sync All
+            </Button>
+          </header>
+
+          {/* Stats */}
+          <section className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Device statistics">
+            <article className="stat-card">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                  <Monitor className="w-5 h-5 text-info" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="stat-card__value text-2xl">{stats.total}</p>
+                  <p className="text-sm text-muted-foreground">Total Devices</p>
+                </div>
+              </div>
+            </article>
+            <article className="stat-card">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                  <Wifi className="w-5 h-5 text-success" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="stat-card__value text-2xl">{stats.online}</p>
+                  <p className="text-sm text-muted-foreground">Online</p>
+                </div>
+              </div>
+            </article>
+            <article className="stat-card">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-success" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="stat-card__value text-2xl">{stats.compliant}</p>
+                  <p className="text-sm text-muted-foreground">Compliant</p>
+                </div>
+              </div>
+            </article>
+            <article className="stat-card">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-destructive" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="stat-card__value text-2xl">{stats.nonCompliant}</p>
+                  <p className="text-sm text-muted-foreground">Non-Compliant</p>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          {/* Devices Table */}
+          <div className="rounded-md border bg-card shadow-sm p-4">
+            <DataTable
+              data={data}
+              columns={columns}
+              globalSearchPlaceholder="Search devices..."
+              emptyMessage={loading ? "Loading devices..." : "No devices match your filters."}
+              rowActions={rowActions}
+              defaultPageSize={10}
+              showExport={true}
+              exportTitle="Devices Report"
+              exportFilename="devices"
+            />
           </div>
-          <Button variant="outline" className="gap-2" onClick={fetchData}>
-            <RefreshCw className="w-4 h-4" aria-hidden="true" />
-            Sync All
-          </Button>
-        </header>
-
-        {/* Stats */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Device statistics">
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
-                <Monitor className="w-5 h-5 text-info" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Devices</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <Wifi className="w-5 h-5 text-success" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.online}</p>
-                <p className="text-sm text-muted-foreground">Online</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-success" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.compliant}</p>
-                <p className="text-sm text-muted-foreground">Compliant</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <XCircle className="w-5 h-5 text-destructive" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.nonCompliant}</p>
-                <p className="text-sm text-muted-foreground">Non-Compliant</p>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        {/* Devices Table */}
-        <div className="rounded-md border bg-card shadow-sm p-4">
-          <DataTable
-            data={data}
-            columns={columns}
-            globalSearchPlaceholder="Search devices..."
-            emptyMessage={loading ? "Loading devices..." : "No devices match your filters."}
-            rowActions={rowActions}
-            defaultPageSize={10}
-            showExport={true}
-            exportTitle="Devices Report"
-            exportFilename="devices"
-          />
         </div>
-      </div>
+      )}
     </MainLayout>
   );
 };

@@ -1,6 +1,15 @@
+import { EnrollmentProfile, EnrollmentService } from '@/api/services/enrollmentService';
+import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -11,6 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
+import { Platform } from '@/types/models';
 import {
   Check,
   Copy,
@@ -18,112 +28,15 @@ import {
   FileText,
   Info,
   Laptop,
+  Maximize2,
   QrCode,
   Server,
   Settings2,
   Smartphone,
   UserPlus
 } from 'lucide-react';
-import { useState } from 'react';
-
-type Platform = 'android' | 'ios' | 'windows' | 'macos' | 'linux';
-
-interface EnrollmentProfile {
-  id: string;
-  name: string;
-  description: string;
-  config: {
-    wifiSSID: string;
-    vpnEnabled: boolean;
-    vpnServer?: string;
-    mandatoryApps: string[];
-    restrictions: string[];
-  };
-}
-
-const profiles: Record<Platform, EnrollmentProfile[]> = {
-  android: [
-    {
-      id: 'android-standard',
-      name: 'Standard Enterprise',
-      description: 'Default Android enterprise profile',
-      config: {
-        wifiSSID: 'CDOT-Enterprise',
-        vpnEnabled: true,
-        vpnServer: 'vpn.cdot.in',
-        mandatoryApps: ['Microsoft Outlook', 'Microsoft Teams', 'Company Portal'],
-        restrictions: ['Camera disabled in work profile', 'USB debugging disabled'],
-      },
-    },
-    {
-      id: 'android-kiosk',
-      name: 'Kiosk Mode',
-      description: 'Locked-down single-app mode',
-      config: {
-        wifiSSID: 'CDOT-Kiosk',
-        vpnEnabled: false,
-        mandatoryApps: ['Kiosk App'],
-        restrictions: ['Single app mode', 'Navigation disabled', 'Status bar hidden'],
-      },
-    },
-  ],
-  ios: [
-    {
-      id: 'ios-standard',
-      name: 'Standard Enterprise',
-      description: 'Default iOS enterprise profile',
-      config: {
-        wifiSSID: 'CDOT-Enterprise',
-        vpnEnabled: true,
-        vpnServer: 'vpn.cdot.in',
-        mandatoryApps: ['Microsoft Outlook', 'Microsoft Teams'],
-        restrictions: ['iCloud backup disabled', 'App Store restricted'],
-      },
-    },
-  ],
-  windows: [
-    {
-      id: 'windows-standard',
-      name: 'Domain Join',
-      description: 'Azure AD join with Autopilot',
-      config: {
-        wifiSSID: 'CDOT-Enterprise',
-        vpnEnabled: true,
-        vpnServer: 'vpn.cdot.in',
-        mandatoryApps: ['Microsoft 365', 'Defender', 'Company Portal'],
-        restrictions: ['BitLocker required', 'Windows Hello required'],
-      },
-    },
-  ],
-  macos: [
-    {
-      id: 'macos-standard',
-      name: 'Standard Enterprise',
-      description: 'Default macOS enterprise profile',
-      config: {
-        wifiSSID: 'CDOT-Enterprise',
-        vpnEnabled: true,
-        vpnServer: 'vpn.cdot.in',
-        mandatoryApps: ['Microsoft 365', 'Company Portal'],
-        restrictions: ['FileVault required', 'Gatekeeper enabled'],
-      },
-    },
-  ],
-  linux: [
-    {
-      id: 'linux-standard',
-      name: 'Standard Workstation',
-      description: 'Ubuntu/RHEL workstation profile',
-      config: {
-        wifiSSID: 'CDOT-Enterprise',
-        vpnEnabled: true,
-        vpnServer: 'vpn.cdot.in',
-        mandatoryApps: ['Intune Agent', 'OpenVPN'],
-        restrictions: ['Root access restricted', 'USB storage disabled'],
-      },
-    },
-  ],
-};
+import { useEffect, useState } from 'react';
+import QRCode from 'react-qr-code';
 
 const enrollmentSteps: Record<Platform, { en: string; hi: string }[]> = {
   android: [
@@ -165,35 +78,80 @@ const enrollmentSteps: Record<Platform, { en: string; hi: string }[]> = {
   ],
 };
 
-const platformIcons: Record<Platform, React.ElementType> = {
-  android: Smartphone,
-  ios: Smartphone,
-  windows: Laptop,
-  macos: Laptop,
-  linux: Server,
+const platformConfig = {
+  android: { label: 'Android', asset: '/Assets/android.png', icon: Smartphone },
+  ios: { label: 'iOS', asset: '/Assets/apple.png', icon: Smartphone },
+  windows: { label: 'Windows', asset: '/Assets/microsoft.png', icon: Laptop },
+  macos: { label: 'macOS', asset: '/Assets/mac_os.png', icon: Laptop },
+  linux: { label: 'Linux', asset: '/Assets/linux.png', icon: Server },
 };
 
 export default function Enrollment() {
   const { t, language } = useLanguage();
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('android');
-  const [selectedProfile, setSelectedProfile] = useState<string>(profiles.android[0].id);
+  const [profiles, setProfiles] = useState<EnrollmentProfile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>('');
+  const [qrCodeData, setQrCodeData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isQrVisible, setIsQrVisible] = useState(false);
 
-  const currentProfiles = profiles[selectedPlatform];
-  const currentProfile = currentProfiles.find(p => p.id === selectedProfile) || currentProfiles[0];
   const steps = enrollmentSteps[selectedPlatform];
+  const currentProfile = profiles.find(p => p.id === selectedProfileId) || profiles[0];
+
+  useEffect(() => {
+    fetchProfiles(selectedPlatform);
+    setIsQrVisible(false); // Reset QR visibility on platform change
+  }, [selectedPlatform]);
+
+  useEffect(() => {
+    if (currentProfile) {
+      fetchQrCode(selectedPlatform, currentProfile.id);
+      setIsQrVisible(false); // Reset QR visibility on profile change
+    }
+  }, [currentProfile, selectedPlatform]);
+
+  const fetchProfiles = async (platform: Platform) => {
+    setLoading(true);
+    try {
+      const data = await EnrollmentService.getProfiles(platform);
+      setProfiles(data);
+      if (data.length > 0) {
+        setSelectedProfileId(data[0].id);
+      } else {
+        setSelectedProfileId('');
+      }
+    } catch (error) {
+      console.error('Failed to fetch profiles', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch enrollment profiles",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchQrCode = async (platform: Platform, profileId: string) => {
+    try {
+      const data = await EnrollmentService.getQrCode(platform, profileId);
+      setQrCodeData(data);
+    } catch (error) {
+      console.error('Failed to fetch QR code', error);
+    }
+  };
 
   const handlePlatformChange = (platform: string) => {
     setSelectedPlatform(platform as Platform);
-    setSelectedProfile(profiles[platform as Platform][0].id);
   };
 
   const handleCopyEnrollmentData = async () => {
     const data = {
       platform: selectedPlatform,
-      profile: currentProfile.name,
-      enrollmentUrl: `https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`,
+      profile: currentProfile?.name,
+      enrollmentUrl: `https://enroll.cdot.in/${selectedPlatform}/${currentProfile?.id}`,
+      // qrData: qrCodeData, // Optional: Include raw QR data if needed
       timestamp: new Date().toISOString(),
     };
 
@@ -208,22 +166,66 @@ export default function Enrollment() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownloadQR = () => {
-    toast({
-      title: t('enrollment.downloading'),
-      description: t('enrollment.downloadingDesc'),
-    });
+  const handleDownloadQR = async () => {
+    if (!currentProfile) return;
+
+    try {
+      toast({
+        title: t('enrollment.downloading'),
+        description: t('enrollment.downloadingDesc'),
+      });
+
+      const downloadUrl = await EnrollmentService.downloadProfile(selectedPlatform, currentProfile.id);
+      // Create a temporary link to download
+      const link = document.createElement('a');
+      link.href = downloadUrl; // Assuming downloadUrl is a valid URL string or blob URL
+      link.download = `profile-${currentProfile.id}.json`; // Or relevant extension
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Download failed", error);
+      toast({
+        title: "Error",
+        description: "Failed to download profile",
+        variant: "destructive"
+      });
+    }
   };
 
-  const qrCodeData = `https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`;
 
   // Stats for the enrollment module
+  // TODO: Fetch real stats from dashboard or similar API if available
   const stats = {
-    totalProfiles: Object.values(profiles).flat().length,
+    totalProfiles: profiles.length, // Only for current platform currently displayed
     platforms: 5,
     pendingEnrollments: 12,
     completedToday: 8,
   };
+
+  const renderQrContent = () => (
+    <div className="w-full h-full bg-white flex items-center justify-center p-4">
+      {qrCodeData ? (
+        <div style={{ height: "auto", margin: "0 auto", maxWidth: "100%", width: "100%" }}>
+          <QRCode
+            size={256}
+            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+            value={typeof qrCodeData === 'string' ? qrCodeData : JSON.stringify(qrCodeData)}
+            viewBox={`0 0 256 256`}
+          />
+        </div>
+      ) : (
+        <div className="w-full h-full grid grid-cols-8 gap-0.5 relative overflow-hidden">
+          {Array.from({ length: 64 }).map((_, i) => (
+            <div
+              key={i}
+              className={`${Math.random() > 0.5 ? 'bg-gray-200' : 'bg-transparent'}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <MainLayout>
@@ -241,10 +243,9 @@ export default function Enrollment() {
         </header>
 
         {/* Stats Cards */}
-        {/* Stats Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Enrollment statistics">
           <StatCard
-            title="Total Profiles"
+            title="Active Profiles"
             value={stats.totalProfiles}
             icon={FileText}
             variant="info"
@@ -269,22 +270,25 @@ export default function Enrollment() {
           />
         </section>
 
-
-
         {/* Platform Tabs */}
         <Tabs value={selectedPlatform} onValueChange={handlePlatformChange} className="w-full">
           <TabsList className="grid w-full grid-cols-5 bg-muted">
             {(['android', 'ios', 'windows', 'macos', 'linux'] as Platform[]).map((platform) => {
-              const Icon = platformIcons[platform];
+              const config = platformConfig[platform];
+              const Icon = config.icon;
               return (
                 <TabsTrigger
                   key={platform}
                   value={platform}
                   className="flex items-center gap-2 data-[state=active]:bg-background"
                 >
-                  <Icon className="w-4 h-4" aria-hidden="true" />
+                  {config.asset ? (
+                    <img src={config.asset} alt={config.label} className="w-4 h-4 object-contain" />
+                  ) : (
+                    <Icon className="w-4 h-4" aria-hidden="true" />
+                  )}
                   <span className="hidden sm:inline">
-                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                    {config.label}
                   </span>
                 </TabsTrigger>
               );
@@ -292,55 +296,79 @@ export default function Enrollment() {
           </TabsList>
 
           {/* Filters */}
-          {/* Profile Selection */}
-          <div className="mt-6">
-            <Select value={selectedProfile} onValueChange={setSelectedProfile}>
-              <SelectTrigger id="profile-filter" className="w-[300px] bg-background">
-                <SelectValue />
+          <div className="mt-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+            {/* Profile Selection */}
+            <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
+              <SelectTrigger id="profile-filter" className="w-[300px] bg-background" disabled={loading || profiles.length === 0}>
+                <SelectValue placeholder={loading ? "Loading..." : "Select Profile"} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                {currentProfiles.map((profile) => (
+                {profiles.map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
                     {profile.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            {loading && <span className="text-sm text-muted-foreground animate-pulse">Fetching profiles...</span>}
           </div>
 
-          {(['android', 'ios', 'windows', 'macos', 'linux'] as Platform[]).map((platform) => (
-            <TabsContent key={platform} value={platform} className="mt-6">
+          <TabsContent value={selectedPlatform} className="mt-6">
+            {loading ? (
+              <LoadingAnimation message="Loading enrollment profiles..." className="min-h-[400px]" />
+            ) : currentProfile ? (
               <div className="space-y-6">
                 {/* Top Row: QR Code & Profile Info */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* QR Code Display */}
                   <section className="panel" aria-label="QR Code">
-                    <div className="panel__header">
+                    <div className="panel__header flex justify-between items-center">
                       <h3 className="panel__title flex items-center gap-2">
                         <QrCode className="w-5 h-5" aria-hidden="true" />
                         {t('enrollment.qrCode')}
                       </h3>
-                    </div>
-                    <div className="panel__content">
-                      <div className="text-center">
-                        <div
-                          className="mx-auto w-48 h-48 bg-background border-2 border-border rounded-lg flex items-center justify-center"
-                          role="img"
-                          aria-label={`${t('enrollment.qrCodeAlt')} ${currentProfile.name}`}
-                        >
-                          <div className="w-40 h-40 bg-foreground p-2">
-                            <div className="w-full h-full bg-background grid grid-cols-8 gap-0.5">
-                              {Array.from({ length: 64 }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className={`${Math.random() > 0.5 ? 'bg-foreground' : 'bg-background'}`}
-                                />
-                              ))}
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" disabled={!isQrVisible}>
+                            <Maximize2 className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Enrollment QR Code</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex items-center justify-center p-4">
+                            <div className="w-64 h-64 border-2 border-border p-2 bg-white">
+                              {renderQrContent()}
                             </div>
                           </div>
+                          <div className="text-center text-sm text-muted-foreground break-all">
+                            {`https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <div className="panel__content">
+                      <div className="text-center relative">
+                        <div className="relative mx-auto w-48 h-48 border-2 border-border rounded-lg overflow-hidden group">
+                          {/* Blurred Container */}
+                          <div className={`w-full h-full p-2 transition-all duration-300 ${!isQrVisible ? 'blur-md opacity-50' : ''}`}>
+                            {renderQrContent()}
+                          </div>
+
+                          {/* Generate Button Overlay */}
+                          {!isQrVisible && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-background/20 z-10">
+                              <Button onClick={() => setIsQrVisible(true)}>
+                                Generate QR
+                              </Button>
+                            </div>
+                          )}
                         </div>
+
                         <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
-                          {qrCodeData}
+                          {`https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`}
                         </p>
                       </div>
 
@@ -350,6 +378,7 @@ export default function Enrollment() {
                           onClick={handleDownloadQR}
                           className="flex-1"
                           variant="outline"
+                          disabled={!isQrVisible}
                         >
                           <Download className="w-4 h-4 mr-2" aria-hidden="true" />
                           {t('enrollment.downloadQR')}
@@ -481,8 +510,12 @@ export default function Enrollment() {
                   </div>
                 </section>
               </div>
-            </TabsContent>
-          ))}
+            ) : (
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                No profiles available for this platform.
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
     </MainLayout>

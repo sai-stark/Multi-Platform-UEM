@@ -1,4 +1,5 @@
 
+import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -181,9 +182,7 @@ const GeofenceEditor = () => {
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex items-center justify-center h-full">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
+                <LoadingAnimation message="Loading geofence data..." />
             </MainLayout>
         );
     }

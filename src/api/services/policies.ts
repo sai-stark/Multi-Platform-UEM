@@ -15,6 +15,7 @@ import {
     LocationRestriction,
     MiscellaneousRestriction,
     NetworkRestriction,
+    PagedResponse,
     PasscodeRestrictionPolicy,
     PhoneRestriction,
     Platform,
@@ -65,6 +66,10 @@ export const PolicyService = {
         const response = await apiClient.post(`/${platform}${CORE_PATH}/${profileId}/policies/applications`, policy);
         return response.data;
     },
+    getApplicationPolicies: async (platform: Platform, profileId: string) => {
+        const response = await apiClient.get<PagedResponse<ApplicationPolicy>>(`/${platform}${CORE_PATH}/${profileId}/policies/applications`);
+        return response.data;
+    },
     updateApplicationPolicy: async (platform: Platform, profileId: string, appId: string, policy: ApplicationPolicy) => {
         const response = await apiClient.put(`/${platform}${CORE_PATH}/${profileId}/policies/applications/${appId}`, policy);
         return response.data;
@@ -73,6 +78,10 @@ export const PolicyService = {
     // Web Applications Policy
     createWebApplicationPolicy: async (platform: Platform, profileId: string, policy: WebApplicationPolicy) => {
         const response = await apiClient.post(`/${platform}${CORE_PATH}/${profileId}/policies/web-applications`, policy);
+        return response.data;
+    },
+    getWebApplicationPolicies: async (platform: Platform, profileId: string) => {
+        const response = await apiClient.get<PagedResponse<WebApplicationPolicy>>(`/${platform}${CORE_PATH}/${profileId}/policies/web-applications`);
         return response.data;
     },
 
