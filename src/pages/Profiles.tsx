@@ -31,100 +31,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const mockProfiles: Profile[] = [
-  {
-    id: "1",
-    name: "Corporate Android Default",
-    description: "Standard policy for all Android devices",
-    platform: "android",
-    creationTime: "2024-01-15T10:00:00Z",
-    modificationTime: "2024-01-20T14:30:00Z",
-    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    status: "PUBLISHED",
-    version: 1,
-    deviceCount: 5,
-  },
-  {
-    id: "2",
-    name: "iOS Executive Policy",
-    description: "High security policy for executives",
-    platform: "ios",
-    creationTime: "2024-01-10T09:00:00Z",
-    modificationTime: "2024-01-22T11:15:00Z",
-    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    status: "PUBLISHED",
-    version: 2,
-    deviceCount: 12,
-  },
-  {
-    id: "3",
-    name: "Windows Kiosk Mode",
-    description: "Locked down kiosk for public terminals",
-    platform: "windows",
-    creationTime: "2024-01-05T16:20:00Z",
-    modificationTime: "2024-01-18T09:45:00Z",
-    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    status: "PUBLISHED",
-    version: 1,
-    deviceCount: 8,
-  },
-  {
-    id: "4",
-    name: "Field Workers Android",
-    description: "Optimized for battery and location tracking",
-    platform: "android",
-    creationTime: "2024-01-12T11:30:00Z",
-    modificationTime: "2024-01-21T15:20:00Z",
-    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    status: "DRAFT",
-    version: 1,
-    deviceCount: 0,
-  },
-  {
-    id: "5",
-    name: "BYOD Limited Access",
-    description: "Restriction policy for personal devices",
-    platform: "ios",
-    creationTime: "2024-01-08T13:45:00Z",
-    modificationTime: "2024-01-19T10:10:00Z",
-    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    status: "PUBLISHED",
-    version: 3,
-    deviceCount: 25,
-  },
-  {
-    id: "6",
-    name: "Sales Tablet Configuration",
-    description: "iPad setup for sales team",
-    platform: "ios",
-    creationTime: "2024-01-14T10:00:00Z",
-    modificationTime: "2024-01-23T12:00:00Z",
-    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    status: "DRAFT",
-    version: 1,
-    deviceCount: 0,
-  },
-  {
-    id: "7",
-    name: "Development Windows Workstation",
-    description: "Developer machine defaults",
-    platform: "windows",
-    creationTime: "2024-01-02T08:15:00Z",
-    modificationTime: "2024-01-16T16:50:00Z",
-    createdBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    lastModifiedBy: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    status: "DRAFT",
-    version: 1,
-    deviceCount: 0,
-  },
-];
+import { ProfileService } from "@/api/services/profiles";
+import { Platform } from "@/types/models";
 
 const platformConfig: Record<
   string,
@@ -204,23 +112,80 @@ const Profiles = () => {
   const fetchProfiles = async () => {
     setLoading(true);
     try {
-      let data: Profile[] = [...mockProfiles];
+      const platforms: Platform[] = ["android", "ios", "windows"];
 
-      if (platformFilter !== "all") {
-        data = data.filter((p) => p.platform === platformFilter);
+      // Always fetch from all platforms for stats
+      const statsResults = await Promise.all(
+        platforms.map(async (platform) => {
+          const result = await ProfileService.getProfiles(platform);
+          return { platform, profiles: result.content };
+        })
+      );
+
+      // Filter profiles based on platformFilter
+      let allProfiles: Profile[] = [];
+      if (platformFilter === "all") {
+        // Use data already fetched for stats
+        allProfiles = statsResults.flatMap(({ platform, profiles }) =>
+          profiles.map((profile) => ({
+            ...profile,
+            platform,
+          }))
+        );
+      } else if (
+        platformFilter === "android" ||
+        platformFilter === "ios" ||
+        platformFilter === "windows"
+      ) {
+        // Use data already fetched for stats
+        const platformData = statsResults.find(
+          (r) => r.platform === platformFilter
+        );
+        if (platformData) {
+          allProfiles = platformData.profiles.map((profile) => ({
+            ...profile,
+            platform: platformFilter as Platform,
+          }));
+        }
       }
 
-      setProfiles(data);
+      setProfiles(allProfiles);
 
-      // Update stats based on all mock data
-      const allData = mockProfiles;
+      // Calculate stats from already fetched data
+      let androidCount = 0;
+      let iosCount = 0;
+      let windowsCount = 0;
+      let publishedCount = 0;
+      let draftCount = 0;
+
+      statsResults.forEach(({ platform, profiles }) => {
+        if (platform === "android") {
+          androidCount = profiles.length;
+        } else if (platform === "ios") {
+          iosCount = profiles.length;
+        } else if (platform === "windows") {
+          windowsCount = profiles.length;
+        }
+
+        profiles.forEach((profile) => {
+          if (profile.status === "PUBLISHED") {
+            publishedCount++;
+          } else if (profile.status === "DRAFT") {
+            draftCount++;
+          }
+        });
+      });
+
       setStats({
-        total: allData.length,
-        android: allData.filter((p) => p.platform === "android").length,
-        ios: allData.filter((p) => p.platform === "ios").length,
-        windows: allData.filter((p) => p.platform === "windows").length,
-        published: allData.filter((p) => p.status === "PUBLISHED").length,
-        draft: allData.filter((p) => p.status === "DRAFT").length,
+        total: statsResults.reduce(
+          (sum, { profiles }) => sum + profiles.length,
+          0
+        ),
+        android: androidCount,
+        ios: iosCount,
+        windows: windowsCount,
+        published: publishedCount,
+        draft: draftCount,
       });
     } catch (error) {
       console.error("Error fetching profiles:", error);

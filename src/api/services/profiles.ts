@@ -2,13 +2,21 @@ import {
     FullProfile,
     Platform,
     Profile,
-    PublishProfile
+    PublishProfile,
+    Pageable,
+    PagedResponse
 } from '@/types/models';
 import apiClient from '../client';
 
 const CORE_PATH = '/profiles';
 
 export const ProfileService = {
+    getProfiles: async (platform: Platform, pageable?: Pageable, filter?: string) => {
+        const params = { ...pageable, filter };
+        const response = await apiClient.get<PagedResponse<Profile>>(`/${platform}${CORE_PATH}`, { params });
+        return response.data;
+    },
+
     createProfile: async (platform: Platform, profile: Profile) => {
         const response = await apiClient.post<Profile>(`/${platform}${CORE_PATH}`, profile);
         return response.data;

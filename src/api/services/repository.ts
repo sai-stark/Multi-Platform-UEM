@@ -1,4 +1,4 @@
-import { CustomRepo, Pageable, PagedResponse, PatchInfo, PatchRequest, Platform, PaginatedCustomRepoList, CustomRepository } from '@/types/models';
+import { CustomRepo, Pageable, PagedResponse, PatchInfo, PatchRequest, Platform, PaginatedCustomRepoList, CustomRepository, ApplicationUnion, MobileApplication, WindowsApplication, LinuxApplication, DmgApplication } from '@/types/models';
 import apiClient from '../client';
 
 // Mock Data Store (for legacy/fallback)
@@ -159,6 +159,161 @@ export const RepositoryService = {
             },
             content: paginatedContent,
         };
+    },
+
+    createCustomRepository: async (
+        platform: Platform,
+        repository: CustomRepository
+    ): Promise<CustomRepository> => {
+        try {
+            const response = await apiClient.post<CustomRepository>(
+                `/${platform}/repository`,
+                repository
+            );
+            return response.data;
+        } catch (error) {
+            console.error(`Error creating repository for ${platform}:`, error);
+            // For now, simulate success with mock data
+            await simulateDelay();
+            const newRepo: CustomRepository = {
+                ...repository,
+                id: `repo-${Date.now()}`,
+                creationTime: new Date().toISOString(),
+                modificationTime: new Date().toISOString(),
+            };
+            if (platform === "linux" && repository.repoType === "CustomUbuntuRepo") {
+                mockCustomRepos[platform].push(newRepo);
+            } else if (platform === "linux" && repository.repoType === "CustomRpmRepo") {
+                mockCustomRepos[platform].push(newRepo);
+            } else {
+                mockCustomRepos[platform] = mockCustomRepos[platform] || [];
+                mockCustomRepos[platform].push(newRepo);
+            }
+            return newRepo;
+        }
+    },
+
+    getRepositoryApplications: async (
+        platform: Platform,
+        customRepoId: string,
+        pageable?: Pageable
+    ): Promise<PagedResponse<ApplicationUnion>> => {
+        await simulateDelay();
+        
+        // Mock applications data - determine osType based on platform
+        const getOsType = (platform: Platform): 'MobileApplication' | 'WindowsApplication' | 'LinuxApplication' | 'DmgFileDetail' => {
+            switch (platform) {
+                case 'android':
+                    return 'MobileApplication';
+                case 'windows':
+                    return 'WindowsApplication';
+                case 'linux':
+                    return 'LinuxApplication';
+                case 'macos':
+                    return 'DmgFileDetail';
+                default:
+                    return 'MobileApplication';
+            }
+        };
+
+        const osType = getOsType(platform);
+        
+        // Create mock applications based on osType
+        const createMockApp = (id: string, name: string, description: string, manufacturere: string, version: string, size: string): ApplicationUnion => {
+            const baseApp = {
+                id,
+                name,
+                description,
+                manufacturere,
+                osType,
+                version,
+                creationTime: "2024-01-15T10:00:00Z",
+                modificationTime: "2024-01-20T14:30:00Z",
+            };
+
+            if (osType === 'MobileApplication') {
+                return {
+                    ...baseApp,
+                    osType: 'MobileApplication',
+                    packageName: `com.company.${name.toLowerCase().replace(/\s+/g, '')}`,
+                    platform: platform,
+                    appType: "ENTERPRISE" as const,
+                    isEmmApp: true,
+                } as MobileApplication;
+            } else if (osType === 'WindowsApplication') {
+                return {
+                    ...baseApp,
+                    osType: 'WindowsApplication',
+                    extraProperties: {},
+                } as WindowsApplication;
+            } else if (osType === 'LinuxApplication') {
+                return {
+                    ...baseApp,
+                    osType: 'LinuxApplication',
+                    extraProperties: {},
+                } as LinuxApplication;
+            } else if (osType === 'DmgFileDetail') {
+                return {
+                    ...baseApp,
+                    osType: 'DmgFileDetail',
+                    fileName: `${name.replace(/\s+/g, '')}.dmg`,
+                    packageName: `com.company.${name.toLowerCase().replace(/\s+/g, '')}`,
+                } as DmgApplication;
+            }
+            return baseApp as MobileApplication;
+        };
+
+        const mockApplications: ApplicationUnion[] = [
+            {
+                ...createMockApp("app-1", "Corporate App Manager", "Enterprise application management tool for device administration", "Company Corp", "1.2.3", "45 MB"),
+                size: "45 MB",
+                isMandatory: true,
+                isBlocked: false,
+                installTypes: ["PRE_INSTALLED"],
+            } as any,
+            {
+                ...createMockApp("app-2", "Internal Tools Suite", "Collection of internal productivity and collaboration tools", "Company Corp", "2.1.0", "128 MB"),
+                size: "128 MB",
+                isMandatory: false,
+                isBlocked: false,
+                installTypes: ["AUTO_INSTALL"],
+            } as any,
+            {
+                ...createMockApp("app-3", "Security Scanner", "Advanced security scanning and threat detection application", "Security Solutions Inc", "3.0.1", "67 MB"),
+                size: "67 MB",
+                isMandatory: true,
+                isBlocked: false,
+                installTypes: ["PRE_INSTALLED"],
+            } as any,
+        ];
+
+        const pageNumber = pageable?.page || 0;
+        const pageSize = pageable?.size || 10;
+        const startIndex = pageNumber * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedContent = mockApplications.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(mockApplications.length / pageSize);
+
+        return {
+            content: paginatedContent,
+            pageable: {
+                pageNumber: pageNumber,
+                pageSize: pageSize,
+                sort: { empty: true, sorted: false, unsorted: true },
+                offset: startIndex,
+                paged: true,
+                unpaged: false,
+            },
+            last: pageNumber >= totalPages - 1,
+            totalPages: totalPages,
+            totalElements: mockApplications.length,
+            first: pageNumber === 0,
+            size: pageSize,
+            number: pageNumber,
+            sort: { empty: true, sorted: false, unsorted: true },
+            numberOfElements: paginatedContent.length,
+            empty: paginatedContent.length === 0,
+        } as PagedResponse<ApplicationUnion>;
     },
 
     // --- Custom Repositories (legacy) ---
