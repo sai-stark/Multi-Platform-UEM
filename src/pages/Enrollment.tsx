@@ -28,12 +28,12 @@ import {
   FileText,
   Info,
   Laptop,
-  Maximize2,
   QrCode,
   Server,
   Settings2,
   Smartphone,
-  UserPlus
+  UserPlus,
+  ZoomIn
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
@@ -204,12 +204,12 @@ export default function Enrollment() {
   };
 
   const renderQrContent = () => (
-    <div className="w-full h-full bg-white flex items-center justify-center p-4">
+    <div className="w-full h-full bg-white flex items-center justify-center">
       {qrCodeData ? (
-        <div style={{ height: "auto", margin: "0 auto", maxWidth: "100%", width: "100%" }}>
+        <div style={{ height: "100%", margin: "0 auto", maxWidth: "100%", width: "100%" }}>
           <QRCode
             size={256}
-            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+            style={{ height: "100%", maxWidth: "100%", width: "100%" }}
             value={typeof qrCodeData === 'string' ? qrCodeData : JSON.stringify(qrCodeData)}
             viewBox={`0 0 256 256`}
           />
@@ -331,15 +331,15 @@ export default function Enrollment() {
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="ghost" size="icon" disabled={!isQrVisible}>
-                            <Maximize2 className="w-4 h-4" />
+                            <ZoomIn className="w-4 h-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-lg">
                           <DialogHeader>
                             <DialogTitle>Enrollment QR Code</DialogTitle>
                           </DialogHeader>
-                          <div className="flex items-center justify-center p-4">
-                            <div className="w-64 h-64 border-2 border-border p-2 bg-white">
+                          <div className="flex items-center justify-center p-0">
+                            <div className="w-96 h-96 bg-white">
                               {renderQrContent()}
                             </div>
                           </div>
@@ -351,9 +351,9 @@ export default function Enrollment() {
                     </div>
                     <div className="panel__content">
                       <div className="text-center relative">
-                        <div className="relative mx-auto w-48 h-48 border-2 border-border rounded-lg overflow-hidden group">
+                        <div className="relative mx-auto w-48 h-48 rounded-lg overflow-hidden group">
                           {/* Blurred Container */}
-                          <div className={`w-full h-full p-2 transition-all duration-300 ${!isQrVisible ? 'blur-md opacity-50' : ''}`}>
+                          <div className={`w-full h-full transition-all duration-300 ${!isQrVisible ? 'blur-md opacity-50' : ''}`}>
                             {renderQrContent()}
                           </div>
 
