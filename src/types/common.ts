@@ -35,3 +35,8 @@ export interface PagedResponse<T> {
     numberOfElements: number;
     empty: boolean;
 }
+
+export interface NameAndIdFilter {
+    name?: string;
+    ids?: string[];
+}

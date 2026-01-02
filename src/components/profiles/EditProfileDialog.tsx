@@ -211,14 +211,18 @@ export function EditProfileDialog({
         ios: "IosProfile",
       };
 
+      // Construct full Profile object as required by API
+      const updatedProfile: Profile = {
+        ...profile,
+        name: formData.name,
+        description: formData.description,
+        profileType: profileTypeMap[profile.platform] || profile.profileType,
+      };
+
       await ProfileService.updateProfile(
         profile.platform as Platform,
-        profile.id,
-        {
-          name: formData.name,
-          description: formData.description,
-          profileType: profileTypeMap[profile.platform],
-        }
+        profile.id!,
+        updatedProfile
       );
 
       toast({

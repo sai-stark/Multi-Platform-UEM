@@ -4,15 +4,22 @@ import {
     Profile,
     PublishProfile,
     Pageable,
-    PagedResponse
+    PagedResponse,
+    NameAndIdFilter
 } from '@/types/models';
 import apiClient from '../client';
 
 const CORE_PATH = '/profiles';
 
 export const ProfileService = {
-    getProfiles: async (platform: Platform, pageable?: Pageable, filter?: string) => {
-        const params = { ...pageable, filter };
+    getProfiles: async (platform: Platform, pageable?: Pageable, filter?: NameAndIdFilter) => {
+        const params: Record<string, any> = { ...pageable };
+        // NameAndIdFilter is required by API, so send empty object if not provided
+        if (filter) {
+            params.NameAndIdFilter = JSON.stringify(filter);
+        } else {
+            params.NameAndIdFilter = JSON.stringify({});
+        }
         const response = await apiClient.get<PagedResponse<Profile>>(`/${platform}${CORE_PATH}`, { params });
         return response.data;
     },
@@ -27,7 +34,7 @@ export const ProfileService = {
         return response.data;
     },
 
-    updateProfile: async (platform: Platform, profileId: string, profile: Partial<Profile>) => {
+    updateProfile: async (platform: Platform, profileId: string, profile: Profile) => {
         const response = await apiClient.put<Profile>(`/${platform}${CORE_PATH}/${profileId}`, profile);
         return response.data;
     },

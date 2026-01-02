@@ -1,6 +1,7 @@
 import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ApplicationPolicyEditor } from '@/components/profiles/Policies/ApplicationPolicy';
+import { MailPolicy } from '@/components/profiles/Policies/MailPolicy';
 import { PasscodePolicy } from '@/components/profiles/Policies/PasscodePolicy';
 import { RestrictionsComposite, RestrictionsPolicy } from '@/components/profiles/Policies/RestrictionsPolicy';
 import { WebApplicationPolicyEditor } from '@/components/profiles/Policies/WebApplicationPolicy';
@@ -14,9 +15,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ApplicationPolicy, FullProfile, IosWiFiConfiguration, PasscodeRestrictionPolicy, Platform, WebApplicationPolicy } from '@/types/models';
+import { ApplicationPolicy, FullProfile, IosMailPolicy, IosWiFiConfiguration, PasscodeRestrictionPolicy, Platform, WebApplicationPolicy } from '@/types/models';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Apple, ArrowLeft, Ban, Globe, Grid, Layout, Monitor, Plus, Shield, Smartphone, Wifi } from 'lucide-react';
+import { Apple, ArrowLeft, Ban, Globe, Grid, Layout, Mail, Monitor, Plus, Shield, Smartphone, Wifi } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -49,6 +50,7 @@ export default function EditProfilePolicies() {
     // State for specific Policy Data
     const [passcodePolicy, setPasscodePolicy] = useState<PasscodeRestrictionPolicy | undefined>(undefined);
     const [wifiPolicy, setWifiPolicy] = useState<IosWiFiConfiguration | undefined>(undefined);
+    const [mailPolicy, setMailPolicy] = useState<IosMailPolicy | undefined>(undefined);
     const [restrictionsPolicy, setRestrictionsPolicy] = useState<RestrictionsComposite | undefined>(undefined);
     const [applicationPolicy, setApplicationPolicy] = useState<ApplicationPolicy[]>([]);
     const [webApplicationPolicy, setWebApplicationPolicy] = useState<WebApplicationPolicy[]>([]);
@@ -98,22 +100,55 @@ export default function EditProfilePolicies() {
                     misc: { allowFactoryReset: false }
                 },
                 // Mocking Application Policy
-                applicationPolicy: [
+                applicationPolicy: platform === 'ios' ? [
                     {
-                        applicationId: 'app1',
-                        packageName: 'com.microsoft.office.outlook',
-                        installType: 'REQUIRED',
-                        autoUpdateMode: 'ALWAYS',
-                        disabled: false,
-                        permission: 'GRANT'
+                        id: 'ios-policy-1',
+                        name: 'Microsoft Outlook',
+                        bundleIdentifier: 'com.microsoft.office.outlook',
+                        action: 'INSTALL' as const,
+                        purchaseMethod: 0,
+                        removable: true,
+                        devicePolicyType: 'IosApplicationPolicy' as const,
+                        creationTime: new Date().toISOString(),
+                        modificationTime: new Date().toISOString(),
+                        createdBy: 'user-1',
+                        lastModifiedBy: 'user-1'
                     },
                     {
-                        applicationId: 'app2',
-                        packageName: 'com.microsoft.teams',
-                        installType: 'AVAILABLE',
-                        autoUpdateMode: 'WIFI_ONLY',
-                        disabled: false,
-                        permission: 'PROMPT'
+                        id: 'ios-policy-2',
+                        name: 'Microsoft Teams',
+                        bundleIdentifier: 'com.microsoft.teams',
+                        action: 'INSTALL' as const,
+                        purchaseMethod: 1,
+                        removable: false,
+                        devicePolicyType: 'IosApplicationPolicy' as const,
+                        creationTime: new Date().toISOString(),
+                        modificationTime: new Date().toISOString(),
+                        createdBy: 'user-1',
+                        lastModifiedBy: 'user-1'
+                    }
+                ] : [
+                    {
+                        id: 'android-policy-1',
+                        applicationVersionId: 'app-version-1',
+                        action: 'INSTALL' as const,
+                        applicationVersion: '1.0.0',
+                        devicePolicyType: 'AndroidApplicationPolicy' as const,
+                        creationTime: new Date().toISOString(),
+                        modificationTime: new Date().toISOString(),
+                        createdBy: 'user-1',
+                        lastModifiedBy: 'user-1'
+                    },
+                    {
+                        id: 'android-policy-2',
+                        applicationVersionId: 'app-version-2',
+                        action: 'ALLOW' as const,
+                        applicationVersion: '2.1.0',
+                        devicePolicyType: 'AndroidApplicationPolicy' as const,
+                        creationTime: new Date().toISOString(),
+                        modificationTime: new Date().toISOString(),
+                        createdBy: 'user-1',
+                        lastModifiedBy: 'user-1'
                     }
                 ],
                 // Mocking Web Application Policy
@@ -236,6 +271,11 @@ export default function EditProfilePolicies() {
                                 <DropdownMenuItem onClick={() => setActivePolicyType('wifi')}>
                                     <Wifi className="w-4 h-4 mr-2" /> WiFi Configuration
                                 </DropdownMenuItem>
+                                {platform === 'ios' && (
+                                    <DropdownMenuItem onClick={() => setActivePolicyType('mail')}>
+                                        <Mail className="w-4 h-4 mr-2" /> Mail Configuration
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={() => setActivePolicyType('restrictions')}>
                                     <Ban className="w-4 h-4 mr-2" /> Device Restrictions
                                 </DropdownMenuItem>
@@ -264,12 +304,14 @@ export default function EditProfilePolicies() {
                                     <CardTitle className="flex items-center gap-2">
                                         {activePolicyType === 'passcode' && <Shield className="w-6 h-6 text-primary" />}
                                         {activePolicyType === 'wifi' && <Wifi className="w-6 h-6 text-info" />}
+                                        {activePolicyType === 'mail' && <Mail className="w-6 h-6 text-purple-500" />}
                                         {activePolicyType === 'restrictions' && <Ban className="w-6 h-6 text-destructive" />}
                                         {activePolicyType === 'applications' && <Grid className="w-6 h-6 text-orange-500" />}
                                         {activePolicyType === 'webApps' && <Globe className="w-6 h-6 text-blue-500" />}
 
                                         {activePolicyType === 'passcode' && 'Passcode Policy'}
                                         {activePolicyType === 'wifi' && 'WiFi Configuration'}
+                                        {activePolicyType === 'mail' && 'Mail Configuration'}
                                         {activePolicyType === 'restrictions' && 'Device Restrictions'}
                                         {activePolicyType === 'applications' && 'Application Policy'}
                                         {activePolicyType === 'webApps' && 'Web Application Policy'}
@@ -289,6 +331,14 @@ export default function EditProfilePolicies() {
                                         <WifiPolicy
                                             profileId={id!}
                                             initialData={wifiPolicy}
+                                            onSave={handlePolicySave}
+                                            onCancel={() => setActivePolicyType(null)}
+                                        />
+                                    )}
+                                    {activePolicyType === 'mail' && (
+                                        <MailPolicy
+                                            profileId={id!}
+                                            initialData={mailPolicy}
                                             onSave={handlePolicySave}
                                             onCancel={() => setActivePolicyType(null)}
                                         />
@@ -360,6 +410,30 @@ export default function EditProfilePolicies() {
                                         <CardContent>
                                             <Badge>Active</Badge>
                                             <p className="text-sm mt-2 text-muted-foreground">{wifiPolicy.ssid}</p>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            )}
+
+                            {/* Mail Policy Card - iOS only */}
+                            {platform === 'ios' && (
+                                <motion.div variants={itemVariants}>
+                                    <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-purple-500" onClick={() => setActivePolicyType('mail')}>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                <Mail className="w-5 h-5 text-purple-500" /> Mail
+                                            </CardTitle>
+                                            <CardDescription>Email configuration</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {mailPolicy ? (
+                                                <>
+                                                    <Badge>Active</Badge>
+                                                    <p className="text-sm mt-2 text-muted-foreground">{mailPolicy.name}</p>
+                                                </>
+                                            ) : (
+                                                <Button variant="outline" size="sm" className="w-full">Configure Mail</Button>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </motion.div>

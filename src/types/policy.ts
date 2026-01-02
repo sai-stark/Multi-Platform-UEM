@@ -20,17 +20,44 @@ export interface EnrollmentPolicy {
     enrollmentUrl?: string;
 }
 
-// 4. Application Policy (Permissions/Config)
-export interface ApplicationPolicy {
-    id?: string;
-    applicationId: string;
-    packageName?: string;
-    permission?: 'GRANT' | 'DENY' | 'PROMPT';
-    configuration?: Record<string, any>;
-    installType?: 'REQUIRED' | 'AVAILABLE' | 'BLOCKED' | 'FORCE_INSTALLED';
-    autoUpdateMode?: 'WIFI_ONLY' | 'ALWAYS' | 'NEVER' | 'CHOICE_TO_THE_USER';
-    disabled?: boolean;
+// Application Action enum
+export type ApplicationAction = 'INSTALL' | 'UNINSTALL' | 'ALLOW' | 'BLOCK';
+
+// Basic Audit Data (from OpenAPI)
+export interface BasicAuditData {
+    creationTime: string; // ISO date-time
+    modificationTime: string; // ISO date-time
 }
+
+// User Audit Data (from OpenAPI)
+export interface UserAuditData extends BasicAuditData {
+    createdBy: string; // UUID
+    lastModifiedBy: string; // UUID
+}
+
+// iOS Application Policy (from OpenAPI)
+export interface IosApplicationPolicy extends UserAuditData {
+    id?: string; // UUID, read-only (optional for create requests)
+    name: string;
+    bundleIdentifier: string;
+    action: 'INSTALL'; // iOS only supports INSTALL currently
+    purchaseMethod?: number; // 0 = Free/VPP with redemption code, 1 = VPP app assignment
+    removable?: boolean; // iOS 14+, tvOS 14+
+    requestRequiresNetworkTether?: boolean; // Only applicable when removing
+    devicePolicyType: 'IosApplicationPolicy';
+}
+
+// Android Application Policy (from OpenAPI)
+export interface AndroidApplicationPolicy extends UserAuditData {
+    id?: string; // UUID, read-only (optional for create requests)
+    applicationVersionId: string; // UUID
+    action: ApplicationAction; // INSTALL | UNINSTALL | ALLOW | BLOCK
+    applicationVersion?: string; // read-only (optional for create requests)
+    devicePolicyType: 'AndroidApplicationPolicy';
+}
+
+// Application Policy - Discriminated Union (from OpenAPI)
+export type ApplicationPolicy = IosApplicationPolicy | AndroidApplicationPolicy;
 
 // 5. Web Application Policy
 export interface WebApplicationPolicy {
@@ -125,19 +152,7 @@ export interface NetworkRestriction {
     allowWifi?: boolean;
 }
 
-// iOS Mail Policy
-export interface MailPolicy {
-    id: string;
-    name: string;
-    policyType: string; // 'IosMail'
-    emailAccountDescription?: string;
-    emailAccountName?: string;
-    emailAccountType: string;
-    emailAddress: string;
-    incomingMailServerHostName: string;
-    incomingMailServerUsername: string;
-    // ... add other specific fields from JSON as needed
-}
+// iOS Mail Policy is defined in ios.ts as IosMailPolicy
 
 // iOS Passcode Policy
 export interface PasscodePolicy {

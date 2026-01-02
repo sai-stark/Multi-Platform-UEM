@@ -3,10 +3,11 @@ import { PolicyService } from '@/api/services/policies';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ApplicationPolicy, MobileApplication, Platform } from '@/types/models';
+import { AndroidApplicationPolicy, ApplicationAction, ApplicationPolicy, IosApplicationPolicy, MobileApplication, Platform } from '@/types/models';
 import { Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -17,6 +18,25 @@ interface ApplicationPolicyProps {
     onSave: () => void;
     onCancel: () => void;
 }
+
+// Type guards
+const isIosApplicationPolicy = (policy: ApplicationPolicy): policy is IosApplicationPolicy => {
+    return policy.devicePolicyType === 'IosApplicationPolicy' || 
+           ('bundleIdentifier' in policy && !('applicationVersionId' in policy));
+};
+
+const isAndroidApplicationPolicy = (policy: ApplicationPolicy): policy is AndroidApplicationPolicy => {
+    return policy.devicePolicyType === 'AndroidApplicationPolicy' || 
+           ('applicationVersionId' in policy && !('bundleIdentifier' in policy));
+};
+
+// Helper to get policy identifier for comparison
+const getPolicyIdentifier = (policy: ApplicationPolicy): string => {
+    if (isIosApplicationPolicy(policy)) {
+        return policy.bundleIdentifier;
+    }
+    return policy.applicationVersionId;
+};
 
 export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSave, onCancel }: ApplicationPolicyProps) => {
     const { toast } = useToast();
@@ -48,7 +68,18 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
         setIsFetching(true);
         try {
             const response = await PolicyService.getApplicationPolicies(platform, profileId);
-            setPolicyApps(response.content);
+            // Ensure devicePolicyType is set correctly based on platform
+            const normalizedPolicies = response.content.map(policy => {
+                if (!policy.devicePolicyType) {
+                    if (platform === 'ios') {
+                        return { ...policy, devicePolicyType: 'IosApplicationPolicy' as const };
+                    } else {
+                        return { ...policy, devicePolicyType: 'AndroidApplicationPolicy' as const };
+                    }
+                }
+                return policy;
+            });
+            setPolicyApps(normalizedPolicies);
         } catch (error) {
             console.error("Failed to load policies", error);
             // Don't show error if 404/empty, just assume empty?
@@ -58,29 +89,68 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
     };
 
     const handleAddApp = (appId: string) => {
-        if (policyApps.some(p => p.applicationId === appId)) return;
         const app = availableApps.find(a => a.id === appId);
         if (!app) return;
 
-        setPolicyApps([...policyApps, {
-            applicationId: app.id,
-            packageName: app.packageName,
-            installType: 'REQUIRED',
-            autoUpdateMode: 'WIFI_ONLY',
-            disabled: false,
-            permission: 'GRANT'
-        }]);
+        // Check if policy already exists
+        const existingPolicy = policyApps.find(p => {
+            if (isIosApplicationPolicy(p)) {
+                return p.bundleIdentifier === app.packageName;
+            } else {
+                return p.applicationVersionId === app.id;
+            }
+        });
+        if (existingPolicy) return;
+
+        // Create platform-specific policy
+        const now = new Date().toISOString();
+        const auditData = {
+            creationTime: now,
+            modificationTime: now,
+            createdBy: '', // Should be set by backend
+            lastModifiedBy: '' // Should be set by backend
+        };
+
+        if (platform === 'ios') {
+            const newPolicy: IosApplicationPolicy = {
+                ...auditData,
+                id: '', // Will be set by backend
+                name: app.name,
+                bundleIdentifier: app.packageName,
+                action: 'INSTALL',
+                devicePolicyType: 'IosApplicationPolicy'
+            };
+            setPolicyApps([...policyApps, newPolicy]);
+        } else if (platform === 'android') {
+            const newPolicy: AndroidApplicationPolicy = {
+                ...auditData,
+                id: '', // Will be set by backend
+                applicationVersionId: app.id, // Using app.id as applicationVersionId for now
+                action: 'INSTALL',
+                // applicationVersion is read-only and set by backend
+                devicePolicyType: 'AndroidApplicationPolicy'
+            };
+            setPolicyApps([...policyApps, newPolicy]);
+        }
     };
 
-    const handleRemoveApp = async (appId: string) => { // appId here refers to policy.applicationId
-        // If generic removal from list:
-        setPolicyApps(policyApps.filter(p => p.applicationId !== appId));
+    const handleRemoveApp = (policyIdentifier: string) => {
+        setPolicyApps(policyApps.filter(p => getPolicyIdentifier(p) !== policyIdentifier));
     };
 
-    const updateAppConfig = (appId: string, field: keyof ApplicationPolicy, value: any) => {
+    const updateIosPolicy = (bundleIdentifier: string, updates: Partial<IosApplicationPolicy>) => {
         setPolicyApps(policyApps.map(p => {
-            if (p.applicationId === appId) {
-                return { ...p, [field]: value };
+            if (isIosApplicationPolicy(p) && p.bundleIdentifier === bundleIdentifier) {
+                return { ...p, ...updates, modificationTime: new Date().toISOString() };
+            }
+            return p;
+        }));
+    };
+
+    const updateAndroidPolicy = (applicationVersionId: string, updates: Partial<AndroidApplicationPolicy>) => {
+        setPolicyApps(policyApps.map(p => {
+            if (isAndroidApplicationPolicy(p) && p.applicationVersionId === applicationVersionId) {
+                return { ...p, ...updates, modificationTime: new Date().toISOString() };
             }
             return p;
         }));
@@ -124,11 +194,20 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
                             <SelectValue placeholder="Select application to control" />
                         </SelectTrigger>
                         <SelectContent>
-                            {availableApps.map(app => (
-                                <SelectItem key={app.id} value={app.id} disabled={policyApps.some(p => p.applicationId === app.id)}>
-                                    {app.name} ({app.version})
-                                </SelectItem>
-                            ))}
+                            {availableApps.map(app => {
+                                const exists = policyApps.some(p => {
+                                    if (isIosApplicationPolicy(p)) {
+                                        return p.bundleIdentifier === app.packageName;
+                                    } else {
+                                        return p.applicationVersionId === app.id;
+                                    }
+                                });
+                                return (
+                                    <SelectItem key={app.id} value={app.id} disabled={exists}>
+                                        {app.name} ({app.version})
+                                    </SelectItem>
+                                );
+                            })}
                         </SelectContent>
                     </Select>
                 </div>
@@ -140,68 +219,142 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
                         {isFetching ? "Loading policies..." : "No applications configured. Select an app to add settings."}
                     </div>
                 )}
-                {policyApps.map((policyApp, index) => {
-                    const appDetails = availableApps.find(a => a.id === policyApp.applicationId);
-                    // If app details not found (e.g. policy for app not in current page of apps), we fall back
+                {policyApps.map((policyApp) => {
+                    const policyIdentifier = getPolicyIdentifier(policyApp);
+                    const appDetails = isIosApplicationPolicy(policyApp)
+                        ? availableApps.find(a => a.packageName === policyApp.bundleIdentifier)
+                        : availableApps.find(a => a.id === policyApp.applicationVersionId);
+
                     return (
-                        <Card key={policyApp.applicationId} className="relative">
+                        <Card key={policyApp.id || policyIdentifier} className="relative">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 className="absolute right-2 top-2 hover:bg-destructive/10 hover:text-destructive"
-                                onClick={() => handleRemoveApp(policyApp.applicationId)}
+                                onClick={() => handleRemoveApp(policyIdentifier)}
+                                aria-label="Remove application policy"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </Button>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-base">{appDetails?.name || policyApp.packageName || policyApp.applicationId}</CardTitle>
-                                <CardDescription>{policyApp.packageName}</CardDescription>
+                                <CardTitle className="text-base">
+                                    {isIosApplicationPolicy(policyApp) ? policyApp.name : appDetails?.name || policyApp.applicationVersion}
+                                </CardTitle>
+                                <CardDescription>
+                                    {isIosApplicationPolicy(policyApp) 
+                                        ? policyApp.bundleIdentifier 
+                                        : `Version: ${policyApp.applicationVersion}`}
+                                </CardDescription>
                             </CardHeader>
-                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Install Type</Label>
-                                    <Select
-                                        value={policyApp.installType}
-                                        onValueChange={(val) => updateAppConfig(policyApp.applicationId, 'installType', val)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="REQUIRED">Required</SelectItem>
-                                            <SelectItem value="AVAILABLE">Available</SelectItem>
-                                            <SelectItem value="BLOCKED">Blocked</SelectItem>
-                                            <SelectItem value="FORCE_INSTALLED">Force Installed</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            <CardContent className="space-y-4">
+                                {isIosApplicationPolicy(policyApp) ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`name-${policyIdentifier}`}>Name</Label>
+                                            <Input
+                                                id={`name-${policyIdentifier}`}
+                                                value={policyApp.name || ''}
+                                                onChange={(e) => updateIosPolicy(policyApp.bundleIdentifier, { name: e.target.value })}
+                                                placeholder="Application name"
+                                            />
+                                        </div>
 
-                                <div className="space-y-2">
-                                    <Label>Auto Update Mode</Label>
-                                    <Select
-                                        value={policyApp.autoUpdateMode}
-                                        onValueChange={(val) => updateAppConfig(policyApp.applicationId, 'autoUpdateMode', val)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="WIFI_ONLY">WiFi Only</SelectItem>
-                                            <SelectItem value="ALWAYS">Always</SelectItem>
-                                            <SelectItem value="NEVER">Never</SelectItem>
-                                            <SelectItem value="CHOICE_TO_THE_USER">User Choice</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`bundleIdentifier-${policyIdentifier}`}>Bundle Identifier</Label>
+                                            <Input
+                                                id={`bundleIdentifier-${policyIdentifier}`}
+                                                value={policyApp.bundleIdentifier || ''}
+                                                disabled
+                                                readOnly
+                                                className="bg-muted"
+                                            />
+                                        </div>
 
-                                <div className="flex items-center space-x-2 pt-2">
-                                    <Checkbox
-                                        id={`disabled-${policyApp.applicationId}`}
-                                        checked={policyApp.disabled}
-                                        onCheckedChange={(checked) => updateAppConfig(policyApp.applicationId, 'disabled', !!checked)}
-                                    />
-                                    <Label htmlFor={`disabled-${policyApp.applicationId}`}>Disabled / Unavailable</Label>
-                                </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`action-${policyIdentifier}`}>Action</Label>
+                                            <Select
+                                                value={policyApp.action || 'INSTALL'}
+                                                onValueChange={(val: 'INSTALL') => updateIosPolicy(policyApp.bundleIdentifier, { action: val })}
+                                            >
+                                                <SelectTrigger id={`action-${policyIdentifier}`}>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="INSTALL">Install</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`purchaseMethod-${policyIdentifier}`}>Purchase Method</Label>
+                                            <Select
+                                                value={policyApp.purchaseMethod?.toString() ?? '0'}
+                                                onValueChange={(val) => updateIosPolicy(policyApp.bundleIdentifier, { purchaseMethod: parseInt(val) })}
+                                            >
+                                                <SelectTrigger id={`purchaseMethod-${policyIdentifier}`}>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="0">Free/VPP with redemption code</SelectItem>
+                                                    <SelectItem value="1">VPP app assignment</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`removable-${policyIdentifier}`}
+                                                checked={policyApp.removable ?? true}
+                                                onCheckedChange={(checked) => updateIosPolicy(policyApp.bundleIdentifier, { removable: checked as boolean })}
+                                            />
+                                            <Label htmlFor={`removable-${policyIdentifier}`} className="cursor-pointer">
+                                                Removable
+                                            </Label>
+                                        </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`networkTether-${policyIdentifier}`}
+                                                checked={policyApp.requestRequiresNetworkTether ?? false}
+                                                onCheckedChange={(checked) => updateIosPolicy(policyApp.bundleIdentifier, { requestRequiresNetworkTether: checked as boolean })}
+                                            />
+                                            <Label htmlFor={`networkTether-${policyIdentifier}`} className="cursor-pointer">
+                                                Requires Network Tether (for removal)
+                                            </Label>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`action-${policyIdentifier}`}>Action</Label>
+                                            <Select
+                                                value={policyApp.action || 'INSTALL'}
+                                                onValueChange={(val: ApplicationAction) => updateAndroidPolicy(policyApp.applicationVersionId, { action: val })}
+                                            >
+                                                <SelectTrigger id={`action-${policyIdentifier}`}>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="INSTALL">Install</SelectItem>
+                                                    <SelectItem value="UNINSTALL">Uninstall</SelectItem>
+                                                    <SelectItem value="ALLOW">Allow</SelectItem>
+                                                    <SelectItem value="BLOCK">Block</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`version-${policyIdentifier}`}>Application Version</Label>
+                                            <Input
+                                                id={`version-${policyIdentifier}`}
+                                                value={policyApp.applicationVersion || ''}
+                                                disabled
+                                                readOnly
+                                                className="bg-muted"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     );
