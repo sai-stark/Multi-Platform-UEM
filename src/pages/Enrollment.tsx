@@ -107,10 +107,13 @@ export default function Enrollment() {
 
   useEffect(() => {
     if (currentProfile) {
-      fetchQrCode(selectedPlatform, currentProfile.id);
+      if (currentProfile.id) {
+        fetchQrCode(selectedPlatform, currentProfile.id);
+        fetchProfileDetails(selectedPlatform, currentProfile.id);
+      }
       setIsQrVisible(false); // Reset QR visibility on profile change
     }
-  }, [currentProfile, selectedPlatform]);
+  }, [selectedProfileId, selectedPlatform]); // Depend on IDs, not the object itself to avoid loops if object references change
 
   const fetchProfiles = async (platform: Platform) => {
     setLoading(true);
@@ -131,6 +134,36 @@ export default function Enrollment() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfileDetails = async (platform: Platform, profileId: string) => {
+    try {
+      const details = await EnrollmentService.getProfileDetails(platform, profileId);
+      // Update the profiles list with the detailed info or store aside?
+      // Simplest is to update the profiles state to include the config derived from details
+      setProfiles(prev => prev.map(p => {
+        if (p.id === profileId) {
+          return {
+            ...p,
+            ...details, // Merge details
+            config: { // Map details to config for UI compatibility
+              wifiSSID: details.wifiPolicy?.ssid || p.config?.wifiSSID || 'Not Configured',
+              vpnEnabled: !!details.mailPolicy?.vpnUUID || !!details.wifiPolicy?.ssid || false, // Heuristic based on provided JSON
+              vpnServer: details.mailPolicy?.incomingMailServerHostName || 'N/A', // Just a guess from sample
+              mandatoryApps: details.applicationPolicies?.filter(app => app.action === 'INSTALL').map(app => app.bundleIdentifier || app.name || 'Unknown App') || [],
+              restrictions: [
+                details.passCodePolicy?.requirePassCode ? 'Passcode Required' : '',
+                details.lockScreenPolicy?.lockScreenFootnote ? `Lock Screen: ${details.lockScreenPolicy.lockScreenFootnote}` : '',
+                details.webClipPolicies?.length ? `${details.webClipPolicies.length} Web Clips` : ''
+              ].filter(Boolean)
+            }
+          };
+        }
+        return p;
+      }));
+    } catch (error) {
+      console.error("Failed to fetch profile details", error);
     }
   };
 
@@ -414,13 +447,13 @@ export default function Enrollment() {
                       <dl className="space-y-3 text-sm">
                         <div className="flex justify-between py-2 border-b border-border">
                           <dt className="text-muted-foreground">{t('enrollment.wifiSSID')}</dt>
-                          <dd className="font-mono">{currentProfile.config.wifiSSID}</dd>
+                          <dd className="font-mono">{currentProfile.config?.wifiSSID || 'N/A'}</dd>
                         </div>
                         <div className="flex justify-between py-2 border-b border-border">
                           <dt className="text-muted-foreground">{t('enrollment.vpnStatus')}</dt>
-                          <dd>{currentProfile.config.vpnEnabled ? t('enrollment.enabled') : t('enrollment.disabled')}</dd>
+                          <dd>{currentProfile.config?.vpnEnabled ? t('enrollment.enabled') : t('enrollment.disabled')}</dd>
                         </div>
-                        {currentProfile.config.vpnServer && (
+                        {currentProfile.config?.vpnServer && (
                           <div className="flex justify-between py-2 border-b border-border">
                             <dt className="text-muted-foreground">{t('enrollment.vpnServer')}</dt>
                             <dd className="font-mono">{currentProfile.config.vpnServer}</dd>
@@ -447,7 +480,7 @@ export default function Enrollment() {
                           </tr>
                         </thead>
                         <tbody>
-                          {currentProfile.config.mandatoryApps.map((app, i) => (
+                          {currentProfile.config?.mandatoryApps?.map((app, i) => (
                             <tr key={i}>
                               <td className="font-medium text-foreground">{app}</td>
                               <td>
@@ -470,7 +503,7 @@ export default function Enrollment() {
                     </div>
                     <div className="panel__content">
                       <ul className="space-y-2">
-                        {currentProfile.config.restrictions.map((restriction, i) => (
+                        {currentProfile.config?.restrictions?.map((restriction, i) => (
                           <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span className="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true" />
                             {restriction}

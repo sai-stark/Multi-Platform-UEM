@@ -42,6 +42,9 @@ export interface DeviceInfo {
     userEmail?: string; // Might need mapping
     deviceUser?: string; // Android
 
+    // Hardware (More specific)
+    cpu?: string;
+
     // Detailed Objects
     opSysInfo?: {
         osType?: string;
@@ -52,6 +55,9 @@ export interface DeviceInfo {
     modelInfo?: {
         manufacturer?: string;
         modelName?: string;
+        deviceName?: string;
+        productName?: string;
+        deviceType?: string;
     };
     wifiInfo?: {
         ssid?: string;
@@ -65,6 +71,98 @@ export interface DeviceInfo {
     isDoNotDisturbInEffect?: boolean;
     isNetworkTethered?: boolean;
     dataRoamingEnabled?: boolean;
+
+    // New fields from JSON
+    activationLockAllowedWhileSupervised?: boolean;
+    lastCloudBackupDate?: string;
+    awaitingConfiguration?: boolean;
+
+    modemFirmwareVersion?: string;
+    cellularTechnology?: string;
+    isMultiUser?: boolean;
+    isCloudBackupEnabled?: boolean;
+    isMDMLostModeEnabled?: boolean;
+    // iOS Specific New Fields
+    iTunesStoreAccountIsActive?: boolean;
+    iTunesStoreAccountHash?: string;
+    supplementalOSVersionExtra?: string;
+    supplementalBuildVersion?: string;
+    modelNumber?: string;
+    quotaSize?: number;
+    residentUsers?: number;
+    managedAppleIDDefaultDomains?: string[];
+    onlineAuthenticationGracePeriod?: number;
+    skipLanguageAndLocaleSetupForNewUsers?: boolean;
+    diagnosticSubmissionEnabled?: boolean;
+    appAnalyticsEnabled?: boolean;
+    timeZone?: string;
+    personalHotspotEnabled?: boolean;
+    boldTextEnabled?: boolean;
+    increaseContrastEnabled?: boolean;
+    reduceMotionEnabled?: boolean;
+    reduceTransparencyEnabled?: boolean;
+    textSize?: number;
+    touchAccommodationsEnabled?: boolean;
+    voiceOverEnabled?: boolean;
+    zoomEnabled?: boolean;
+    eid?: string;
+    iccid?: string;
+
+    serviceSubscriptions?: {
+        carrierSettingsVersion?: string;
+        currentCarrierNetwork?: string;
+        currentMCC?: string;
+        currentMNC?: string;
+        eid?: string;
+        iccId?: string;
+        imei?: string;
+        isDataPreferred?: boolean;
+        isRoaming?: boolean;
+        isVoicePreferred?: boolean;
+        label?: string;
+        phoneNumber?: string;
+        slot?: string;
+    }[];
+
+    deviceType?: string;
+    devicePropertiesAttestation?: string[];
+    // Android Specific
+    simInfos?: {
+        imei?: string;
+        imsi?: string;
+        phoneNumber?: string;
+        carrierNetwork?: string;
+        isRoaming?: boolean;
+        isDataTxOn?: boolean;
+        simState?: boolean;
+        connectionState?: boolean;
+        rssi?: number;
+        txBytes?: number;
+        rxBytes?: number;
+        ipAddress?: string;
+    }[];
+    cpuArch?: string;
+    volume?: number;
+    ringVolume?: number;
+    brightness?: number;
+    gpsStatus?: boolean;
+    bluetooth?: boolean;
+    wifi?: boolean;
+    freeRam?: string;
+    usedRam?: string;
+    totalRam?: string;
+    freeStorage?: string;
+    usedStorage?: string;
+    totalStorage?: string;
+    usbstorageEnabled?: boolean;
+    keyguardEnabled?: boolean;
+    mdmMode?: boolean;
+    kioskMode?: boolean;
+    mobileData?: boolean;
+    nfcStatus?: boolean;
+    remarks?: string;
+    deployedLocation?: string;
+
 }
 
 export interface BriefDeviceInfo {

@@ -94,7 +94,18 @@ const Devices = () => {
       // Map API response to Device interface
       // Map API response to Device interface
       const mappedData: Device[] = responseData.map(item => {
-        const platform = (item.platform || item.opSysInfo?.osType?.toLowerCase() || 'android') as any;
+        let platform: Platform = 'android'; // Default
+        const dType = item.deviceType?.toLowerCase() || '';
+
+        if (dType.includes('ios') || dType.includes('apple') || dType.includes('ipad') || dType.includes('iphone')) {
+          platform = 'ios';
+        } else if (dType.includes('android')) {
+          platform = 'android';
+        } else if (item.platform) {
+          platform = item.platform.toLowerCase() as Platform;
+        } else if (item.opSysInfo?.osType) {
+          platform = item.opSysInfo.osType.toLowerCase() as Platform;
+        }
 
         // Calculate storage percentage
         let storageUsed = 0;

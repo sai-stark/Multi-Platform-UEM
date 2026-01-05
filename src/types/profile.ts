@@ -2,6 +2,8 @@ import { Platform } from './common';
 import {
     IosAcmeConfiguration,
     IosAppNotificationSetting,
+    IosApplicationPolicy,
+    IosLockScreenMessage,
     IosMailPolicy,
     IosMdmConfiguration,
     IosWiFiConfiguration
@@ -100,6 +102,8 @@ export interface FullProfile extends Profile {
     acmePolicy?: IosAcmeConfiguration;
     notificationPolicies?: IosAppNotificationSetting[];
     wifiPolicy?: IosWiFiConfiguration;
+    lockScreenPolicy?: IosLockScreenMessage;
+    applicationPolicies?: IosApplicationPolicy[];
 }
 
 export interface PublishProfile {

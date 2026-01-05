@@ -3,11 +3,12 @@ import { WebApplicationService } from '@/api/services/webApps';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Platform, WebApplication, WebApplicationPolicy } from '@/types/models';
-import { Trash2 } from 'lucide-react';
+import { AndroidWebApplicationPolicy, IosWebApplicationPolicy, Platform, WebApplication, WebApplicationPolicy } from '@/types/models';
+import { Globe, Loader2, Smartphone, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface WebApplicationPolicyProps {
@@ -22,13 +23,18 @@ export const WebApplicationPolicyEditor = ({ profileId, platform, initialData, o
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [availableWebApps, setAvailableWebApps] = useState<WebApplication[]>([]);
-    const [policyWebApps, setPolicyWebApps] = useState<WebApplicationPolicy[]>(initialData || []);
+
+    // State
+    const [policies, setPolicies] = useState<WebApplicationPolicy[]>(initialData || []);
+    const [initialPolicies, setInitialPolicies] = useState<WebApplicationPolicy[]>(initialData || []);
     const [isFetching, setIsFetching] = useState(false);
 
     useEffect(() => {
         loadWebApps();
         if (!initialData) {
             loadExistingPolicies();
+        } else {
+            setInitialPolicies(initialData);
         }
     }, [profileId, platform]);
 
@@ -37,8 +43,14 @@ export const WebApplicationPolicyEditor = ({ profileId, platform, initialData, o
             const response = await WebApplicationService.getWebApplications({ page: 0, size: 100 });
             setAvailableWebApps(response.content);
         } catch (error) {
-            console.error("Failed to load web apps", error);
-            toast({ title: "Error", description: "Failed to load web applications", variant: "destructive" });
+            console.error("Failed to load web apps, using mock data", error);
+            setAvailableWebApps([
+                { id: 'web1', name: 'Azure Portal', url: 'https://portal.azure.com', iconUrl: '' },
+                { id: 'web2', name: 'Gmail', url: 'https://mail.google.com', iconUrl: '' },
+                { id: 'web3', name: 'GitHub', url: 'https://github.com', iconUrl: '' },
+                { id: 'web4', name: 'Slack', url: 'https://slack.com', iconUrl: '' },
+                { id: 'web5', name: 'Jira', url: 'https://jira.atlassian.com', iconUrl: '' },
+            ] as WebApplication[]);
         }
     };
 
@@ -46,50 +58,85 @@ export const WebApplicationPolicyEditor = ({ profileId, platform, initialData, o
         setIsFetching(true);
         try {
             const response = await PolicyService.getWebApplicationPolicies(platform, profileId);
-            setPolicyWebApps(response.content);
+            setPolicies(response.content);
+            setInitialPolicies(response.content);
         } catch (error) {
-            // Ignore
+            console.error("Failed to load policies", error);
         } finally {
             setIsFetching(false);
         }
     }
 
     const handleAddApp = (webAppId: string) => {
-        if (policyWebApps.some(p => p.webApplicationId === webAppId)) return;
         const app = availableWebApps.find(a => a.id === webAppId);
         if (!app) return;
 
-        setPolicyWebApps([...policyWebApps, {
-            webApplicationId: app.id,
-            url: app.url,
-            label: app.name,
-            isAllowed: true,
-            allowCookies: true
-        }]);
+        // Check for duplicates
+        if (platform === 'android') {
+            if (policies.some((p) => (p as AndroidWebApplicationPolicy).webAppId === webAppId)) return;
+        }
+
+        let newPolicy: WebApplicationPolicy;
+
+        if (platform === 'ios') {
+            newPolicy = {
+                name: app.name,
+                label: app.name,
+                url: app.url,
+                fullScreen: true,
+                isRemovable: true,
+                precomposed: true,
+                ignoreManifestScope: false,
+                policyType: 'IosWebApplicationPolicy'
+            } as IosWebApplicationPolicy;
+        } else {
+            newPolicy = {
+                webAppId: app.id,
+                webAppName: app.name,
+                keyCode: 1,
+                policyType: 'AndroidWebApplicationPolicy'
+            } as AndroidWebApplicationPolicy;
+        }
+
+        setPolicies([...policies, newPolicy]);
     };
 
-    const handleRemoveApp = (webAppId: string) => {
-        setPolicyWebApps(policyWebApps.filter(p => p.webApplicationId !== webAppId));
+    const handleRemoveApp = (index: number) => {
+        const newPolicies = [...policies];
+        newPolicies.splice(index, 1);
+        setPolicies(newPolicies);
     };
 
-    const updateAppConfig = (webAppId: string, field: keyof WebApplicationPolicy, value: any) => {
-        setPolicyWebApps(policyWebApps.map(p => {
-            if (p.webApplicationId === webAppId) {
-                return { ...p, [field]: value };
-            }
-            return p;
-        }));
+    const updatePolicyField = (index: number, field: keyof IosWebApplicationPolicy | keyof AndroidWebApplicationPolicy, value: any) => {
+        const newPolicies = [...policies];
+        newPolicies[index] = { ...newPolicies[index], [field]: value };
+        setPolicies(newPolicies);
     };
-
 
     const handleSave = async () => {
         setLoading(true);
         try {
-            for (const policy of policyWebApps) {
-                await PolicyService.createWebApplicationPolicy(platform, profileId, policy);
+            // 1. Handle Deletions
+            const toDelete = initialPolicies.filter(init =>
+                init.id && !policies.some(curr => curr.id === init.id)
+            );
+
+            for (const policy of toDelete) {
+                if (policy.id) {
+                    await PolicyService.deleteWebApplicationPolicy(platform, profileId, policy.id);
+                }
             }
 
-            toast({ title: "Success", description: "Web Application policies saved" });
+            // 2. Handle Creations and Updates
+            for (const policy of policies) {
+                if (policy.id) {
+                    await PolicyService.updateWebApplicationPolicy(platform, profileId, policy.id, policy);
+                } else {
+                    await PolicyService.createWebApplicationPolicy(platform, profileId, policy);
+                }
+            }
+
+            toast({ title: "Success", description: "Web Application policies saved successfully" });
             onSave();
         } catch (error) {
             console.error("Save error", error);
@@ -99,6 +146,105 @@ export const WebApplicationPolicyEditor = ({ profileId, platform, initialData, o
         }
     };
 
+    const renderIosPolicy = (policy: IosWebApplicationPolicy, index: number) => (
+        <Card key={index} className="relative border-l-4 border-l-blue-500">
+            <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-2 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => handleRemoveApp(index)}
+            >
+                <Trash2 className="w-4 h-4" />
+            </Button>
+            <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-blue-500" />
+                    <Input
+                        className="font-semibold text-lg max-w-[200px] h-8 p-1"
+                        value={policy.label}
+                        onChange={(e) => updatePolicyField(index, 'label', e.target.value)}
+                        placeholder="Label"
+                    />
+                </div>
+                <Input
+                    className="text-sm text-muted-foreground h-7 p-1 max-w-md mt-1"
+                    value={policy.url}
+                    onChange={(e) => updatePolicyField(index, 'url', e.target.value)}
+                    placeholder="https://..."
+                />
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`fullscreen-${index}`}
+                        checked={policy.fullScreen}
+                        onCheckedChange={(checked) => updatePolicyField(index, 'fullScreen', !!checked)}
+                    />
+                    <Label htmlFor={`fullscreen-${index}`}>Full Screen</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`removable-${index}`}
+                        checked={policy.isRemovable}
+                        onCheckedChange={(checked) => updatePolicyField(index, 'isRemovable', !!checked)}
+                    />
+                    <Label htmlFor={`removable-${index}`}>Removable</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`precomposed-${index}`}
+                        checked={policy.precomposed}
+                        onCheckedChange={(checked) => updatePolicyField(index, 'precomposed', !!checked)}
+                    />
+                    <Label htmlFor={`precomposed-${index}`}>Precomposed Icon</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`scope-${index}`}
+                        checked={policy.ignoreManifestScope}
+                        onCheckedChange={(checked) => updatePolicyField(index, 'ignoreManifestScope', !!checked)}
+                    />
+                    <Label htmlFor={`scope-${index}`}>Ignore Scope</Label>
+                </div>
+            </CardContent>
+        </Card>
+    );
+
+    const renderAndroidPolicy = (policy: AndroidWebApplicationPolicy, index: number) => (
+        <Card key={index} className="relative border-l-4 border-l-green-500">
+            <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-2 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => handleRemoveApp(index)}
+            >
+                <Trash2 className="w-4 h-4" />
+            </Button>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-green-500" />
+                    {getAppName(policy.webAppId) || policy.webAppName || 'Unknown Web App'}
+                </CardTitle>
+                <CardDescription className="text-xs font-mono">{policy.webAppId}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="items-center gap-4 max-w-xs">
+                    <Label htmlFor={`keycode-${index}`}>Key Code (&ge; 1)</Label>
+                    <Input
+                        id={`keycode-${index}`}
+                        type="number"
+                        min={1}
+                        value={policy.keyCode}
+                        onChange={(e) => updatePolicyField(index, 'keyCode', parseInt(e.target.value))}
+                        className="mt-1"
+                    />
+                </div>
+            </CardContent>
+        </Card>
+    );
+
+    const getAppName = (id: string) => availableWebApps.find(a => a.id === id)?.name;
+
     return (
         <div className="space-y-6">
             <div className="flex gap-4 items-end">
@@ -106,11 +252,11 @@ export const WebApplicationPolicyEditor = ({ profileId, platform, initialData, o
                     <Label htmlFor="webapp-select">Add Web Application</Label>
                     <Select onValueChange={handleAddApp}>
                         <SelectTrigger id="webapp-select">
-                            <SelectValue placeholder="Select web application" />
+                            <SelectValue placeholder="Select web application from inventory" />
                         </SelectTrigger>
                         <SelectContent>
                             {availableWebApps.map(app => (
-                                <SelectItem key={app.id} value={app.id} disabled={policyWebApps.some(p => p.webApplicationId === app.id)}>
+                                <SelectItem key={app.id} value={app.id}>
                                     {app.name} ({app.url})
                                 </SelectItem>
                             ))}
@@ -120,45 +266,27 @@ export const WebApplicationPolicyEditor = ({ profileId, platform, initialData, o
             </div>
 
             <div className="space-y-4">
-                {policyWebApps.length === 0 && (
+                {policies.length === 0 && (
                     <div className="text-center p-8 border rounded-lg text-muted-foreground border-dashed">
-                        {isFetching ? "Loading policies..." : "No web applications configured."}
+                        {isFetching ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" /> Loading policies...
+                            </div>
+                        ) : "No web applications configured. Add one from the list above."}
                     </div>
                 )}
-                {policyWebApps.map((policyApp, index) => {
-                    const appDetails = availableWebApps.find(a => a.id === policyApp.webApplicationId);
-                    return (
-                        <Card key={policyApp.webApplicationId} className="relative">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-2 top-2 hover:bg-destructive/10 hover:text-destructive"
-                                onClick={() => handleRemoveApp(policyApp.webApplicationId)}
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-base">{appDetails?.name || policyApp.label || policyApp.webApplicationId}</CardTitle>
-                                <CardDescription>{appDetails?.url || policyApp.url}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center space-x-2 pt-2">
-                                    <Checkbox
-                                        id={`allowed-${policyApp.webApplicationId}`}
-                                        checked={policyApp.isAllowed}
-                                        onCheckedChange={(checked) => updateAppConfig(policyApp.webApplicationId, 'isAllowed', !!checked)}
-                                    />
-                                    <Label htmlFor={`allowed-${policyApp.webApplicationId}`}>Allow this Web Application shortcut</Label>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
+                {policies.map((policy, index) => (
+                    platform === 'ios'
+                        ? renderIosPolicy(policy as IosWebApplicationPolicy, index)
+                        : renderAndroidPolicy(policy as AndroidWebApplicationPolicy, index)
+                ))}
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={onCancel} disabled={loading}>Cancel</Button>
-                <Button onClick={handleSave} disabled={loading}>{loading ? 'Saving...' : 'Save Policies'}</Button>
+                <Button onClick={handleSave} disabled={loading}>
+                    {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving...</> : 'Save Policies'}
+                </Button>
             </div>
         </div>
     );

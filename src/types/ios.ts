@@ -54,7 +54,7 @@ export interface IosWiFiConfiguration extends UserAuditData {
     id?: string; // UUID, read-only
     name: string; // Required
     policyType?: 'IosWiFiConfiguration'; // Default: IosWiFiConfiguration
-    
+
     // Basic WiFi Settings
     ssid?: string; // Optional if domainName is specified (iOS 7.0+)
     autoJoin?: boolean; // Default: true (iOS 5.0+)
@@ -62,7 +62,7 @@ export interface IosWiFiConfiguration extends UserAuditData {
     encryptionType?: 'WEP' | 'WPA' | 'WPA2' | 'WPA3' | 'Any' | 'None'; // Default: Any
     password?: string;
     payloadCertificateUUID?: string; // UUID for client credential certificate
-    
+
     // Proxy Settings (forbidden in user enrollment)
     proxyType?: 'None' | 'Manual' | 'Auto'; // Default: None
     proxyServer?: string;
@@ -71,10 +71,10 @@ export interface IosWiFiConfiguration extends UserAuditData {
     proxyPassword?: string;
     proxyPACURL?: string; // URI format
     proxyPACFallbackAllowed?: boolean; // Default: false
-    
+
     // Enterprise/EAP Configuration
     eapClientConfiguration?: EAPClientConfiguration;
-    
+
     // Hotspot 2.0 Settings (iOS 7.0+)
     displayedOperatorName?: string;
     domainName?: string;
@@ -84,7 +84,7 @@ export interface IosWiFiConfiguration extends UserAuditData {
     hessid?: string;
     naiRealmNames?: string[];
     mccAndMNCs?: string[]; // Pattern: ^[0-9]{6}$ (iOS only)
-    
+
     // Other Settings
     captiveBypass?: boolean; // Default: false (iOS 10.0+)
     qosMarkingPolicy?: QoSMarkingPolicy; // iOS 10.0+
@@ -163,4 +163,16 @@ export interface IosLockScreenMessage {
     id?: string;
     ifLostReturnTo?: string;
     assetTagInformation?: string;
+    lockScreenFootnote?: string;
+}
+
+export interface IosApplicationPolicy {
+    id?: string;
+    name?: string;
+    bundleIdentifier?: string;
+    action?: 'INSTALL' | 'REMOVE';
+    purchaseMethod?: number;
+    removable?: boolean;
+    requestRequiresNetworkTether?: boolean;
+    devicePolicyType?: string;
 }

@@ -5,6 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -12,8 +20,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from '@/components/ui/use-toast';
-import { getAssetUrl } from '@/config/env';
 import { cn } from '@/lib/utils';
 import { DeviceInfo, Platform } from '@/types/models';
 import {
@@ -76,6 +85,14 @@ export default function DeviceDetails() {
     const [device, setDevice] = useState<DeviceInfo | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; action: string | null; label: string; requiredText: string }>({
+        isOpen: false,
+        action: null,
+        label: '',
+        requiredText: ''
+    });
+    const [confirmInput, setConfirmInput] = useState('');
+
     const fetchDevice = async () => {
         setLoading(true);
         try {
@@ -102,16 +119,30 @@ export default function DeviceDetails() {
     const handleAction = async (action: string, label: string) => {
         if (!device || !device.id) return;
 
+        // Intercept critical actions
+        if (action === 'reboot' || action === 'factory_reset') {
+            setConfirmDialog({
+                isOpen: true,
+                action: action,
+                label: label,
+                requiredText: action === 'reboot' ? 'REBOOT' : 'RESET'
+            });
+            setConfirmInput('');
+            return;
+        }
+
+        executeAction(action, label);
+    };
+
+    const executeAction = async (action: string, label: string) => {
+        if (!device || !device.id) return;
+
         toast({
             title: "Action Initiated",
             description: `Sending ${label} command to device...`,
         });
 
         try {
-            // Mapping actions to service calls
-            // Note: Actions require platform which might be missing in restricted API response, 
-            // but we can use the URL param 'platform' or try to infer.
-            // Using logic from Devices.tsx mapping:
             const devicePlatform = (device.platform || platform || 'android') as Platform;
 
             switch (action) {
@@ -125,11 +156,7 @@ export default function DeviceDetails() {
                     await DeviceService.lockDevice(devicePlatform, device.id);
                     break;
                 case 'factory_reset':
-                    if (confirm("Are you sure you want to factory reset this device? This action is irreversible.")) {
-                        await DeviceService.factoryResetDevice(devicePlatform, device.id);
-                    } else {
-                        return; // Cancelled
-                    }
+                    await DeviceService.factoryResetDevice(devicePlatform, device.id);
                     break;
                 case 'gps':
                     await DeviceService.getGPS(device.id);
@@ -149,13 +176,20 @@ export default function DeviceDetails() {
         }
     };
 
+    const handleConfirm = () => {
+        if (confirmDialog.action && confirmInput === confirmDialog.requiredText) {
+            executeAction(confirmDialog.action, confirmDialog.label);
+            setConfirmDialog({ ...confirmDialog, isOpen: false });
+        }
+    };
+
     const getPlatformIcon = (plat?: string) => {
-        const p = plat?.toLowerCase();
+        const p = plat?.toLowerCase() || '';
         let assetSrc = null;
 
-        if (p === 'android') assetSrc = getAssetUrl('/Assets/android.png');
-        else if (p === 'ios' || p === 'macos') assetSrc = getAssetUrl('/Assets/apple.png');
-        else if (p === 'windows') assetSrc = getAssetUrl('/Assets/microsoft.png');
+        if (p === 'android' || p.includes('android')) assetSrc = '/Assets/android.png';
+        else if (p === 'ios' || p === 'macos' || p === 'iosdeviceinfo') assetSrc = '/Assets/apple.png';
+        else if (p === 'windows') assetSrc = '/Assets/microsoft.png';
 
         if (assetSrc) {
             return <img src={assetSrc} alt={plat} className="w-16 h-16 object-contain" />;
@@ -224,6 +258,11 @@ export default function DeviceDetails() {
         );
     }
 
+    // Platform Detection
+    const deviceType = device.deviceType || '';
+    const isIos = deviceType === 'IosDeviceInfo' || device.platform === 'ios';
+    const isAndroid = deviceType === 'AndroidDeviceInfo' || device.platform === 'android';
+
     // Ensure we have fallback for boolean checks if they are undefined in type (though we just added them)
     const isTethered = device.isNetworkTethered ?? false;
     const isRoaming = device.dataRoamingEnabled ?? false;
@@ -244,7 +283,7 @@ export default function DeviceDetails() {
                     <div className="flex gap-6">
                         {/* Device Icon / Image Placeholder */}
                         {/* <div className="w-24 h-24 rounded-2xl bg-muted/30 border flex items-center justify-center shrink-0 p-4"> */}
-                        {getPlatformIcon(device.platform)}
+                        {getPlatformIcon(device.deviceType || device.platform)}
                         {/* </div> */}
 
                         {/* Title & Key Identity */}
@@ -494,6 +533,37 @@ export default function DeviceDetails() {
 
                 </div>
             </div>
+            <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, isOpen: open })}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm {confirmDialog.label}</DialogTitle>
+                        <DialogDescription>
+                            This action is critical and may satisfy irreversible changes. <br />
+                            Please type <span className="font-bold text-foreground">{confirmDialog.requiredText}</span> to confirm.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="confirm-input" className="mb-2 block">Confirmation Text</Label>
+                        <Input
+                            id="confirm-input"
+                            value={confirmInput}
+                            onChange={(e) => setConfirmInput(e.target.value)}
+                            placeholder={`Type ${confirmDialog.requiredText} to confirm`}
+                            className={cn(confirmInput === confirmDialog.requiredText ? "border-success" : "")}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleConfirm}
+                            disabled={confirmInput !== confirmDialog.requiredText}
+                        >
+                            Confirm {confirmDialog.label}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </MainLayout>
     );
 }

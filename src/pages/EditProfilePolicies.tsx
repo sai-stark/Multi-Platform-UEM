@@ -1,7 +1,10 @@
+import { ProfileService } from '@/api/services/profiles';
 import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ApplicationPolicyEditor } from '@/components/profiles/Policies/ApplicationPolicy';
+import { LockScreenMessagePolicy } from '@/components/profiles/Policies/LockScreenMessagePolicy';
 import { MailPolicy } from '@/components/profiles/Policies/MailPolicy';
+import { NotificationPolicy } from '@/components/profiles/Policies/NotificationPolicy';
 import { PasscodePolicy } from '@/components/profiles/Policies/PasscodePolicy';
 import { RestrictionsComposite, RestrictionsPolicy } from '@/components/profiles/Policies/RestrictionsPolicy';
 import { WebApplicationPolicyEditor } from '@/components/profiles/Policies/WebApplicationPolicy';
@@ -15,9 +18,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ApplicationPolicy, FullProfile, IosMailPolicy, IosWiFiConfiguration, PasscodeRestrictionPolicy, Platform, WebApplicationPolicy } from '@/types/models';
+import { ApplicationPolicy, FullProfile, IosMailPolicy, IosPasscodeRestrictionPolicy, IosWiFiConfiguration, LockScreenMessagePolicy as LockScreenMessagePolicyType, NotificationPolicy as NotificationPolicyType, PasscodeRestrictionPolicy, Platform, WebApplicationPolicy } from '@/types/models';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Apple, ArrowLeft, Ban, Globe, Grid, Layout, Mail, Monitor, Plus, Shield, Smartphone, Wifi } from 'lucide-react';
+import { Apple, ArrowLeft, Ban, Bell, Globe, Grid, Layout, Mail, MessageSquare, Monitor, Plus, Shield, Smartphone, Wifi } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -48,153 +51,59 @@ export default function EditProfilePolicies() {
     const [activePolicyType, setActivePolicyType] = useState<string | null>(null);
 
     // State for specific Policy Data
-    const [passcodePolicy, setPasscodePolicy] = useState<PasscodeRestrictionPolicy | undefined>(undefined);
+    const [passcodePolicy, setPasscodePolicy] = useState<PasscodeRestrictionPolicy | IosPasscodeRestrictionPolicy | undefined>(undefined);
     const [wifiPolicy, setWifiPolicy] = useState<IosWiFiConfiguration | undefined>(undefined);
     const [mailPolicy, setMailPolicy] = useState<IosMailPolicy | undefined>(undefined);
     const [restrictionsPolicy, setRestrictionsPolicy] = useState<RestrictionsComposite | undefined>(undefined);
     const [applicationPolicy, setApplicationPolicy] = useState<ApplicationPolicy[]>([]);
     const [webApplicationPolicy, setWebApplicationPolicy] = useState<WebApplicationPolicy[]>([]);
-    // For App and WebApp, we might fetch them on demand or passing initialData if we had them in full profile
-    // But FullProfile usually doesn't contain list of all policies.
-    // For specific editors, they handle their own fetching/list management for now, or we can fetch here.
-    // We will let the components manage their lists for simplicity in this integration step, 
-    // or pass "undefined" to start fresh/fetch own.
+    const [notificationPolicy, setNotificationPolicy] = useState<NotificationPolicyType[]>([]);
+    const [lockScreenMessagePolicy, setLockScreenMessagePolicy] = useState<LockScreenMessagePolicyType | null>(null);
 
     const fetchProfile = async () => {
         setLoading(true);
         try {
-            // Mock Data for UI dev
-            const mockData: FullProfile & {
-                restrictionsPolicy?: RestrictionsComposite;
-                applicationPolicy?: ApplicationPolicy[];
-                webApplicationPolicy?: WebApplicationPolicy[];
-            } = {
-                id: id || '1',
-                name: 'Corporate Android Default',
-                description: 'Standard policy for all Android devices. Enforces passcode, encryption, and basic app restrictions.',
-                platform: (platform as Platform) || 'android',
-                status: 'PUBLISHED',
-                // Mocking Passcode Policy
-                passCodePolicy: {
-                    minLength: 6,
-                    allowSimple: false,
-                    requirePassCode: true,
-                    requireAlphanumericPasscode: true,
-                    maximumFailedAttempts: 5,
-                    maximumGracePeriodInMinutes: 15
-                } as any,
-                // Mocking WiFi Policy
-                wifiPolicy: {
-                    ssid: 'Corp-Secure-Net',
-                    securityType: 'WPA2',
-                    password: 'securepassword123',
-                    autoJoin: true,
-                    hiddenNetwork: false
-                } as any,
-                // Mocking Restrictions (Custom property)
-                restrictionsPolicy: {
-                    security: { allowCamera: true, allowScreenCapture: false },
-                    connectivity: { allowBluetooth: true },
-                    storage: { allowUsbMassStorage: false },
-                    location: { forceGps: true },
-                    misc: { allowFactoryReset: false }
-                },
-                // Mocking Application Policy
-                applicationPolicy: platform === 'ios' ? [
-                    {
-                        id: 'ios-policy-1',
-                        name: 'Microsoft Outlook',
-                        bundleIdentifier: 'com.microsoft.office.outlook',
-                        action: 'INSTALL' as const,
-                        purchaseMethod: 0,
-                        removable: true,
-                        devicePolicyType: 'IosApplicationPolicy' as const,
-                        creationTime: new Date().toISOString(),
-                        modificationTime: new Date().toISOString(),
-                        createdBy: 'user-1',
-                        lastModifiedBy: 'user-1'
-                    },
-                    {
-                        id: 'ios-policy-2',
-                        name: 'Microsoft Teams',
-                        bundleIdentifier: 'com.microsoft.teams',
-                        action: 'INSTALL' as const,
-                        purchaseMethod: 1,
-                        removable: false,
-                        devicePolicyType: 'IosApplicationPolicy' as const,
-                        creationTime: new Date().toISOString(),
-                        modificationTime: new Date().toISOString(),
-                        createdBy: 'user-1',
-                        lastModifiedBy: 'user-1'
-                    }
-                ] : [
-                    {
-                        id: 'android-policy-1',
-                        applicationVersionId: 'app-version-1',
-                        action: 'INSTALL' as const,
-                        applicationVersion: '1.0.0',
-                        devicePolicyType: 'AndroidApplicationPolicy' as const,
-                        creationTime: new Date().toISOString(),
-                        modificationTime: new Date().toISOString(),
-                        createdBy: 'user-1',
-                        lastModifiedBy: 'user-1'
-                    },
-                    {
-                        id: 'android-policy-2',
-                        applicationVersionId: 'app-version-2',
-                        action: 'ALLOW' as const,
-                        applicationVersion: '2.1.0',
-                        devicePolicyType: 'AndroidApplicationPolicy' as const,
-                        creationTime: new Date().toISOString(),
-                        modificationTime: new Date().toISOString(),
-                        createdBy: 'user-1',
-                        lastModifiedBy: 'user-1'
-                    }
-                ],
-                // Mocking Web Application Policy
-                webApplicationPolicy: [
-                    {
-                        webApplicationId: 'web1',
-                        url: 'https://portal.azure.com',
-                        label: 'Azure Portal',
-                        isAllowed: true,
-                        allowCookies: true
-                    }
-                ]
-            };
+            if (platform && id) {
+                // Fetch basic profle or full profile depending on API
+                // Assuming getProfile returns full profile with policies
+                const data = await ProfileService.getProfile(platform as Platform, id);
+                setProfile(data);
 
-            await new Promise(r => setTimeout(r, 600)); // Simulate delay
-            const profileData = mockData;
-            setProfile(profileData);
+                // Populate policies from FullProfile properties
+                if (data.passCodePolicy) {
+                    // Cast or map if necessary, but forcing for now as the component expects a certain shape
+                    setPasscodePolicy(data.passCodePolicy as any);
+                }
+                if (data.wifiPolicy) {
+                    setWifiPolicy(data.wifiPolicy);
+                }
+                if (data.lockScreenPolicy) {
+                    setLockScreenMessagePolicy(data.lockScreenPolicy as any);
+                }
+                if (data.notificationPolicies) {
+                    setNotificationPolicy(data.notificationPolicies as any);
+                }
 
-            // Populate policies from FullProfile properties
-            if (profileData.passCodePolicy) {
-                setPasscodePolicy(profileData.passCodePolicy as any);
+                // Handle Restrictions
+                if ((data as any).restrictionsPolicy) {
+                    setRestrictionsPolicy((data as any).restrictionsPolicy);
+                }
+
+                // Handle Application Policy
+                if (data.applicationPolicies) {
+                    // Map IOS policies or Android policies to component state
+                    setApplicationPolicy(data.applicationPolicies as any);
+                } else if ((data as any).applicationPolicy) {
+                    setApplicationPolicy((data as any).applicationPolicy);
+                }
+
+                // Handle Web Application Policy
+                if (data.webClipPolicies) {
+                    setWebApplicationPolicy(data.webClipPolicies as any);
+                } else if ((data as any).webApplicationPolicy) {
+                    setWebApplicationPolicy((data as any).webApplicationPolicy);
+                }
             }
-            if (profileData.wifiPolicy) {
-                setWifiPolicy(profileData.wifiPolicy);
-            }
-
-            // Handle Restrictions
-            if ((profileData as any).restrictionsPolicy) {
-                setRestrictionsPolicy((profileData as any).restrictionsPolicy);
-            } else if ((profileData as any).policies) {
-                // Fallback for array structure if we switch mocks
-                const pols = (profileData as any).policies;
-                const restr = pols.find((p: any) => p.type === 'RESTRICTIONS');
-                if (restr) setRestrictionsPolicy(restr.restrictions);
-            }
-
-            // Handle Application Policy
-            if ((profileData as any).applicationPolicy) {
-                setApplicationPolicy((profileData as any).applicationPolicy);
-            }
-
-            // Handle Web Application Policy
-            if ((profileData as any).webApplicationPolicy) {
-                setWebApplicationPolicy((profileData as any).webApplicationPolicy);
-            }
-
         } catch (error) {
             console.error("Failed to fetch profile", error);
         } finally {
@@ -285,6 +194,12 @@ export default function EditProfilePolicies() {
                                 <DropdownMenuItem onClick={() => setActivePolicyType('webApps')}>
                                     <Globe className="w-4 h-4 mr-2" /> Web Application Policy
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActivePolicyType('notifications')}>
+                                    <Bell className="w-4 h-4 mr-2" /> Notification Policy
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActivePolicyType('lockScreenMessage')}>
+                                    <MessageSquare className="w-4 h-4 mr-2" /> Lock Screen Message
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
@@ -300,27 +215,30 @@ export default function EditProfilePolicies() {
                             transition={{ duration: 0.2 }}
                         >
                             <Card className="border-l-4 border-l-primary shadow-md">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        {activePolicyType === 'passcode' && <Shield className="w-6 h-6 text-primary" />}
-                                        {activePolicyType === 'wifi' && <Wifi className="w-6 h-6 text-info" />}
-                                        {activePolicyType === 'mail' && <Mail className="w-6 h-6 text-purple-500" />}
-                                        {activePolicyType === 'restrictions' && <Ban className="w-6 h-6 text-destructive" />}
-                                        {activePolicyType === 'applications' && <Grid className="w-6 h-6 text-orange-500" />}
-                                        {activePolicyType === 'webApps' && <Globe className="w-6 h-6 text-blue-500" />}
+                                {activePolicyType !== 'passcode' && activePolicyType !== 'notifications' && activePolicyType !== 'lockScreenMessage' && (
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            {activePolicyType === 'passcode' && <Shield className="w-6 h-6 text-primary" />}
+                                            {activePolicyType === 'wifi' && <Wifi className="w-6 h-6 text-info" />}
+                                            {activePolicyType === 'mail' && <Mail className="w-6 h-6 text-purple-500" />}
+                                            {activePolicyType === 'restrictions' && <Ban className="w-6 h-6 text-destructive" />}
+                                            {activePolicyType === 'applications' && <Grid className="w-6 h-6 text-orange-500" />}
+                                            {activePolicyType === 'webApps' && <Globe className="w-6 h-6 text-blue-500" />}
 
-                                        {activePolicyType === 'passcode' && 'Passcode Policy'}
-                                        {activePolicyType === 'wifi' && 'WiFi Configuration'}
-                                        {activePolicyType === 'mail' && 'Mail Configuration'}
-                                        {activePolicyType === 'restrictions' && 'Device Restrictions'}
-                                        {activePolicyType === 'applications' && 'Application Policy'}
-                                        {activePolicyType === 'webApps' && 'Web Application Policy'}
-                                    </CardTitle>
-                                    <CardDescription>Configure the settings for this policy module.</CardDescription>
-                                </CardHeader>
+                                            {activePolicyType === 'passcode' && 'Passcode Policy'}
+                                            {activePolicyType === 'wifi' && 'WiFi Configuration'}
+                                            {activePolicyType === 'mail' && 'Mail Configuration'}
+                                            {activePolicyType === 'restrictions' && 'Device Restrictions'}
+                                            {activePolicyType === 'applications' && 'Application Policy'}
+                                            {activePolicyType === 'webApps' && 'Web Application Policy'}
+                                        </CardTitle>
+                                        <CardDescription>Configure the settings for this policy module.</CardDescription>
+                                    </CardHeader>
+                                )}
                                 <CardContent>
                                     {activePolicyType === 'passcode' && (
                                         <PasscodePolicy
+                                            platform={platform as Platform}
                                             profileId={id!}
                                             initialData={passcodePolicy}
                                             onSave={handlePolicySave}
@@ -367,6 +285,20 @@ export default function EditProfilePolicies() {
                                             initialData={webApplicationPolicy}
                                             onSave={handlePolicySave}
                                             onCancel={() => setActivePolicyType(null)}
+                                        />
+                                    )}
+                                    {activePolicyType === 'notifications' && (
+                                        <NotificationPolicy
+                                            platform={platform as Platform}
+                                            profileId={id!}
+                                            initialData={notificationPolicy}
+                                        />
+                                    )}
+                                    {activePolicyType === 'lockScreenMessage' && (
+                                        <LockScreenMessagePolicy
+                                            platform={platform as Platform}
+                                            profileId={id!}
+                                            initialData={lockScreenMessagePolicy}
                                         />
                                     )}
                                 </CardContent>
@@ -481,6 +413,34 @@ export default function EditProfilePolicies() {
                                     </CardHeader>
                                     <CardContent>
                                         <Button variant="outline" size="sm" className="w-full">Manage Web Apps</Button>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants}>
+                                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-purple-500" onClick={() => setActivePolicyType('notifications')}>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Bell className="w-5 h-5 text-purple-500" /> Notifications
+                                        </CardTitle>
+                                        <CardDescription>App notification settings</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Button variant="outline" size="sm" className="w-full">Manage Notifications</Button>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants}>
+                                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-teal-500" onClick={() => setActivePolicyType('lockScreenMessage')}>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <MessageSquare className="w-5 h-5 text-teal-500" /> Lock Screen
+                                        </CardTitle>
+                                        <CardDescription>Lock screen messages</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Button variant="outline" size="sm" className="w-full">Manage Message</Button>
                                     </CardContent>
                                 </Card>
                             </motion.div>
