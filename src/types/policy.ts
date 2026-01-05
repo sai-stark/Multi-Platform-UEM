@@ -60,14 +60,37 @@ export interface AndroidApplicationPolicy extends UserAuditData {
 export type ApplicationPolicy = IosApplicationPolicy | AndroidApplicationPolicy;
 
 // 5. Web Application Policy
-export interface WebApplicationPolicy {
+// 5. Web Application Policy
+// 5. Web Application Policy
+export interface IosWebApplicationPolicy {
     id?: string;
-    webApplicationId: string;
-    label?: string;
-    url?: string;
-    allowCookies?: boolean;
-    isAllowed?: boolean;
+    name: string;
+    fullScreen?: boolean;
+    ignoreManifestScope?: boolean;
+    isRemovable?: boolean;
+    label: string;
+    precomposed?: boolean;
+    url: string;
+    policyType: 'IosWebApplicationPolicy';
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
 }
+
+export interface AndroidWebApplicationPolicy {
+    id?: string; // read-only
+    webAppId: string;
+    keyCode?: number;
+    webAppName?: string; // read-only
+    policyType: 'AndroidWebApplicationPolicy';
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
+}
+
+export type WebApplicationPolicy = IosWebApplicationPolicy | AndroidWebApplicationPolicy;
 
 // 6. Security Restriction
 export interface SecurityRestriction {
@@ -77,11 +100,21 @@ export interface SecurityRestriction {
 }
 
 // 7. Passcode Restriction
+// 7. Passcode Restriction
 export interface PasscodeRestrictionPolicy {
     id?: string;
+    passcodeId?: string;
+    policyType?: string;
+    complexity?: string;
     minLength?: number;
-    requireAlphanumeric?: boolean;
-    maxFailedAttempts?: number;
+    minUpperCase?: number;
+    minLowerCase?: number;
+    minDigits?: number;
+    minSymbols?: number;
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
 }
 
 // 8. Sync Storage
@@ -221,14 +254,24 @@ export interface AcmePolicy {
 
 // iOS Notification Policy
 export interface NotificationPolicy {
-    id: string;
-    name: string;
-    policyType: string; // 'IosNotificationSettings'
+    id?: string;
+    name?: string;
+    policyType?: string; // 'IosNotificationSettings'
     bundleIdentifier: string;
     notificationsEnabled?: boolean;
     showInNotificationCenter?: boolean;
     showInLockScreen?: boolean;
     alertType?: number;
+    badgesEnabled?: boolean;
+    soundsEnabled?: boolean;
+    showInCarPlay?: boolean;
+    criticalAlertEnabled?: boolean;
+    groupingType?: number;
+    previewType?: number;
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
 }
 
 // iOS WiFi Policy
@@ -242,4 +285,17 @@ export interface WifiPolicy {
     encryptionType: string;
     password?: string;
     proxyType?: string;
+}
+
+// iOS Lock Screen Message Policy
+export interface LockScreenMessagePolicy {
+    id?: string;
+    name?: string;
+    policyType?: string; // 'IosLockScreenMessage'
+    assetTagInformation?: string;
+    lockScreenFootnote?: string;
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
 }
