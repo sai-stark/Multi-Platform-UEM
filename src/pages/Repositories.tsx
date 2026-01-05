@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getAssetUrl } from "@/config/env";
 import {
   Apple,
   Database,
@@ -40,37 +41,37 @@ const platformConfig: Record<
     label: "All Platforms",
     icon: Layout,
     color: "text-primary",
-    image: "/Assets/all_platforms.png",
+    image: getAssetUrl("/Assets/all_platforms.png"),
   },
   android: {
     label: "Android",
     icon: Smartphone,
     color: "text-success",
-    image: "/Assets/android.png",
+    image: getAssetUrl("/Assets/android.png"),
   },
   ios: {
     label: "iOS",
     icon: Apple,
     color: "text-muted-foreground",
-    image: "/Assets/apple.png",
+    image: getAssetUrl("/Assets/apple.png"),
   },
   windows: {
     label: "Windows",
     icon: Monitor,
     color: "text-info",
-    image: "/Assets/microsoft.png",
+    image: getAssetUrl("/Assets/microsoft.png"),
   },
   linux: {
     label: "Linux",
     icon: Monitor,
     color: "text-info",
-    image: "/Assets/linux.png",
+    image: getAssetUrl("/Assets/linux.png"),
   },
   macos: {
     label: "macOS",
     icon: Monitor,
     color: "text-info",
-    image: "/Assets/mac_os.png",
+    image: getAssetUrl("/Assets/mac_os.png"),
   },
 };
 

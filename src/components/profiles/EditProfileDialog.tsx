@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { getAssetUrl } from "@/config/env";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType } from "@/types/models";
 import { Pencil } from "lucide-react";
@@ -36,15 +37,15 @@ const DESC_PATTERN = /^[a-zA-Z0-9\- ]{5,100}$/;
 const PLATFORM_CONFIG: Record<string, { label: string; image: string }> = {
   android: {
     label: "Android",
-    image: "/Assets/android.png",
+    image: getAssetUrl("/Assets/android.png"),
   },
   ios: {
     label: "iOS",
-    image: "/Assets/apple.png",
+    image: getAssetUrl("/Assets/apple.png"),
   },
   windows: {
     label: "Windows",
-    image: "/Assets/microsoft.png",
+    image: getAssetUrl("/Assets/microsoft.png"),
   },
 };
 

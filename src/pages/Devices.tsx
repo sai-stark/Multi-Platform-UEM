@@ -12,6 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { getAssetUrl } from '@/config/env';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
@@ -47,10 +48,10 @@ interface Device {
 }
 
 const platformConfig = {
-  android: { label: 'Android', asset: '/Assets/android.png', icon: Smartphone },
-  ios: { label: 'iOS', asset: '/Assets/apple.png', icon: Smartphone },
-  windows: { label: 'Windows', asset: '/Assets/microsoft.png', icon: Laptop },
-  macos: { label: 'macOS', asset: '/Assets/apple.png', icon: Laptop },
+  android: { label: 'Android', asset: getAssetUrl('/Assets/android.png'), icon: Smartphone },
+  ios: { label: 'iOS', asset: getAssetUrl('/Assets/apple.png'), icon: Smartphone },
+  windows: { label: 'Windows', asset: getAssetUrl('/Assets/microsoft.png'), icon: Laptop },
+  macos: { label: 'macOS', asset: getAssetUrl('/Assets/apple.png'), icon: Laptop },
   linux: { label: 'Linux', asset: null, icon: Server },
 };
 

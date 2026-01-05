@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
+import { getAssetUrl } from '@/config/env';
 import { cn } from '@/lib/utils';
 import { DeviceInfo, Platform } from '@/types/models';
 import {
@@ -152,9 +153,9 @@ export default function DeviceDetails() {
         const p = plat?.toLowerCase();
         let assetSrc = null;
 
-        if (p === 'android') assetSrc = '/Assets/android.png';
-        else if (p === 'ios' || p === 'macos') assetSrc = '/Assets/apple.png';
-        else if (p === 'windows') assetSrc = '/Assets/microsoft.png';
+        if (p === 'android') assetSrc = getAssetUrl('/Assets/android.png');
+        else if (p === 'ios' || p === 'macos') assetSrc = getAssetUrl('/Assets/apple.png');
+        else if (p === 'windows') assetSrc = getAssetUrl('/Assets/microsoft.png');
 
         if (assetSrc) {
             return <img src={assetSrc} alt={plat} className="w-16 h-16 object-contain" />;

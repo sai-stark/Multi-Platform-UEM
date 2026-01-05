@@ -18,24 +18,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { getAssetUrl } from "@/config/env";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType } from "@/types/models";
 import { Layout } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Platform configuration with asset images
 const PLATFORM_CONFIG = {
   android: {
     label: "Android",
-    image: "/Assets/android.png",
+    image: getAssetUrl("/Assets/android.png"),
   },
   ios: {
     label: "iOS",
-    image: "/Assets/apple.png",
+    image: getAssetUrl("/Assets/apple.png"),
   },
   windows: {
     label: "Windows",
-    image: "/Assets/microsoft.png",
+    image: getAssetUrl("/Assets/microsoft.png"),
     disabled: true,
   },
 };
@@ -80,6 +82,7 @@ export function AddProfileDialog({
   onProfileAdded,
   defaultPlatform = "android",
 }: AddProfileDialogProps) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -192,7 +195,10 @@ export function AddProfileDialog({
         profileType: profileType,
       };
 
-      await ProfileService.createProfile(formData.platform, profilePayload);
+      const createdProfile = await ProfileService.createProfile(
+        formData.platform,
+        profilePayload
+      );
 
       toast({
         title: "Profile Created",
@@ -202,6 +208,13 @@ export function AddProfileDialog({
       onProfileAdded();
       onOpenChange(false);
       resetForm();
+
+      // Navigate to edit policies page for the newly created profile
+      if (createdProfile?.id) {
+        navigate(
+          `/profiles/${formData.platform}/${createdProfile.id}/policies`
+        );
+      }
     } catch (error) {
       console.error("Failed to create profile:", error);
       toast({

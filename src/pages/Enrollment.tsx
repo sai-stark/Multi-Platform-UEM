@@ -3,6 +3,7 @@ import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
+import { getAssetUrl } from '@/config/env';
 import {
   Dialog,
   DialogContent,
@@ -79,11 +80,11 @@ const enrollmentSteps: Record<Platform, { en: string; hi: string }[]> = {
 };
 
 const platformConfig = {
-  android: { label: 'Android', asset: '/Assets/android.png', icon: Smartphone },
-  ios: { label: 'iOS', asset: '/Assets/apple.png', icon: Smartphone },
-  windows: { label: 'Windows', asset: '/Assets/microsoft.png', icon: Laptop },
-  macos: { label: 'macOS', asset: '/Assets/mac_os.png', icon: Laptop },
-  linux: { label: 'Linux', asset: '/Assets/linux.png', icon: Server },
+  android: { label: 'Android', asset: getAssetUrl('/Assets/android.png'), icon: Smartphone },
+  ios: { label: 'iOS', asset: getAssetUrl('/Assets/apple.png'), icon: Smartphone },
+  windows: { label: 'Windows', asset: getAssetUrl('/Assets/microsoft.png'), icon: Laptop },
+  macos: { label: 'macOS', asset: getAssetUrl('/Assets/mac_os.png'), icon: Laptop },
+  linux: { label: 'Linux', asset: getAssetUrl('/Assets/linux.png'), icon: Server },
 };
 
 export default function Enrollment() {

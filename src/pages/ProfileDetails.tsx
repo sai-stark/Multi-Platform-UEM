@@ -4,61 +4,45 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { LoadingAnimation } from '@/components/common/LoadingAnimation';
-import { FullProfile } from '@/types/models';
+import { FullProfile, Platform } from '@/types/models';
+import { ProfileService } from '@/api/services/profiles';
 
 import { Apple, ArrowLeft, Calendar, CheckCircle, Clock, Edit, Layout, Monitor, Shield, Smartphone, Users, Wifi } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const mockFullProfile: FullProfile & {
-    deployedDevices: number;
-    complianceRate: number;
-    category?: string; // Add optional category if needed locally
-} = {
-    id: '1',
-    name: 'Corporate Android Default',
-    description: 'Standard policy for all Android devices. Enforces passcode, encryption, and basic app restrictions.',
-    platform: 'android',
-    creationTime: '2024-01-15T10:00:00Z',
-    modificationTime: '2024-01-20T14:30:00Z',
-    status: 'PUBLISHED',
-    category: 'Corporate',
-    deployedDevices: 142,
-    complianceRate: 98,
-    createdBy: 'admin@company.com',
-    lastModifiedBy: 'security-ops@company.com',
-    version: 3,
-    passCodePolicy: {
-        id: 'p1',
-        minLength: 6,
-        requireAlphanumericPasscode: true,
-        maximumFailedAttempts: 5
-    },
-    wifiPolicy: {
-        ssid: 'Corp-Secure-Net',
-        securityType: 'WPA2', // Note: IosWiFiConfiguration might expect enum
-        password: 'securepassword123'
-    },
-    // We might need to mock generic policies if the UI expects them in a list, 
-    // but the UI logic shows iterating them. 
-    // Let's create a helper to transform FullProfile to list for display if needed.
+// Extended type for UI display (API may not return these fields)
+type ProfileDetailsData = FullProfile & {
+    deployedDevices?: number;
+    complianceRate?: number;
+    category?: string;
 };
 
 export default function ProfileDetails() {
     const { platform, id } = useParams<{ platform: string; id: string }>();
     const navigate = useNavigate();
-    const [profile, setProfile] = useState<typeof mockFullProfile | null>(null);
+    const [profile, setProfile] = useState<ProfileDetailsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchProfile = async () => {
-        // Simulate API delay
-        setLoading(true);
-        setTimeout(() => {
-            console.log('Using mock profile data');
-            const data = mockFullProfile;
-            setProfile(data);
+        if (!platform || !id) {
+            setError('Invalid profile parameters');
             setLoading(false);
-        }, 600);
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await ProfileService.getProfile(platform as Platform, id);
+            setProfile(data as ProfileDetailsData);
+        } catch (err) {
+            console.error('Failed to fetch profile:', err);
+            setError('Failed to load profile details');
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -72,6 +56,16 @@ export default function ProfileDetails() {
             <MainLayout>
                 <div className="flex h-full items-center justify-center">
                     <LoadingAnimation message="Loading profile details..." />
+                </div>
+            </MainLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <MainLayout>
+                <div className="p-8 text-center text-muted-foreground">
+                    {error}
                 </div>
             </MainLayout>
         );
