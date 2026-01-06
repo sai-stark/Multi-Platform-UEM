@@ -22,61 +22,57 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
-import { DeviceInfo, Platform } from '@/types/models';
+import { Progress } from "@/components/ui/progress";
 import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from '@/components/ui/use-toast';
+import { getAssetUrl } from '@/config/env';
+import { cn } from '@/lib/utils';
+import { DeviceApplicationList, DeviceInfo, FullProfile, Platform } from '@/types/models';
+import {
+    Activity,
+    AppWindow,
     ArrowLeft,
     Barcode,
     Battery,
+    BatteryCharging,
     Bluetooth,
-    Building2,
-    Calendar,
-    ChevronDown,
-    Cloud,
+    HardDrive as Chip,
     Cpu,
+    Database,
     FileText,
+    Gauge,
     Globe,
-    HardDrive,
-    Hash,
-    Layout,
+    Layers,
     Lock,
     MapPin,
-
-    Monitor,
+    MessagesSquare,
+    MoreVertical,
     Network,
     Power,
-    Radio,
     RefreshCw,
     ScanBarcode,
     Settings,
     Shield,
     ShieldAlert,
-
+    Signal,
     Smartphone,
-    Tag,
+    Sun,
+    Tablet,
     Trash2,
+    Unlock,
     User,
     Wifi
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
-// Mock data for development/preview
-const mockDevice: DeviceInfo = {
-    id: '1',
-    udid: '00008030-001A2B3C4D5E6F',
-    serialNo: 'C02XD12345',
-    macAddress: '00:1A:2B:3C:4D:5E',
-    imei: '354890061234567',
-    model: 'Pixel 7 Pro',
-    osVersion: '14.0',
-    platform: 'android',
-    enrollmentTime: '2024-03-15T10:30:00Z',
-    lastSyncTime: '2024-03-20T14:45:00Z',
-    status: 'active',
-    userEmail: 'employee@company.com'
-};
 
 export default function DeviceDetails() {
     const { platform, id } = useParams<{ platform: string; id: string }>();
@@ -92,6 +88,11 @@ export default function DeviceDetails() {
         requiredText: ''
     });
     const [confirmInput, setConfirmInput] = useState('');
+
+    const [applications, setApplications] = useState<DeviceApplicationList>([]);
+    const [effectiveProfile, setEffectiveProfile] = useState<FullProfile | null>(null);
+    const [showProfileDialog, setShowProfileDialog] = useState(false);
+    const [loadingApps, setLoadingApps] = useState(false);
 
     const fetchDevice = async () => {
         setLoading(true);
@@ -111,6 +112,31 @@ export default function DeviceDetails() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (device && platform && id) {
+            // Load extra details
+            const loadExtras = async () => {
+                try {
+                    setLoadingApps(true);
+                    const apps = await DeviceService.getDeviceApplications(platform as Platform, id);
+                    setApplications(apps || []);
+                } catch (e) {
+                    console.error("Failed to load apps", e);
+                } finally {
+                    setLoadingApps(false);
+                }
+
+                try {
+                    const profile = await DeviceService.getEffectiveProfile(platform as Platform, id);
+                    setEffectiveProfile(profile);
+                } catch (e) {
+                    console.error("Failed to load profile", e);
+                }
+            };
+            loadExtras();
+        }
+    }, [device]);
 
     useEffect(() => {
         fetchDevice();
@@ -161,6 +187,12 @@ export default function DeviceDetails() {
                 case 'gps':
                     await DeviceService.getGPS(device.id);
                     break;
+                case 'clear_passcode':
+                    await DeviceService.removePassCode(device.id);
+                    break;
+                case 'remove_restriction_password':
+                    await DeviceService.removeRestrictionPassword(device.id);
+                    break;
             }
             toast({
                 title: "Success",
@@ -187,61 +219,102 @@ export default function DeviceDetails() {
         const p = plat?.toLowerCase() || '';
         let assetSrc = null;
 
-        if (p === 'android' || p.includes('android')) assetSrc = '/Assets/android.png';
-        else if (p === 'ios' || p === 'macos' || p === 'iosdeviceinfo') assetSrc = '/Assets/apple.png';
-        else if (p === 'windows') assetSrc = '/Assets/microsoft.png';
+        if (p === 'android' || p.includes('android')) assetSrc = getAssetUrl('/Assets/android.png');
+        else if (p === 'ios' || p === 'iosdeviceinfo') assetSrc = getAssetUrl('/Assets/apple.png');
+        else if (p === 'macos') assetSrc = getAssetUrl('/Assets/mac_os.png');
+        else if (p === 'windows') assetSrc = getAssetUrl('/Assets/microsoft.png');
+        else if (p === 'linux') assetSrc = getAssetUrl('/Assets/linux.png');
 
         if (assetSrc) {
             return <img src={assetSrc} alt={plat} className="w-16 h-16 object-contain" />;
         }
 
-        switch (p) {
-            case 'linux': return <Monitor className="w-12 h-12 text-orange-500" />;
-            default: return <Layout className="w-12 h-12 text-primary" />;
-        }
+        return <Smartphone className="w-12 h-12 text-primary" />;
     };
 
-    // Helper for formatting bytes to GB/MB
-    const formatBytes = (bytes?: number) => {
-        if (bytes === undefined || bytes === null) return '-';
-        if (bytes === 0) return '0 B';
-        // Assume input might be bytes if large, or GB if small (based on previous logic/mock).
-        // Let's stick to the previous mock assumption that values are in GB for now, 
-        // but label it clearly or handle "0.x" as likely GB.
-        // If the value is > 10000, it's probably MB or KB? 
-        // Reverting to simple string append for consistency with previous mock data approach.
-        return `${bytes} GB`;
+    // Helper for formatting bytes
+    const formatBytes = (bytes?: number | string) => {
+        if (bytes === undefined || bytes === null || bytes === '') return '-';
+        const num = typeof bytes === 'string' ? parseInt(bytes) : bytes;
+        if (isNaN(num)) return bytes.toString();
+
+        if (num === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(num) / Math.log(k));
+        return parseFloat((num / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    // Helper for Battery Color
     const getBatteryColor = (level?: number) => {
         if (level === undefined) return 'text-muted-foreground';
         if (level <= 20) return 'text-destructive';
-        if (level <= 50) return 'text-warning';
-        return 'text-success';
+        if (level <= 50) return 'text-yellow-500';
+        return 'text-green-500';
     };
 
-    const InfoRow = ({ label, value, className, icon: Icon }: { label: string, value: React.ReactNode, className?: string, icon?: React.ElementType }) => (
-        <div className={cn("flex items-start gap-3", className)}>
+    const InfoRow = ({ label, value, className, icon: Icon, subValue, copyable }: { label: string, value: React.ReactNode, className?: string, icon?: React.ElementType, subValue?: string, copyable?: boolean }) => (
+        <div className={cn("flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors", className)}>
             {Icon && (
-                <div className="mt-1 p-1.5 rounded-md bg-muted/50 shrink-0">
-                    <Icon className="w-4 h-4 text-muted-foreground" />
+                <div className="mt-1 p-2 rounded-md bg-primary/10 shrink-0">
+                    <Icon className="w-4 h-4 text-primary" />
                 </div>
             )}
-            <div className="flex flex-col gap-0.5 overflow-hidden">
+            <div className="flex flex-col gap-0.5 overflow-hidden w-full">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-                <span className="text-sm font-medium text-foreground truncate block" title={typeof value === 'string' ? value : undefined}>
-                    {value || '-'}
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground truncate block" title={typeof value === 'string' ? value : undefined}>
+                        {value}
+                        {value === undefined || value === null || value === '' ? '-' : ''}
+                    </span>
+                    {copyable && value && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                                navigator.clipboard.writeText(String(value));
+                                toast({ description: "Copied to clipboard" });
+                            }}
+                        >
+                            <FileText className="h-3 w-3" />
+                        </Button>
+                    )}
+                </div>
+                {subValue && <span className="text-xs text-muted-foreground">{subValue}</span>}
             </div>
+        </div>
+    );
+
+    const BooleanStatus = ({ label, value, trueLabel = "Enabled", falseLabel = "Disabled", invertColor = false }: { label: string, value?: boolean, trueLabel?: string, falseLabel?: string, invertColor?: boolean }) => {
+        const isTrue = !!value;
+        const isPositive = invertColor ? !isTrue : isTrue;
+
+        return (
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                <span className="text-sm font-medium">{label}</span>
+                <Badge variant={isPositive ? "default" : "secondary"} className={cn(
+                    "font-normal",
+                    isPositive ? "bg-green-500/15 text-green-700 hover:bg-green-500/25 border-green-200" : "bg-red-500/15 text-red-700 hover:bg-red-500/25 border-red-200"
+                )}>
+                    {isTrue ? trueLabel : falseLabel}
+                </Badge>
+            </div>
+        );
+    };
+
+    const SectionHeader = ({ title, icon: Icon }: { title: string, icon: React.ElementType }) => (
+        <div className="flex items-center gap-2 mb-4 pb-2 border-b">
+            <Icon className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-lg tracking-tight">{title}</h3>
         </div>
     );
 
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex items-center justify-center h-full">
-                    Loading device details...
+                <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="text-muted-foreground animate-pulse">Loading device details...</p>
                 </div>
             </MainLayout>
         );
@@ -250,7 +323,10 @@ export default function DeviceDetails() {
     if (!device) {
         return (
             <MainLayout>
-                <div className="flex flex-col items-center justify-center h-full gap-4">
+                <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] gap-4">
+                    <div className="p-4 rounded-full bg-muted">
+                        <Smartphone className="w-12 h-12 text-muted-foreground" />
+                    </div>
                     <h2 className="text-xl font-semibold">Device Not Found</h2>
                     <Button onClick={() => navigate('/devices')}>Back to Devices</Button>
                 </div>
@@ -258,287 +334,661 @@ export default function DeviceDetails() {
         );
     }
 
-    // Platform Detection
-    const deviceType = device.deviceType || '';
-    const isIos = deviceType === 'IosDeviceInfo' || device.platform === 'ios';
-    const isAndroid = deviceType === 'AndroidDeviceInfo' || device.platform === 'android';
-
-    // Ensure we have fallback for boolean checks if they are undefined in type (though we just added them)
-    const isTethered = device.isNetworkTethered ?? false;
-    const isRoaming = device.dataRoamingEnabled ?? false;
+    // Calculations
+    const storagePercent = Math.min(100, ((Number(device.storageUsed || device.usedStorage) || 0) / (Number(device.storageCapacity || device.totalStorage || device.deviceCapacity) || 1)) * 100);
+    const ramPercent = Math.min(100, ((Number(device.ramUsed || device.usedRam) || 0) / (Number(device.ramCapacity || device.totalRam) || 1)) * 100);
 
     return (
         <MainLayout>
-            <div className="space-y-6 pb-10">
-                {/* Top Navigation */}
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="sm" onClick={() => navigate('/devices')} className="gap-2 pl-0 hover:pl-2 transition-all">
-                        <ArrowLeft className="w-4 h-4" />
-                        Back to Devices
-                    </Button>
-                </div>
+            <div className="space-y-6 pb-20 max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Navigation */}
+                <Button variant="ghost" size="sm" onClick={() => navigate('/devices')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Devices
+                </Button>
 
-                {/* Hero / Header Section */}
-                <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between bg-card p-6 rounded-xl border shadow-sm">
-                    <div className="flex gap-6">
-                        {/* Device Icon / Image Placeholder */}
-                        {/* <div className="w-24 h-24 rounded-2xl bg-muted/30 border flex items-center justify-center shrink-0 p-4"> */}
-                        {getPlatformIcon(device.deviceType || device.platform)}
-                        {/* </div> */}
+                {/* Header Card */}
+                <div className="bg-card rounded-xl border shadow-sm p-6">
+                    <div className="flex flex-col md:flex-row gap-6 justify-between">
+                        <div className="flex gap-6 items-start">
+                            <div className="p-4 rounded-xl bg-muted/30 border">
+                                {getPlatformIcon(device.deviceType || device.platform)}
+                            </div>
 
-                        {/* Title & Key Identity */}
-                        <div className="space-y-2">
-                            <div>
-                                <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                                    {device.deviceName || device.model || 'Unknown Device'}
-                                </h1>
-                                <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                                    <span className="font-medium text-foreground">{device.modelName || device.model}</span>
-                                    <span>•</span>
-                                    <span>{device.opSysInfo?.name || device.platform} {device.osVersion}</span>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-2xl font-bold text-foreground">
+                                        {device.deviceName || device.model || 'Unknown Device'}
+                                    </h1>
+                                    <Badge variant={device.status === 'ONLINE' || device.connectionStatus === 'online' ? 'default' : 'secondary'} className={cn(
+                                        "h-6 gap-1.5",
+                                        (device.status === 'ONLINE' || device.connectionStatus === 'online') ? "bg-green-500 hover:bg-green-600" : "bg-zinc-500"
+                                    )}>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                        {device.connectionStatus === 'online' || device.status === 'ONLINE' ? 'Online' : 'Offline'}
+                                    </Badge>
+                                </div>
+
+                                <p className="text-lg font-medium text-foreground">{device.modelName || device.model}</p>
+
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted">
+                                        {device.opSysInfo?.name || (device.platform?.toUpperCase())} {device.osVersion || device.androidVersion}
+                                    </span>
                                     {device.buildVersion && (
-                                        <>
-                                            <span>•</span>
-                                            <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
-                                                Build {device.buildVersion}
-                                            </span>
-                                        </>
+                                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted font-mono text-xs">
+                                            Build: {device.buildVersion}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    <Badge variant="outline" className={cn(
+                                        "gap-1",
+                                        device.complianceStatus === 'compliant' ? "text-green-600 border-green-200 bg-green-50" : "text-red-600 border-red-200 bg-red-50"
+                                    )}>
+                                        {device.complianceStatus === 'compliant' ? <Shield className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+                                        {device.complianceStatus === 'compliant' ? 'Compliant' : 'Non-Compliant'}
+                                    </Badge>
+
+                                    {device.isSupervised && (
+                                        <Badge variant="outline" className="gap-1 text-purple-600 border-purple-200 bg-purple-50">
+                                            <Layers className="w-3 h-3" /> Supervised
+                                        </Badge>
                                     )}
                                 </div>
                             </div>
-
-                            <div className="flex flex-wrap gap-2 text-sm pt-2">
-                                <Badge variant={device.status === 'ONLINE' || device.connectionStatus === 'online' ? 'default' : 'secondary'} className={cn(
-                                    "px-3 py-1 gap-1.5",
-                                    (device.status === 'ONLINE' || device.connectionStatus === 'online') ? "bg-success hover:bg-success/90" : "bg-muted-foreground/50"
-                                )}>
-                                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                                    {device.connectionStatus === 'online' ? 'Online' : 'Offline'}
-                                </Badge>
-
-                                <Badge variant="outline" className={cn(
-                                    "px-3 py-1 border-transparent bg-opacity-10",
-                                    device.complianceStatus === 'compliant' ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                                )}>
-                                    {device.complianceStatus === 'compliant' ? <Shield className="w-3 h-3 mr-1.5" /> : <ShieldAlert className="w-3 h-3 mr-1.5" />}
-                                    {device.complianceStatus === 'compliant' ? 'Compliant' : 'Non-Compliant'}
-                                </Badge>
-
-                                {device.isSupervised && (
-                                    <Badge variant="secondary" className="px-3 py-1 bg-purple-500/10 text-purple-600 border-purple-200">
-                                        Supervised
-                                    </Badge>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Action Toolbar */}
-                    <div className="flex items-center gap-2 self-start md:self-center">
-                        <div className="flex items-center bg-muted/50 p-1 rounded-lg border">
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('sync', 'Sync')} title="Sync Device">
-                                <RefreshCw className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('lock', 'Lock')} title="Lock Device">
-                                <Lock className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleAction('reboot', 'Reboot')} title="Reboot Device">
-                                <Power className="w-4 h-4" />
-                            </Button>
                         </div>
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="gap-2">
-                                    More Actions
-                                    <ChevronDown className="w-4 h-4 opacity-50" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuLabel>Management</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => handleAction('gps', 'Get GPS')}>
-                                    <MapPin className="w-4 h-4 mr-2" /> Locate Device
-                                </DropdownMenuItem>
-                                {device.platform === 'ios' && (
-                                    <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
-                                        <Shield className="w-4 h-4 mr-2" /> Clear Passcode
+                        <div className="flex items-center gap-2 self-start md:self-center">
+                            <Button variant="outline" size="sm" onClick={() => handleAction('sync', 'Sync')} className="gap-2">
+                                <RefreshCw className="w-4 h-4" /> Sync
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleAction('reboot', 'Reboot')} className="gap-2">
+                                <Power className="w-4 h-4" /> Reboot
+                            </Button>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="icon" variant="ghost">
+                                        <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => handleAction('lock', 'Lock')}>
+                                        <Lock className="w-4 h-4 mr-2" /> Lock Device
                                     </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleAction('factory_reset', 'Factory Reset')}>
-                                    <Trash2 className="w-4 h-4 mr-2" /> Factory Reset
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                    {device.platform === 'ios' && (
+                                        <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
+                                            <Unlock className="w-4 h-4 mr-2" /> Clear Passcode
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-red-600" onClick={() => handleAction('factory_reset', 'Factory Reset')}>
+                                        <Trash2 className="w-4 h-4 mr-2" /> Factory Reset
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {platform === 'ios' && (
+                                        <>
+                                            <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
+                                                <Unlock className="w-4 h-4 mr-2" /> Clear Passcode
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleAction('remove_restriction_password', 'Remove Restriction Password')}>
+                                                <Unlock className="w-4 h-4 mr-2" /> Clear Restriction Pwd
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
                 </div>
 
-                {/* Quick Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card>
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className={cn("p-2 rounded-lg bg-opacity-10", getBatteryColor(device.batteryLevel).replace('text-', 'bg-'))}>
-                                <Battery className={cn("w-6 h-6", getBatteryColor(device.batteryLevel))} />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Battery</p>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-bold">{device.batteryLevel ?? '-'}%</span>
-                                    {device.isBatteryCharging && <span className="text-xs text-success animate-pulse">Charging</span>}
+                {/* Tabs for detailed info */}
+                <Tabs defaultValue="overview" className="space-y-6">
+                    <TabsList className="bg-card border w-full h-auto p-1 flex flex-nowrap overflow-x-auto gap-2">
+                        <TabsTrigger value="overview" className="gap-2 px-4 py-2 w-full">
+                            <Activity className="w-4 h-4" /> Overview
+                        </TabsTrigger>
+                        <TabsTrigger value="hardware" className="gap-2 px-4 py-2 w-full">
+                            <Chip className="w-4 h-4" /> Hardware
+                        </TabsTrigger>
+                        <TabsTrigger value="network" className="gap-2 px-4 py-2 w-full">
+                            <Network className="w-4 h-4" /> Network
+                        </TabsTrigger>
+                        <TabsTrigger value="applications" className="gap-2 px-4 py-2 w-full">
+                            <AppWindow className="w-4 h-4" /> Applications
+                        </TabsTrigger>
+                        <TabsTrigger value="system" className="gap-2 px-4 py-2 w-full">
+                            <Cpu className="w-4 h-4" /> System
+                        </TabsTrigger>
+                        <TabsTrigger value="settings" className="gap-2 px-4 py-2 w-full">
+                            <Settings className="w-4 h-4" /> Settings
+                        </TabsTrigger>
+                        <TabsTrigger value="user" className="gap-2 px-4 py-2 w-full">
+                            <User className="w-4 h-4" /> User
+                        </TabsTrigger>
+                        <TabsTrigger value="effective-profile" className="gap-2 px-4 py-2 w-full">
+                            <FileText className="w-4 h-4" /> Effective Profile
+                        </TabsTrigger>
+                    </TabsList>
+
+                    {/* OVERVIEW TAB */}
+                    <TabsContent value="overview" className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* Battery Status */}
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                        <Battery className="w-4 h-4" /> Battery
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center gap-4">
+                                        <div className={cn("text-4xl font-bold", getBatteryColor(device.batteryLevel))}>
+                                            {device.batteryLevel !== undefined ? (device.batteryLevel > 1 ? device.batteryLevel : Math.round(device.batteryLevel * 100)) : '-'}%
+                                        </div>
+                                        <div className="space-y-1">
+                                            {device.isBatteryCharging && (
+                                                <Badge variant="outline" className="gap-1 text-green-600 bg-green-50 border-green-200">
+                                                    <BatteryCharging className="w-3 h-3" /> Charging
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <Progress value={device.batteryLevel !== undefined ? (device.batteryLevel > 1 ? device.batteryLevel : device.batteryLevel * 100) : 0} className="mt-4 h-2" />
+                                </CardContent>
+                            </Card>
+
+                            {/* Storage */}
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                        <Database className="w-4 h-4" /> Storage
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex justify-between items-baseline mb-2">
+                                        <span className="text-2xl font-bold">{formatBytes(device.storageUsed || device.usedStorage)}</span>
+                                        <span className="text-sm text-muted-foreground">of {formatBytes(device.storageCapacity || device.totalStorage || device.deviceCapacity)}</span>
+                                    </div>
+                                    <Progress value={storagePercent} className="h-2 mb-2" />
+                                    <div className="flex justify-between text-xs text-muted-foreground">
+                                        <span>Used: {Math.round(storagePercent)}%</span>
+                                        <span>Free: {formatBytes(device.freeStorage || (device.availableDeviceCapacity))}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* RAM (Android mainly) */}
+                            {(device.ramCapacity || device.totalRam) && (
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <Gauge className="w-4 h-4" /> RAM
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex justify-between items-baseline mb-2">
+                                            <span className="text-2xl font-bold">{formatBytes(device.ramUsed || device.usedRam)}</span>
+                                            <span className="text-sm text-muted-foreground">of {formatBytes(device.ramCapacity || device.totalRam)}</span>
+                                        </div>
+                                        <Progress value={ramPercent} className="h-2 mb-2" />
+                                        <div className="flex justify-between text-xs text-muted-foreground">
+                                            <span>Used: {Math.round(ramPercent)}%</span>
+                                            <span>Free: {formatBytes(device.freeRam)}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <SectionHeader title="Identity" icon={Smartphone} />
+                                </CardHeader>
+                                <CardContent className="grid gap-2">
+                                    <InfoRow label="Serial Number" value={device.serialNo} icon={Barcode} copyable />
+                                    <InfoRow label="IMEI" value={device.imei || (device.imeis?.map(i => i.imei).join(', '))} icon={ScanBarcode} copyable />
+                                    <InfoRow label="UDID / ID" value={device.udid || device.id} icon={Chip} copyable />
+                                    <InfoRow label="Model Identifier" value={device.model} icon={Smartphone} />
+                                    <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} icon={Layers} />
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <SectionHeader title="Network Summary" icon={Wifi} />
+                                </CardHeader>
+                                <CardContent className="grid gap-2">
+                                    <InfoRow label="Wi-Fi MAC" value={device.wifiMAC || device.wifiInfo?.macId || device.macAddress} icon={Network} copyable />
+                                    <InfoRow label="Bluetooth MAC" value={device.bluetoothMAC} icon={Bluetooth} copyable />
+                                    <InfoRow label="IP Address" value={device.ipAddress || device.wifiInfo?.ipAddress || (device.simInfos && device.simInfos[0]?.ipAddress)} icon={Globe} />
+                                    {device.wifiInfo && (
+                                        <InfoRow label="Connected SSID" value={device.wifiInfo.ssid} icon={Wifi} />
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+
+                    {/* HARDWARE TAB */}
+                    <TabsContent value="hardware" className="space-y-6">
+                        <Card>
+                            <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="space-y-4">
+                                    <SectionHeader title="Device Info" icon={Smartphone} />
+                                    <InfoRow label="Model Name" value={device.modelName || device.modelInfo?.modelName} />
+                                    <InfoRow label="Product Name" value={device.productName || device.modelInfo?.productName} />
+                                    <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} />
+                                    <InfoRow label="Model Number" value={device.modelNumber} />
+                                    <InfoRow label="Device Type" value={device.deviceType || device.modelInfo?.deviceType} />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <SectionHeader title="Processor & Storage" icon={Cpu} />
+                                    <InfoRow label="CPU Architecture" value={device.cpuArch || device.cpu} />
+                                    <InfoRow label="Device Capacity" value={formatBytes(device.deviceCapacity || device.storageCapacity)} subValue={device.storageCapacity ? 'Total Storage' : undefined} />
+                                    <InfoRow label="RAM" value={formatBytes(device.ramCapacity || device.totalRam)} />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <SectionHeader title="Hardware Features" icon={Layers} />
+                                    <BooleanStatus label="GPS" value={device.gpsStatus} />
+                                    <BooleanStatus label="Bluetooth" value={device.bluetooth} />
+                                    <BooleanStatus label="NFC" value={device.nfcStatus} />
+                                    <BooleanStatus label="Audio/Volume Control" value={device.volume !== undefined} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* NETWORK TAB */}
+                    <TabsContent value="network" className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <SectionHeader title="Wi-Fi Information" icon={Wifi} />
+                                </CardHeader>
+                                <CardContent className="grid gap-2">
+                                    <BooleanStatus label="Wi-Fi Enabled" value={device.wifi} />
+                                    <InfoRow label="MAC Address" value={device.wifiMAC || device.wifiInfo?.macId} />
+                                    {device.wifiInfo && (
+                                        <>
+                                            <InfoRow label="SSID" value={device.wifiInfo.ssid} />
+                                            <InfoRow label="IP Address" value={device.wifiInfo.ipAddress} />
+                                            <InfoRow label="Signal Strength (RSSI)" value={device.wifiInfo.rssi} />
+                                            <InfoRow label="Link Speed" value={device.wifiInfo.linkSpeed} subValue="Mbps" />
+                                            <InfoRow label="Frequency" value={device.wifiInfo.frequency} subValue="MHz" />
+                                        </>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <SectionHeader title="Cellular" icon={Signal} />
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <BooleanStatus label="Mobile Data" value={device.mobileData} />
+                                    {/* Android SIMs */}
+                                    {device.simInfos?.map((sim, idx) => (
+                                        <div key={idx} className="p-4 rounded-lg bg-muted/20 border">
+                                            <p className="font-semibold text-sm mb-2">SIM Slot {idx + 1}</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                <InfoRow label="Carrier" value={sim.carrierNetwork} />
+                                                <InfoRow label="Phone" value={sim.phoneNumber} />
+                                                <InfoRow label="IMEI" value={sim.imei} />
+                                                <InfoRow label="Roaming" value={sim.isRoaming ? 'Yes' : 'No'} />
+                                                <InfoRow label="Data Active" value={sim.isDataTxOn ? 'Yes' : 'No'} />
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* iOS Service Subscriptions */}
+                                    {device.serviceSubscriptions?.map((sub, idx) => (
+                                        <div key={idx} className="p-4 rounded-lg bg-muted/20 border">
+                                            <p className="font-semibold text-sm mb-2">Service Subscription {idx + 1} ({sub.slot})</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                <InfoRow label="Carrier" value={sub.currentCarrierNetwork} />
+                                                <InfoRow label="Phone" value={sub.phoneNumber} />
+                                                <InfoRow label="ICCID" value={sub.iccId} />
+                                                <InfoRow label="Data Preferred" value={sub.isDataPreferred ? 'Yes' : 'No'} />
+                                                <InfoRow label="Voice Preferred" value={sub.isVoicePreferred ? 'Yes' : 'No'} />
+                                                <InfoRow label="Roaming" value={sub.isRoaming ? 'Yes' : 'No'} />
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {(!device.simInfos?.length && !device.serviceSubscriptions?.length) && (
+                                        <p className="text-muted-foreground text-sm italic">No cellular information available.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+
+                    {/* APPLICATIONS TAB */}
+                    <TabsContent value="applications" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Installed Applications</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>App Name</TableHead>
+                                            <TableHead>Identifier / Package</TableHead>
+                                            <TableHead>Version</TableHead>
+                                            {platform === 'ios' && <TableHead>Managed</TableHead>}
+                                            <TableHead>Status</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {applications.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center h-24">
+                                                    {loadingApps ? "Loading applications..." : "No applications found."}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            applications.map((app, index) => (
+                                                <TableRow key={index}>
+                                                    <TableCell className="font-medium">{app.name}</TableCell>
+                                                    <TableCell>{app.packageName || app.identifier}</TableCell>
+                                                    <TableCell>{app.appVersion}</TableCell>
+                                                    {platform === 'ios' && (
+                                                        <TableCell>{app.isManaged ? <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Yes</Badge> : 'No'}</TableCell>
+                                                    )}
+                                                    <TableCell>
+                                                        {app.isInstalled ? <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Installed</Badge> :
+                                                            app.isBlocked ? <Badge variant="destructive">Blocked</Badge> : <span className="text-muted-foreground">-</span>}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* SYSTEM TAB */}
+                    <TabsContent value="system" className="space-y-6">
+                        <Card>
+                            <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <SectionHeader title="Operating System" icon={AppWindow} />
+                                    <InfoRow label="OS Details" value={device.opSysInfo?.fullVersion || `${device.opSysInfo?.name || ''} ${device.opSysInfo?.version || ''}`} />
+                                    <InfoRow label="Version" value={device.osVersion || device.androidVersion} />
+                                    <InfoRow label="Build Version" value={device.buildVersion} />
+                                    <InfoRow label="Supplemental Build" value={device.supplementalBuildVersion} />
+                                    <InfoRow label="Kernel/Baseband" value={device.modemFirmwareVersion} />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <SectionHeader title="Time & Location" icon={Globe} />
+                                    <InfoRow label="Timezone" value={device.timeZone} />
+                                    <InfoRow label="Creation Time" value={device.creationTime} icon={FileText} />
+                                    <InfoRow label="Enrollment Time" value={device.enrollmentTime} icon={FileText} />
+                                    <InfoRow label="Last Sync" value={device.lastSyncTime} icon={RefreshCw} />
+                                    <InfoRow label="Deployed Location" value={device.deployedLocation} icon={MapPin} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* SETTINGS TAB */}
+                    <TabsContent value="settings" className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <SectionHeader title="Display & Sound" icon={Sun} />
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span>Brightness</span>
+                                            <span>{device.brightness ?? '-'}%</span>
+                                        </div>
+                                        <Progress value={device.brightness || 0} className="h-2" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span>Volume</span>
+                                            <span>{device.volume ?? '-'}%</span>
+                                        </div>
+                                        <Progress value={device.volume || 0} className="h-2" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span>Ring Volume</span>
+                                            <span>{device.ringVolume ?? '-'}%</span>
+                                        </div>
+                                        <Progress value={device.ringVolume || 0} className="h-2" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <SectionHeader title="Security & Restrictions" icon={Lock} />
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <BooleanStatus label="Keyguard/Passcode" value={device.isKeyguardEnabled} />
+                                    <BooleanStatus label="USB Storage" value={device.isUsbStorageEnabled} />
+                                    <BooleanStatus label="Kiosk Mode" value={device.kioskMode} />
+                                    <BooleanStatus label="MDM Mode" value={device.mdmMode} />
+                                    <BooleanStatus label="Supervised" value={device.isSupervised} />
+                                    <BooleanStatus label="Activation Lock (Supervised)" value={device.activationLockAllowedWhileSupervised} />
+                                    <BooleanStatus label="Do Not Disturb" value={device.isDoNotDisturbInEffect} />
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <SectionHeader title="Accessibility" icon={User} />
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <BooleanStatus label="VoiceOver" value={device.voiceOverEnabled} />
+                                    <BooleanStatus label="Zoom" value={device.zoomEnabled} />
+                                    <BooleanStatus label="Invert Colors" value={device.increaseContrastEnabled} />
+                                    <BooleanStatus label="Bold Text" value={device.boldTextEnabled} />
+                                    <BooleanStatus label="Reduce Motion" value={device.reduceMotionEnabled} />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+
+                    {/* USER TAB */}
+                    <TabsContent value="user" className="space-y-6">
+                        <Card>
+                            <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <SectionHeader title="User Info" icon={User} />
+                                    <InfoRow label="User Email" value={device.userEmail} />
+                                    <InfoRow label="Device User Name" value={device.deviceUser} />
+                                    <InfoRow label="Organization" value={device.organizationName} icon={Layers} />
+                                    <InfoRow label="Assigned User" value={device.deviceUser} />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <SectionHeader title="Shared Device (iPad)" icon={Tablet} />
+                                    <BooleanStatus label="Shared Device" value={device.isMultiUser} />
+                                    <InfoRow label="Resident Users" value={device.residentUsers} />
+                                    <InfoRow label="Quota Size" value={formatBytes(Number(device.quotaSize) * 1024 * 1024)} subValue={device.quotaSize ? 'Calculated from MB' : undefined} />
+                                    <InfoRow label="Grace Period" value={device.onlineAuthenticationGracePeriod} subValue="Days" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* EFFECTIVE PROFILE TAB */}
+                    <TabsContent value="effective-profile" className="space-y-6">
+                        {!effectiveProfile ? (
+                            <Card>
+                                <CardContent className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                                    <FileText className="w-12 h-12 mb-4 opacity-20" />
+                                    <p>No effective profile data available.</p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="space-y-6">
+                                {/* Profile Info */}
+                                <Card>
+                                    <CardHeader>
+                                        <SectionHeader title="Profile Summary" icon={FileText} />
+                                    </CardHeader>
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <InfoRow label="Profile Name" value={effectiveProfile.name} />
+                                        <InfoRow label="Description" value={effectiveProfile.description} />
+                                        <InfoRow label="Profile ID" value={effectiveProfile.id} copyable />
+                                        <InfoRow label="Version" value={effectiveProfile.version} />
+                                        <InfoRow label="Platform" value={effectiveProfile.platform || effectiveProfile.profileType} />
+                                        <InfoRow label="Status" value={effectiveProfile.status} />
+                                    </CardContent>
+                                </Card>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Passcode Policy */}
+                                    {effectiveProfile.passCodePolicy && (
+                                        <Card>
+                                            <CardHeader>
+                                                <SectionHeader title="Passcode Policy" icon={Lock} />
+                                            </CardHeader>
+                                            <CardContent className="space-y-2">
+                                                <BooleanStatus label="Require Passcode" value={effectiveProfile.passCodePolicy.requirePassCode} />
+                                                <BooleanStatus label="Simple Passcode Allowed" value={effectiveProfile.passCodePolicy.allowSimple} />
+                                                <BooleanStatus label="Alphanumeric Required" value={effectiveProfile.passCodePolicy.requireAlphanumericPasscode} />
+                                                <InfoRow label="Min Length" value={effectiveProfile.passCodePolicy.minLength} />
+                                                <InfoRow label="Max Failed Attempts" value={effectiveProfile.passCodePolicy.maximumFailedAttempts} />
+                                                <InfoRow label="Max Passcode Age" value={effectiveProfile.passCodePolicy.maximumPasscodeAgeInDays} subValue="Days" />
+                                                <InfoRow label="Auto-Lock" value={effectiveProfile.passCodePolicy.maximumInactivityInMinutes} subValue="Minutes" />
+                                                <InfoRow label="Grace Period" value={effectiveProfile.passCodePolicy.maximumGracePeriodInMinutes} subValue="Minutes" />
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Wi-Fi Policy */}
+                                    {effectiveProfile.wifiPolicy && (
+                                        <Card>
+                                            <CardHeader>
+                                                <SectionHeader title="Wi-Fi Configuration" icon={Wifi} />
+                                            </CardHeader>
+                                            <CardContent className="space-y-2">
+                                                <InfoRow label="SSID" value={effectiveProfile.wifiPolicy.ssid} />
+                                                <InfoRow label="Encryption" value={effectiveProfile.wifiPolicy.encryptionType} />
+                                                <BooleanStatus label="Auto Join" value={effectiveProfile.wifiPolicy.autoJoin} />
+                                                <BooleanStatus label="Hidden Network" value={effectiveProfile.wifiPolicy.hiddenNetwork} />
+                                                <BooleanStatus label="Is Hotspot" value={effectiveProfile.wifiPolicy.isHotspot} />
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Lock Screen Message */}
+                                    {effectiveProfile.lockScreenPolicy && (
+                                        <Card>
+                                            <CardHeader>
+                                                <SectionHeader title="Lock Screen Message" icon={Smartphone} />
+                                            </CardHeader>
+                                            <CardContent className="space-y-2">
+                                                <InfoRow label="If Lost" value={effectiveProfile.lockScreenPolicy.lockScreenFootnote} />
+                                                <InfoRow label="Asset Tag" value={effectiveProfile.lockScreenPolicy.assetTagInformation} />
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Web Clips */}
+                                    {effectiveProfile.webClipPolicies && effectiveProfile.webClipPolicies.length > 0 && (
+                                        <Card>
+                                            <CardHeader>
+                                                <SectionHeader title="Web Clips" icon={Globe} />
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {effectiveProfile.webClipPolicies.map((clip, idx) => (
+                                                    <div key={idx} className="p-3 border rounded-lg">
+                                                        <InfoRow label="Label" value={clip.label} />
+                                                        <InfoRow label="URL" value={clip.url} />
+                                                        <BooleanStatus label="Removable" value={clip.isRemovable} />
+                                                        <BooleanStatus label="Full Screen" value={clip.fullScreen} />
+                                                    </div>
+                                                ))}
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Applications Policy */}
+                                    {effectiveProfile.applicationPolicies && effectiveProfile.applicationPolicies.length > 0 && (
+                                        <Card>
+                                            <CardHeader>
+                                                <SectionHeader title="Application Rules" icon={AppWindow} />
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {effectiveProfile.applicationPolicies.map((app, idx) => (
+                                                    <div key={idx} className="p-3 border rounded-lg">
+                                                        <InfoRow label="Bundle ID" value={app.bundleIdentifier} />
+                                                        <InfoRow label="Install Action" value={app.action} />
+                                                        <BooleanStatus label="Removable" value={app.removable} />
+                                                    </div>
+                                                ))}
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Notifications Policy */}
+                                    {effectiveProfile.notificationPolicies && effectiveProfile.notificationPolicies.length > 0 && (
+                                        <Card>
+                                            <CardHeader>
+                                                <SectionHeader title="Notification Settings" icon={MessagesSquare} />
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {effectiveProfile.notificationPolicies.map((notif, idx) => (
+                                                    <div key={idx} className="p-3 border rounded-lg">
+                                                        <InfoRow label="Bundle ID" value={notif.bundleIdentifier} />
+                                                        <BooleanStatus label="Enabled" value={notif.enabled} />
+                                                        <BooleanStatus label="Lock Screen" value={notif.showInLockScreen} />
+                                                        <BooleanStatus label="Notification Center" value={notif.showInNotificationCenter} />
+                                                        <BooleanStatus label="Alert Style" value={notif.alertStyle !== 'NONE'} trueLabel={notif.alertStyle || 'BANNER'} />
+                                                    </div>
+                                                ))}
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Raw JSON Fallback for other policies (optional but good for debug/completeness) */}
+                                    <div className="col-span-1 lg:col-span-2">
+                                        <Card>
+                                            <CardHeader>
+                                                <SectionHeader title="Full Policy Data (Debug)" icon={Database} />
+                                            </CardHeader>
+                                            <CardContent>
+                                                <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto max-h-96">
+                                                    {JSON.stringify(effectiveProfile, (key, value) => {
+                                                        if (key === 'passCodePolicy' || key === 'wifiPolicy' || key === 'lockScreenPolicy' || key === 'webClipPolicies' || key === 'notificationPolicies' || key === 'applicationPolicies') return undefined; // Hide already shown
+                                                        return value;
+                                                    }, 2)}
+                                                </pre>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-2 rounded-lg bg-blue-500/10">
-                                <HardDrive className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-muted-foreground">Storage</p>
-                                <p className="text-2xl font-bold">{formatBytes(device.storageUsed)} <span className="text-sm font-normal text-muted-foreground">/ {formatBytes(device.storageCapacity || device.deviceCapacity)}</span></p>
-                                {/* Simple Progress Bar */}
-                                <div className="h-1.5 w-full bg-muted rounded-full mt-2 overflow-hidden">
-                                    <div
-                                        className="h-full bg-blue-600 rounded-full"
-                                        style={{ width: `${Math.min(100, ((device.storageUsed || 0) / (device.storageCapacity || device.deviceCapacity || 1)) * 100)}% ` }}
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-2 rounded-lg bg-orange-500/10">
-                                <Cpu className="w-6 h-6 text-orange-600" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-muted-foreground">RAM</p>
-                                <p className="text-2xl font-bold">{device.ramUsed || '-'} <span className="text-sm font-normal text-muted-foreground">/ {device.ramCapacity || '-'} GB</span></p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-2 rounded-lg bg-zinc-500/10">
-                                <Radio className="w-6 h-6 text-zinc-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Last Sync</p>
-                                <p className="text-lg font-bold truncate">
-                                    {device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleDateString() : '-'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleTimeString() : ''}
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Detailed Info Sections */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-
-                    {/* Identity Card */}
-                    <Card className="md:col-span-1 border-l-4 border-l-primary">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Smartphone className="w-5 h-5 text-primary" />
-                                Device Identity
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4">
-                            <InfoRow label="Serial Number" value={<span className="font-mono">{device.serialNo}</span>} icon={Barcode} />
-                            <InfoRow label="UDID" value={<span className="font-mono break-all text-xs">{device.udid}</span>} icon={Hash} />
-                            <InfoRow label="IMEI" value={<span className="font-mono">{device.imei || (device.imeis?.join(', '))}</span>} icon={ScanBarcode} />
-                            <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} icon={Building2} />
-                            <InfoRow label="Model Identifier" value={device.modelInfo?.modelName || device.model} icon={Smartphone} />
-                            <InfoRow label="Product Name" value={device.productName} icon={Tag} />
-                        </CardContent>
-                    </Card>
-
-                    {/* Network Card */}
-                    <Card className="md:col-span-1 border-l-4 border-l-info">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Wifi className="w-5 h-5 text-info" />
-                                Connectivity
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4">
-                            <InfoRow label="WiFi IP Address" value={<span className="font-mono">{device.wifiInfo?.ipAddress}</span>} icon={Globe} />
-                            <InfoRow label="WiFi MAC" value={<span className="font-mono">{device.wifiMAC || device.wifiInfo?.macId}</span>} icon={Network} />
-                            <InfoRow label="Bluetooth MAC" value={<span className="font-mono">{device.bluetoothMAC}</span>} icon={Bluetooth} />
-                            <InfoRow label="Current SSID" value={device.wifiInfo?.ssid} icon={Wifi} />
-                            <div className="flex gap-4 pt-2 pl-[3.25rem]">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <div className={cn("w-2 h-2 rounded-full", isTethered ? "bg-success" : "bg-muted")} />
-                                    Tethering
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <div className={cn("w-2 h-2 rounded-full", isRoaming ? "bg-success" : "bg-muted")} />
-                                    Roaming
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Security & OS Card */}
-                    <Card className="md:col-span-1 border-l-4 border-l-indigo-500">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <Shield className="w-5 h-5 text-indigo-500" />
-                                Security & OS
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <InfoRow label="OS Version" value={device.osVersion} icon={Layout} />
-                                <InfoRow label="Build Version" value={device.buildVersion} icon={Settings} />
-                            </div>
-                            <InfoRow label="Supervised" value={device.isSupervised ? 'Yes' : 'No'} icon={Shield} />
-                            <InfoRow label="Locator Service" value={device.isDeviceLocatorServiceEnabled ? 'Enabled' : 'Disabled'} icon={MapPin} />
-                            <InfoRow label="Do Not Disturb" value={device.isDoNotDisturbInEffect ? 'Active' : 'Inactive'} icon={Cloud} />
-                            <div className="pt-2 pl-[3.25rem]">
-                                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block mb-2">Effective Policies</span>
-                                <div className="flex flex-wrap gap-2">
-                                    {/* Placeholder mainly, would probably loop policies if array existed */}
-                                    <Badge variant="outline">Passcode</Badge>
-                                    <Badge variant="outline">WiFi</Badge>
-                                    <Badge variant="outline">Email</Badge>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Ownership & Enrollment */}
-                    <Card className="md:col-span-1 xl:col-span-3 border-l-4 border-l-emerald-500">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <FileText className="w-5 h-5 text-emerald-500" />
-                                Enrollment Details
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <InfoRow label="Enrolled User" value={device.userEmail || device.deviceUser} icon={User} />
-                            <InfoRow label="Organization" value={device.organizationName} icon={Building2} />
-                            <InfoRow label="Enrollment Date" value={device.enrollmentTime ? new Date(device.enrollmentTime).toLocaleString() : '-'} icon={Calendar} />
-                            <InfoRow label="Last Sync" value={device.lastSyncTime ? new Date(device.lastSyncTime).toLocaleString() : '-'} icon={RefreshCw} />
-                            <InfoRow label="Creation Time" value={device.creationTime ? new Date(device.creationTime).toLocaleString() : '-'} icon={FileText} />
-                        </CardContent>
-                    </Card>
-
-                </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </div>
+
+            {/* Confirmation Dialog */}
             <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, isOpen: open })}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Confirm {confirmDialog.label}</DialogTitle>
                         <DialogDescription>
-                            This action is critical and may satisfy irreversible changes. <br />
+                            This action is critical.
                             Please type <span className="font-bold text-foreground">{confirmDialog.requiredText}</span> to confirm.
                         </DialogDescription>
                     </DialogHeader>
@@ -549,7 +999,7 @@ export default function DeviceDetails() {
                             value={confirmInput}
                             onChange={(e) => setConfirmInput(e.target.value)}
                             placeholder={`Type ${confirmDialog.requiredText} to confirm`}
-                            className={cn(confirmInput === confirmDialog.requiredText ? "border-success" : "")}
+                            className={cn(confirmInput === confirmDialog.requiredText ? "border-green-500" : "")}
                         />
                     </div>
                     <DialogFooter>

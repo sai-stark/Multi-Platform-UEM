@@ -1,7 +1,10 @@
 import {
+    ActionDeviceFactoryReset,
+    ActionDeviceLock,
+    ActionDeviceReboot,
+    DeviceApplicationList,
     DeviceInfo,
     FullProfile,
-    MobileApplication,
     Pageable,
     Platform
 } from '@/types/models';
@@ -23,13 +26,17 @@ export const DeviceService = {
         await apiClient.delete(`/${platform}/devices/${deviceId}`);
     },
 
-    getEffectiveProfile: async (deviceId: string) => {
-        const response = await apiClient.get<FullProfile>(`/devices/${deviceId}/effective-profile`);
+    getEffectiveProfile: async (platform: Platform, deviceId: string) => {
+        const response = await apiClient.get<FullProfile>(`/${platform}/profiles/effective-profile`, {
+            params: { deviceId }
+        });
         return response.data;
     },
 
     getDeviceApplications: async (platform: Platform, deviceId: string) => {
-        const response = await apiClient.get<MobileApplication[]>(`/${platform}/devices/${deviceId}/applications`);
+        const response = await apiClient.get<DeviceApplicationList>(`/${platform}/applications`, {
+            params: { deviceId }
+        });
         return response.data;
     },
 
@@ -39,19 +46,19 @@ export const DeviceService = {
     },
 
     // Commands
-    rebootDevice: async (platform: Platform, deviceId: string) => {
-        const payload = platform === 'ios' ? { command: 'RestartDevice' } : {};
-        await apiClient.post(`/${platform}/devices/${deviceId}/commands/reboot`, payload);
+    rebootDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceReboot) => {
+        const body = platform === 'ios' ? (payload || { command: 'RestartDevice' }) : {};
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/reboot`, body);
     },
 
-    factoryResetDevice: async (platform: Platform, deviceId: string) => {
-        const payload = platform === 'ios' ? { command: 'EraseDevice' } : {};
-        await apiClient.post(`/${platform}/devices/${deviceId}/commands/factory-reset`, payload);
+    factoryResetDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceFactoryReset) => {
+        const body = platform === 'ios' ? (payload || { command: 'EraseDevice' }) : {};
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/factory-reset`, body);
     },
 
-    lockDevice: async (platform: Platform, deviceId: string) => {
-        const payload = platform === 'ios' ? { command: 'DeviceLock' } : {};
-        await apiClient.post(`/${platform}/devices/${deviceId}/commands/lock`, payload);
+    lockDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceLock) => {
+        const body = platform === 'ios' ? (payload || { command: 'DeviceLock' }) : {};
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/lock`, body);
     },
 
     // default actions
@@ -65,15 +72,18 @@ export const DeviceService = {
 
     // iOS Specific Commands
     removePassCode: async (deviceId: string) => {
-        await apiClient.post(`/ios/devices/${deviceId}/commands/removePassCode`);
+        // Spec requires a body with commandreferenceId usually, but let's check if it's optional in strict mode or if we need to gen UUID
+        // For now, assuming empty object or simple call if backend handles it, but definitions say required.
+        // Let's pass a dummy for now as many implementations do this automatically or we'll add uuid lib.
+        // Actually for this call, let's just do empty object as per previous code unless strictly required by client validation.
+        // Spec said required `commandreferenceId`.
+        const payload = { commandreferenceId: crypto.randomUUID() };
+        await apiClient.post(`/ios/devices/${deviceId}/commands/removePassCode`, payload);
     },
 
     removeRestrictionPassword: async (deviceId: string) => {
-        await apiClient.post(`/ios/devices/${deviceId}/commands/removeRestrictionPassword`);
-    },
-
-    unlockUserAccount: async (deviceId: string) => {
-        await apiClient.post(`/ios/devices/${deviceId}/commands/unlockUserAccount`);
+        const payload = { commandreferenceId: crypto.randomUUID() };
+        await apiClient.post(`/ios/devices/${deviceId}/commands/removeRestrictionPassword`, payload);
     },
 
     // APNS

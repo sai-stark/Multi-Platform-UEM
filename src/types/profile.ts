@@ -92,18 +92,26 @@ export interface IosWebApplicationPolicy {
 }
 
 // Full Profile interface matching API response (detail view with all policies)
+// Full Profile interface matching API response (detail view with all policies)
 export interface FullProfile extends Profile {
-    // iOS-specific policies (only present in full profile response)
+    // iOS-specific policies
     mailPolicy?: IosMailPolicy;
     passCodePolicy?: IosPasscodeRestrictionPolicy;
     scepPolicy?: IosScepPolicyRes;
-    webClipPolicies?: IosWebApplicationPolicy[];
+    webClipPolicies?: IosWebApplicationPolicy[]; // Note: Shared name, check type
     mdmPolicy?: IosMdmConfiguration;
     acmePolicy?: IosAcmeConfiguration;
     notificationPolicies?: IosAppNotificationSetting[];
     wifiPolicy?: IosWiFiConfiguration;
     lockScreenPolicy?: IosLockScreenMessage;
-    applicationPolicies?: IosApplicationPolicy[];
+
+    // Shared / Android policies
+    applicationPolicies?: IosApplicationPolicy[] | any[]; // Update with Android types if available
+    commonSettingsPolicy?: any; // Define properly if needed
+    deviceThemePolicy?: any;
+    enrollmentPolicy?: any;
+    webApplicationPolicies?: any[];
+    restrictions?: any;
 }
 
 export interface PublishProfile {

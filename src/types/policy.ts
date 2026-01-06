@@ -83,6 +83,8 @@ export interface AndroidWebApplicationPolicy {
     webAppId: string;
     keyCode?: number;
     webAppName?: string; // read-only
+    screenOrder?: number;
+    screenBottom?: boolean;
     policyType: 'AndroidWebApplicationPolicy';
     creationTime?: string;
     modificationTime?: string;

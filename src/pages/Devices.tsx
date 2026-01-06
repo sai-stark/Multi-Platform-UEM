@@ -1,5 +1,4 @@
 import { DeviceService } from '@/api/services/devices';
-import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Column, DataTable } from '@/components/ui/data-table';
@@ -21,6 +20,7 @@ import {
   CheckCircle,
   HardDrive,
   Laptop,
+  Layout,
   Monitor,
   RefreshCw,
   Server,
@@ -47,12 +47,52 @@ interface Device {
   storageTotal: number;
 }
 
-const platformConfig = {
-  android: { label: 'Android', asset: getAssetUrl('/Assets/android.png'), icon: Smartphone },
-  ios: { label: 'iOS', asset: getAssetUrl('/Assets/apple.png'), icon: Smartphone },
-  windows: { label: 'Windows', asset: getAssetUrl('/Assets/microsoft.png'), icon: Laptop },
-  macos: { label: 'macOS', asset: getAssetUrl('/Assets/apple.png'), icon: Laptop },
-  linux: { label: 'Linux', asset: null, icon: Server },
+const platformConfig: Record<
+  string,
+  {
+    label: string;
+    icon: React.ElementType;
+    color: string;
+    disabled?: boolean;
+    image?: string;
+  }
+> = {
+  all: {
+    label: "All Platforms",
+    icon: Layout,
+    color: "text-primary",
+    image: getAssetUrl("/Assets/all_platforms.png"),
+  },
+  android: {
+    label: 'Android',
+    icon: Smartphone,
+    color: 'text-success',
+    image: getAssetUrl('/Assets/android.png'),
+  },
+  ios: {
+    label: 'iOS',
+    icon: Smartphone,
+    color: 'text-muted-foreground',
+    image: getAssetUrl('/Assets/apple.png'),
+  },
+  windows: {
+    label: 'Windows',
+    icon: Laptop,
+    color: 'text-info',
+    image: getAssetUrl('/Assets/microsoft.png'),
+  },
+  macos: {
+    label: 'macOS',
+    icon: Laptop,
+    color: 'text-info',
+    image: getAssetUrl('/Assets/mac_os.png'), // Assuming asset exists
+  },
+  linux: {
+    label: 'Linux',
+    icon: Server,
+    color: 'text-info',
+    image: getAssetUrl('/Assets/linux.png'),
+  },
 };
 
 const complianceConfig = {
@@ -64,37 +104,48 @@ const complianceConfig = {
 const Devices = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { platform } = useParams<{ platform?: string }>();
+  // We can still support URL init but we focus on local state
+  const { platform: urlPlatform } = useParams<{ platform?: string }>();
+  const [platformFilter, setPlatformFilter] = useState<string>(urlPlatform && platformConfig[urlPlatform] ? urlPlatform : "all");
   const [data, setData] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [stats, setStats] = useState({
+    total: 0,
+    online: 0,
+    compliant: 0,
+    nonCompliant: 0,
+  });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      let responseData: any[] = [];
-      if (platform) {
-        const res = await DeviceService.getDevices(platform as Platform, { page: 0, size: 100 });
-        responseData = res.content || [];
-      } else {
-        const platforms: Platform[] = ['android', 'ios', 'windows', 'macos', 'linux'];
-        const results = await Promise.all(
-          platforms.map(async (p) => {
-            try {
-              const res = await DeviceService.getDevices(p, { page: 0, size: 20 });
-              return res.content || [];
-            } catch (err) {
-              console.warn(`Failed to fetch devices for platform ${p}`, err);
-              return [];
-            }
-          })
-        );
-        responseData = results.flat();
-      }
+      const platforms: Platform[] = ['android', 'ios', 'windows', 'macos', 'linux'];
 
-      // Map API response to Device interface
-      // Map API response to Device interface
-      const mappedData: Device[] = responseData.map(item => {
-        let platform: Platform = 'android'; // Default
+      // Fetch from all platforms to build complete stats
+      const results = await Promise.all(
+        platforms.map(async (p) => {
+          try {
+            // Fetching a reasonable amount for the single-page view. 
+            // In a real large-scale scenario, we would use specific endpoints for stats and pagination.
+            const res = await DeviceService.getDevices(p, { page: 0, size: 100 });
+            return { platform: p, devices: res.content || [] };
+          } catch (err) {
+            console.warn(`Failed to fetch devices for platform ${p}`, err);
+            return { platform: p, devices: [] };
+          }
+        })
+      );
+
+      // Flatten all devices for specific filtering
+      const allRawDevices = results.flatMap(r => r.devices);
+
+      // Deduplicate by ID (handles potential backend issues where same device appears in multiple platform endpoints)
+      const allDevices = Array.from(new Map(allRawDevices.map(item => [item.id, item])).values());
+
+      // Client-side mapping
+      const mapDevice = (item: any): Device => {
+        let platform: any = 'android'; // Default
         const dType = item.deviceType?.toLowerCase() || '';
 
         if (dType.includes('ios') || dType.includes('apple') || dType.includes('ipad') || dType.includes('iphone')) {
@@ -102,21 +153,24 @@ const Devices = () => {
         } else if (dType.includes('android')) {
           platform = 'android';
         } else if (item.platform) {
-          platform = item.platform.toLowerCase() as Platform;
+          platform = item.platform.toLowerCase();
         } else if (item.opSysInfo?.osType) {
-          platform = item.opSysInfo.osType.toLowerCase() as Platform;
+          platform = item.opSysInfo.osType.toLowerCase();
         }
 
-        // Calculate storage percentage
+        // Normalize platform for config lookups
+        if (!['android', 'ios', 'windows', 'macos', 'linux'].includes(platform)) {
+          if (platform.includes('mac')) platform = 'macos';
+          else if (platform.includes('win')) platform = 'windows';
+        }
+
+        // Calculate storage
         let storageUsed = 0;
         let storageTotal = 0;
         if (item.storageCapacity) {
-          // Android usually returns bytes or similar, need to normalize if needed. 
-          // Assuming simple mapping for now based on JSON example values (which were just '1')
           storageTotal = item.storageCapacity;
           storageUsed = item.storageUsed || 0;
         } else if (item.deviceCapacity) {
-          // iOS
           storageTotal = item.deviceCapacity;
           storageUsed = (item.deviceCapacity - (item.availableDeviceCapacity || 0));
         }
@@ -125,18 +179,35 @@ const Devices = () => {
           id: item.id,
           name: item.deviceName || item.name || item.model || 'Unknown',
           model: item.model || item.modelName || 'Unknown',
-          platform: platform,
+          platform: platform as any,
           osVersion: item.osVersion || (item.opSysInfo ? item.opSysInfo.version : '-'),
           owner: item.deviceUser || item.userEmail || '-',
           lastSync: item.lastSyncTime ? new Date(item.lastSyncTime).toLocaleString() : (item.modificationTime ? new Date(item.modificationTime).toLocaleString() : '-'),
-          complianceStatus: 'compliant', // Placeholder
+          complianceStatus: item.complianceStatus === 'non-compliant' ? 'non-compliant' : 'compliant', // Simple Mapping
           connectionStatus: (item.status === 'ONLINE' || item.connectionStatus === 'online') ? 'online' : 'offline',
           batteryLevel: item.batteryLevel ?? 0,
-          storageUsed: storageUsed, // Placeholder logic needs refinement based on unit
+          storageUsed: storageUsed,
           storageTotal: storageTotal
         };
+      };
+
+      const mappedAllDevices = allDevices.map(mapDevice);
+
+      // Update Stats (Global)
+      setStats({
+        total: mappedAllDevices.length,
+        online: mappedAllDevices.filter(d => d.connectionStatus === 'online').length,
+        compliant: mappedAllDevices.filter(d => d.complianceStatus === 'compliant').length,
+        nonCompliant: mappedAllDevices.filter(d => d.complianceStatus === 'non-compliant').length,
       });
-      setData(mappedData);
+
+      // Filter for Table View
+      if (platformFilter === 'all') {
+        setData(mappedAllDevices);
+      } else {
+        setData(mappedAllDevices.filter(d => d.platform === platformFilter));
+      }
+
     } catch (error) {
       console.error("Failed to fetch devices", error);
     } finally {
@@ -146,18 +217,7 @@ const Devices = () => {
 
   useEffect(() => {
     fetchData();
-  }, [platform]);
-
-  const pageTitle = platform
-    ? `${platformConfig[platform as keyof typeof platformConfig]?.label || 'Unknown'} Devices`
-    : t('nav.devices');
-
-  const stats = {
-    total: data.length,
-    online: data.filter(d => d.connectionStatus === 'online').length,
-    compliant: data.filter(d => d.complianceStatus === 'compliant').length,
-    nonCompliant: data.filter(d => d.complianceStatus === 'non-compliant').length,
-  };
+  }, [platformFilter]); // Refetch when filter changes or on mount (technically we could just filter client side if we store all, but simpler to refetch/recalc for now)
 
   const columns: Column<Device>[] = [
     {
@@ -166,33 +226,22 @@ const Devices = () => {
       accessor: (item) => item.name,
       sortable: true,
       searchable: true,
-      render: (_, item) => {
-        const platformInfo = platformConfig[item.platform];
-        const PlatformIcon = platformInfo ? platformInfo.icon : Smartphone;
-        return (
-          <div className="flex items-center gap-3">
-            {/* <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden p-2">
-              {platformInfo?.asset ? (
-                <img src={platformInfo.asset} alt={platformInfo.label} className="w-full h-full object-contain" />
-              ) : (
-                <PlatformIcon className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
-              )}
-            </div> */}
-            <div>
-              <p
-                className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/devices/${item.platform}/${item.id}`);
-                }}
-              >
-                {item.name}
-              </p>
-              <p className="text-xs text-muted-foreground">{item.model}</p>
-            </div>
+      render: (_, item) => (
+        <div className="flex items-center gap-3">
+          <div>
+            <p
+              className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/devices/${item.platform}/${item.id}`);
+              }}
+            >
+              {item.name}
+            </p>
+            <p className="text-xs text-muted-foreground">{item.model}</p>
           </div>
-        );
-      },
+        </div>
+      ),
     },
     {
       key: 'platform',
@@ -208,9 +257,9 @@ const Devices = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="inline-flex items-center justify-center cursor-default">
-                {platformInfo?.asset ? (
+                {platformInfo?.image ? (
                   <img
-                    src={platformInfo.asset}
+                    src={platformInfo.image}
                     alt={platformInfo.label}
                     className="w-6 h-6 object-contain"
                   />
@@ -246,7 +295,7 @@ const Devices = () => {
       sortable: true,
       filterable: true,
       render: (_, item) => {
-        const compliance = complianceConfig[item.complianceStatus];
+        const compliance = complianceConfig[item.complianceStatus] || complianceConfig.pending;
         return (
           <div className="space-y-1">
             <span className={cn('status-badge', compliance.className)}>
@@ -325,88 +374,135 @@ const Devices = () => {
 
   return (
     <MainLayout>
-      {loading ? (
-        <LoadingAnimation message="Fetching enrolled devices..." />
-      ) : (
-        <div className="space-y-6">
-          {/* Page Header */}
-          <header className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{pageTitle}</h1>
-              <p className="text-muted-foreground mt-1">
-                {platform ? `Manage ${platformConfig[platform as keyof typeof platformConfig]?.label} devices` : 'View and manage all enrolled devices'}
-              </p>
-            </div>
-            <Button variant="outline" className="gap-2" onClick={fetchData}>
-              <RefreshCw className="w-4 h-4" aria-hidden="true" />
-              Sync All
-            </Button>
-          </header>
-
-          {/* Stats */}
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Device statistics">
-            <article className="stat-card">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
-                  <Monitor className="w-5 h-5 text-info" aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="stat-card__value text-2xl">{stats.total}</p>
-                  <p className="text-sm text-muted-foreground">Total Devices</p>
-                </div>
-              </div>
-            </article>
-            <article className="stat-card">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                  <Wifi className="w-5 h-5 text-success" aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="stat-card__value text-2xl">{stats.online}</p>
-                  <p className="text-sm text-muted-foreground">Online</p>
-                </div>
-              </div>
-            </article>
-            <article className="stat-card">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-success" aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="stat-card__value text-2xl">{stats.compliant}</p>
-                  <p className="text-sm text-muted-foreground">Compliant</p>
-                </div>
-              </div>
-            </article>
-            <article className="stat-card">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                  <XCircle className="w-5 h-5 text-destructive" aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="stat-card__value text-2xl">{stats.nonCompliant}</p>
-                  <p className="text-sm text-muted-foreground">Non-Compliant</p>
-                </div>
-              </div>
-            </article>
-          </section>
-
-          {/* Devices Table */}
-          <div className="rounded-md border bg-card shadow-sm p-4">
-            <DataTable
-              data={data}
-              columns={columns}
-              globalSearchPlaceholder="Search devices..."
-              emptyMessage={loading ? "Loading devices..." : "No devices match your filters."}
-              rowActions={rowActions}
-              defaultPageSize={10}
-              showExport={true}
-              exportTitle="Devices Report"
-              exportFilename="devices"
-            />
+      <div className="space-y-6">
+        {/* Page Header */}
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{t('nav.devices')}</h1>
+            <p className="text-muted-foreground mt-1">
+              View and manage all enrolled devices across platforms
+            </p>
           </div>
+          <Button variant="outline" className="gap-2" onClick={fetchData}>
+            <RefreshCw className="w-4 h-4" aria-hidden="true" />
+            Sync All
+          </Button>
+        </header>
+
+        {/* Platform Tabs */}
+        <section
+          className="inline-flex rounded-lg border bg-muted/30 p-1"
+          role="tablist"
+          aria-label="Filter by platform"
+        >
+          {Object.keys(platformConfig).map((platform) => {
+            const config = platformConfig[platform];
+            const Icon = config.icon;
+            const isActive = platformFilter === platform;
+            const isDisabled = config.disabled;
+            return (
+              <button
+                key={platform}
+                role="tab"
+                aria-selected={isActive}
+                aria-disabled={isDisabled}
+                disabled={isDisabled}
+                onClick={() => !isDisabled && setPlatformFilter(platform)}
+                className={cn(
+                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  isActive && "bg-background text-foreground shadow-sm",
+                  !isActive &&
+                  !isDisabled &&
+                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                  isDisabled &&
+                  "text-muted-foreground/50 cursor-not-allowed opacity-50"
+                )}
+              >
+                {config.image ? (
+                  <img
+                    src={config.image}
+                    alt={config.label}
+                    className={cn(
+                      "w-5 h-5 object-contain",
+                      isDisabled && "opacity-50"
+                    )}
+                  />
+                ) : (
+                  <Icon
+                    className={cn("w-4 h-4", isActive ? config.color : "")}
+                  />
+                )}
+                {config.label}
+              </button>
+            );
+          })}
+        </section>
+
+        {/* Stats */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Device statistics">
+          <article className="stat-card">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                <Monitor className="w-5 h-5 text-info" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="stat-card__value text-2xl">{stats.total}</p>
+                <p className="text-sm text-muted-foreground">Total Devices</p>
+              </div>
+            </div>
+          </article>
+          <article className="stat-card">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <Wifi className="w-5 h-5 text-success" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="stat-card__value text-2xl">{stats.online}</p>
+                <p className="text-sm text-muted-foreground">Online</p>
+              </div>
+            </div>
+          </article>
+          <article className="stat-card">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-success" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="stat-card__value text-2xl">{stats.compliant}</p>
+                <p className="text-sm text-muted-foreground">Compliant</p>
+              </div>
+            </div>
+          </article>
+          <article className="stat-card">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <XCircle className="w-5 h-5 text-destructive" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="stat-card__value text-2xl">{stats.nonCompliant}</p>
+                <p className="text-sm text-muted-foreground">Non-Compliant</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        {/* Devices Table */}
+        <div className="rounded-md border bg-card shadow-sm p-4">
+          <DataTable
+            data={data}
+            columns={columns}
+            loading={loading}
+            globalSearchPlaceholder="Search devices..."
+            emptyMessage={loading ? "Loading devices..." : "No devices match your filters."}
+            rowActions={rowActions}
+            defaultPageSize={10}
+            showExport={true}
+            exportTitle="Devices Report"
+            exportFilename="devices"
+          />
         </div>
-      )}
+      </div>
     </MainLayout>
   );
 };
