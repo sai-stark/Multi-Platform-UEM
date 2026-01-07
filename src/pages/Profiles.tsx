@@ -116,18 +116,54 @@ const Profiles = () => {
       const platforms: Platform[] = ["android", "ios", "windows"];
 
       // Always fetch from all platforms for stats
-      const statsResults = await Promise.all(
+      // Handle errors per platform to allow partial success
+      const statsResults = await Promise.allSettled(
         platforms.map(async (platform) => {
-          const result = await ProfileService.getProfiles(platform);
-          return { platform, profiles: result.content };
+          try {
+            const result = await ProfileService.getProfiles(platform);
+            return { platform, profiles: result.content };
+          } catch (error: any) {
+            // Check if it's a "not supported" error
+            if (
+              error.response?.status === 400 &&
+              error.response?.data?.message?.includes("not supported")
+            ) {
+              console.warn(
+                `Profile feature not supported for platform: ${platform}`
+              );
+              return { platform, profiles: [] };
+            }
+            // Re-throw other errors
+            throw error;
+          }
         })
       );
+
+      // Extract successful results and handle failures
+      const successfulResults = statsResults
+        .map((result, index) => {
+          if (result.status === "fulfilled") {
+            return result.value;
+          } else {
+            // Log error but continue with empty profiles for failed platform
+            const platform = platforms[index];
+            console.error(
+              `Error fetching ${platform} profiles:`,
+              result.reason
+            );
+            return { platform, profiles: [] };
+          }
+        })
+        .filter(
+          (result): result is { platform: Platform; profiles: Profile[] } =>
+            result !== null && result !== undefined
+        );
 
       // Filter profiles based on platformFilter
       let allProfiles: Profile[] = [];
       if (platformFilter === "all") {
         // Use data already fetched for stats
-        allProfiles = statsResults.flatMap(({ platform, profiles }) =>
+        allProfiles = successfulResults.flatMap(({ platform, profiles }) =>
           profiles.map((profile) => ({
             ...profile,
             platform,
@@ -139,7 +175,7 @@ const Profiles = () => {
         platformFilter === "windows"
       ) {
         // Use data already fetched for stats
-        const platformData = statsResults.find(
+        const platformData = successfulResults.find(
           (r) => r.platform === platformFilter
         );
         if (platformData) {
@@ -159,7 +195,7 @@ const Profiles = () => {
       let publishedCount = 0;
       let draftCount = 0;
 
-      statsResults.forEach(({ platform, profiles }) => {
+      successfulResults.forEach(({ platform, profiles }) => {
         if (platform === "android") {
           androidCount = profiles.length;
         } else if (platform === "ios") {
@@ -178,7 +214,7 @@ const Profiles = () => {
       });
 
       setStats({
-        total: statsResults.reduce(
+        total: successfulResults.reduce(
           (sum, { profiles }) => sum + profiles.length,
           0
         ),
@@ -473,10 +509,10 @@ const Profiles = () => {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isActive && "bg-background text-foreground shadow-sm",
                   !isActive &&
-                  !isDisabled &&
-                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                    !isDisabled &&
+                    "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   isDisabled &&
-                  "text-muted-foreground/50 cursor-not-allowed opacity-50"
+                    "text-muted-foreground/50 cursor-not-allowed opacity-50"
                 )}
               >
                 {config.image ? (

@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   // Ensure deployment prefix path has trailing slash for Vite's base option
-  let deploymentPrefix = env.VITE_DEPLOYMENT_PREFIX_PATH || "/wp/";
+  let deploymentPrefix = env.VITE_DEPLOYMENT_PREFIX_PATH || "/uem";
   if (!deploymentPrefix.endsWith('/')) {
     deploymentPrefix += '/';
   }
@@ -18,7 +18,11 @@ export default defineConfig(({ mode }) => {
     base: deploymentPrefix,
     server: {
       host: "::",
-      port: 8080,
+      port: 6066,
+    },
+    preview: {
+      host: "::",
+      port: 6066,
     },
     plugins: [react()],
     resolve: {
