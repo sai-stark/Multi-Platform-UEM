@@ -1,3 +1,4 @@
+import { generateUUID } from '@/lib/utils';
 import {
     ActionDeviceFactoryReset,
     ActionDeviceLock,
@@ -77,12 +78,12 @@ export const DeviceService = {
         // Let's pass a dummy for now as many implementations do this automatically or we'll add uuid lib.
         // Actually for this call, let's just do empty object as per previous code unless strictly required by client validation.
         // Spec said required `commandreferenceId`.
-        const payload = { commandreferenceId: crypto.randomUUID() };
+        const payload = { commandreferenceId: generateUUID() };
         await apiClient.post(`/ios/devices/${deviceId}/commands/removePassCode`, payload);
     },
 
     removeRestrictionPassword: async (deviceId: string) => {
-        const payload = { commandreferenceId: crypto.randomUUID() };
+        const payload = { commandreferenceId: generateUUID() };
         await apiClient.post(`/ios/devices/${deviceId}/commands/removeRestrictionPassword`, payload);
     },
 

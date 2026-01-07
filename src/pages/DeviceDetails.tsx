@@ -246,7 +246,7 @@ export default function DeviceDetails() {
     };
 
     const getBatteryColor = (level?: number) => {
-        if (level === undefined) return 'text-muted-foreground';
+        if (level === undefined || level < 0) return 'text-muted-foreground';
         if (level <= 20) return 'text-destructive';
         if (level <= 50) return 'text-yellow-500';
         return 'text-green-500';
@@ -486,19 +486,29 @@ export default function DeviceDetails() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="flex items-center gap-4">
-                                        <div className={cn("text-4xl font-bold", getBatteryColor(device.batteryLevel))}>
-                                            {device.batteryLevel !== undefined ? (device.batteryLevel > 1 ? device.batteryLevel : Math.round(device.batteryLevel * 100)) : '-'}%
-                                        </div>
-                                        <div className="space-y-1">
-                                            {device.isBatteryCharging && (
-                                                <Badge variant="outline" className="gap-1 text-green-600 bg-green-50 border-green-200">
-                                                    <BatteryCharging className="w-3 h-3" /> Charging
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <Progress value={device.batteryLevel !== undefined ? (device.batteryLevel > 1 ? device.batteryLevel : device.batteryLevel * 100) : 0} className="mt-4 h-2" />
+                                    {(() => {
+                                        const raw = device.batteryLevel;
+                                        const normalized = (raw !== undefined && raw !== null && raw >= 0)
+                                            ? (raw <= 1 ? Math.round(raw * 100) : Math.round(raw))
+                                            : -1;
+                                        return (
+                                            <>
+                                                <div className="flex items-center gap-4">
+                                                    <div className={cn("text-4xl font-bold", getBatteryColor(normalized))}>
+                                                        {normalized >= 0 ? normalized : '-'}%
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {device.isBatteryCharging && (
+                                                            <Badge variant="outline" className="gap-1 text-green-600 bg-green-50 border-green-200">
+                                                                <BatteryCharging className="w-3 h-3" /> Charging
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <Progress value={normalized >= 0 ? normalized : 0} className="mt-4 h-2" />
+                                            </>
+                                        );
+                                    })()}
                                 </CardContent>
                             </Card>
 

@@ -185,7 +185,10 @@ const Devices = () => {
           lastSync: item.lastSyncTime ? new Date(item.lastSyncTime).toLocaleString() : (item.modificationTime ? new Date(item.modificationTime).toLocaleString() : '-'),
           complianceStatus: item.complianceStatus === 'non-compliant' ? 'non-compliant' : 'compliant', // Simple Mapping
           connectionStatus: (item.status === 'ONLINE' || item.connectionStatus === 'online') ? 'online' : 'offline',
-          batteryLevel: item.batteryLevel ?? 0,
+          // Map -1.0...1.0 to -1...100
+          batteryLevel: (item.batteryLevel !== undefined && item.batteryLevel !== null)
+            ? (item.batteryLevel >= 0 && item.batteryLevel <= 1 ? Math.round(item.batteryLevel * 100) : Math.round(item.batteryLevel))
+            : -1,
           storageUsed: storageUsed,
           storageTotal: storageTotal
         };
@@ -318,12 +321,15 @@ const Devices = () => {
       accessor: (item) => item.batteryLevel,
       sortable: true,
       align: 'center',
-      render: (value, item) => (
-        <div className="flex items-center gap-2 justify-center">
-          <Battery className={cn('w-4 h-4', item.batteryLevel < 20 ? 'text-destructive' : item.batteryLevel < 50 ? 'text-warning' : 'text-success')} aria-hidden="true" />
-          <span className="text-sm font-mono">{value}%</span>
-        </div>
-      ),
+      render: (value, item) => {
+        if (value === undefined || value < 0) return <span className="text-muted-foreground">-</span>;
+        return (
+          <div className="flex items-center gap-2 justify-center">
+            <Battery className={cn('w-4 h-4', value < 20 ? 'text-destructive' : value < 50 ? 'text-warning' : 'text-success')} aria-hidden="true" />
+            <span className="text-sm font-mono">{value}%</span>
+          </div>
+        );
+      },
     },
     {
       key: 'storage',
