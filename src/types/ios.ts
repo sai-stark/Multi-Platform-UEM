@@ -137,8 +137,22 @@ export interface IosMailPolicy extends UserAuditData {
 
 export interface IosMdmConfiguration {
     id?: string;
-    serverUrl?: string;
+    policyType?: string;
+    identityCertificateUUID?: string;
+    topic?: string;
+    serverURL?: string;
+    checkInURL?: string;
+    signMessage?: boolean;
     accessRights?: number;
+    useDevelopmentAPNS?: boolean;
+    assignedManagedAppleID?: string;
+    enrollmentMode?: 'BYOD' | 'ADDE';
+    serverURLPinningCertificateUUIDs?: string[];
+    checkInURLPinningCertificateUUIDs?: string[];
+    pinningRevocationCheckRequired?: boolean;
+    serverCapabilities?: string[];
+    checkOutWhenRemoved?: boolean;
+    promptUserToAllowBootstrapTokenForAuthentication?: boolean;
 }
 
 export interface IosCertificateRootPolicy {
@@ -149,8 +163,18 @@ export interface IosCertificateRootPolicy {
 
 export interface IosScepConfiguration {
     id?: string;
+    policyType?: string;
     url: string;
+    scepName?: string;
     name?: string;
+    subject?: any[][][];
+    challenge?: string;
+    keysize?: number;
+    keyType?: string;
+    keyUsage?: number;
+    subjectAltName?: {
+        dnsName?: string;
+    };
 }
 
 export interface IosAcmeConfiguration {

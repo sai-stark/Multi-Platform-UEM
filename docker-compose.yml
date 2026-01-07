@@ -6,7 +6,7 @@ services:
     env_file:
       - ./.env.production
     ports:
-      - "6066:80"
+      - "7077:80"
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost/uem || exit 1"]

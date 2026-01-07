@@ -30,7 +30,7 @@ import {
   Smartphone,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileService } from "@/api/services/profiles";
 import { Platform } from "@/types/models";
@@ -121,13 +121,28 @@ const Profiles = () => {
         platforms.map(async (platform) => {
           try {
             const result = await ProfileService.getProfiles(platform);
-            return { platform, profiles: result.content };
+            // Ensure result and content exist
+            if (!result || !result.content) {
+              console.warn(
+                `Invalid response structure for platform: ${platform}`
+              );
+              return { platform, profiles: [] };
+            }
+            return { platform, profiles: result.content || [] };
           } catch (error: any) {
             // Check if it's a "not supported" error
-            if (
+            const errorMessage =
+              error.response?.data?.message ||
+              error.response?.data ||
+              error.message ||
+              "";
+            const isNotSupportedError =
               error.response?.status === 400 &&
-              error.response?.data?.message?.includes("not supported")
-            ) {
+              (typeof errorMessage === "string"
+                ? errorMessage.includes("not supported")
+                : false);
+
+            if (isNotSupportedError) {
               console.warn(
                 `Profile feature not supported for platform: ${platform}`
               );
@@ -143,20 +158,45 @@ const Profiles = () => {
       const successfulResults = statsResults
         .map((result, index) => {
           if (result.status === "fulfilled") {
-            return result.value;
+            // Ensure the value has the expected structure
+            const value = result.value;
+            if (
+              value &&
+              typeof value === "object" &&
+              "platform" in value &&
+              "profiles" in value
+            ) {
+              return {
+                platform: value.platform,
+                profiles: Array.isArray(value.profiles) ? value.profiles : [],
+              };
+            }
+            // Fallback if structure is unexpected
+            const platform = platforms[index];
+            console.warn(
+              `Unexpected response structure for platform: ${platform}`
+            );
+            return { platform, profiles: [] };
           } else {
             // Log error but continue with empty profiles for failed platform
             const platform = platforms[index];
-            console.error(
-              `Error fetching ${platform} profiles:`,
-              result.reason
-            );
+            const errorReason = result.reason;
+            const errorMessage =
+              errorReason?.response?.data?.message ||
+              errorReason?.message ||
+              "Unknown error";
+            console.error(`Error fetching ${platform} profiles:`, errorMessage);
             return { platform, profiles: [] };
           }
         })
         .filter(
           (result): result is { platform: Platform; profiles: Profile[] } =>
-            result !== null && result !== undefined
+            result !== null &&
+            result !== undefined &&
+            typeof result === "object" &&
+            "platform" in result &&
+            "profiles" in result &&
+            Array.isArray(result.profiles)
         );
 
       // Filter profiles based on platformFilter
@@ -247,174 +287,195 @@ const Profiles = () => {
     );
   };
 
-  const columns: Column<Profile>[] = [
-    {
-      key: "name",
-      header: "Profile Name",
-      accessor: (item) => item.name,
-      sortable: true,
-      searchable: true,
-      render: (_, item) => (
-        <p
-          className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/profiles/${item.platform}/${item.id}`);
-          }}
-        >
-          {item.name}
-        </p>
-      ),
-    },
-    {
-      key: "description",
-      header: "Description",
-      accessor: (item) => item.description || "",
-      sortable: false,
-      searchable: true,
-      render: (value) => (
-        <p className="text-sm text-muted-foreground truncate max-w-[280px]">
-          {value || "-"}
-        </p>
-      ),
-    },
-    {
-      key: "platform",
-      header: "Platform",
-      accessor: (item) => item.platform || "",
-      sortable: true,
-      filterable: true,
-      render: (_, item) => {
-        const config = platformConfig[item.platform?.toLowerCase() || "all"];
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center justify-center cursor-default">
-                {config.image ? (
-                  <img
-                    src={config.image}
-                    alt={config.label}
-                    className="w-6 h-6 object-contain"
-                  />
-                ) : (
-                  getPlatformIcon(item.platform, true)
-                )}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{config.label}</p>
-            </TooltipContent>
-          </Tooltip>
-        );
+  const columns = useMemo<Column<Profile>[]>(() => {
+    const baseColumns: Column<Profile>[] = [
+      {
+        key: "name",
+        header: "Profile Name",
+        accessor: (item) => item.name,
+        sortable: true,
+        searchable: true,
+        render: (_, item) => (
+          <p
+            className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/profiles/${item.platform}/${item.id}`);
+            }}
+          >
+            {item.name}
+          </p>
+        ),
       },
-    },
-    {
-      key: "status",
-      header: "Status",
-      accessor: (item) => item.status || "DRAFT",
-      sortable: true,
-      filterable: true,
-      render: (value) => {
-        const statusConfig: Record<
-          string,
-          { icon: React.ElementType; color: string; label: string }
-        > = {
-          PUBLISHED: {
-            icon: CheckCircle,
-            color: "text-success",
-            label: "Published",
-          },
-          DRAFT: {
-            icon: FileText,
-            color: "text-warning",
-            label: "Draft",
-          },
-        };
-        const config = statusConfig[value] || statusConfig.DRAFT;
-        const Icon = config.icon;
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center justify-center cursor-default">
-                <Icon className={cn("w-5 h-5", config.color)} />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{config.label}</p>
-            </TooltipContent>
-          </Tooltip>
-        );
+      {
+        key: "description",
+        header: "Description",
+        accessor: (item) => item.description || "",
+        sortable: false,
+        searchable: true,
+        render: (value) => (
+          <p className="text-sm text-muted-foreground truncate max-w-[280px]">
+            {value || "-"}
+          </p>
+        ),
       },
-    },
-    {
-      key: "version",
-      header: "Version",
-      accessor: (item) => item.version || 0,
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground font-mono text-sm">
-          {value || "-"}
-        </span>
-      ),
-    },
-    {
-      key: "deviceCount",
-      header: "Devices",
-      accessor: (item) => item.deviceCount || 0,
-      sortable: true,
-      render: (value) => (
-        <span className="text-muted-foreground">{value || 0}</span>
-      ),
-    },
-    {
-      key: "modificationTime",
-      header: "Last Modified",
-      accessor: (item) => item.modificationTime || "",
-      sortable: true,
-      hidden: true,
-      render: (value) => (
-        <span className="text-muted-foreground font-mono text-sm">
-          {value ? new Date(value).toLocaleDateString() : "-"}
-        </span>
-      ),
-    },
-    {
-      key: "creationTime",
-      header: "Created",
-      accessor: (item) => item.creationTime || "",
-      sortable: true,
-      hidden: true,
-      render: (value) => (
-        <span className="text-muted-foreground font-mono text-sm">
-          {value ? new Date(value).toLocaleDateString() : "-"}
-        </span>
-      ),
-    },
-    {
-      key: "createdBy",
-      header: "Created By",
-      accessor: (item) => item.createdBy || "",
-      sortable: true,
-      hidden: true,
-      render: (value) => (
-        <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
-          {value || "-"}
-        </span>
-      ),
-    },
-    {
-      key: "lastModifiedBy",
-      header: "Last Modified By",
-      accessor: (item) => item.lastModifiedBy || "",
-      sortable: true,
-      hidden: true,
-      render: (value) => (
-        <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
-          {value || "-"}
-        </span>
-      ),
-    },
-  ];
+      {
+        key: "platform",
+        header: "Platform",
+        accessor: (item) => item.platform || "",
+        sortable: true,
+        filterable: true,
+        render: (_, item) => {
+          const config = platformConfig[item.platform?.toLowerCase() || "all"];
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center justify-center cursor-default">
+                  {config.image ? (
+                    <img
+                      src={config.image}
+                      alt={config.label}
+                      className="w-6 h-6 object-contain"
+                    />
+                  ) : (
+                    getPlatformIcon(item.platform, true)
+                  )}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{config.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        key: "status",
+        header: "Status",
+        accessor: (item) => item.status || "DRAFT",
+        sortable: true,
+        filterable: true,
+        render: (value) => {
+          const statusConfig: Record<
+            string,
+            { icon: React.ElementType; color: string; label: string }
+          > = {
+            PUBLISHED: {
+              icon: CheckCircle,
+              color: "text-success",
+              label: "Published",
+            },
+            DRAFT: {
+              icon: FileText,
+              color: "text-warning",
+              label: "Draft",
+            },
+          };
+          const config = statusConfig[value] || statusConfig.DRAFT;
+          const Icon = config.icon;
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center justify-center cursor-default">
+                  <Icon className={cn("w-5 h-5", config.color)} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{config.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        key: "version",
+        header: "Version",
+        accessor: (item) => item.version || 0,
+        sortable: true,
+        render: (value, item) => {
+          // iOS profiles don't have version field per OpenAPI spec
+          if (item.platform?.toLowerCase() === "ios") {
+            return null;
+          }
+          return (
+            <span className="text-muted-foreground font-mono text-sm">
+              {value || "-"}
+            </span>
+          );
+        },
+      },
+      {
+        key: "deviceCount",
+        header: "Devices",
+        accessor: (item) => item.deviceCount || 0,
+        sortable: true,
+        render: (value, item) => {
+          // iOS profiles don't have deviceCount field per OpenAPI spec
+          if (item.platform?.toLowerCase() === "ios") {
+            return null;
+          }
+          return <span className="text-muted-foreground">{value || 0}</span>;
+        },
+      },
+      {
+        key: "modificationTime",
+        header: "Last Modified",
+        accessor: (item) => item.modificationTime || "",
+        sortable: true,
+        hidden: true,
+        render: (value) => (
+          <span className="text-muted-foreground font-mono text-sm">
+            {value ? new Date(value).toLocaleDateString() : "-"}
+          </span>
+        ),
+      },
+      {
+        key: "creationTime",
+        header: "Created",
+        accessor: (item) => item.creationTime || "",
+        sortable: true,
+        hidden: true,
+        render: (value) => (
+          <span className="text-muted-foreground font-mono text-sm">
+            {value ? new Date(value).toLocaleDateString() : "-"}
+          </span>
+        ),
+      },
+      {
+        key: "createdBy",
+        header: "Created By",
+        accessor: (item) => item.createdBy || "",
+        sortable: true,
+        hidden: true,
+        render: (value) => (
+          <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
+            {value || "-"}
+          </span>
+        ),
+      },
+      {
+        key: "lastModifiedBy",
+        header: "Last Modified By",
+        accessor: (item) => item.lastModifiedBy || "",
+        sortable: true,
+        hidden: true,
+        render: (value) => (
+          <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
+            {value || "-"}
+          </span>
+        ),
+      },
+    ];
+
+    // Exclude version and deviceCount columns for iOS profiles per OpenAPI spec
+    if (platformFilter === "ios") {
+      return baseColumns.filter(
+        (col) => col.key !== "version" && col.key !== "deviceCount"
+      );
+    }
+
+    return baseColumns;
+  }, [platformFilter]);
 
   const handleEditProfile = (profile: Profile) => {
     setSelectedProfile(profile);

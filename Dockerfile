@@ -15,5 +15,5 @@ ENV HOSTNAME=${HOSTNAME}
 RUN find /usr/share/nginx/html -type f -exec sed -i "s/mdm\.pnb\.bank\.in/${HOSTNAME//\//\\/}/g" {} +
 
 
-# Expose port 6066
-EXPOSE 6066
+# Expose port 7007
+EXPOSE 7007

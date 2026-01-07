@@ -18,11 +18,11 @@ export default defineConfig(({ mode }) => {
     base: deploymentPrefix,
     server: {
       host: "::",
-      port: 6066,
+      port: 7007,
     },
     preview: {
       host: "::",
-      port: 6066,
+      port: 7007,
     },
     plugins: [react()],
     resolve: {
