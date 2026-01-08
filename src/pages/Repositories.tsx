@@ -98,10 +98,17 @@ const Repositories = () => {
       // Always fetch from all platforms for stats
       const statsResults = await Promise.all(
         platforms.map(async (platform) => {
-          const result = await RepositoryService.getCustomRepositories(
-            platform
-          );
-          return { platform, repos: result.content };
+          try {
+            const result = await RepositoryService.getCustomRepositories(
+              platform
+            );
+            // Handle various response structures - ensure we always return an array
+            const repos = Array.isArray(result?.content) ? result.content : [];
+            return { platform, repos };
+          } catch {
+            // API may not be implemented for all platforms - return empty
+            return { platform, repos: [] };
+          }
         })
       );
 
@@ -109,7 +116,7 @@ const Repositories = () => {
       let allRepos: CustomRepository[] = [];
       if (platformFilter === "all") {
         // Use data already fetched for stats
-        allRepos = statsResults.flatMap(({ repos }) => repos);
+        allRepos = statsResults.flatMap(({ repos }) => repos || []);
       } else if (
         platformFilter === "android" ||
         platformFilter === "windows" ||
@@ -121,7 +128,7 @@ const Repositories = () => {
           (r) => r.platform === platformFilter
         );
         if (platformData) {
-          allRepos = platformData.repos;
+          allRepos = platformData.repos || [];
         }
       } else {
         // iOS not supported by API
@@ -137,19 +144,23 @@ const Repositories = () => {
       let macosCount = 0;
 
       statsResults.forEach(({ platform, repos }) => {
+        const count = repos?.length || 0;
         if (platform === "android") {
-          androidCount = repos.length;
+          androidCount = count;
         } else if (platform === "windows") {
-          windowsCount = repos.length;
+          windowsCount = count;
         } else if (platform === "linux") {
-          linuxCount = repos.length;
+          linuxCount = count;
         } else if (platform === "macos") {
-          macosCount = repos.length;
+          macosCount = count;
         }
       });
 
       setStats({
-        total: statsResults.reduce((sum, { repos }) => sum + repos.length, 0),
+        total: statsResults.reduce(
+          (sum, { repos }) => sum + (repos?.length || 0),
+          0
+        ),
         android: androidCount,
         ios: 0,
         windows: windowsCount,
@@ -626,7 +637,7 @@ const Repositories = () => {
             columns={columns}
             loading={loading}
             globalSearchPlaceholder="Search repositories..."
-            emptyMessage="No repositories found."
+            emptyMessage="No repositories found. Click 'Add Repository' to create one."
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}

@@ -1,4 +1,4 @@
-import { MobileApplicationService } from '@/api/services/mobileApps';
+import { DeviceApplication, MobileApplicationService } from '@/api/services/mobileApps';
 import { PolicyService } from '@/api/services/policies';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { AndroidApplicationPolicy, ApplicationAction, ApplicationPolicy, IosApplicationPolicy, MobileApplication, Platform } from '@/types/models';
+import { AndroidApplicationPolicy, ApplicationAction, ApplicationPolicy, IosApplicationPolicy, Platform } from '@/types/models';
 import { Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -41,7 +41,7 @@ const getPolicyIdentifier = (policy: ApplicationPolicy): string => {
 export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSave, onCancel }: ApplicationPolicyProps) => {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    const [availableApps, setAvailableApps] = useState<MobileApplication[]>([]);
+    const [availableApps, setAvailableApps] = useState<DeviceApplication[]>([]);
     const [policyApps, setPolicyApps] = useState<ApplicationPolicy[]>(initialData || []);
 
     const [isFetching, setIsFetching] = useState(false);
@@ -55,9 +55,9 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
 
     const loadApplications = async () => {
         try {
-            const response = await MobileApplicationService.getMobileApplications({ page: 0, size: 100 });
-            const filtered = response.content.filter(app => !app.platform || (app.platform as string) === 'all' || app.platform === platform);
-            setAvailableApps(filtered);
+            // Use platform-specific GET /{platform}/applications endpoint
+            const apps = await MobileApplicationService.getApplications(platform);
+            setAvailableApps(apps);
         } catch (error) {
             console.error("Failed to load apps", error);
             toast({ title: "Error", description: "Failed to load available applications", variant: "destructive" });
@@ -89,7 +89,7 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
     };
 
     const handleAddApp = (appId: string) => {
-        const app = availableApps.find(a => a.id === appId);
+        const app = availableApps.find(a => a.appId === appId);
         if (!app) return;
 
         // Check if policy already exists
@@ -97,7 +97,7 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
             if (isIosApplicationPolicy(p)) {
                 return p.bundleIdentifier === app.packageName;
             } else {
-                return p.applicationVersionId === app.id;
+                return p.applicationVersionId === app.appVersionId;
             }
         });
         if (existingPolicy) return;
@@ -125,9 +125,9 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
             const newPolicy: AndroidApplicationPolicy = {
                 ...auditData,
                 id: '', // Will be set by backend
-                applicationVersionId: app.id, // Using app.id as applicationVersionId for now
+                applicationVersionId: app.appVersionId,
+                applicationVersion: app.appVersion,
                 action: 'INSTALL',
-                // applicationVersion is read-only and set by backend
                 devicePolicyType: 'AndroidApplicationPolicy'
             };
             setPolicyApps([...policyApps, newPolicy]);
@@ -199,12 +199,12 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
                                     if (isIosApplicationPolicy(p)) {
                                         return p.bundleIdentifier === app.packageName;
                                     } else {
-                                        return p.applicationVersionId === app.id;
+                                        return p.applicationVersionId === app.appVersionId;
                                     }
                                 });
                                 return (
-                                    <SelectItem key={app.id} value={app.id} disabled={exists}>
-                                        {app.name} ({app.version})
+                                    <SelectItem key={app.appId} value={app.appId} disabled={exists}>
+                                        {app.name} ({app.appVersion})
                                     </SelectItem>
                                 );
                             })}
@@ -223,7 +223,7 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
                     const policyIdentifier = getPolicyIdentifier(policyApp);
                     const appDetails = isIosApplicationPolicy(policyApp)
                         ? availableApps.find(a => a.packageName === policyApp.bundleIdentifier)
-                        : availableApps.find(a => a.id === policyApp.applicationVersionId);
+                        : availableApps.find(a => a.appVersionId === policyApp.applicationVersionId);
 
                     return (
                         <Card key={policyApp.id || policyIdentifier} className="relative">

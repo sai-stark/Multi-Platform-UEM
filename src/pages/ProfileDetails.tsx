@@ -17,6 +17,7 @@ import { ProfileService } from "@/api/services/profiles";
 import {
   Apple,
   ArrowLeft,
+  Ban,
   Calendar,
   CheckCircle,
   Clock,
@@ -331,24 +332,34 @@ export default function ProfileDetails() {
         );
 
       case "webclip":
-        if (!profile.webClipPolicies || profile.webClipPolicies.length === 0)
-          return null;
+        // Handle iOS webClipPolicies or Android webApplicationPolicies
+        const webPolicies =
+          profile.webClipPolicies ||
+          (profile as any).webApplicationPolicies ||
+          [];
+        if (webPolicies.length === 0) return null;
         return (
           <div className="space-y-4">
-            {profile.webClipPolicies.map((webClip, index) => (
+            {webPolicies.map((webApp: any, index: number) => (
               <div key={index} className="border rounded-lg p-4 space-y-2">
-                <h4 className="font-semibold">Web Clip {index + 1}</h4>
-                {renderInfoRow("Label", webClip.label)}
-                {renderInfoRow("URL", webClip.url)}
-                {renderInfoRow(
-                  "Is Removable",
-                  webClip.isRemovable ? "Yes" : "No"
-                )}
-                {renderInfoRow(
-                  "Precomposed",
-                  webClip.precomposed ? "Yes" : "No"
-                )}
-                {renderAuditInfo(webClip)}
+                <h4 className="font-semibold">
+                  {profile.platform?.toLowerCase() === "ios"
+                    ? `Web Clip ${index + 1}`
+                    : `Web Application ${index + 1}`}
+                </h4>
+                {renderInfoRow("Label", webApp.label || webApp.title)}
+                {renderInfoRow("URL", webApp.url)}
+                {webApp.isRemovable !== undefined &&
+                  renderInfoRow(
+                    "Is Removable",
+                    webApp.isRemovable ? "Yes" : "No"
+                  )}
+                {webApp.precomposed !== undefined &&
+                  renderInfoRow(
+                    "Precomposed",
+                    webApp.precomposed ? "Yes" : "No"
+                  )}
+                {renderAuditInfo(webApp)}
               </div>
             ))}
           </div>
@@ -483,6 +494,59 @@ export default function ProfileDetails() {
           </div>
         );
 
+      case "restrictions":
+        const restrictions = (profile as any).restrictions;
+        if (!restrictions) return null;
+        return (
+          <div className="space-y-4">
+            {restrictions.security && (
+              <div className="border rounded-lg p-4 space-y-2">
+                <h4 className="font-semibold">Security Restrictions</h4>
+                {renderInfoRow(
+                  "Allow Camera",
+                  restrictions.security.allowCamera ? "Yes" : "No"
+                )}
+                {renderInfoRow(
+                  "Allow Screen Capture",
+                  restrictions.security.allowScreenCapture ? "Yes" : "No"
+                )}
+              </div>
+            )}
+            {restrictions.passcode && (
+              <div className="border rounded-lg p-4 space-y-2">
+                <h4 className="font-semibold">Passcode Restrictions</h4>
+                {renderInfoRow("Min Length", restrictions.passcode.minLength)}
+                {renderInfoRow(
+                  "Require Alphanumeric",
+                  restrictions.passcode.requireAlphanumeric ? "Yes" : "No"
+                )}
+              </div>
+            )}
+            {restrictions.kiosk && (
+              <div className="border rounded-lg p-4 space-y-2">
+                <h4 className="font-semibold">Kiosk Restrictions</h4>
+                {renderInfoRow(
+                  "Enabled",
+                  restrictions.kiosk.enabled ? "Yes" : "No"
+                )}
+              </div>
+            )}
+            {restrictions.network && (
+              <div className="border rounded-lg p-4 space-y-2">
+                <h4 className="font-semibold">Network Restrictions</h4>
+                {renderInfoRow(
+                  "Allow WiFi",
+                  restrictions.network.allowWifi ? "Yes" : "No"
+                )}
+                {renderInfoRow(
+                  "Allow Bluetooth",
+                  restrictions.network.allowBluetooth ? "Yes" : "No"
+                )}
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return <div>Policy details not available</div>;
     }
@@ -499,6 +563,7 @@ export default function ProfileDetails() {
       application: "Application Policies",
       mail: "Mail Policy",
       lockscreen: "Lock Screen Policy",
+      restrictions: "Device Restrictions",
     };
     return titles[selectedPolicyType || ""] || "Policy Details";
   };
@@ -1092,6 +1157,82 @@ export default function ProfileDetails() {
               </Card>
             )}
 
+            {/* Android Restrictions (only for Android platform) */}
+            {profile.platform?.toLowerCase() === "android" &&
+              (profile as any).restrictions && (
+                <Card
+                  className="cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => handlePolicyClick("restrictions")}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <Ban className="w-4 h-4 text-destructive" />
+                      Device Restrictions
+                    </CardTitle>
+                    <Badge variant="secondary">Active</Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {(profile as any).restrictions.security && (
+                        <div className="flex justify-between">
+                          <span>Security:</span>
+                          <span className="font-medium text-foreground">
+                            Configured
+                          </span>
+                        </div>
+                      )}
+                      {(profile as any).restrictions.passcode && (
+                        <div className="flex justify-between">
+                          <span>Passcode:</span>
+                          <span className="font-medium text-foreground">
+                            Configured
+                          </span>
+                        </div>
+                      )}
+                      {(profile as any).restrictions.kiosk && (
+                        <div className="flex justify-between">
+                          <span>Kiosk Mode:</span>
+                          <span className="font-medium text-foreground">
+                            Configured
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+            {/* Android Web Application Policies (webApplicationPolicies) */}
+            {profile.platform?.toLowerCase() === "android" &&
+              (profile as any).webApplicationPolicies &&
+              (profile as any).webApplicationPolicies.length > 0 && (
+                <Card
+                  className="cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => handlePolicyClick("webclip")}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-blue-500" />
+                      Web Applications
+                    </CardTitle>
+                    <Badge variant="secondary">
+                      {(profile as any).webApplicationPolicies.length}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <div className="flex justify-between">
+                        <span>Total:</span>
+                        <span className="font-medium text-foreground">
+                          {(profile as any).webApplicationPolicies.length}{" "}
+                          configured
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
             {/* Empty State */}
             {!profile.passCodePolicy &&
               !profile.wifiPolicy &&
@@ -1099,12 +1240,15 @@ export default function ProfileDetails() {
               !profile.mdmPolicy &&
               (!profile.webClipPolicies ||
                 profile.webClipPolicies.length === 0) &&
+              (!(profile as any).webApplicationPolicies ||
+                (profile as any).webApplicationPolicies.length === 0) &&
               (!profile.notificationPolicies ||
                 profile.notificationPolicies.length === 0) &&
               (!profile.applicationPolicies ||
                 profile.applicationPolicies.length === 0) &&
               !profile.mailPolicy &&
-              !profile.lockScreenPolicy && (
+              !profile.lockScreenPolicy &&
+              !(profile as any).restrictions && (
                 <div className="col-span-full text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                   No policies configured.
                 </div>
@@ -1144,6 +1288,9 @@ export default function ProfileDetails() {
               )}
               {selectedPolicyType === "lockscreen" && (
                 <Shield className="w-5 h-5 text-gray-600" />
+              )}
+              {selectedPolicyType === "restrictions" && (
+                <Ban className="w-5 h-5 text-destructive" />
               )}
               {getPolicyTitle()}
             </DialogTitle>
