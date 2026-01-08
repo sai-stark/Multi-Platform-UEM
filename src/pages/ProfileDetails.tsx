@@ -25,6 +25,7 @@ import {
   Layout,
   Mail,
   Monitor,
+  Send,
   Shield,
   Smartphone,
   Users,
@@ -35,6 +36,7 @@ import {
   Bell,
   Package,
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -55,6 +57,7 @@ export default function ProfileDetails() {
   const [selectedPolicyType, setSelectedPolicyType] = useState<string | null>(
     null
   );
+  const [publishing, setPublishing] = useState(false);
 
   const fetchProfile = async () => {
     if (!platform || !id) {
@@ -83,6 +86,39 @@ export default function ProfileDetails() {
   useEffect(() => {
     fetchProfile();
   }, [id, platform]);
+
+  const handlePublish = async () => {
+    if (!platform || !id) return;
+
+    setPublishing(true);
+    try {
+      const profileType =
+        platform.toLowerCase() === "ios"
+          ? "IosPublishProfile"
+          : "AndroidPublishProfile";
+
+      await ProfileService.publishProfile(platform as Platform, id, {
+        profileType,
+      });
+
+      toast({
+        title: "Profile Published",
+        description: `Profile "${profile?.name}" has been published successfully.`,
+      });
+
+      // Refresh profile data to update status
+      await fetchProfile();
+    } catch (err) {
+      console.error("Failed to publish profile:", err);
+      toast({
+        title: "Error",
+        description: "Failed to publish profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -599,6 +635,16 @@ export default function ProfileDetails() {
                 <Edit className="w-4 h-4" />
                 Edit Policies
               </Button>
+              {profile.status !== "PUBLISHED" && (
+                <Button
+                  className="gap-2 bg-green-500 hover:bg-green-600 text-white"
+                  onClick={handlePublish}
+                  disabled={publishing}
+                >
+                  <Send className="w-4 h-4" />
+                  {publishing ? "Publishing..." : "Publish"}
+                </Button>
+              )}
             </div>
             <Badge
               variant="outline"

@@ -2,12 +2,12 @@ import { Platform } from './common';
 import {
     IosAcmeConfiguration,
     IosAppNotificationSetting,
-    IosApplicationPolicy,
     IosLockScreenMessage,
     IosMailPolicy,
     IosMdmConfiguration,
     IosWiFiConfiguration
 } from './ios';
+import { IosApplicationPolicy } from './policy';
 
 // Profile types as per OpenAPI spec
 export type ProfileType = 'AndroidProfile' | 'IosProfile' | 'IosFullProfile' | 'AndroidFullProfile';
@@ -117,4 +117,5 @@ export interface FullProfile extends Profile {
 export interface PublishProfile {
     deviceIds?: string[];
     groupIds?: string[];
+    profileType?: 'AndroidPublishProfile' | 'IosPublishProfile';
 }

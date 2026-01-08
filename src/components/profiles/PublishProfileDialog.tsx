@@ -41,8 +41,14 @@ export function PublishProfileDialog({
 
     setLoading(true);
     try {
-      // Publish profile with empty data (deviceIds and groupIds are optional)
-      await ProfileService.publishProfile(profile.platform as Platform, profile.id, {});
+      // Determine profileType based on platform
+      const profileType = profile.platform.toLowerCase() === "ios" 
+        ? "IosPublishProfile" 
+        : "AndroidPublishProfile";
+
+      await ProfileService.publishProfile(profile.platform as Platform, profile.id, {
+        profileType,
+      });
 
       toast({
         title: "Profile Published",

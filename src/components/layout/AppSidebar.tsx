@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/sidebar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
-  AppWindow,
   Box,
   ChevronDown,
   Folder,
@@ -39,7 +38,6 @@ import {
 const mainNavItems = [
   { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
   { titleKey: "Profiles", url: "/profiles", icon: Layout },
-  { titleKey: "nav.applications", url: "/applications", icon: AppWindow },
   { titleKey: "nav.webApplications", url: "/web-applications", icon: Globe },
   { titleKey: "nav.devices", url: "/devices", icon: Monitor },
   { titleKey: "Inventory", url: "/inventory", icon: Box },

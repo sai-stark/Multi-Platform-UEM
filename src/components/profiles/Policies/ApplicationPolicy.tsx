@@ -1,3 +1,4 @@
+import { ITunesSearchResult, ITunesSearchService } from '@/api/services/itunesSearch';
 import { DeviceApplication, MobileApplicationService } from '@/api/services/mobileApps';
 import { PolicyService } from '@/api/services/policies';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { AndroidApplicationPolicy, ApplicationAction, ApplicationPolicy, IosApplicationPolicy, Platform } from '@/types/models';
-import { Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Loader2, Search, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ApplicationPolicyProps {
     profileId: string;
@@ -46,12 +47,113 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
 
     const [isFetching, setIsFetching] = useState(false);
 
+    // iTunes Search state (iOS only)
+    const [itunesSearchTerm, setItunesSearchTerm] = useState('');
+    const [itunesResults, setItunesResults] = useState<ITunesSearchResult[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         loadApplications();
         if (!initialData) {
             loadExistingPolicies();
         }
     }, [platform, profileId]);
+
+    // Close search results when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+                setShowSearchResults(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Debounced iTunes search
+    const searchITunes = useCallback(async (term: string) => {
+        if (!term || term.trim().length < 2) {
+            setItunesResults([]);
+            setShowSearchResults(false);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const results = await ITunesSearchService.searchApps(term);
+            setItunesResults(results);
+            setShowSearchResults(true);
+        } catch (error) {
+            console.error('iTunes search failed:', error);
+            toast({ title: 'Search Error', description: 'Failed to search iTunes Store', variant: 'destructive' });
+            setItunesResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    }, [toast]);
+
+    const handleItunesSearchChange = (value: string) => {
+        setItunesSearchTerm(value);
+        
+        // Clear previous timeout
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        // Debounce search by 400ms
+        searchTimeoutRef.current = setTimeout(() => {
+            searchITunes(value);
+        }, 400);
+    };
+
+    const handleAddItunesApp = (app: ITunesSearchResult) => {
+        // Check if policy already exists
+        const existingPolicy = policyApps.find(p => 
+            isIosApplicationPolicy(p) && p.bundleIdentifier === app.bundleId
+        );
+        
+        if (existingPolicy) {
+            toast({ title: 'App Already Added', description: `${app.trackName} is already in the policy list`, variant: 'default' });
+            return;
+        }
+
+        // Create iOS Application Policy with default values per user specification
+        const now = new Date().toISOString();
+        const newPolicy: IosApplicationPolicy = {
+            creationTime: now,
+            modificationTime: now,
+            createdBy: '', // Will be set by backend
+            lastModifiedBy: '', // Will be set by backend
+            id: '', // Will be set by backend
+            name: app.trackName,
+            bundleIdentifier: app.bundleId,
+            action: 'INSTALL',
+            purchaseMethod: 1, // VPP app assignment
+            removable: true,
+            requestRequiresNetworkTether: true,
+            devicePolicyType: 'IosApplicationPolicy',
+        };
+
+        setPolicyApps([...policyApps, newPolicy]);
+        setItunesSearchTerm('');
+        setItunesResults([]);
+        setShowSearchResults(false);
+        
+        toast({ 
+            title: 'App Added', 
+            description: `${app.trackName} has been added with default settings` 
+        });
+    };
+
+    const clearItunesSearch = () => {
+        setItunesSearchTerm('');
+        setItunesResults([]);
+        setShowSearchResults(false);
+    };
 
     const loadApplications = async () => {
         try {
@@ -186,32 +288,134 @@ export const ApplicationPolicyEditor = ({ profileId, platform, initialData, onSa
 
     return (
         <div className="space-y-6">
-            <div className="flex gap-4 items-end">
-                <div className="space-y-2 flex-1">
-                    <Label htmlFor="app-select">Add Application</Label>
-                    <Select onValueChange={handleAddApp}>
-                        <SelectTrigger id="app-select">
-                            <SelectValue placeholder="Select application to control" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableApps.map(app => {
-                                const exists = policyApps.some(p => {
-                                    if (isIosApplicationPolicy(p)) {
-                                        return p.bundleIdentifier === app.packageName;
-                                    } else {
-                                        return p.applicationVersionId === app.appVersionId;
-                                    }
-                                });
-                                return (
-                                    <SelectItem key={app.appId} value={app.appId} disabled={exists}>
-                                        {app.name} ({app.appVersion})
-                                    </SelectItem>
-                                );
-                            })}
-                        </SelectContent>
-                    </Select>
+            {/* iOS: iTunes Store Search */}
+            {platform === 'ios' && (
+                <div className="space-y-2" ref={searchContainerRef}>
+                    <Label htmlFor="itunes-search" className="flex items-center gap-2">
+                        <Search className="w-4 h-4" />
+                        Search iOS Apps (iTunes Store)
+                    </Label>
+                    <div className="relative">
+                        <div className="relative">
+                            <Input
+                                id="itunes-search"
+                                type="text"
+                                placeholder="Search for apps (e.g., Amazon, Slack, Zoom)..."
+                                value={itunesSearchTerm}
+                                onChange={(e) => handleItunesSearchChange(e.target.value)}
+                                onFocus={() => itunesResults.length > 0 && setShowSearchResults(true)}
+                                className="pr-16"
+                                aria-label="Search iTunes Store for iOS apps"
+                                aria-describedby="itunes-search-hint"
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {isSearching && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                                {itunesSearchTerm && !isSearching && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={clearItunesSearch}
+                                        aria-label="Clear search"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                        <p id="itunes-search-hint" className="text-xs text-muted-foreground mt-1">
+                            Type at least 2 characters to search. Select an app to add it with default policy settings.
+                        </p>
+
+                        {/* Search Results Dropdown */}
+                        {showSearchResults && itunesResults.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-[320px] overflow-y-auto">
+                                <div className="p-2 text-xs text-muted-foreground border-b sticky top-0 bg-popover">
+                                    {itunesResults.length} app{itunesResults.length !== 1 ? 's' : ''} found
+                                </div>
+                                <ul role="listbox" aria-label="iTunes search results">
+                                    {itunesResults.map((app) => {
+                                        const isAdded = policyApps.some(p => 
+                                            isIosApplicationPolicy(p) && p.bundleIdentifier === app.bundleId
+                                        );
+                                        return (
+                                            <li key={app.trackId} role="option" aria-selected={isAdded}>
+                                                <button
+                                                    type="button"
+                                                    disabled={isAdded}
+                                                    onClick={() => handleAddItunesApp(app)}
+                                                    className={`w-full flex items-center gap-3 p-3 text-left hover:bg-accent transition-colors border-b last:border-b-0 ${
+                                                        isAdded ? 'opacity-50 cursor-not-allowed bg-muted' : 'cursor-pointer'
+                                                    }`}
+                                                >
+                                                    {app.artworkUrl60 && (
+                                                        <img 
+                                                            src={app.artworkUrl60} 
+                                                            alt="" 
+                                                            className="w-10 h-10 rounded-lg flex-shrink-0"
+                                                            loading="lazy"
+                                                        />
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-medium truncate">
+                                                            {app.trackName}
+                                                            {isAdded && <span className="ml-2 text-xs text-muted-foreground">(Already added)</span>}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground truncate">
+                                                            {app.bundleId}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {app.sellerName} • {app.primaryGenreName}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* No Results State */}
+                        {showSearchResults && itunesResults.length === 0 && !isSearching && itunesSearchTerm.length >= 2 && (
+                            <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg p-4 text-center text-muted-foreground">
+                                No apps found for "{itunesSearchTerm}"
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Android: Select from available apps */}
+            {platform === 'android' && (
+                <div className="flex gap-4 items-end">
+                    <div className="space-y-2 flex-1">
+                        <Label htmlFor="app-select">Add Application</Label>
+                        <Select onValueChange={handleAddApp}>
+                            <SelectTrigger id="app-select">
+                                <SelectValue placeholder="Select application to control" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableApps.map(app => {
+                                    const exists = policyApps.some(p => {
+                                        if (isIosApplicationPolicy(p)) {
+                                            return p.bundleIdentifier === app.packageName;
+                                        } else {
+                                            return p.applicationVersionId === app.appVersionId;
+                                        }
+                                    });
+                                    return (
+                                        <SelectItem key={app.appId} value={app.appId} disabled={exists}>
+                                            {app.name} ({app.appVersion})
+                                        </SelectItem>
+                                    );
+                                })}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            )}
 
             <div className="space-y-4">
                 {policyApps.length === 0 && (

@@ -6,7 +6,6 @@ import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Applications from "./pages/Applications";
 import DeviceDetails from "./pages/DeviceDetails";
 import Devices from "./pages/Devices";
 import EditProfilePolicies from "./pages/EditProfilePolicies";
@@ -38,7 +37,6 @@ const App = () => (
           <BrowserRouter basename={deploymentPrefixPath}>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/applications" element={<Applications />} />
               <Route path="/web-applications" element={<WebApplications />} />
               <Route path="/policies" element={<Policies />} />
               <Route path="/enrollment" element={<Enrollment />} />

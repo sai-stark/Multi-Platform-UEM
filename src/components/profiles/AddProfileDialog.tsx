@@ -1,4 +1,5 @@
 import { ProfileService } from "@/api/services/profiles";
+import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,7 +23,7 @@ import { getAssetUrl } from "@/config/env";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType } from "@/types/models";
 import { Layout } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Platform configuration with asset images
@@ -76,6 +77,10 @@ interface FormData {
   platform: "android" | "ios";
 }
 
+// Constants for profile readiness polling
+const MAX_POLL_ATTEMPTS = 10;
+const POLL_INTERVAL_MS = 500; // 500ms between attempts, max ~5 seconds total
+
 export function AddProfileDialog({
   open,
   onOpenChange,
@@ -84,6 +89,7 @@ export function AddProfileDialog({
 }: AddProfileDialogProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
@@ -91,6 +97,30 @@ export function AddProfileDialog({
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Poll the profile API until it returns valid data
+  const waitForProfileReady = useCallback(
+    async (platform: string, profileId: string): Promise<boolean> => {
+      for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+        try {
+          const profile = await ProfileService.getProfile(
+            platform as Platform,
+            profileId
+          );
+          if (profile && profile.id) {
+            return true;
+          }
+        } catch {
+          // Profile not ready yet, continue polling
+        }
+        // Wait before next attempt
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      }
+      // Timeout reached - navigate anyway after max attempts
+      return false;
+    },
+    []
+  );
 
   // Sync platform with defaultPlatform when dialog opens
   useEffect(() => {
@@ -206,14 +236,26 @@ export function AddProfileDialog({
       });
 
       onProfileAdded();
-      onOpenChange(false);
-      resetForm();
+      setLoading(false);
 
       // Navigate to edit policies page for the newly created profile
       if (createdProfile?.id) {
+        // Show preparing state while waiting for profile to be ready
+        setPreparing(true);
+
+        // Wait for profile to be available in the API
+        await waitForProfileReady(formData.platform, createdProfile.id);
+
+        setPreparing(false);
+        onOpenChange(false);
+        resetForm();
+
         navigate(
-          `/profiles/${formData.platform}/${createdProfile.id}/policies`
+          `/profiles/${formData.platform}/${createdProfile.id}`
         );
+      } else {
+        onOpenChange(false);
+        resetForm();
       }
     } catch (error) {
       console.error("Failed to create profile:", error);
@@ -222,8 +264,8 @@ export function AddProfileDialog({
         description: "Failed to create profile. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
+      setPreparing(false);
     }
   };
 
@@ -240,20 +282,32 @@ export function AddProfileDialog({
     onOpenChange(isOpen);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-background">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Layout className="w-5 h-5" />
-            Create New Profile
-          </DialogTitle>
-          <DialogDescription>
-            Create a new device profile to apply policies and configurations.
-          </DialogDescription>
-        </DialogHeader>
+  // Prevent closing dialog while preparing
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    if (preparing) return; // Prevent closing during preparation
+    handleOpenChange(isOpen);
+  };
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+  return (
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      <DialogContent className="sm:max-w-[500px] bg-background">
+        {preparing ? (
+          <div className="py-4">
+            <LoadingAnimation message="Preparing profile..." />
+          </div>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Layout className="w-5 h-5" />
+                Create New Profile
+              </DialogTitle>
+              <DialogDescription>
+                Create a new device profile to apply policies and configurations.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-1">
               Profile Name
@@ -406,20 +460,22 @@ export function AddProfileDialog({
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Profile"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Creating..." : "Create Profile"}
+              </Button>
+            </DialogFooter>
+          </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

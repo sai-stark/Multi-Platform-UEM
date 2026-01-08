@@ -190,13 +190,3 @@ export interface IosLockScreenMessage {
     lockScreenFootnote?: string;
 }
 
-export interface IosApplicationPolicy {
-    id?: string;
-    name?: string;
-    bundleIdentifier?: string;
-    action?: 'INSTALL' | 'REMOVE';
-    purchaseMethod?: number;
-    removable?: boolean;
-    requestRequiresNetworkTether?: boolean;
-    devicePolicyType?: string;
-}
