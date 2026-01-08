@@ -23,7 +23,7 @@ const defaultSettings: AccessibilitySettings = {
   fontSize: 'medium',
   greyscale: false,
   underlineLinks: false,
-  darkMode: true,
+  darkMode: false,
   highContrast: false,
 };
 
