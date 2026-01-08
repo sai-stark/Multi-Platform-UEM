@@ -60,6 +60,8 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
         if (platform === 'ios') {
             return {
                 policyType: 'IosPasscodeRestrictionPolicy',
+                name: (initialData as any)?.name || 'iOS Passcode Policy',
+                requirePassCode: true,
                 requirePassCode: true,
                 allowSimple: false,
                 forcePIN: true,
@@ -76,6 +78,7 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
         }
         return {
             policyType: 'AndoidPasscodeRestrictionPolicy',
+            name: (initialData as any)?.name || 'Android Passcode Policy',
             passcodeId: (initialData as any)?.passcodeId, // Persist passcodeId for updates
             minLength: 4,
             complexity: 'low',
@@ -277,6 +280,11 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
 
     const renderAndroidEdit = () => (
         <div className="grid gap-6 p-1">
+            <div className="space-y-2">
+                <Label htmlFor="policyName">Policy Name</Label>
+                <Input id="policyName" value={formData.name || ''} onChange={(e) => updateField('name', e.target.value)} placeholder="e.g. Corporate Passcode Policy" />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label htmlFor="complexity">Complexity</Label>
@@ -326,6 +334,11 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
 
     const renderIosEdit = () => (
         <div className="space-y-8">
+            <div className="space-y-2">
+                <Label htmlFor="policyName">Policy Name</Label>
+                <Input id="policyName" value={formData.name || ''} onChange={(e) => updateField('name', e.target.value)} placeholder="e.g. Corporate iOS Passcode Policy" />
+            </div>
+
             {/* Core Settings */}
             <div className="p-4 border rounded-xl bg-card space-y-6">
                 <div className="flex items-center justify-between">

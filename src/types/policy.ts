@@ -106,6 +106,7 @@ export interface SecurityRestriction {
 export interface PasscodeRestrictionPolicy {
     id?: string;
     passcodeId?: string;
+    name?: string;
     policyType?: string;
     complexity?: string;
     minLength?: number;
