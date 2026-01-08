@@ -18,8 +18,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ApplicationPolicy, FullProfile, IosMailPolicy, IosPasscodeRestrictionPolicy, IosWiFiConfiguration, LockScreenMessagePolicy as LockScreenMessagePolicyType, NotificationPolicy as NotificationPolicyType, PasscodeRestrictionPolicy, Platform, WebApplicationPolicy } from '@/types/models';
 import { IosMdmConfiguration, IosScepConfiguration } from '@/types/ios';
+import { ApplicationPolicy, FullProfile, IosMailPolicy, IosPasscodeRestrictionPolicy, IosWiFiConfiguration, LockScreenMessagePolicy as LockScreenMessagePolicyType, NotificationPolicy as NotificationPolicyType, PasscodeRestrictionPolicy, Platform, WebApplicationPolicy } from '@/types/models';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Apple, ArrowLeft, Ban, Bell, Globe, Grid, Key, Layout, Mail, MessageSquare, Monitor, Plus, Server, Shield, Smartphone, Wifi } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -448,8 +448,31 @@ export default function EditProfilePolicies() {
                                             <CardDescription>Device security</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground">Min Length: {passcodePolicy.minLength}</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <Badge>Active</Badge>
+                                                <span className="text-xs text-muted-foreground">Modified {new Date().toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Complexity</span>
+                                                    <span className="font-medium capitalize">
+                                                        {'complexity' in passcodePolicy ? passcodePolicy.complexity || 'Simple' : 'Simple'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Min Length</span>
+                                                    <span className="font-medium">{passcodePolicy.minLength} chars</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Max Failed Attempts</span>
+                                                    <span className="font-medium">
+                                                        {'maximumFailedAttempts' in passcodePolicy ? passcodePolicy.maximumFailedAttempts || 'Unlimited' : 'Unlimited'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <Button variant="secondary" className="w-full" onClick={() => setActivePolicyType('passcode')}>
+                                                View Policy
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </motion.div>
@@ -465,8 +488,26 @@ export default function EditProfilePolicies() {
                                             <CardDescription>Network connectivity</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground">{wifiPolicy.ssid}</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <Badge className="bg-info hover:bg-info/90">Active</Badge>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">SSID</span>
+                                                    <span className="font-medium">{wifiPolicy.ssid}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Encryption</span>
+                                                    <span className="font-medium">{wifiPolicy.encryptionType || 'None'}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Auto Join</span>
+                                                    <span className="font-medium">{wifiPolicy.autoJoin ? 'Yes' : 'No'}</span>
+                                                </div>
+                                            </div>
+                                            <Button variant="secondary" className="w-full" onClick={() => setActivePolicyType('wifi')}>
+                                                View Policy
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </motion.div>
@@ -500,8 +541,32 @@ export default function EditProfilePolicies() {
                                             <CardDescription>Feature control</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground">Camera: {restrictionsPolicy.security?.allowCamera ? 'Yes' : 'No'}</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <Badge className="bg-destructive hover:bg-destructive/90">Active</Badge>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Camera</span>
+                                                    <span className={restrictionsPolicy.security?.allowCamera ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                                        {restrictionsPolicy.security?.allowCamera ? 'Allowed' : 'Blocked'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Screen Capture</span>
+                                                    <span className={restrictionsPolicy.security?.allowScreenCapture ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                                        {restrictionsPolicy.security?.allowScreenCapture ? 'Allowed' : 'Blocked'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Factory Reset</span>
+                                                    <span className={restrictionsPolicy.misc?.allowFactoryReset ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                                        {restrictionsPolicy.misc?.allowFactoryReset ? 'Allowed' : 'Blocked'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <Button variant="secondary" className="w-full" onClick={() => setActivePolicyType('restrictions')}>
+                                                View Policy
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </motion.div>
@@ -536,51 +601,80 @@ export default function EditProfilePolicies() {
                                             <CardDescription>Device management</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground truncate">{mdmPolicy.serverURL || 'Configured'}</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <Badge className="bg-destructive hover:bg-destructive/90">Active</Badge>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Camera</span>
+                                                    <span className={restrictionsPolicy.security?.allowCamera ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                                        {restrictionsPolicy.security?.allowCamera ? 'Allowed' : 'Blocked'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Screen Capture</span>
+                                                    <span className={restrictionsPolicy.security?.allowScreenCapture ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                                        {restrictionsPolicy.security?.allowScreenCapture ? 'Allowed' : 'Blocked'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Factory Reset</span>
+                                                    <span className={restrictionsPolicy.misc?.allowFactoryReset ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                                        {restrictionsPolicy.misc?.allowFactoryReset ? 'Allowed' : 'Blocked'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <Button variant="secondary" className="w-full" onClick={() => setActivePolicyType('restrictions')}>
+                                                View Policy
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </motion.div>
                             )}
 
-                            {/* Application Policies - show only if array has items */}
-                            {applicationPolicy.length > 0 && (
-                                <motion.div variants={itemVariants}>
-                                    <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-orange-500" onClick={() => setActivePolicyType('applications')}>
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-lg flex items-center gap-2">
-                                                <Grid className="w-5 h-5 text-orange-500" /> Applications
-                                            </CardTitle>
-                                            <CardDescription>Managed app catalog</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground">{applicationPolicy.length} app(s) configured</p>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            )}
+                            {/* Always show App and WebApp cards as "Manage" entry points since they are lists */}
+                            <motion.div variants={itemVariants}>
+                                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-orange-500" onClick={() => setActivePolicyType('applications')}>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Grid className="w-5 h-5 text-orange-500" /> Applications
+                                        </CardTitle>
+                                        <CardDescription>Manage app catalog</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Button variant="outline" size="sm" className="w-full">Manage Apps</Button>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
 
-                            {/* Web Application Policies - show only if array has items */}
-                            {webApplicationPolicy.length > 0 && (
+                            {webApplicationPolicy && webApplicationPolicy.length > 0 && (
                                 <motion.div variants={itemVariants}>
                                     <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-blue-500" onClick={() => setActivePolicyType('webApps')}>
                                         <CardHeader className="pb-2">
                                             <CardTitle className="text-lg flex items-center gap-2">
                                                 <Globe className="w-5 h-5 text-blue-500" /> Web Apps
                                             </CardTitle>
-                                            <CardDescription>Web shortcuts</CardDescription>
+                                            <CardDescription>Manage web shortcuts</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground">{webApplicationPolicy.length} web app(s) configured</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <Badge>Active</Badge>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Configured Web Apps</span>
+                                                    <span className="font-medium">{webApplicationPolicy.length} Shortcuts</span>
+                                                </div>
+                                            </div>
+                                            <Button variant="secondary" className="w-full" onClick={() => setActivePolicyType('webApps')}>
+                                                View Policy
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </motion.div>
                             )}
 
-                            {/* Notification Policies - show only if array has items */}
-                            {notificationPolicy.length > 0 && (
+                            {notificationPolicy && notificationPolicy.length > 0 && (
                                 <motion.div variants={itemVariants}>
                                     <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-purple-500" onClick={() => setActivePolicyType('notifications')}>
                                         <CardHeader className="pb-2">
@@ -590,14 +684,23 @@ export default function EditProfilePolicies() {
                                             <CardDescription>App notification settings</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground">{notificationPolicy.length} notification rule(s)</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <Badge>Active</Badge>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Configured Apps</span>
+                                                    <span className="font-medium">{notificationPolicy.length} Apps</span>
+                                                </div>
+                                            </div>
+                                            <Button variant="secondary" className="w-full" onClick={() => setActivePolicyType('notifications')}>
+                                                View Policy
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </motion.div>
                             )}
 
-                            {/* Lock Screen Message - show only if configured */}
                             {lockScreenMessagePolicy && (
                                 <motion.div variants={itemVariants}>
                                     <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-teal-500" onClick={() => setActivePolicyType('lockScreenMessage')}>
@@ -608,26 +711,29 @@ export default function EditProfilePolicies() {
                                             <CardDescription>Lock screen messages</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Badge>Active</Badge>
-                                            <p className="text-sm mt-2 text-muted-foreground truncate">
-                                                {(lockScreenMessagePolicy as any).assetTagInformation || (lockScreenMessagePolicy as any).lockScreenFootnote || 'Configured'}
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            )}
-
-                            {/* Show empty state if no policies are configured */}
-                            {!passcodePolicy && !wifiPolicy && !mailPolicy && !restrictionsPolicy && 
-                             !scepPolicy && !mdmPolicy &&
-                             applicationPolicy.length === 0 && webApplicationPolicy.length === 0 && 
-                             notificationPolicy.length === 0 && !lockScreenMessagePolicy && (
-                                <motion.div variants={itemVariants} className="col-span-full">
-                                    <Card className="border-dashed">
-                                        <CardContent className="flex flex-col items-center justify-center py-12">
-                                            <Shield className="w-12 h-12 text-muted-foreground/50 mb-4" />
-                                            <h3 className="text-lg font-medium text-muted-foreground mb-2">No Policies Configured</h3>
-                                            <p className="text-sm text-muted-foreground mb-4">Use the "Add Policy" button above to configure policies for this profile.</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <Badge>Active</Badge>
+                                            </div>
+                                            <div className="space-y-2 mb-4">
+                                                {lockScreenMessagePolicy.assetTagInformation && (
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">Asset Tag</span>
+                                                        <span className="font-medium truncate max-w-[150px]">{lockScreenMessagePolicy.assetTagInformation}</span>
+                                                    </div>
+                                                )}
+                                                {lockScreenMessagePolicy.lockScreenFootnote && (
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">Footnote</span>
+                                                        <span className="font-medium truncate max-w-[150px]">{lockScreenMessagePolicy.lockScreenFootnote}</span>
+                                                    </div>
+                                                )}
+                                                {!lockScreenMessagePolicy.assetTagInformation && !lockScreenMessagePolicy.lockScreenFootnote && (
+                                                    <div className="text-sm text-muted-foreground italic">No message configured</div>
+                                                )}
+                                            </div>
+                                            <Button variant="secondary" className="w-full" onClick={() => setActivePolicyType('lockScreenMessage')}>
+                                                View Policy
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </motion.div>

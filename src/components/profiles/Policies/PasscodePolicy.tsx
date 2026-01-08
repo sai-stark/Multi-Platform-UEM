@@ -62,7 +62,6 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                 policyType: 'IosPasscodeRestrictionPolicy',
                 name: (initialData as any)?.name || 'iOS Passcode Policy',
                 requirePassCode: true,
-                requirePassCode: true,
                 allowSimple: false,
                 forcePIN: true,
                 maxFailedAttempts: 6,

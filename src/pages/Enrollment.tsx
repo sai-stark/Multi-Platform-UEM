@@ -3,7 +3,6 @@ import { LoadingAnimation } from '@/components/common/LoadingAnimation';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { getAssetUrl } from '@/config/env';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getAssetUrl } from '@/config/env';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 import { Platform } from '@/types/models';
@@ -170,7 +170,11 @@ export default function Enrollment() {
   const fetchQrCode = async (platform: Platform, profileId: string) => {
     try {
       const data = await EnrollmentService.getQrCode(platform, profileId);
-      setQrCodeData(data);
+      if (platform === 'ios' && data && typeof data === 'object' && 'apple.enrollment.url' in data) {
+        setQrCodeData(data['apple.enrollment.url']);
+      } else {
+        setQrCodeData(data);
+      }
     } catch (error) {
       console.error('Failed to fetch QR code', error);
     }
@@ -180,48 +184,111 @@ export default function Enrollment() {
     setSelectedPlatform(platform as Platform);
   };
 
+  const getEnrollmentUrl = () => {
+    if (selectedPlatform === 'ios' && typeof qrCodeData === 'string') {
+      return qrCodeData;
+    }
+    return `https://enroll.cdot.in/${selectedPlatform}/${currentProfile?.id}`;
+  };
+
   const handleCopyEnrollmentData = async () => {
-    const data = {
-      platform: selectedPlatform,
-      profile: currentProfile?.name,
-      enrollmentUrl: `https://enroll.cdot.in/${selectedPlatform}/${currentProfile?.id}`,
-      // qrData: qrCodeData, // Optional: Include raw QR data if needed
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      const data = {
+        platform: selectedPlatform,
+        profile: currentProfile?.name,
+        enrollmentUrl: getEnrollmentUrl(),
+        timestamp: new Date().toISOString(),
+      };
 
-    await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-    setCopied(true);
+      const textToCopy = JSON.stringify(data, null, 2);
 
-    toast({
-      title: t('enrollment.copied'),
-      description: t('enrollment.copiedDesc'),
-    });
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        // Fallback for non-secure contexts (HTTP)
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
 
-    setTimeout(() => setCopied(false), 2000);
+        // Ensure it's not visible but part of the DOM
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+
+        textArea.focus();
+        textArea.select();
+
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback: Oops, unable to copy', err);
+          throw new Error('Fallback copy failed');
+        }
+
+        document.body.removeChild(textArea);
+      }
+
+      setCopied(true);
+
+      toast({
+        title: t('enrollment.copied'),
+        description: t('enrollment.copiedDesc'),
+      });
+
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDownloadQR = async () => {
-    if (!currentProfile) return;
+    if (!currentProfile || !qrCodeData) return;
 
     try {
-      toast({
-        title: t('enrollment.downloading'),
-        description: t('enrollment.downloadingDesc'),
-      });
+      const svg = document.querySelector('.panel__content svg');
+      if (!svg) throw new Error('QR Code SVG not found');
 
-      const downloadUrl = await EnrollmentService.downloadProfile(selectedPlatform, currentProfile.id);
-      // Create a temporary link to download
-      const link = document.createElement('a');
-      link.href = downloadUrl; // Assuming downloadUrl is a valid URL string or blob URL
-      link.download = `profile-${currentProfile.id}.json`; // Or relevant extension
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const pngUrl = canvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = pngUrl;
+          link.download = `enrollment-qr-${selectedPlatform}-${currentProfile.name}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          toast({
+            title: "Success",
+            description: "QR Code downloaded successfully",
+          });
+        }
+      };
+
+      img.src = url;
+
     } catch (error) {
       console.error("Download failed", error);
       toast({
         title: "Error",
-        description: "Failed to download profile",
+        description: "Failed to download QR code",
         variant: "destructive"
       });
     }
@@ -378,7 +445,7 @@ export default function Enrollment() {
                             </div>
                           </div>
                           <div className="text-center text-sm text-muted-foreground break-all">
-                            {`https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`}
+                            {getEnrollmentUrl()}
                           </div>
                         </DialogContent>
                       </Dialog>
@@ -402,7 +469,7 @@ export default function Enrollment() {
                         </div>
 
                         <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
-                          {`https://enroll.cdot.in/${selectedPlatform}/${currentProfile.id}`}
+                          {getEnrollmentUrl()}
                         </p>
                       </div>
 

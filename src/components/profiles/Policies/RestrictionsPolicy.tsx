@@ -10,6 +10,7 @@ import {
     SecurityRestriction,
     SyncStorageRestriction
 } from '@/types/models';
+import { Ban, Edit } from 'lucide-react';
 import { useState } from 'react';
 
 // Composite interface for the editor
@@ -29,6 +30,10 @@ interface RestrictionsPolicyProps {
 }
 
 export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }: RestrictionsPolicyProps) {
+    // If we have an ID or any set data, start in view mode.
+    // However, RestrictionsComposite doesn't have an ID itself. We check if initialData is provided.
+    // Let's assume if initialData is provided, it's view mode.
+    const [isEditing, setIsEditing] = useState(!initialData);
     const [data, setData] = useState<RestrictionsComposite>(
         initialData || {
             security: { allowCamera: true, allowScreenCapture: true },
@@ -74,8 +79,117 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
     };
 
 
+    const handleCancelClick = () => {
+        if (isEditing && initialData) {
+            setIsEditing(false);
+            setData(initialData); // Reset
+        } else {
+            onCancel();
+        }
+    };
+
+    const renderView = () => (
+        <div className="space-y-6 max-w-4xl mt-6">
+            <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-destructive/10 rounded-full">
+                        <Ban className="w-6 h-6 text-destructive" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-semibold">Device Restrictions</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Control device features and functionality
+                        </p>
+                    </div>
+                </div>
+                <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Restrictions
+                </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="p-4 rounded-xl border bg-card space-y-4">
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider border-b pb-2">Security</h4>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span>Camera</span>
+                            <span className={data.security?.allowCamera ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                {data.security?.allowCamera ? 'Allowed' : 'Blocked'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>Screen Capture</span>
+                            <span className={data.security?.allowScreenCapture ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                {data.security?.allowScreenCapture ? 'Allowed' : 'Blocked'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-4 rounded-xl border bg-card space-y-4">
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider border-b pb-2">Connectivity</h4>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span>Bluetooth</span>
+                            <span className={data.connectivity?.allowBluetooth ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                {data.connectivity?.allowBluetooth ? 'Allowed' : 'Blocked'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>USB Storage</span>
+                            <span className={data.storage?.allowUsbMassStorage ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                {data.storage?.allowUsbMassStorage ? 'Allowed' : 'Blocked'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-4 rounded-xl border bg-card space-y-4">
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider border-b pb-2">System</h4>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span>Force GPS</span>
+                            <span className={data.location?.forceGps ? 'text-success font-medium' : 'text-muted-foreground'}>
+                                {data.location?.forceGps ? 'Yes' : 'No'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>Factory Reset</span>
+                            <span className={data.misc?.allowFactoryReset ? 'text-success font-medium' : 'text-destructive font-medium'}>
+                                {data.misc?.allowFactoryReset ? 'Allowed' : 'Blocked'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+                <Button variant="outline" onClick={onCancel}>Close</Button>
+            </div>
+        </div>
+    );
+
+    if (!isEditing) {
+        return renderView();
+    }
+
     return (
-        <>
+        <div className="space-y-6 max-w-4xl mt-6">
+            <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-destructive/10 rounded-full">
+                        <Edit className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium">Edit Restrictions</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Configure allowed features and limitations
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div className="grid gap-6 py-4">
                 <div className="space-y-4">
                     <h3 className="font-medium text-sm text-muted-foreground border-b pb-2">Security</h3>
@@ -156,11 +270,11 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
                 </div>
             </div>
             <CardFooter className="flex justify-between px-0">
-                <Button variant="outline" onClick={onCancel}>
+                <Button variant="outline" onClick={handleCancelClick}>
                     Cancel
                 </Button>
                 <Button onClick={() => onSave(data)}>Save Changes</Button>
             </CardFooter>
-        </>
+        </div>
     );
 }

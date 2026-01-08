@@ -45,14 +45,20 @@ interface WebApplicationPolicyProps {
     profileId: string;
     platform: "android" | "ios" | "windows" | "macos" | "linux";
     readonly?: boolean;
+    initialData?: (AndroidWebApplicationPolicy | IosWebApplicationPolicy)[];
+    onSave?: () => void;
+    onCancel?: () => void;
 }
 
 export function WebApplicationPolicyEditor({
     profileId,
     platform,
     readonly = false,
+    initialData,
+    onSave,
+    onCancel,
 }: WebApplicationPolicyProps) {
-    const [policies, setPolicies] = useState<(AndroidWebApplicationPolicy | IosWebApplicationPolicy)[]>([]);
+    const [policies, setPolicies] = useState<(AndroidWebApplicationPolicy | IosWebApplicationPolicy)[]>(initialData || []);
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingPolicy, setEditingPolicy] = useState<(AndroidWebApplicationPolicy | IosWebApplicationPolicy) | null>(null);
@@ -111,7 +117,9 @@ export function WebApplicationPolicyEditor({
     };
 
     useEffect(() => {
-        fetchPolicies();
+        if (!initialData) {
+            fetchPolicies();
+        }
         if (platform === 'android') {
             fetchWebApps();
         }
@@ -492,6 +500,10 @@ export function WebApplicationPolicyEditor({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <div className="flex justify-end pt-4 border-t">
+                <Button variant="outline" onClick={onCancel}>Close</Button>
+            </div>
         </div>
     );
 }
