@@ -1,8 +1,14 @@
 import { generateUUID } from '@/lib/utils';
 import {
+    ActionAndroidDeviceFactoryReset,
+    ActionAndroidDeviceLock,
+    ActionAndroidDeviceReboot,
     ActionDeviceFactoryReset,
     ActionDeviceLock,
     ActionDeviceReboot,
+    ActionIosDeviceFactoryReset,
+    ActionIosDeviceLock,
+    ActionIosDeviceReboot,
     DeviceApplicationList,
     DeviceInfo,
     FullProfile,
@@ -48,17 +54,58 @@ export const DeviceService = {
 
     // Commands
     rebootDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceReboot) => {
-        const body = platform === 'ios' ? (payload || { command: 'RestartDevice' }) : {};
+        let body: any = {};
+        if (platform === 'ios') {
+            body = {
+                commandReferenceId: (payload as any)?.commandReferenceId || generateUUID(),
+                deviceType: 'ActionIosDeviceReboot',
+                notifyUser: (payload as any)?.notifyUser
+            } as ActionIosDeviceReboot;
+        } else if (platform === 'android') {
+            body = {
+                deviceType: 'ActionAndroidDeviceReboot',
+                force: (payload as any)?.force,
+                delay: (payload as any)?.delay
+            } as ActionAndroidDeviceReboot;
+        }
         await apiClient.post(`/${platform}/devices/${deviceId}/commands/reboot`, body);
     },
 
     factoryResetDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceFactoryReset) => {
-        const body = platform === 'ios' ? (payload || { command: 'EraseDevice' }) : {};
+        let body: any = {};
+        if (platform === 'ios') {
+            body = {
+                commandReferenceId: (payload as any)?.commandReferenceId || generateUUID(),
+                deviceActionType: 'ActionIosDeviceFactoryReset',
+                preserveDataPlan: (payload as any)?.preserveDataPlan,
+                disallowProximitySetup: (payload as any)?.disallowProximitySetup,
+                returnToServiceEnabled: (payload as any)?.returnToServiceEnabled
+            } as ActionIosDeviceFactoryReset;
+        } else if (platform === 'android') {
+            body = {
+                deviceActionType: 'ActionAndroidDeviceFactoryReset',
+                delay: (payload as any)?.delay
+            } as ActionAndroidDeviceFactoryReset;
+        }
         await apiClient.post(`/${platform}/devices/${deviceId}/commands/factory-reset`, body);
     },
 
     lockDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceLock) => {
-        const body = platform === 'ios' ? (payload || { command: 'DeviceLock' }) : {};
+        let body: any = {};
+        if (platform === 'ios') {
+            body = {
+                commandReferenceId: (payload as any)?.commandReferenceId || generateUUID(),
+                deviceActionType: 'ActionIosDeviceLock',
+                message: (payload as any)?.message,
+                phoneNumber: (payload as any)?.phoneNumber,
+                requestRequiresNetworkTether: (payload as any)?.requestRequiresNetworkTether
+            } as ActionIosDeviceLock;
+        } else if (platform === 'android') {
+            body = {
+                deviceActionType: 'ActionAndroidDeviceLock',
+                delay: (payload as any)?.delay
+            } as ActionAndroidDeviceLock;
+        }
         await apiClient.post(`/${platform}/devices/${deviceId}/commands/lock`, body);
     },
 

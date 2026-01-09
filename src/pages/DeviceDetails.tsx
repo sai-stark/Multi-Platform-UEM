@@ -338,6 +338,8 @@ export default function DeviceDetails() {
     const storagePercent = Math.min(100, ((Number(device.storageUsed || device.usedStorage) || 0) / (Number(device.storageCapacity || device.totalStorage || device.deviceCapacity) || 1)) * 100);
     const ramPercent = Math.min(100, ((Number(device.ramUsed || device.usedRam) || 0) / (Number(device.ramCapacity || device.totalRam) || 1)) * 100);
 
+    const isIos = device.platform === 'ios' || device.deviceType === 'IosDeviceInfo';
+
     return (
         <MainLayout>
             <div className="space-y-6 pb-20 max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
@@ -452,24 +454,31 @@ export default function DeviceDetails() {
                         <TabsTrigger value="overview" className="gap-2 px-4 py-2 w-full">
                             <Activity className="w-4 h-4" /> Overview
                         </TabsTrigger>
-                        <TabsTrigger value="hardware" className="gap-2 px-4 py-2 w-full">
+
+                        <TabsTrigger value="hardware" disabled={isIos} className="gap-2 px-4 py-2 w-full">
                             <Chip className="w-4 h-4" /> Hardware
                         </TabsTrigger>
-                        <TabsTrigger value="network" className="gap-2 px-4 py-2 w-full">
+
+                        <TabsTrigger value="network" disabled={isIos} className="gap-2 px-4 py-2 w-full">
                             <Network className="w-4 h-4" /> Network
                         </TabsTrigger>
+
                         <TabsTrigger value="applications" className="gap-2 px-4 py-2 w-full">
                             <AppWindow className="w-4 h-4" /> Applications
                         </TabsTrigger>
-                        <TabsTrigger value="system" className="gap-2 px-4 py-2 w-full">
+
+                        <TabsTrigger value="system" disabled={isIos} className="gap-2 px-4 py-2 w-full">
                             <Cpu className="w-4 h-4" /> System
                         </TabsTrigger>
-                        <TabsTrigger value="settings" className="gap-2 px-4 py-2 w-full">
+
+                        <TabsTrigger value="settings" disabled={isIos} className="gap-2 px-4 py-2 w-full">
                             <Settings className="w-4 h-4" /> Settings
                         </TabsTrigger>
-                        <TabsTrigger value="user" className="gap-2 px-4 py-2 w-full">
+
+                        <TabsTrigger value="user" disabled={isIos} className="gap-2 px-4 py-2 w-full">
                             <User className="w-4 h-4" /> User
                         </TabsTrigger>
+
                         <TabsTrigger value="effective-profile" className="gap-2 px-4 py-2 w-full">
                             <FileText className="w-4 h-4" /> Effective Profile
                         </TabsTrigger>
@@ -477,211 +486,259 @@ export default function DeviceDetails() {
 
                     {/* OVERVIEW TAB */}
                     <TabsContent value="overview" className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {/* Battery Status */}
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                        <Battery className="w-4 h-4" /> Battery
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {(() => {
-                                        const raw = device.batteryLevel;
-                                        const normalized = (raw !== undefined && raw !== null && raw >= 0)
-                                            ? (raw <= 1 ? Math.round(raw * 100) : Math.round(raw))
-                                            : -1;
-                                        return (
-                                            <>
-                                                <div className="flex items-center gap-4">
-                                                    <div className={cn("text-4xl font-bold", getBatteryColor(normalized))}>
-                                                        {normalized >= 0 ? normalized : '-'}%
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        {device.isBatteryCharging && (
-                                                            <Badge variant="outline" className="gap-1 text-green-600 bg-green-50 border-green-200">
-                                                                <BatteryCharging className="w-3 h-3" /> Charging
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <Progress value={normalized >= 0 ? normalized : 0} className="mt-4 h-2" />
-                                            </>
-                                        );
-                                    })()}
-                                </CardContent>
-                            </Card>
+                        {(device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') ? (
+                            // iOS Specific Overview Layout
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <Card className="col-span-1 border-t-4 border-t-primary">
+                                    <CardHeader>
+                                        <SectionHeader title="Device Information" icon={Smartphone} />
+                                    </CardHeader>
+                                    <CardContent className="grid gap-2">
+                                        <InfoRow label="Device Name" value={device.deviceName} icon={Smartphone} />
+                                        <InfoRow label="Model Name" value={device.modelName} />
+                                        <InfoRow label="Model Number" value={device.model} />
+                                        <InfoRow label="Product Name" value={device.productName} />
+                                        <InfoRow label="Serial Number" value={device.serialNo} copyable icon={Barcode} />
+                                        <InfoRow label="UDID" value={device.udid} copyable icon={Chip} />
+                                    </CardContent>
+                                </Card>
 
-                            {/* Storage */}
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                        <Database className="w-4 h-4" /> Storage
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex justify-between items-baseline mb-2">
-                                        <span className="text-2xl font-bold">{formatBytes(device.storageUsed || device.usedStorage)}</span>
-                                        <span className="text-sm text-muted-foreground">of {formatBytes(device.storageCapacity || device.totalStorage || device.deviceCapacity)}</span>
-                                    </div>
-                                    <Progress value={storagePercent} className="h-2 mb-2" />
-                                    <div className="flex justify-between text-xs text-muted-foreground">
-                                        <span>Used: {Math.round(storagePercent)}%</span>
-                                        <span>Free: {formatBytes(device.freeStorage || (device.availableDeviceCapacity))}</span>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                <Card className="col-span-1 border-t-4 border-t-info">
+                                    <CardHeader>
+                                        <SectionHeader title="Software" icon={Cpu} />
+                                    </CardHeader>
+                                    <CardContent className="grid gap-2">
+                                        <InfoRow label="OS Version" value={device.osVersion} />
+                                        <InfoRow label="Build Version" value={device.buildVersion} />
+                                        <InfoRow label="Modem Firmware" value={device.modemFirmwareVersion} />
+                                        <BooleanStatus label="Awaiting Config" value={device.awaitingConfiguration} trueLabel="Yes" falseLabel="No" />
+                                        <BooleanStatus label="iTunes Account Active" value={device.iTunesStoreAccountIsActive} trueLabel="Yes" falseLabel="No" />
+                                    </CardContent>
+                                </Card>
 
-                            {/* RAM (Android mainly) */}
-                            {(device.ramCapacity || device.totalRam) && (
+                                <Card className="col-span-1 border-t-4 border-t-success">
+                                    <CardHeader>
+                                        <SectionHeader title="Storage" icon={Database} />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex flex-col gap-4">
+                                            <InfoRow label="Total Capacity" value={device.deviceCapacity ? `${device.deviceCapacity} GB` : '-'} icon={Database} />
+                                            {/* Calculate used if available, or just show capacity */}
+                                            {/* Note: iOS API provided might not have used storage directly in this specific response subset, only capacity */}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="col-span-1 md:col-span-2 border-t-4 border-t-warning">
+                                    <CardHeader>
+                                        <SectionHeader title="Status & Compliance" icon={Shield} />
+                                    </CardHeader>
+                                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <BooleanStatus label="Supervised" value={device.isSupervised} />
+                                        <BooleanStatus label="Device Locator" value={device.isDeviceLocatorServiceEnabled} />
+                                        <BooleanStatus label="Do Not Disturb" value={device.isDoNotDisturbInEffect} />
+                                        <BooleanStatus label="Cloud Backup" value={device.isCloudBackupEnabled} />
+                                        <BooleanStatus label="MDM Lost Mode" value={device.isMDMLostModeEnabled} invertColor />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ) : (
+                            // Existing Android/Generic Layout
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {/* Battery Status */}
                                 <Card>
                                     <CardHeader className="pb-2">
                                         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                            <Gauge className="w-4 h-4" /> RAM
+                                            <Battery className="w-4 h-4" /> Battery
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {(() => {
+                                            const raw = device.batteryLevel;
+                                            const normalized = (raw !== undefined && raw !== null && raw >= 0)
+                                                ? (raw <= 1 ? Math.round(raw * 100) : Math.round(raw))
+                                                : -1;
+                                            return (
+                                                <>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={cn("text-4xl font-bold", getBatteryColor(normalized))}>
+                                                            {normalized >= 0 ? normalized : '-'}%
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            {device.isBatteryCharging && (
+                                                                <Badge variant="outline" className="gap-1 text-green-600 bg-green-50 border-green-200">
+                                                                    <BatteryCharging className="w-3 h-3" /> Charging
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <Progress value={normalized >= 0 ? normalized : 0} className="mt-4 h-2" />
+                                                </>
+                                            );
+                                        })()}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Storage */}
+                                <Card>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <Database className="w-4 h-4" /> Storage
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex justify-between items-baseline mb-2">
-                                            <span className="text-2xl font-bold">{formatBytes(device.ramUsed || device.usedRam)}</span>
-                                            <span className="text-sm text-muted-foreground">of {formatBytes(device.ramCapacity || device.totalRam)}</span>
+                                            <span className="text-2xl font-bold">{formatBytes(device.storageUsed || device.usedStorage)}</span>
+                                            <span className="text-sm text-muted-foreground">of {formatBytes(device.storageCapacity || device.totalStorage || device.deviceCapacity)}</span>
                                         </div>
-                                        <Progress value={ramPercent} className="h-2 mb-2" />
+                                        <Progress value={storagePercent} className="h-2 mb-2" />
                                         <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>Used: {Math.round(ramPercent)}%</span>
-                                            <span>Free: {formatBytes(device.freeRam)}</span>
+                                            <span>Used: {Math.round(storagePercent)}%</span>
+                                            <span>Free: {formatBytes(device.freeStorage || (device.availableDeviceCapacity))}</span>
                                         </div>
                                     </CardContent>
                                 </Card>
-                            )}
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card>
-                                <CardHeader>
-                                    <SectionHeader title="Identity" icon={Smartphone} />
-                                </CardHeader>
-                                <CardContent className="grid gap-2">
-                                    <InfoRow label="Serial Number" value={device.serialNo} icon={Barcode} copyable />
-                                    <InfoRow label="IMEI" value={device.imei || (device.imeis?.map(i => i.imei).join(', '))} icon={ScanBarcode} copyable />
-                                    <InfoRow label="UDID / ID" value={device.udid || device.id} icon={Chip} copyable />
-                                    <InfoRow label="Model Identifier" value={device.model} icon={Smartphone} />
-                                    <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} icon={Layers} />
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <SectionHeader title="Network Summary" icon={Wifi} />
-                                </CardHeader>
-                                <CardContent className="grid gap-2">
-                                    <InfoRow label="Wi-Fi MAC" value={device.wifiMAC || device.wifiInfo?.macId || device.macAddress} icon={Network} copyable />
-                                    <InfoRow label="Bluetooth MAC" value={device.bluetoothMAC} icon={Bluetooth} copyable />
-                                    <InfoRow label="IP Address" value={device.ipAddress || device.wifiInfo?.ipAddress || (device.simInfos && device.simInfos[0]?.ipAddress)} icon={Globe} />
-                                    {device.wifiInfo && (
-                                        <InfoRow label="Connected SSID" value={device.wifiInfo.ssid} icon={Wifi} />
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </TabsContent>
-
-                    {/* HARDWARE TAB */}
-                    <TabsContent value="hardware" className="space-y-6">
-                        <Card>
-                            <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="space-y-4">
-                                    <SectionHeader title="Device Info" icon={Smartphone} />
-                                    <InfoRow label="Model Name" value={device.modelName || device.modelInfo?.modelName} />
-                                    <InfoRow label="Product Name" value={device.productName || device.modelInfo?.productName} />
-                                    <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} />
-                                    <InfoRow label="Model Number" value={device.modelNumber} />
-                                    <InfoRow label="Device Type" value={device.deviceType || device.modelInfo?.deviceType} />
-                                </div>
-
-                                <div className="space-y-4">
-                                    <SectionHeader title="Processor & Storage" icon={Cpu} />
-                                    <InfoRow label="CPU Architecture" value={device.cpuArch || device.cpu} />
-                                    <InfoRow label="Device Capacity" value={formatBytes(device.deviceCapacity || device.storageCapacity)} subValue={device.storageCapacity ? 'Total Storage' : undefined} />
-                                    <InfoRow label="RAM" value={formatBytes(device.ramCapacity || device.totalRam)} />
-                                </div>
-
-                                <div className="space-y-4">
-                                    <SectionHeader title="Hardware Features" icon={Layers} />
-                                    <BooleanStatus label="GPS" value={device.gpsStatus} />
-                                    <BooleanStatus label="Bluetooth" value={device.bluetooth} />
-                                    <BooleanStatus label="NFC" value={device.nfcStatus} />
-                                    <BooleanStatus label="Audio/Volume Control" value={device.volume !== undefined} />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    {/* NETWORK TAB */}
-                    <TabsContent value="network" className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card>
-                                <CardHeader>
-                                    <SectionHeader title="Wi-Fi Information" icon={Wifi} />
-                                </CardHeader>
-                                <CardContent className="grid gap-2">
-                                    <BooleanStatus label="Wi-Fi Enabled" value={device.wifi} />
-                                    <InfoRow label="MAC Address" value={device.wifiMAC || device.wifiInfo?.macId} />
-                                    {device.wifiInfo && (
-                                        <>
-                                            <InfoRow label="SSID" value={device.wifiInfo.ssid} />
-                                            <InfoRow label="IP Address" value={device.wifiInfo.ipAddress} />
-                                            <InfoRow label="Signal Strength (RSSI)" value={device.wifiInfo.rssi} />
-                                            <InfoRow label="Link Speed" value={device.wifiInfo.linkSpeed} subValue="Mbps" />
-                                            <InfoRow label="Frequency" value={device.wifiInfo.frequency} subValue="MHz" />
-                                        </>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <SectionHeader title="Cellular" icon={Signal} />
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <BooleanStatus label="Mobile Data" value={device.mobileData} />
-                                    {/* Android SIMs */}
-                                    {device.simInfos?.map((sim, idx) => (
-                                        <div key={idx} className="p-4 rounded-lg bg-muted/20 border">
-                                            <p className="font-semibold text-sm mb-2">SIM Slot {idx + 1}</p>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                <InfoRow label="Carrier" value={sim.carrierNetwork} />
-                                                <InfoRow label="Phone" value={sim.phoneNumber} />
-                                                <InfoRow label="IMEI" value={sim.imei} />
-                                                <InfoRow label="Roaming" value={sim.isRoaming ? 'Yes' : 'No'} />
-                                                <InfoRow label="Data Active" value={sim.isDataTxOn ? 'Yes' : 'No'} />
+                                {/* RAM (Android mainly) */}
+                                {(device.ramCapacity || device.totalRam) && (
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                                <Gauge className="w-4 h-4" /> RAM
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="flex justify-between items-baseline mb-2">
+                                                <span className="text-2xl font-bold">{formatBytes(device.ramUsed || device.usedRam)}</span>
+                                                <span className="text-sm text-muted-foreground">of {formatBytes(device.ramCapacity || device.totalRam)}</span>
                                             </div>
-                                        </div>
-                                    ))}
-
-                                    {/* iOS Service Subscriptions */}
-                                    {device.serviceSubscriptions?.map((sub, idx) => (
-                                        <div key={idx} className="p-4 rounded-lg bg-muted/20 border">
-                                            <p className="font-semibold text-sm mb-2">Service Subscription {idx + 1} ({sub.slot})</p>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                <InfoRow label="Carrier" value={sub.currentCarrierNetwork} />
-                                                <InfoRow label="Phone" value={sub.phoneNumber} />
-                                                <InfoRow label="ICCID" value={sub.iccId} />
-                                                <InfoRow label="Data Preferred" value={sub.isDataPreferred ? 'Yes' : 'No'} />
-                                                <InfoRow label="Voice Preferred" value={sub.isVoicePreferred ? 'Yes' : 'No'} />
-                                                <InfoRow label="Roaming" value={sub.isRoaming ? 'Yes' : 'No'} />
+                                            <Progress value={ramPercent} className="h-2 mb-2" />
+                                            <div className="flex justify-between text-xs text-muted-foreground">
+                                                <span>Used: {Math.round(ramPercent)}%</span>
+                                                <span>Free: {formatBytes(device.freeRam)}</span>
                                             </div>
-                                        </div>
-                                    ))}
+                                        </CardContent>
+                                    </Card>
+                                )}
 
-                                    {(!device.simInfos?.length && !device.serviceSubscriptions?.length) && (
-                                        <p className="text-muted-foreground text-sm italic">No cellular information available.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
+                                <div className="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Card>
+                                        <CardHeader>
+                                            <SectionHeader title="Identity" icon={Smartphone} />
+                                        </CardHeader>
+                                        <CardContent className="grid gap-2">
+                                            <InfoRow label="Serial Number" value={device.serialNo} icon={Barcode} copyable />
+                                            <InfoRow label="IMEI" value={device.imei || (device.imeis?.map(i => i.imei).join(', '))} icon={ScanBarcode} copyable />
+                                            <InfoRow label="UDID / ID" value={device.udid || device.id} icon={Chip} copyable />
+                                            <InfoRow label="Model Identifier" value={device.model} icon={Smartphone} />
+                                            <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} icon={Layers} />
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader>
+                                            <SectionHeader title="Network Summary" icon={Wifi} />
+                                        </CardHeader>
+                                        <CardContent className="grid gap-2">
+                                            <InfoRow label="Wi-Fi MAC" value={device.wifiMAC || device.wifiInfo?.macId || device.macAddress} icon={Network} copyable />
+                                            <InfoRow label="Bluetooth MAC" value={device.bluetoothMAC} icon={Bluetooth} copyable />
+                                            <InfoRow label="IP Address" value={device.ipAddress || device.wifiInfo?.ipAddress || (device.simInfos && device.simInfos[0]?.ipAddress)} icon={Globe} />
+                                            {device.wifiInfo && (
+                                                <InfoRow label="Connected SSID" value={device.wifiInfo.ssid} icon={Wifi} />
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
+                        )}
                     </TabsContent>
 
-                    {/* APPLICATIONS TAB */}
+                    {/* HARDWARE TAB - Only render for non-iOS or if forced */}
+                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                        <TabsContent value="hardware" className="space-y-6">
+                            <Card>
+                                <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div className="space-y-4">
+                                        <SectionHeader title="Device Info" icon={Smartphone} />
+                                        <InfoRow label="Model Name" value={device.modelName || device.modelInfo?.modelName} />
+                                        <InfoRow label="Product Name" value={device.productName || device.modelInfo?.productName} />
+                                        <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} />
+                                        <InfoRow label="Model Number" value={device.modelNumber} />
+                                        <InfoRow label="Device Type" value={device.deviceType || device.modelInfo?.deviceType} />
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <SectionHeader title="Processor & Storage" icon={Cpu} />
+                                        <InfoRow label="CPU Architecture" value={device.cpuArch || device.cpu} />
+                                        <InfoRow label="Device Capacity" value={formatBytes(device.deviceCapacity || device.storageCapacity)} subValue={device.storageCapacity ? 'Total Storage' : undefined} />
+                                        <InfoRow label="RAM" value={formatBytes(device.ramCapacity || device.totalRam)} />
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <SectionHeader title="Hardware Features" icon={Layers} />
+                                        <BooleanStatus label="GPS" value={device.gpsStatus} />
+                                        <BooleanStatus label="Bluetooth" value={device.bluetooth} />
+                                        <BooleanStatus label="NFC" value={device.nfcStatus} />
+                                        <BooleanStatus label="Audio/Volume Control" value={device.volume !== undefined} />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    )}
+
+                    {/* NETWORK TAB - Only render for non-iOS */}
+                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                        <TabsContent value="network" className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Card>
+                                    <CardHeader>
+                                        <SectionHeader title="Wi-Fi Information" icon={Wifi} />
+                                    </CardHeader>
+                                    <CardContent className="grid gap-2">
+                                        <BooleanStatus label="Wi-Fi Enabled" value={device.wifi} />
+                                        <InfoRow label="MAC Address" value={device.wifiMAC || device.wifiInfo?.macId} />
+                                        {device.wifiInfo && (
+                                            <>
+                                                <InfoRow label="SSID" value={device.wifiInfo.ssid} />
+                                                <InfoRow label="IP Address" value={device.wifiInfo.ipAddress} />
+                                                <InfoRow label="Signal Strength (RSSI)" value={device.wifiInfo.rssi} />
+                                                <InfoRow label="Link Speed" value={device.wifiInfo.linkSpeed} subValue="Mbps" />
+                                                <InfoRow label="Frequency" value={device.wifiInfo.frequency} subValue="MHz" />
+                                            </>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <SectionHeader title="Cellular" icon={Signal} />
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <BooleanStatus label="Mobile Data" value={device.mobileData} />
+                                        {/* Android SIMs */}
+                                        {device.simInfos?.map((sim, idx) => (
+                                            <div key={idx} className="p-4 rounded-lg bg-muted/20 border">
+                                                <p className="font-semibold text-sm mb-2">SIM Slot {idx + 1}</p>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    <InfoRow label="Carrier" value={sim.carrierNetwork} />
+                                                    <InfoRow label="Phone" value={sim.phoneNumber} />
+                                                    <InfoRow label="IMEI" value={sim.imei} />
+                                                    <InfoRow label="Roaming" value={sim.isRoaming ? 'Yes' : 'No'} />
+                                                    <InfoRow label="Data Active" value={sim.isDataTxOn ? 'Yes' : 'No'} />
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {(!device.simInfos?.length) && (
+                                            <p className="text-muted-foreground text-sm italic">No cellular information available.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+                    )}
+
+                    {/* APPLICATIONS TAB - Keep for both */}
                     <TabsContent value="applications" className="space-y-6">
                         <Card>
                             <CardHeader>
@@ -727,92 +784,96 @@ export default function DeviceDetails() {
                         </Card>
                     </TabsContent>
 
-                    {/* SYSTEM TAB */}
-                    <TabsContent value="system" className="space-y-6">
-                        <Card>
-                            <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <SectionHeader title="Operating System" icon={AppWindow} />
-                                    <InfoRow label="OS Details" value={device.opSysInfo?.fullVersion || `${device.opSysInfo?.name || ''} ${device.opSysInfo?.version || ''}`} />
-                                    <InfoRow label="Version" value={device.osVersion || device.androidVersion} />
-                                    <InfoRow label="Build Version" value={device.buildVersion} />
-                                    <InfoRow label="Supplemental Build" value={device.supplementalBuildVersion} />
-                                    <InfoRow label="Kernel/Baseband" value={device.modemFirmwareVersion} />
-                                </div>
-
-                                <div className="space-y-4">
-                                    <SectionHeader title="Time & Location" icon={Globe} />
-                                    <InfoRow label="Timezone" value={device.timeZone} />
-                                    <InfoRow label="Creation Time" value={device.creationTime} icon={FileText} />
-                                    <InfoRow label="Enrollment Time" value={device.enrollmentTime} icon={FileText} />
-                                    <InfoRow label="Last Sync" value={device.lastSyncTime} icon={RefreshCw} />
-                                    <InfoRow label="Deployed Location" value={device.deployedLocation} icon={MapPin} />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    {/* SETTINGS TAB */}
-                    <TabsContent value="settings" className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* SYSTEM TAB - Hide for iOS */}
+                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                        <TabsContent value="system" className="space-y-6">
                             <Card>
-                                <CardHeader>
-                                    <SectionHeader title="Display & Sound" icon={Sun} />
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span>Brightness</span>
-                                            <span>{device.brightness ?? '-'}%</span>
-                                        </div>
-                                        <Progress value={device.brightness || 0} className="h-2" />
+                                <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <SectionHeader title="Operating System" icon={AppWindow} />
+                                        <InfoRow label="OS Details" value={device.opSysInfo?.fullVersion || `${device.opSysInfo?.name || ''} ${device.opSysInfo?.version || ''}`} />
+                                        <InfoRow label="Version" value={device.osVersion || device.androidVersion} />
+                                        <InfoRow label="Build Version" value={device.buildVersion} />
+                                        <InfoRow label="Supplemental Build" value={device.supplementalBuildVersion} />
+                                        <InfoRow label="Kernel/Baseband" value={device.modemFirmwareVersion} />
                                     </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span>Volume</span>
-                                            <span>{device.volume ?? '-'}%</span>
-                                        </div>
-                                        <Progress value={device.volume || 0} className="h-2" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span>Ring Volume</span>
-                                            <span>{device.ringVolume ?? '-'}%</span>
-                                        </div>
-                                        <Progress value={device.ringVolume || 0} className="h-2" />
+
+                                    <div className="space-y-4">
+                                        <SectionHeader title="Time & Location" icon={Globe} />
+                                        <InfoRow label="Timezone" value={device.timeZone} />
+                                        <InfoRow label="Creation Time" value={device.creationTime} icon={FileText} />
+                                        <InfoRow label="Enrollment Time" value={device.enrollmentTime} icon={FileText} />
+                                        <InfoRow label="Last Sync" value={device.lastSyncTime} icon={RefreshCw} />
+                                        <InfoRow label="Deployed Location" value={device.deployedLocation} icon={MapPin} />
                                     </div>
                                 </CardContent>
                             </Card>
+                        </TabsContent>
+                    )}
 
-                            <Card>
-                                <CardHeader>
-                                    <SectionHeader title="Security & Restrictions" icon={Lock} />
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    <BooleanStatus label="Keyguard/Passcode" value={device.isKeyguardEnabled} />
-                                    <BooleanStatus label="USB Storage" value={device.isUsbStorageEnabled} />
-                                    <BooleanStatus label="Kiosk Mode" value={device.kioskMode} />
-                                    <BooleanStatus label="MDM Mode" value={device.mdmMode} />
-                                    <BooleanStatus label="Supervised" value={device.isSupervised} />
-                                    <BooleanStatus label="Activation Lock (Supervised)" value={device.activationLockAllowedWhileSupervised} />
-                                    <BooleanStatus label="Do Not Disturb" value={device.isDoNotDisturbInEffect} />
-                                </CardContent>
-                            </Card>
+                    {/* SETTINGS TAB - Hide for iOS */}
+                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                        <TabsContent value="settings" className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <Card>
+                                    <CardHeader>
+                                        <SectionHeader title="Display & Sound" icon={Sun} />
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Brightness</span>
+                                                <span>{device.brightness ?? '-'}%</span>
+                                            </div>
+                                            <Progress value={device.brightness || 0} className="h-2" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Volume</span>
+                                                <span>{device.volume ?? '-'}%</span>
+                                            </div>
+                                            <Progress value={device.volume || 0} className="h-2" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span>Ring Volume</span>
+                                                <span>{device.ringVolume ?? '-'}%</span>
+                                            </div>
+                                            <Progress value={device.ringVolume || 0} className="h-2" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
 
-                            <Card>
-                                <CardHeader>
-                                    <SectionHeader title="Accessibility" icon={User} />
-                                </CardHeader>
-                                <CardContent className="space-y-2">
-                                    <BooleanStatus label="VoiceOver" value={device.voiceOverEnabled} />
-                                    <BooleanStatus label="Zoom" value={device.zoomEnabled} />
-                                    <BooleanStatus label="Invert Colors" value={device.increaseContrastEnabled} />
-                                    <BooleanStatus label="Bold Text" value={device.boldTextEnabled} />
-                                    <BooleanStatus label="Reduce Motion" value={device.reduceMotionEnabled} />
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </TabsContent>
+                                <Card>
+                                    <CardHeader>
+                                        <SectionHeader title="Security & Restrictions" icon={Lock} />
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                        <BooleanStatus label="Keyguard/Passcode" value={device.isKeyguardEnabled} />
+                                        <BooleanStatus label="USB Storage" value={device.isUsbStorageEnabled} />
+                                        <BooleanStatus label="Kiosk Mode" value={device.kioskMode} />
+                                        <BooleanStatus label="MDM Mode" value={device.mdmMode} />
+                                        <BooleanStatus label="Supervised" value={device.isSupervised} />
+                                        <BooleanStatus label="Activation Lock (Supervised)" value={device.activationLockAllowedWhileSupervised} />
+                                        <BooleanStatus label="Do Not Disturb" value={device.isDoNotDisturbInEffect} />
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <SectionHeader title="Accessibility" icon={User} />
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                        <BooleanStatus label="VoiceOver" value={device.voiceOverEnabled} />
+                                        <BooleanStatus label="Zoom" value={device.zoomEnabled} />
+                                        <BooleanStatus label="Invert Colors" value={device.increaseContrastEnabled} />
+                                        <BooleanStatus label="Bold Text" value={device.boldTextEnabled} />
+                                        <BooleanStatus label="Reduce Motion" value={device.reduceMotionEnabled} />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+                    )}
 
                     {/* USER TAB */}
                     <TabsContent value="user" className="space-y-6">

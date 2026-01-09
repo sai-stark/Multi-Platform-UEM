@@ -227,26 +227,46 @@ export interface ClearPasscodeAction {
     requestRequiresNetworkTether?: boolean;
 }
 
-export interface ActionDeviceFactoryReset {
-    commandReferenceId?: string; // iOS
-    delay?: number; // Android
-    deviceActionType?: string; // ActionAndroidDeviceFactoryReset | ActionIosDeviceFactoryReset
-    preserveDataPlan?: boolean; // iOS
-    disallowProximitySetup?: boolean; // iOS
-    returnToServiceEnabled?: boolean; // iOS
+export interface ActionAndroidDeviceFactoryReset {
+    delay?: number;
+    deviceActionType: 'ActionAndroidDeviceFactoryReset';
 }
 
-export interface ActionDeviceLock {
-    commandreferenceId?: string; // iOS
-    delay?: number; // Android
-    message?: string; // iOS
-    phoneNumber?: string; // iOS
-    requestRequiresNetworkTether?: boolean; // iOS
-    deviceActionType?: string;
-}
-
-export interface ActionDeviceReboot {
+export interface ActionIosDeviceFactoryReset {
     commandReferenceId: string;
-    deviceType?: string;
+    preserveDataPlan?: boolean;
+    disallowProximitySetup?: boolean;
+    returnToServiceEnabled?: boolean;
+    deviceActionType: 'ActionIosDeviceFactoryReset';
+}
+
+export type ActionDeviceFactoryReset = ActionAndroidDeviceFactoryReset | ActionIosDeviceFactoryReset;
+
+export interface ActionAndroidDeviceLock {
+    delay?: number;
+    deviceActionType: 'ActionAndroidDeviceLock';
+}
+
+export interface ActionIosDeviceLock {
+    commandReferenceId: string;
+    message?: string;
+    phoneNumber?: string;
+    requestRequiresNetworkTether?: boolean;
+    deviceActionType: 'ActionIosDeviceLock';
+}
+
+export type ActionDeviceLock = ActionAndroidDeviceLock | ActionIosDeviceLock;
+
+export interface ActionAndroidDeviceReboot {
+    force?: boolean; // Default: false
+    delay?: number; // Default: 0
+    deviceType?: 'ActionAndroidDeviceReboot';
+}
+
+export interface ActionIosDeviceReboot {
+    commandReferenceId: string;
+    deviceType: 'ActionIosDeviceReboot';
     notifyUser?: boolean;
 }
+
+export type ActionDeviceReboot = ActionAndroidDeviceReboot | ActionIosDeviceReboot;
