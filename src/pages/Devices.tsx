@@ -11,6 +11,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useToast } from '@/components/ui/use-toast';
 import { getAssetUrl } from '@/config/env';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -104,6 +105,7 @@ const complianceConfig = {
 const Devices = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { toast } = useToast();
   // We can still support URL init but we focus on local state
   const { platform: urlPlatform } = useParams<{ platform?: string }>();
   const [platformFilter, setPlatformFilter] = useState<string>(urlPlatform && platformConfig[urlPlatform] ? urlPlatform : "all");
@@ -221,6 +223,45 @@ const Devices = () => {
   useEffect(() => {
     fetchData();
   }, [platformFilter]); // Refetch when filter changes or on mount (technically we could just filter client side if we store all, but simpler to refetch/recalc for now)
+
+  const handleLock = async (device: Device) => {
+    try {
+      await DeviceService.lockDevice(device.platform as Platform, device.id);
+      toast({
+        title: "Success",
+        description: "Lock command sent successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to lock device", error);
+      toast({
+        title: "Error",
+        description: "Failed to send lock command.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnenroll = async (device: Device) => {
+    if (!confirm(`Are you sure you want to unenroll ${device.name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await DeviceService.deleteDevice(device.platform as Platform, device.id);
+      toast({
+        title: "Success",
+        description: "Device unenrolled successfully.",
+      });
+      fetchData(); // Refresh list
+    } catch (error) {
+      console.error("Failed to unenroll device", error);
+      toast({
+        title: "Error",
+        description: "Failed to unenroll device.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const columns: Column<Device>[] = [
     {
@@ -370,11 +411,16 @@ const Devices = () => {
       <DropdownMenuItem onClick={() => navigate(`/devices/${device.platform}/${device.id}`)}>
         View Details
       </DropdownMenuItem>
-      <DropdownMenuItem>Sync Device</DropdownMenuItem>
-      <DropdownMenuItem>Send Message</DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>Lock Device</DropdownMenuItem>
-      <DropdownMenuItem className="text-destructive">Wipe Device</DropdownMenuItem>
+      <DropdownMenuItem onClick={() => handleLock(device)}>
+        Lock Device
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        className="text-destructive"
+        onClick={() => handleUnenroll(device)}
+      >
+        Unenroll Device
+      </DropdownMenuItem>
     </>
   );
 
