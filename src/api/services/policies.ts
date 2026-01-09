@@ -74,6 +74,9 @@ export const PolicyService = {
         const response = await apiClient.put(`/${platform}${CORE_PATH}/${profileId}/policies/applications/${appId}`, policy);
         return response.data;
     },
+    deleteApplicationPolicy: async (platform: Platform, profileId: string, appId: string) => {
+        await apiClient.delete(`/${platform}${CORE_PATH}/${profileId}/policies/applications/${appId}`);
+    },
 
     // Web Applications Policy
     createWebApplicationPolicy: async (platform: Platform, profileId: string, policy: WebApplicationPolicy) => {
