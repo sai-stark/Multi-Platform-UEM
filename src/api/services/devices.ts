@@ -33,17 +33,21 @@ export const DeviceService = {
         await apiClient.delete(`/${platform}/devices/${deviceId}`);
     },
 
+    // Corrected: Uses /{platform}/devices/{deviceId}/effective-profile per OpenAPI spec
     getEffectiveProfile: async (platform: Platform, deviceId: string) => {
-        const response = await apiClient.get<FullProfile>(`/${platform}/profiles/effective-profile`, {
-            params: { deviceId }
-        });
+        const response = await apiClient.get<FullProfile>(`/${platform}/devices/${deviceId}/effective-profile`);
         return response.data;
     },
 
+    // Corrected: Uses /{platform}/devices/{deviceId}/applications per OpenAPI spec
     getDeviceApplications: async (platform: Platform, deviceId: string) => {
-        const response = await apiClient.get<DeviceApplicationList>(`/${platform}/applications`, {
-            params: { deviceId }
-        });
+        const response = await apiClient.get<DeviceApplicationList>(`/${platform}/devices/${deviceId}/applications`);
+        return response.data;
+    },
+
+    // New: Get web applications installed on a device
+    getDeviceWebApplications: async (platform: Platform, deviceId: string) => {
+        const response = await apiClient.get(`/${platform}/devices/${deviceId}/web-applications`);
         return response.data;
     },
 
