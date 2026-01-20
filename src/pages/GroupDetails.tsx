@@ -176,10 +176,12 @@ export default function GroupDetails() {
         <MainLayout>
             <div className="space-y-6">
                 {/* Header */}
+                <Button variant="ghost" size="sm" onClick={() => navigate('/groups')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Groups
+                </Button>
+
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate('/groups')}>
-                        <ArrowLeft className="w-4 h-4" />
-                    </Button>
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold flex items-center gap-3">
                             <Users className="w-6 h-6 text-primary" />

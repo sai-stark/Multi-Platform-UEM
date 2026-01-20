@@ -26,6 +26,7 @@ import {
   WebApplicationsPolicyCard,
   WifiPolicyCard,
 } from "@/components/profiles/PolicyCards";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,11 +62,13 @@ import {
   Bell,
   Globe,
   Grid,
+  Key,
   Layout,
   Mail,
   MessageSquare,
   Monitor,
   Plus,
+  Server,
   Shield,
   Smartphone,
   Wifi,
@@ -269,20 +272,6 @@ export default function EditProfilePolicies() {
               policies.
             </p>
           </div>
-          {!activePolicyType && (
-            <AddPolicyDropdown
-              platform={platform}
-              passcodePolicy={passcodePolicy}
-              wifiPolicy={wifiPolicy}
-              mailPolicy={mailPolicy}
-              restrictionsPolicy={restrictionsPolicy}
-              applicationPolicy={applicationPolicy}
-              webApplicationPolicy={webApplicationPolicy}
-              notificationPolicy={notificationPolicy}
-              lockScreenMessagePolicy={lockScreenMessagePolicy}
-              onSelect={setActivePolicyType}
-            />
-          )}
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -311,6 +300,7 @@ export default function EditProfilePolicies() {
               wifiPolicy={wifiPolicy}
               mailPolicy={mailPolicy}
               restrictionsPolicy={restrictionsPolicy}
+              applicationPolicy={applicationPolicy}
               webApplicationPolicy={webApplicationPolicy}
               notificationPolicy={notificationPolicy}
               lockScreenMessagePolicy={lockScreenMessagePolicy}
@@ -573,6 +563,7 @@ interface PolicyCardGridProps {
   wifiPolicy?: IosWiFiConfiguration;
   mailPolicy?: IosMailPolicy;
   restrictionsPolicy?: RestrictionsComposite;
+  applicationPolicy?: ApplicationPolicy[];
   webApplicationPolicy: WebApplicationPolicy[];
   notificationPolicy: NotificationPolicyType[];
   lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
@@ -581,12 +572,60 @@ interface PolicyCardGridProps {
   onSelectPolicy: (type: string) => void;
 }
 
+// Uniform card wrapper component for consistent sizing
+function UniformPolicyCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <motion.div variants={itemVariants} className={`h-full ${className}`}>
+      {children}
+    </motion.div>
+  );
+}
+
+// Available policy card (grayed out, not yet configured)
+interface AvailablePolicyCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}
+
+function AvailablePolicyCard({ icon, title, description, onClick }: AvailablePolicyCardProps) {
+  return (
+    <motion.div variants={itemVariants} className="h-full">
+      <Card
+        className="cursor-pointer hover:shadow-md transition-all h-full bg-muted/30 border-dashed border-2 hover:bg-muted/50 hover:border-solid"
+        onClick={onClick}
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2 text-muted-foreground">
+            {icon}
+            {title}
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col justify-end">
+          <Badge variant="outline" className="w-fit text-muted-foreground border-muted-foreground/50">
+            Not Configured
+          </Badge>
+          <p className="text-sm mt-2 text-muted-foreground/70">Click to configure</p>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+};
+
 function PolicyCardGrid({
   platform,
   passcodePolicy,
   wifiPolicy,
   mailPolicy,
   restrictionsPolicy,
+  applicationPolicy = [],
   webApplicationPolicy,
   notificationPolicy,
   lockScreenMessagePolicy,
@@ -594,78 +633,262 @@ function PolicyCardGrid({
   mdmPolicy,
   onSelectPolicy,
 }: PolicyCardGridProps) {
+  // Check which policies are configured (active)
+  const hasPasscode = !!passcodePolicy;
+  const hasWifi = !!wifiPolicy;
+  const hasMail = platform === 'ios' && !!mailPolicy;
+  const hasRestrictions = !!restrictionsPolicy;
+  const hasScep = !!scepPolicy;
+  const hasMdm = !!mdmPolicy;
+  const hasWebApps = webApplicationPolicy && webApplicationPolicy.length > 0;
+  const hasNotifications = notificationPolicy && notificationPolicy.length > 0;
+  const hasLockScreen = !!lockScreenMessagePolicy;
+  const hasApplications = applicationPolicy && applicationPolicy.length > 0;
+
+  // Determine which policies are available based on platform
+  const isIos = platform === 'ios';
+  const isAndroid = platform === 'android';
+
+  // Count active policies
+  const activePolicies = [
+    hasPasscode, hasWifi, hasMail, hasRestrictions, hasScep, hasMdm,
+    hasWebApps, hasNotifications, hasLockScreen
+  ].filter(Boolean).length;
+
+  // Determine available policies that are not configured
+  const availablePolicies: { type: string; title: string; description: string; icon: React.ReactNode; show: boolean }[] = [
+    { type: 'passcode', title: 'Passcode', description: 'Security requirements', icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: !hasPasscode },
+    { type: 'wifi', title: 'WiFi', description: 'Network configuration', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: !hasWifi },
+    { type: 'mail', title: 'Mail', description: 'Email configuration', icon: <Mail className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasMail },
+    { type: 'restrictions', title: 'Restrictions', description: 'Device restrictions', icon: <Ban className="w-5 h-5 text-muted-foreground" />, show: !hasRestrictions },
+    { type: 'webApps', title: 'Web Apps', description: 'Web application links', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: !hasWebApps },
+    { type: 'notifications', title: 'Notifications', description: 'Notification settings', icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasNotifications },
+    { type: 'lockScreenMessage', title: 'Lock Screen', description: 'Lock screen message', icon: <MessageSquare className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasLockScreen },
+  ].filter(p => p.show);
+
   return (
     <motion.div
       key="list"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      className="space-y-8"
     >
-      {passcodePolicy && (
-        <PasscodePolicyCard
-          policy={passcodePolicy}
-          onClick={() => onSelectPolicy("passcode")}
-        />
+      {/* Active Policies Section */}
+      {activePolicies > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Active Policies</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {hasPasscode && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-primary h-full flex flex-col" onClick={() => onSelectPolicy('passcode')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" /> Passcode
+                    </CardTitle>
+                    <CardDescription>Security requirements</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">Min length: {(passcodePolicy as any).minLength || '-'}</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasWifi && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-info h-full flex flex-col" onClick={() => onSelectPolicy('wifi')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Wifi className="w-5 h-5 text-info" /> WiFi
+                    </CardTitle>
+                    <CardDescription>Network configuration</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{wifiPolicy?.ssid || wifiPolicy?.name || 'Configured'}</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasMail && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-purple-500 h-full flex flex-col" onClick={() => onSelectPolicy('mail')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-purple-500" /> Mail
+                    </CardTitle>
+                    <CardDescription>Email configuration</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{mailPolicy?.name || 'Configured'}</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasScep && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-warning h-full flex flex-col" onClick={() => onSelectPolicy('scep')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Key className="w-5 h-5 text-warning" /> SCEP
+                    </CardTitle>
+                    <CardDescription>Certificate enrollment</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{(scepPolicy as any)?.scepName || 'Configured'}</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasMdm && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-success h-full flex flex-col" onClick={() => onSelectPolicy('mdm')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Server className="w-5 h-5 text-success" /> MDM
+                    </CardTitle>
+                    <CardDescription>Device management</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge className="bg-destructive hover:bg-destructive/90">Active</Badge>
+                    <Button variant="secondary" size="sm" className="w-full mt-2">View Policy</Button>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasRestrictions && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-destructive h-full flex flex-col" onClick={() => onSelectPolicy('restrictions')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Ban className="w-5 h-5 text-destructive" /> Restrictions
+                    </CardTitle>
+                    <CardDescription>Device restrictions</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">Custom restrictions applied</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasWebApps && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 h-full flex flex-col" onClick={() => onSelectPolicy('webApps')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-blue-500" /> Web Apps
+                    </CardTitle>
+                    <CardDescription>Web application links</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{webApplicationPolicy.length} web app(s)</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasNotifications && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-yellow-500 h-full flex flex-col" onClick={() => onSelectPolicy('notifications')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Bell className="w-5 h-5 text-yellow-500" /> Notifications
+                    </CardTitle>
+                    <CardDescription>Notification settings</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{notificationPolicy.length} rule(s)</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasLockScreen && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-teal-500 h-full flex flex-col" onClick={() => onSelectPolicy('lockScreenMessage')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-teal-500" /> Lock Screen
+                    </CardTitle>
+                    <CardDescription>Lock screen message</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">Message configured</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {/* Applications Policy Card - always shown */}
+            <UniformPolicyCard>
+              <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-orange-500 h-full flex flex-col" onClick={() => onSelectPolicy('applications')}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Grid className="w-5 h-5 text-orange-500" /> Applications
+                  </CardTitle>
+                  <CardDescription>Manage app catalog</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col justify-end">
+                  <Button variant="outline" size="sm" className="w-full">Manage Apps</Button>
+                </CardContent>
+              </Card>
+            </UniformPolicyCard>
+          </div>
+        </div>
       )}
 
-      {wifiPolicy && (
-        <WifiPolicyCard
-          policy={wifiPolicy}
-          onClick={() => onSelectPolicy("wifi")}
-        />
+      {/* Available Policies Section (grayed out) */}
+      {availablePolicies.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-muted-foreground">Available Policies</h3>
+          <p className="text-sm text-muted-foreground/70">Click on a policy to configure it</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availablePolicies.map((policy) => (
+              <AvailablePolicyCard
+                key={policy.type}
+                icon={policy.icon}
+                title={policy.title}
+                description={policy.description}
+                onClick={() => onSelectPolicy(policy.type)}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
-      {platform === "ios" && mailPolicy && (
-        <MailPolicyCard
-          policy={mailPolicy}
-          onClick={() => onSelectPolicy("mail")}
-        />
-      )}
-
-      {restrictionsPolicy && (
-        <RestrictionsPolicyCard
-          policy={restrictionsPolicy}
-          onClick={() => onSelectPolicy("restrictions")}
-        />
-      )}
-
-      {scepPolicy && (
-        <ScepPolicyCard
-          policy={scepPolicy}
-          onClick={() => onSelectPolicy("scep")}
-        />
-      )}
-
-      {mdmPolicy && (
-        <MdmPolicyCard
-          policy={mdmPolicy}
-          restrictionsPolicy={restrictionsPolicy}
-          onClick={() => onSelectPolicy("mdm")}
-        />
-      )}
-
-      <ApplicationsPolicyCard onClick={() => onSelectPolicy("applications")} />
-
-      {webApplicationPolicy && webApplicationPolicy.length > 0 && (
-        <WebApplicationsPolicyCard
-          policies={webApplicationPolicy}
-          onClick={() => onSelectPolicy("webApps")}
-        />
-      )}
-
-      {notificationPolicy && notificationPolicy.length > 0 && (
-        <NotificationsPolicyCard
-          policies={notificationPolicy}
-          onClick={() => onSelectPolicy("notifications")}
-        />
-      )}
-
-      {lockScreenMessagePolicy && (
-        <LockScreenMessagePolicyCard
-          policy={lockScreenMessagePolicy}
-          onClick={() => onSelectPolicy("lockScreenMessage")}
-        />
+      {/* Show applications card in available section if no active policies exist */}
+      {activePolicies === 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Manage Applications</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <UniformPolicyCard>
+              <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-orange-500 h-full flex flex-col" onClick={() => onSelectPolicy('applications')}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Grid className="w-5 h-5 text-orange-500" /> Applications
+                  </CardTitle>
+                  <CardDescription>Manage app catalog</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col justify-end">
+                  <Button variant="outline" size="sm" className="w-full">Manage Apps</Button>
+                </CardContent>
+              </Card>
+            </UniformPolicyCard>
+          </div>
+        </div>
       )}
     </motion.div>
   );

@@ -529,7 +529,7 @@ const Repositories = () => {
 
         {/* Platform Tabs */}
         <section
-          className="inline-flex rounded-lg border bg-muted/30 p-1"
+          className="grid grid-cols-6 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
           role="tablist"
           aria-label="Filter by platform"
         >
@@ -547,9 +547,9 @@ const Repositories = () => {
                 disabled={isDisabled}
                 onClick={() => !isDisabled && setPlatformFilter(platform)}
                 className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all",
+                  "relative inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  isActive && "bg-background text-foreground shadow-sm",
+                  isActive && "bg-background text-foreground shadow-md border border-border/50 backdrop-blur-md",
                   !isActive &&
                     !isDisabled &&
                     "text-muted-foreground hover:text-foreground hover:bg-muted/50",

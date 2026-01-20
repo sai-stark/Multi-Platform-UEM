@@ -228,17 +228,15 @@ const RepositoryDetails = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Back Navigation */}
+        <Button variant="ghost" size="sm" onClick={() => navigate('/repositories')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Repositories
+        </Button>
+
         {/* Page Header */}
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/repositories")}
-              aria-label="Go back to repositories"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">
                 {repositoryName || "Repository Applications"}
