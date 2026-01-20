@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { IosMailPolicy } from '@/types/models';
+import { Edit, Mail, Server, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface MailPolicyProps {
@@ -41,6 +42,8 @@ const defaultMailPolicy: Partial<IosMailPolicy> = {
 export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPolicyProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
+    // If we have an ID, start in view mode. Otherwise, start in edit mode.
+    const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [formData, setFormData] = useState<Partial<IosMailPolicy>>(
         initialData || defaultMailPolicy
     );
@@ -66,8 +69,14 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
 
         setLoading(true);
         try {
-            await PolicyService.createIosMailPolicy(profileId, formData as IosMailPolicy);
-            toast({ title: "Success", description: "Mail policy saved successfully" });
+            // Use update if policy already has an ID (editing), otherwise create
+            if (initialData?.id) {
+                await PolicyService.updateIosMailPolicy(profileId, formData as IosMailPolicy);
+                toast({ title: "Success", description: "Mail policy updated successfully" });
+            } else {
+                await PolicyService.createIosMailPolicy(profileId, formData as IosMailPolicy);
+                toast({ title: "Success", description: "Mail policy created successfully" });
+            }
             onSave();
         } catch (error) {
             console.error("Failed to save mail policy", error);
@@ -76,6 +85,163 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
             setLoading(false);
         }
     };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        
+        setLoading(true);
+        try {
+            await PolicyService.deleteIosMailPolicy(profileId);
+            toast({ title: "Success", description: "Mail policy deleted successfully" });
+            onSave(); // Refresh the parent
+        } catch (error) {
+            console.error("Failed to delete mail policy", error);
+            toast({ title: "Error", description: "Failed to delete mail policy", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancelClick = () => {
+        if (isEditing && initialData?.id) {
+            setIsEditing(false);
+            setFormData(initialData); // Reset to initial
+        } else {
+            onCancel();
+        }
+    };
+
+    const renderView = () => (
+        <div className="space-y-6 max-w-4xl mt-6">
+            <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/10 rounded-full">
+                        <Mail className="w-6 h-6 text-purple-500" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-semibold">{formData.name || 'Mail Policy'}</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {formData.emailAddress || 'Configure mail settings'}
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                    </Button>
+                    {initialData?.id && (
+                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                    <div className="p-4 rounded-xl border bg-card space-y-4">
+                        <h4 className="font-semibold flex items-center gap-2 text-sm text-muted-foreground uppercase tracking-wider">
+                            <Mail className="w-4 h-4" /> Account Details
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-muted-foreground block">Account Type</span>
+                                <span className="font-medium">{formData.emailAccountType === 'EmailTypeIMAP' ? 'IMAP' : 'POP'}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block">Email Address</span>
+                                <span className="font-medium">{formData.emailAddress || '-'}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block">Account Name</span>
+                                <span className="font-medium">{formData.emailAccountName || '-'}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block">Description</span>
+                                <span className="font-medium">{formData.emailAccountDescription || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl border bg-card space-y-4">
+                        <h4 className="font-semibold flex items-center gap-2 text-sm text-muted-foreground uppercase tracking-wider">
+                            <Server className="w-4 h-4" /> Incoming Server
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-muted-foreground block">Host</span>
+                                <span className="font-medium">{formData.incomingMailServerHostName || '-'}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block">Port</span>
+                                <span className="font-medium">{formData.incomingMailServerPortNumber || 'Default'}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block">SSL</span>
+                                <span className="font-medium">{formData.incomingMailServerUseSSL ? 'Enabled' : 'Disabled'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="p-4 rounded-xl border bg-card space-y-4">
+                        <h4 className="font-semibold flex items-center gap-2 text-sm text-muted-foreground uppercase tracking-wider">
+                            <Server className="w-4 h-4" /> Outgoing Server
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-muted-foreground block">Host</span>
+                                <span className="font-medium">{formData.outgoingMailServerHostName || '-'}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block">Port</span>
+                                <span className="font-medium">{formData.outgoingMailServerPortNumber || 'Default'}</span>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground block">SSL</span>
+                                <span className="font-medium">{formData.outgoingMailServerUseSSL ? 'Enabled' : 'Disabled'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl border bg-card space-y-4">
+                        <h4 className="font-semibold flex items-center gap-2 text-sm text-muted-foreground uppercase tracking-wider">
+                            <Shield className="w-4 h-4" /> Security & Restrictions
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                                <span>Prevent Moving Messages</span>
+                                <span className={formData.preventMove ? 'text-green-600' : 'text-muted-foreground'}>{formData.preventMove ? 'Yes' : 'No'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Prevent Third-Party Apps</span>
+                                <span className={formData.preventAppSheet ? 'text-green-600' : 'text-muted-foreground'}>{formData.preventAppSheet ? 'Yes' : 'No'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>S/MIME</span>
+                                <span className={formData.smimeEnabled ? 'text-green-600' : 'text-muted-foreground'}>{formData.smimeEnabled ? 'Enabled' : 'Disabled'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Mail Drop</span>
+                                <span className={formData.allowMailDrop ? 'text-green-600' : 'text-muted-foreground'}>{formData.allowMailDrop ? 'Allowed' : 'Not Allowed'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+                <Button variant="outline" onClick={onCancel}>Close</Button>
+            </div>
+        </div>
+    );
+
+    if (!isEditing) {
+        return renderView();
+    }
 
     return (
         <>
@@ -436,7 +602,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
             </div>
 
             <CardFooter className="flex justify-between px-0 pt-6">
-                <Button variant="outline" onClick={onCancel} disabled={loading}>
+                <Button variant="outline" onClick={handleCancelClick} disabled={loading}>
                     Cancel
                 </Button>
                 <Button onClick={handleSave} disabled={loading}>

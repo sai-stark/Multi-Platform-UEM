@@ -197,15 +197,37 @@ export const PolicyService = {
     // --- iOS Specific Policies ---
 
     // WiFi
+    getIosWiFiConfiguration: async (profileId: string) => {
+        const response = await apiClient.get(`/ios${CORE_PATH}/${profileId}/policies/wifi`);
+        return response.data;
+    },
     createIosWiFiConfiguration: async (profileId: string, policy: IosWiFiConfiguration) => {
         const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/wifi`, policy);
         return response.data;
     },
+    updateIosWiFiConfiguration: async (profileId: string, policy: IosWiFiConfiguration) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/wifi`, policy);
+        return response.data;
+    },
+    deleteIosWiFiConfiguration: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/wifi`);
+    },
 
     // Mail
+    getIosMailPolicy: async (profileId: string) => {
+        const response = await apiClient.get(`/ios${CORE_PATH}/${profileId}/policies/mail`);
+        return response.data;
+    },
     createIosMailPolicy: async (profileId: string, policy: IosMailPolicy) => {
         const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/mail`, policy);
         return response.data;
+    },
+    updateIosMailPolicy: async (profileId: string, policy: IosMailPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/mail`, policy);
+        return response.data;
+    },
+    deleteIosMailPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/mail`);
     },
 
     // App Notifications

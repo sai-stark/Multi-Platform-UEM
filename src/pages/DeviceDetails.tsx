@@ -176,7 +176,7 @@ export default function DeviceDetails() {
                     await DeviceService.rebootDevice(devicePlatform, device.id);
                     break;
                 case 'sync':
-                    await DeviceService.syncDevice(device.id);
+                    await DeviceService.syncDevice(devicePlatform, device.id);
                     break;
                 case 'lock':
                     await DeviceService.lockDevice(devicePlatform, device.id);
@@ -185,7 +185,7 @@ export default function DeviceDetails() {
                     await DeviceService.factoryResetDevice(devicePlatform, device.id);
                     break;
                 case 'gps':
-                    await DeviceService.getGPS(device.id);
+                    await DeviceService.getGPS(devicePlatform, device.id);
                     break;
                 case 'clear_passcode':
                     await DeviceService.removePassCode(device.id);

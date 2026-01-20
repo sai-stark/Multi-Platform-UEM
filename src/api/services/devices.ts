@@ -47,8 +47,8 @@ export const DeviceService = {
         return response.data;
     },
 
-    getLocationHistory: async (deviceId: string) => {
-        const response = await apiClient.get(`/devices/${deviceId}/locations`);
+    getLocationHistory: async (platform: Platform, deviceId: string) => {
+        const response = await apiClient.get(`/${platform}/devices/${deviceId}/locations`);
         return response.data;
     },
 
@@ -110,12 +110,12 @@ export const DeviceService = {
     },
 
     // default actions
-    syncDevice: async (deviceId: string) => {
-        await apiClient.post(`/devices/${deviceId}/actions/sync`);
+    syncDevice: async (platform: Platform, deviceId: string) => {
+        await apiClient.post(`/${platform}/devices/${deviceId}/actions/sync`);
     },
 
-    getGPS: async (deviceId: string) => {
-        await apiClient.post(`/devices/${deviceId}/actions/get-gps`);
+    getGPS: async (platform: Platform, deviceId: string) => {
+        await apiClient.post(`/${platform}/devices/${deviceId}/actions/get-gps`);
     },
 
     // iOS Specific Commands

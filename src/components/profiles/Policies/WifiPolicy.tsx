@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { EAPClientConfiguration, EAPType, IosWiFiConfiguration, TLSVersion, TTLSInnerAuth } from '@/types/models';
-import { Edit, Eye, EyeOff, Globe, Lock, Shield, Wifi } from 'lucide-react';
+import { Edit, Eye, EyeOff, Globe, Lock, Shield, Trash2, Wifi } from 'lucide-react';
 import { useState } from 'react';
 
 interface WifiPolicyProps {
@@ -92,12 +92,34 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
 
         setLoading(true);
         try {
-            await PolicyService.createIosWiFiConfiguration(profileId, formData as IosWiFiConfiguration);
-            toast({ title: "Success", description: "WiFi configuration saved successfully" });
+            // Use update if policy already has an ID (editing), otherwise create
+            if (initialData?.id) {
+                await PolicyService.updateIosWiFiConfiguration(profileId, formData as IosWiFiConfiguration);
+                toast({ title: "Success", description: "WiFi configuration updated successfully" });
+            } else {
+                await PolicyService.createIosWiFiConfiguration(profileId, formData as IosWiFiConfiguration);
+                toast({ title: "Success", description: "WiFi configuration created successfully" });
+            }
             onSave();
         } catch (error) {
             console.error("Failed to save WiFi policy", error);
             toast({ title: "Error", description: "Failed to save WiFi configuration", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        
+        setLoading(true);
+        try {
+            await PolicyService.deleteIosWiFiConfiguration(profileId);
+            toast({ title: "Success", description: "WiFi configuration deleted successfully" });
+            onSave(); // Refresh the parent
+        } catch (error) {
+            console.error("Failed to delete WiFi policy", error);
+            toast({ title: "Error", description: "Failed to delete WiFi configuration", variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -130,10 +152,18 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
                         </p>
                     </div>
                 </div>
-                <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Configuration
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                    </Button>
+                    {initialData?.id && (
+                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
