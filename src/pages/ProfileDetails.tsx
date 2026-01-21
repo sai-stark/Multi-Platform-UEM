@@ -621,7 +621,7 @@ export default function ProfileDetails() {
               {profile.name}
             </h1>
             <p className="text-muted-foreground">
-              {profile.description || "No description provided"}
+              {profile.description}
             </p>
           </div>
           <div className="flex items-center gap-2">

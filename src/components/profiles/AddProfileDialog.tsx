@@ -164,7 +164,7 @@ export function AddProfileDialog({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {
       name: validateName(formData.name || ""),
-      description: validateDescription(formData.description || ""),
+      description: validateDescription(formData.description),
       platform: !formData.platform ? "Platform is required" : undefined,
     };
 
@@ -181,7 +181,7 @@ export function AddProfileDialog({
     } else if (field === "description") {
       setErrors({
         ...errors,
-        description: validateDescription(formData.description || ""),
+        description: validateDescription(formData.description),
       });
     }
   };

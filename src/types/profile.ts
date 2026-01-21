@@ -20,7 +20,7 @@ export interface Profile {
     // API response fields
     id?: string;
     name: string;
-    description?: string;
+    description: string;
     status?: ProfileStatus; // DRAFT or PUBLISHED as per OpenAPI spec
     version?: number;
     deviceCount?: number;

@@ -1,4 +1,4 @@
-import { PolicyService } from '@/api/services/policies';
+import { PolicyService } from '@/api/services/IOSpolicies';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';

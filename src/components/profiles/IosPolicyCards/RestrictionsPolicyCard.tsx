@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RestrictionsComposite } from '@/components/profiles/Policies/RestrictionsPolicy';
+import { RestrictionsComposite } from '@/components/profiles/IosPolicies/RestrictionsPolicy';
 import { motion } from 'framer-motion';
 import { Ban } from 'lucide-react';
 import { BasePolicyCardProps, itemVariants } from './types';

@@ -77,7 +77,7 @@ export function EditProfileDialog({
   const originalValues = useMemo(
     () => ({
       name: profile?.name || "",
-      description: profile?.description || "",
+      description: profile?.description,
     }),
     [profile]
   );
@@ -95,7 +95,7 @@ export function EditProfileDialog({
     if (open && profile) {
       setFormData({
         name: profile.name || "",
-        description: profile.description || "",
+        description: profile.description,
       });
       setErrors({});
       setTouched({});
@@ -137,7 +137,7 @@ export function EditProfileDialog({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {
       name: validateName(formData.name || ""),
-      description: validateDescription(formData.description || ""),
+      description: validateDescription(formData.description),
     };
 
     setErrors(newErrors);
@@ -153,7 +153,7 @@ export function EditProfileDialog({
     } else if (field === "description") {
       setErrors({
         ...errors,
-        description: validateDescription(formData.description || ""),
+        description: validateDescription(formData.description),
       });
     }
   };

@@ -55,5 +55,10 @@ export const ProfileService = {
 
     deleteProfile: async (platform: Platform, profileId: string) => {
         await apiClient.delete(`/${platform}${CORE_PATH}/${profileId}`);
+    },
+
+    cloneProfile: async (platform: Platform, profileId: string, data: { name: string; description?: string }) => {
+        const response = await apiClient.post<FullProfile>(`/${platform}${CORE_PATH}/${profileId}:clone`, data);
+        return response.data;
     }
 };

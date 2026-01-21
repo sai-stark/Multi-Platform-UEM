@@ -1,5 +1,6 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AddProfileDialog } from "@/components/profiles/AddProfileDialog";
+import { CloneProfileDialog } from "@/components/profiles/CloneProfileDialog";
 import { DeleteProfileDialog } from "@/components/profiles/DeleteProfileDialog";
 import { EditProfileDialog } from "@/components/profiles/EditProfileDialog";
 import { ProfilePlatformChart } from "@/components/profiles/ProfilePlatformChart";
@@ -19,6 +20,7 @@ import { Profile } from "@/types/models";
 import {
   Apple,
   CheckCircle,
+  Copy,
   Edit,
   FileText,
   Layout,
@@ -94,10 +96,13 @@ const Profiles = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [selectedPublishProfile, setSelectedPublishProfile] =
     useState<Profile | null>(null);
   const [selectedDeleteProfile, setSelectedDeleteProfile] =
+    useState<Profile | null>(null);
+  const [selectedCloneProfile, setSelectedCloneProfile] =
     useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -310,7 +315,7 @@ const Profiles = () => {
       {
         key: "description",
         header: "Description",
-        accessor: (item) => item.description || "",
+        accessor: (item) => item.description,
         sortable: false,
         searchable: true,
         render: (value) => (
@@ -492,6 +497,11 @@ const Profiles = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleCloneProfile = (profile: Profile) => {
+    setSelectedCloneProfile(profile);
+    setCloneDialogOpen(true);
+  };
+
   const rowActions = (profile: Profile) => {
     const isDraft = profile.status === "DRAFT";
     const canDelete = (profile.deviceCount || 0) === 0;
@@ -516,6 +526,10 @@ const Profiles = () => {
         >
           <Edit className="w-4 h-4 mr-2" />
           Edit Policies
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCloneProfile(profile)}>
+          <Copy className="w-4 h-4 mr-2" />
+          Clone Profile
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => handleDeleteProfile(profile)}
@@ -712,6 +726,13 @@ const Profiles = () => {
         onOpenChange={setDeleteDialogOpen}
         onProfileDeleted={fetchProfiles}
         profile={selectedDeleteProfile}
+      />
+
+      <CloneProfileDialog
+        open={cloneDialogOpen}
+        onOpenChange={setCloneDialogOpen}
+        onProfileCloned={fetchProfiles}
+        profile={selectedCloneProfile}
       />
     </MainLayout>
   );

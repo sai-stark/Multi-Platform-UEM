@@ -1,24 +1,6 @@
-// 1. Common Settings
-export interface CommonSettingsPolicy {
-    id?: string;
-    name: string;
-    description?: string;
-    // Add specific properties as needed
-}
-
-// 2. Device Theme
-export interface DeviceThemePolicy {
-    id?: string;
-    name: string;
-    theme?: 'LIGHT' | 'DARK' | 'SYSTEM';
-}
-
-// 3. Enrollment
-export interface EnrollmentPolicy {
-    id?: string;
-    allowEnrollment: boolean;
-    enrollmentUrl?: string;
-}
+// ========================================
+// COMMON TYPES
+// ========================================
 
 // Application Action enum
 export type ApplicationAction = 'INSTALL' | 'UNINSTALL' | 'ALLOW' | 'BLOCK';
@@ -35,32 +17,53 @@ export interface UserAuditData extends BasicAuditData {
     lastModifiedBy: string; // UUID
 }
 
-// iOS Application Policy (from OpenAPI)
+// ========================================
+// POLICIES
+// ========================================
+
+// 1. Common Settings Policy
+export interface CommonSettingsPolicy {
+    id?: string;
+    name: string;
+    description?: string;
+}
+
+// 2. Device Theme Policy
+export interface DeviceThemePolicy {
+    id?: string;
+    name: string;
+    theme?: 'LIGHT' | 'DARK' | 'SYSTEM';
+}
+
+// 3. Enrollment Policy
+export interface EnrollmentPolicy {
+    id?: string;
+    allowEnrollment: boolean;
+    enrollmentUrl?: string;
+}
+
+// 4. Application Policy
 export interface IosApplicationPolicy extends UserAuditData {
-    id?: string; // UUID, read-only (optional for create requests)
+    id?: string; // UUID, read-only
     name: string;
     bundleIdentifier: string;
     action: 'INSTALL'; // iOS only supports INSTALL currently
     purchaseMethod?: number; // 0 = Free/VPP with redemption code, 1 = VPP app assignment
     removable?: boolean; // iOS 14+, tvOS 14+
-    requestRequiresNetworkTether?: boolean; // Only applicable when removing
+    requestRequiresNetworkTether?: boolean;
     devicePolicyType: 'IosApplicationPolicy';
 }
 
-// Android Application Policy (from OpenAPI)
 export interface AndroidApplicationPolicy extends UserAuditData {
-    id?: string; // UUID, read-only (optional for create requests)
+    id?: string; // UUID, read-only
     applicationVersionId: string; // UUID
     action: ApplicationAction; // INSTALL | UNINSTALL | ALLOW | BLOCK
-    applicationVersion?: string; // read-only (optional for create requests)
+    applicationVersion?: string; // read-only
     devicePolicyType: 'AndroidApplicationPolicy';
 }
 
-// Application Policy - Discriminated Union (from OpenAPI)
 export type ApplicationPolicy = IosApplicationPolicy | AndroidApplicationPolicy;
 
-// 5. Web Application Policy
-// 5. Web Application Policy
 // 5. Web Application Policy
 export interface IosWebApplicationPolicy {
     id?: string;
@@ -94,103 +97,7 @@ export interface AndroidWebApplicationPolicy {
 
 export type WebApplicationPolicy = IosWebApplicationPolicy | AndroidWebApplicationPolicy;
 
-// 6. Security Restriction
-export interface SecurityRestriction {
-    id?: string;
-    allowCamera?: boolean;
-    allowScreenCapture?: boolean;
-}
-
-// 7. Passcode Restriction
-// 7. Passcode Restriction
-export interface PasscodeRestrictionPolicy {
-    id?: string;
-    passcodeId?: string;
-    name?: string;
-    policyType?: string;
-    complexity?: string;
-    minLength?: number;
-    minUpperCase?: number;
-    minLowerCase?: number;
-    minDigits?: number;
-    minSymbols?: number;
-    creationTime?: string;
-    modificationTime?: string;
-    createdBy?: string;
-    lastModifiedBy?: string;
-}
-
-// 8. Sync Storage
-export interface SyncStorageRestriction {
-    id?: string;
-    allowUsbMassStorage?: boolean;
-}
-
-// 9. Kiosk
-export interface KioskRestriction {
-    id?: string;
-    mode?: 'SINGLE_APP' | 'MULTI_APP';
-    apps?: string[];
-}
-
-// 10. Location
-export interface LocationRestriction {
-    id?: string;
-    forceGps?: boolean;
-}
-
-// 11. Tethering
-export interface TetheringRestriction {
-    id?: string;
-    allowWifiTethering?: boolean;
-}
-
-// 12. Phone
-export interface PhoneRestriction {
-    id?: string;
-    allowOutgoingCalls?: boolean;
-}
-
-// 13. DateTime
-export interface DateTimeRestriction {
-    id?: string;
-    forceAutomaticTime?: boolean;
-}
-
-// 14. Display
-export interface DisplayRestriction {
-    id?: string;
-    screenTimeout?: number;
-}
-
-// 15. Miscellaneous
-export interface MiscellaneousRestriction {
-    id?: string;
-    allowFactoryReset?: boolean;
-}
-
-// 16. Applications Restriction (blocklist/allowlist)
-export interface ApplicationsRestriction {
-    id?: string;
-    blockedApps?: string[];
-    allowedApps?: string[];
-}
-
-// 17. Connectivity
-export interface ConnectivityRestriction {
-    id?: string;
-    allowBluetooth?: boolean;
-}
-
-// 18. Network
-export interface NetworkRestriction {
-    id?: string;
-    allowWifi?: boolean;
-}
-
-// iOS Mail Policy is defined in ios.ts as IosMailPolicy
-
-// iOS Passcode Policy
+// 6. Passcode Policy (iOS)
 export interface PasscodePolicy {
     id: string;
     name: string;
@@ -209,7 +116,7 @@ export interface PasscodePolicy {
     changeAtNextAuth?: boolean;
 }
 
-// iOS SCEP Policy
+// 7. SCEP Policy (iOS)
 export interface ScepPolicy {
     id: string;
     policyType: string; // 'IosScepPolicyRes'
@@ -221,7 +128,7 @@ export interface ScepPolicy {
     subject?: string[][][]; // Complex subject structure
 }
 
-// iOS WebClip Policy
+// 8. WebClip Policy (iOS)
 export interface WebClipPolicy {
     id: string;
     name: string;
@@ -230,10 +137,10 @@ export interface WebClipPolicy {
     fullScreen?: boolean;
     isRemovable?: boolean;
     precomposed?: boolean;
-    icon?: string; // If available
+    icon?: string;
 }
 
-// iOS MDM Policy
+// 9. MDM Policy (iOS)
 export interface MdmPolicy {
     policyType: string; // 'IosMdmConfiguration'
     serverURL: string;
@@ -243,7 +150,7 @@ export interface MdmPolicy {
     enrollmentMode: string;
 }
 
-// iOS ACME Policy
+// 10. ACME Policy (iOS)
 export interface AcmePolicy {
     id: string;
     name: string;
@@ -255,7 +162,7 @@ export interface AcmePolicy {
     usageFlags?: number;
 }
 
-// iOS Notification Policy
+// 11. Notification Policy (iOS)
 export interface NotificationPolicy {
     id?: string;
     name?: string;
@@ -277,7 +184,7 @@ export interface NotificationPolicy {
     lastModifiedBy?: string;
 }
 
-// iOS WiFi Policy
+// 12. WiFi Policy (iOS)
 export interface WifiPolicy {
     id: string;
     name: string;
@@ -290,7 +197,7 @@ export interface WifiPolicy {
     proxyType?: string;
 }
 
-// iOS Lock Screen Message Policy
+// 13. Lock Screen Message Policy (iOS)
 export interface LockScreenMessagePolicy {
     id?: string;
     name?: string;
@@ -302,3 +209,4 @@ export interface LockScreenMessagePolicy {
     createdBy?: string;
     lastModifiedBy?: string;
 }
+

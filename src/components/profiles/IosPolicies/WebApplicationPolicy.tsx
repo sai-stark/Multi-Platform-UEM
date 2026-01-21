@@ -1,4 +1,4 @@
-import { PolicyService } from "@/api/services/policies";
+import { PolicyService } from "@/api/services/IOSpolicies";
 import { WebApplicationService } from "@/api/services/webApps";
 import {
     AlertDialog,

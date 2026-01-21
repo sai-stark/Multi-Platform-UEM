@@ -1,17 +1,17 @@
 import { ProfileService } from "@/api/services/profiles";
 import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ApplicationPolicyEditor } from "@/components/profiles/Policies/ApplicationPolicy";
-import { LockScreenMessagePolicy } from "@/components/profiles/Policies/LockScreenMessagePolicy";
-import { MailPolicy } from "@/components/profiles/Policies/MailPolicy";
-import { NotificationPolicy } from "@/components/profiles/Policies/NotificationPolicy";
-import { PasscodePolicy } from "@/components/profiles/Policies/PasscodePolicy";
+import { ApplicationPolicyEditor } from "@/components/profiles/IosPolicies/ApplicationPolicy";
+import { LockScreenMessagePolicy } from "@/components/profiles/IosPolicies/LockScreenMessagePolicy";
+import { MailPolicy } from "@/components/profiles/IosPolicies/MailPolicy";
+import { NotificationPolicy } from "@/components/profiles/IosPolicies/NotificationPolicy";
+import { PasscodePolicy } from "@/components/profiles/IosPolicies/PasscodePolicy";
 import {
   RestrictionsComposite,
   RestrictionsPolicy,
-} from "@/components/profiles/Policies/RestrictionsPolicy";
-import { WebApplicationPolicyEditor } from "@/components/profiles/Policies/WebApplicationPolicy";
-import { WifiPolicy } from "@/components/profiles/Policies/WifiPolicy";
+} from "@/components/profiles/IosPolicies/RestrictionsPolicy";
+import { WebApplicationPolicyEditor } from "@/components/profiles/IosPolicies/WebApplicationPolicy";
+import { WifiPolicy } from "@/components/profiles/IosPolicies/WifiPolicy";
 import {
   ApplicationsPolicyCard,
   LockScreenMessagePolicyCard,
@@ -25,7 +25,7 @@ import {
   ScepPolicyView,
   WebApplicationsPolicyCard,
   WifiPolicyCard,
-} from "@/components/profiles/PolicyCards";
+} from "@/components/profiles/IosPolicyCards";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

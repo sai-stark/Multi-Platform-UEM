@@ -6,7 +6,7 @@ import {
   DeviceApplication,
   MobileApplicationService,
 } from "@/api/services/mobileApps";
-import { PolicyService } from "@/api/services/policies";
+import { PolicyService } from "@/api/services/IOSpolicies";
 import {
   AlertDialog,
   AlertDialogAction,
