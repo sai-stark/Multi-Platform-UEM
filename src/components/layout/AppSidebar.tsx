@@ -27,6 +27,7 @@ import {
   LayoutDashboard,
   MapPin,
   Monitor,
+  Package,
   QrCode,
   Server,
   Settings,
@@ -38,6 +39,7 @@ import {
 const mainNavItems = [
   { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
   { titleKey: "Profiles", url: "/profiles", icon: Layout },
+  { titleKey: "Applications", url: "/applications", icon: Package },
   { titleKey: "nav.webApplications", url: "/web-applications", icon: Globe },
   { titleKey: "nav.devices", url: "/devices", icon: Monitor },
   { titleKey: "Inventory", url: "/inventory", icon: Box },

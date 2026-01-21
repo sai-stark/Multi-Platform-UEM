@@ -24,6 +24,7 @@ import Profiles from "./pages/Profiles";
 import Repositories from "./pages/Repositories";
 import RepositoryDetails from "./pages/RepositoryDetails";
 import WebApplications from "./pages/WebApplications";
+import Applications from "./pages/Applications";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
           <BrowserRouter basename={deploymentPrefixPath}>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/applications" element={<Applications />} />
               <Route path="/web-applications" element={<WebApplications />} />
               <Route path="/policies" element={<Policies />} />
               <Route path="/enrollment" element={<Enrollment />} />
