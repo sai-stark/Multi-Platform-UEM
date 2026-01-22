@@ -1,6 +1,26 @@
 import { ProfileService } from "@/api/services/profiles";
 import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { MainLayout } from "@/components/layout/MainLayout";
+import {
+  AndroidApplicationPolicy,
+  AndroidWebApplicationPolicy,
+  CommonSettingsPolicy,
+  DeviceThemePolicy,
+  EnrollmentPolicy,
+} from "@/components/profiles/AndroidPolicies";
+import {
+  ConnectivityRestriction,
+  DateTimeRestriction,
+  DisplayRestriction,
+  KioskRestriction,
+  LocationRestriction,
+  MiscellaneousRestriction,
+  NetworkRestriction,
+  PhoneRestriction,
+  SecurityRestriction,
+  SyncStorageRestriction,
+  TetheringRestriction,
+} from "@/components/profiles/AndroidRestrictions";
 import { ApplicationPolicyEditor } from "@/components/profiles/IosPolicies/ApplicationPolicy";
 import { LockScreenMessagePolicy } from "@/components/profiles/IosPolicies/LockScreenMessagePolicy";
 import { MailPolicy } from "@/components/profiles/IosPolicies/MailPolicy";
@@ -44,6 +64,9 @@ import {
 import { IosMdmConfiguration, IosScepConfiguration } from "@/types/ios";
 import {
   ApplicationPolicy,
+  CommonSettingsPolicy as CommonSettingsPolicyType,
+  DeviceThemePolicy as DeviceThemePolicyType,
+  EnrollmentPolicy as EnrollmentPolicyType,
   FullProfile,
   IosMailPolicy,
   IosPasscodeRestrictionPolicy,
@@ -67,10 +90,13 @@ import {
   Mail,
   MessageSquare,
   Monitor,
+  Palette,
   Plus,
   Server,
+  Settings,
   Shield,
   Smartphone,
+  UserPlus,
   Wifi,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -550,6 +576,151 @@ function PolicyEditor({
           {activePolicyType === "mdm" && mdmPolicy && (
             <MdmPolicyView policy={mdmPolicy} onClose={onCancel} />
           )}
+          {/* Android-specific policy editors */}
+          {activePolicyType === "securityRestriction" && (
+            <SecurityRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "kioskRestriction" && (
+            <KioskRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "locationRestriction" && (
+            <LocationRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "tetheringRestriction" && (
+            <TetheringRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "phoneRestriction" && (
+            <PhoneRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "dateTimeRestriction" && (
+            <DateTimeRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "displayRestriction" && (
+            <DisplayRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "miscRestriction" && (
+            <MiscellaneousRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "connectivityRestriction" && (
+            <ConnectivityRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "networkRestriction" && (
+            <NetworkRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "storageRestriction" && (
+            <SyncStorageRestriction
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "commonSettings" && (
+            <CommonSettingsPolicy
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "deviceTheme" && (
+            <DeviceThemePolicy
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "enrollment" && (
+            <EnrollmentPolicy
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "androidApplication" && (
+            <AndroidApplicationPolicy
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "androidWebApp" && (
+            <AndroidWebApplicationPolicy
+              platform={platform}
+              profileId={profileId}
+              initialData={undefined}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -657,13 +828,30 @@ function PolicyCardGrid({
 
   // Determine available policies that are not configured
   const availablePolicies: { type: string; title: string; description: string; icon: React.ReactNode; show: boolean }[] = [
-    { type: 'passcode', title: 'Passcode', description: 'Security requirements', icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: !hasPasscode },
-    { type: 'wifi', title: 'WiFi', description: 'Network configuration', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: !hasWifi },
+    { type: 'passcode', title: 'Passcode', description: 'Security requirements', icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasPasscode },
+    { type: 'wifi', title: 'WiFi', description: 'Network configuration', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWifi },
     { type: 'mail', title: 'Mail', description: 'Email configuration', icon: <Mail className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasMail },
-    { type: 'restrictions', title: 'Restrictions', description: 'Device restrictions', icon: <Ban className="w-5 h-5 text-muted-foreground" />, show: !hasRestrictions },
+    { type: 'restrictions', title: 'Restrictions', description: 'Device restrictions', icon: <Ban className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasRestrictions },
     { type: 'webApps', title: 'Web Apps', description: 'Web application links', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: !hasWebApps },
     { type: 'notifications', title: 'Notifications', description: 'Notification settings', icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasNotifications },
     { type: 'lockScreenMessage', title: 'Lock Screen', description: 'Lock screen message', icon: <MessageSquare className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasLockScreen },
+    // Android-specific policies and restrictions
+    { type: 'securityRestriction', title: 'Security', description: 'Camera & screen capture', icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'kioskRestriction', title: 'Kiosk', description: 'Lock to specific apps', icon: <Monitor className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'locationRestriction', title: 'Location', description: 'GPS controls', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'tetheringRestriction', title: 'Tethering', description: 'Wi-Fi hotspot control', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'phoneRestriction', title: 'Phone', description: 'Outgoing calls', icon: <Smartphone className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'dateTimeRestriction', title: 'Date/Time', description: 'Automatic time', icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'displayRestriction', title: 'Display', description: 'Screen timeout', icon: <Monitor className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'miscRestriction', title: 'Miscellaneous', description: 'Factory reset', icon: <Settings className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'connectivityRestriction', title: 'Connectivity', description: 'Bluetooth control', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'networkRestriction', title: 'Network', description: 'Wi-Fi control', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'storageRestriction', title: 'Storage', description: 'USB mass storage', icon: <Server className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'androidApplication', title: 'Applications', description: 'Android app management', icon: <Smartphone className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'androidWebApp', title: 'Web Apps', description: 'Web app shortcuts', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'commonSettings', title: 'Common Settings', description: 'Device naming & settings', icon: <Settings className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'deviceTheme', title: 'Device Theme', description: 'Light/Dark mode', icon: <Palette className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
+    { type: 'enrollment', title: 'Enrollment', description: 'Enrollment settings', icon: <UserPlus className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
   ].filter(p => p.show);
 
   return (
