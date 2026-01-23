@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Platform, TetheringRestriction as TetheringRestrictionType } from '@/types/models';
-import { Edit, Loader2, Save, Wifi } from 'lucide-react';
+import { Edit, Loader2, Save, Share2, Wifi } from 'lucide-react';
 import { useState } from 'react';
 
 interface TetheringRestrictionProps {
@@ -21,7 +21,9 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     const [formData, setFormData] = useState<Partial<TetheringRestrictionType>>({
-        allowWifiTethering: initialData?.allowWifiTethering ?? true,
+        disableTethering: initialData?.disableTethering ?? true,
+        disableWifiTethering: initialData?.disableWifiTethering ?? true,
+        devicePolicyType: 'AndroidTetheringRestriction',
         ...initialData
     });
 
@@ -56,11 +58,11 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
             <div className="flex items-center justify-between pb-4 border-b">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-500/10 rounded-full">
-                        <Wifi className="w-6 h-6 text-purple-500" />
+                        <Share2 className="w-6 h-6 text-purple-500" />
                     </div>
                     <div>
                         <h3 className="text-xl font-semibold">Tethering Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Wi-Fi hotspot controls</p>
+                        <p className="text-sm text-muted-foreground">Hotspot and tethering controls</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
@@ -69,17 +71,41 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                 </Button>
             </div>
 
-            <Card className={`border-l-4 ${formData.allowWifiTethering ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Wifi className="w-5 h-5 text-purple-500" />
-                        <span className="font-medium">Wi-Fi Tethering</span>
-                    </div>
-                    <Badge variant={formData.allowWifiTethering ? 'default' : 'destructive'}>
-                        {formData.allowWifiTethering ? 'Allowed' : 'Blocked'}
-                    </Badge>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className={`border-l-4 ${formData.disableTethering ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Share2 className="w-5 h-5 text-purple-500" />
+                            <span className="font-medium">All Tethering</span>
+                        </div>
+                        <Badge variant={formData.disableTethering ? 'default' : 'destructive'}>
+                            {formData.disableTethering ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableTethering 
+                                ? 'All tethering modes blocked' 
+                                : 'USB/Bluetooth tethering allowed'}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${formData.disableWifiTethering ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Wifi className="w-5 h-5 text-blue-500" />
+                            <span className="font-medium">Wi-Fi Hotspot</span>
+                        </div>
+                        <Badge variant={formData.disableWifiTethering ? 'default' : 'destructive'}>
+                            {formData.disableWifiTethering ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableWifiTethering 
+                                ? 'Mobile hotspot is blocked' 
+                                : 'Users can create hotspots'}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="flex justify-end pt-4 border-t">
                 <Button variant="outline" onClick={onCancel}>Close</Button>
@@ -100,25 +126,41 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                     </div>
                     <div>
                         <h3 className="text-lg font-medium">Edit Tethering Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure mobile hotspot policy</p>
+                        <p className="text-sm text-muted-foreground">Configure hotspot and tethering policies</p>
                     </div>
                 </div>
             </div>
 
-            <div className="p-4 border rounded-xl bg-card">
-                <div className="flex items-center justify-between">
+            <div className="space-y-4 p-4 border rounded-xl bg-card">
+                <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <Wifi className="w-5 h-5 mt-0.5 text-purple-500" />
+                        <Share2 className="w-5 h-5 mt-0.5 text-purple-500" />
                         <div>
-                            <span className="font-medium">Allow Wi-Fi Tethering</span>
+                            <span className="font-medium">Disable Tethering</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Enable mobile hotspot functionality
+                                Block all tethering (USB, Bluetooth)
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.allowWifiTethering}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, allowWifiTethering: c }))}
+                        checked={formData.disableTethering}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableTethering: c }))}
+                    />
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                    <Label className="flex items-start gap-3">
+                        <Wifi className="w-5 h-5 mt-0.5 text-blue-500" />
+                        <div>
+                            <span className="font-medium">Disable Wi-Fi Tethering</span>
+                            <p className="font-normal text-xs text-muted-foreground">
+                                Block mobile Wi-Fi hotspot functionality
+                            </p>
+                        </div>
+                    </Label>
+                    <Switch
+                        checked={formData.disableWifiTethering}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableWifiTethering: c }))}
                     />
                 </div>
             </div>

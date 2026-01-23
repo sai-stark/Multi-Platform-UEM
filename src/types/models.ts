@@ -8,7 +8,7 @@ export * from './inventory';
 export * from './ios';
 export * from './metadata';
 export * from './policy';
-export * from './profile';
 export * from './repository';
 export * from './security';
+export * from './restrictions';
 

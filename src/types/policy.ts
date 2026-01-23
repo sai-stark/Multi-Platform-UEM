@@ -5,6 +5,51 @@
 // Application Action enum
 export type ApplicationAction = 'INSTALL' | 'UNINSTALL' | 'ALLOW' | 'BLOCK';
 
+// Android Policy Enums (from OpenAPI)
+export type IconSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+export type ScreenOrientation = 'NONE' | 'PORTRAIT' | 'LANDSCAPE';
+export type Color = string; // Pattern: ^#[0-9a-f]{6}$
+export type AppPermissionType = 'GRANT' | 'DENY' | 'PROMPT';
+export type WifiSecurity = 'WPA' | 'WEP' | 'EAP';
+
+// Volume Policy (discriminated union)
+export interface ManagedVolume {
+    manageVolume: 'ManagedVolume';
+    volume: number; // 1-100
+}
+
+export interface UnmanagedVolume {
+    manageVolume: 'UnmanagedVolume';
+}
+
+export type VolumePolicy = ManagedVolume | UnmanagedVolume;
+
+// System Update Policy (discriminated union)
+export interface ScheduledSystemUpdate {
+    systemUpdate: 'SCHEDULED';
+    systemUpdateScheduleFrom: string; // time format
+    systemUpdateScheduleTo: string; // time format
+}
+
+export interface NonScheduledSystemUpdate {
+    systemUpdate: 'DEFAULT' | 'IMMEDIATELY' | 'POSTPONE';
+}
+
+export type SystemUpdatePolicy = ScheduledSystemUpdate | NonScheduledSystemUpdate;
+
+// Schedule Time
+export interface ScheduleTime {
+    from: string; // time format
+    to: string; // time format
+}
+
+// WiFi Hotspot Info
+export interface WifiHotspotInfo {
+    ssid: string;
+    security: WifiSecurity;
+    password: string;
+}
+
 // Basic Audit Data (from OpenAPI)
 export interface BasicAuditData {
     creationTime: string; // ISO date-time
@@ -21,25 +66,38 @@ export interface UserAuditData extends BasicAuditData {
 // POLICIES
 // ========================================
 
-// 1. Common Settings Policy
+// 1. Common Settings Policy (AndroidCommonSettingsPolicy)
 export interface CommonSettingsPolicy {
     id?: string;
-    name: string;
-    description?: string;
+    locationTracking?: boolean;
+    defaultAppPerms?: AppPermissionType;
+    keepAliveTime?: number; // positive integer in minutes
+    disableScreenCapture?: boolean;
+    appUpdateSchedule?: ScheduleTime;
+    volumePolicy?: VolumePolicy;
+    systemUpdatePolicy?: SystemUpdatePolicy;
+    devicePolicyType?: 'AndroidCommonSettingsPolicy';
 }
 
-// 2. Device Theme Policy
+// 2. Device Theme Policy (AndroidDeviceThemePolicy)
 export interface DeviceThemePolicy {
     id?: string;
-    name: string;
-    theme?: 'LIGHT' | 'DARK' | 'SYSTEM';
+    appNamesColor?: Color;
+    iconSize?: IconSize;
+    screenSignature?: string;
+    screenOrientation?: ScreenOrientation;
+    backgroundColor?: Color;
+    backgroundImage?: string; // URI
+    devicePolicyType?: 'AndroidDeviceThemePolicy';
 }
 
-// 3. Enrollment Policy
+// 3. Enrollment Policy (AndroidEnrollmentPolicy)
 export interface EnrollmentPolicy {
     id?: string;
-    allowEnrollment: boolean;
-    enrollmentUrl?: string;
+    isKioskMode?: boolean;
+    wifiHotspot?: WifiHotspotInfo;
+    useMobileData?: boolean;
+    devicePolicyType?: 'AndroidEnrollmentPolicy';
 }
 
 // 4. Application Policy

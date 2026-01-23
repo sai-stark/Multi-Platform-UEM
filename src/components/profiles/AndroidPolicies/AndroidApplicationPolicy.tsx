@@ -1,8 +1,17 @@
+import { ApplicationService, Application, ApplicationVersion } from '@/api/services/applications';
 import { policyAPI } from '@/api/services/Androidpolicies';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -11,53 +20,117 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 import { AndroidApplicationPolicy as AndroidApplicationPolicyType, ApplicationAction, Platform } from '@/types/models';
-import { AppWindow, Ban, Check, Download, Edit, Loader2, Save, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import {
+    AlertTriangle,
+    AppWindow,
+    Ban,
+    Check,
+    Download,
+    Edit,
+    Loader2,
+    Plus,
+    Save,
+    Trash2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface AndroidApplicationPolicyProps {
     platform: Platform;
     profileId: string;
-    initialData?: AndroidApplicationPolicyType;
+    initialData?: AndroidApplicationPolicyType[];
     onSave: () => void;
     onCancel: () => void;
 }
 
-export function AndroidApplicationPolicy({ platform, profileId, initialData, onSave, onCancel }: AndroidApplicationPolicyProps) {
+interface ExtendedApplicationPolicy extends Partial<AndroidApplicationPolicyType> {
+    isNew?: boolean;
+    displayName?: string;
+    displayVersion?: string;
+}
+
+export function AndroidApplicationPolicy({ platform, profileId, initialData = [], onSave, onCancel }: AndroidApplicationPolicyProps) {
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    const [isEditing, setIsEditing] = useState(!initialData?.id);
+    const [policies, setPolicies] = useState<ExtendedApplicationPolicy[]>(initialData || []);
+    const [changedPolicies, setChangedPolicies] = useState<ExtendedApplicationPolicy[]>([]);
+    const [availableApps, setAvailableApps] = useState<Application[]>([]);
 
-    const [formData, setFormData] = useState<Partial<AndroidApplicationPolicyType>>({
-        applicationVersionId: initialData?.applicationVersionId || '',
-        action: initialData?.action || 'INSTALL',
-        devicePolicyType: 'AndroidApplicationPolicy',
-        ...initialData
-    });
+    // Modal states
+    const [openAddModal, setOpenAddModal] = useState(false);
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const [appToDelete, setAppToDelete] = useState<ExtendedApplicationPolicy | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            if (initialData?.id) {
-                await policyAPI.updateApplicationPolicy(platform, profileId, formData);
-            } else {
-                await policyAPI.createApplicationPolicy(platform, profileId, formData);
+    // Add modal form state
+    const [selectedAppId, setSelectedAppId] = useState('');
+    const [selectedVersionId, setSelectedVersionId] = useState('');
+    const [selectedAction, setSelectedAction] = useState<ApplicationAction>('INSTALL');
+
+    // Fetch available applications
+    useEffect(() => {
+        const fetchApplications = async () => {
+            try {
+                const response = await ApplicationService.getApplications(platform);
+                setAvailableApps(response.content || []);
+            } catch (error) {
+                console.error('Failed to fetch applications:', error);
+                toast({
+                    title: 'Error',
+                    description: 'Failed to fetch applications',
+                    variant: 'destructive',
+                });
             }
-            onSave();
-        } catch (error) {
-            console.error('Failed to save application policy:', error);
-        } finally {
-            setLoading(false);
-        }
+        };
+        fetchApplications();
+    }, [platform, toast]);
+
+    // Get available app names (excluding already selected versions)
+    const getAvailableAppsWithVersions = () => {
+        const usedVersionIds = new Set(
+            policies
+                .map(p => p.applicationVersionId)
+                .filter((id): id is string => id !== undefined)
+        );
+
+        return availableApps
+            .map(app => ({
+                ...app,
+                availableVersions: (app.versions || []).filter(
+                    v => !usedVersionIds.has(v.id)
+                ),
+            }))
+            .filter(app => app.availableVersions.length > 0);
     };
 
-    const handleCancel = () => {
-        if (isEditing && initialData?.id) {
-            setIsEditing(false);
-            setFormData({ ...initialData });
-        } else {
-            onCancel();
+    // Get app display info from version ID
+    const getAppDisplayInfo = (applicationVersionId?: string) => {
+        if (!applicationVersionId) return { name: 'Unknown', version: 'Unknown', packageName: '' };
+        for (const app of availableApps) {
+            const version = (app.versions || []).find(v => v.id === applicationVersionId);
+            if (version) {
+                return {
+                    name: app.name,
+                    version: version.versionName || version.versionCode,
+                    packageName: app.packageName || '',
+                };
+            }
         }
+        return { name: 'Unknown', version: 'Unknown', packageName: '' };
     };
 
     const getActionIcon = (action?: ApplicationAction) => {
@@ -70,146 +143,464 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData, onS
         }
     };
 
-    const getActionColor = (action?: ApplicationAction) => {
+    const getActionBadgeVariant = (action?: ApplicationAction) => {
         switch (action) {
-            case 'INSTALL': return 'border-l-green-500';
-            case 'UNINSTALL': return 'border-l-red-500';
-            case 'ALLOW': return 'border-l-blue-500';
-            case 'BLOCK': return 'border-l-orange-500';
-            default: return 'border-l-gray-300';
+            case 'INSTALL': return 'default';
+            case 'UNINSTALL': return 'destructive';
+            case 'ALLOW': return 'secondary';
+            case 'BLOCK': return 'outline';
+            default: return 'secondary';
         }
     };
 
-    const renderView = () => (
-        <div className="space-y-6 max-w-4xl mt-6">
+    const resetAddModalState = () => {
+        setSelectedAppId('');
+        setSelectedVersionId('');
+        setSelectedAction('INSTALL');
+    };
+
+    const handleAddApplication = () => {
+        if (!selectedAppId || !selectedVersionId) {
+            toast({
+                title: 'Error',
+                description: 'Please select both app and version',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        const selectedApp = availableApps.find(app => app.id === selectedAppId);
+        const selectedVersion = selectedApp?.versions?.find(v => v.id === selectedVersionId);
+
+        if (!selectedApp || !selectedVersion) {
+            toast({
+                title: 'Error',
+                description: 'Selected application not found',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        const newPolicy: ExtendedApplicationPolicy = {
+            id: `new-${Date.now()}`,
+            applicationVersionId: selectedVersionId,
+            action: selectedAction,
+            devicePolicyType: 'AndroidApplicationPolicy',
+            isNew: true,
+            displayName: selectedApp.name,
+            displayVersion: selectedVersion.versionName || selectedVersion.versionCode,
+        };
+
+        setChangedPolicies(prev => [...prev, newPolicy]);
+        setPolicies(prev => [...prev, newPolicy]);
+        setOpenAddModal(false);
+        resetAddModalState();
+    };
+
+    const handleDeletePolicy = (policy: ExtendedApplicationPolicy) => {
+        setAppToDelete(policy);
+        setOpenDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!appToDelete) return;
+
+        try {
+            if (!appToDelete.isNew && appToDelete.id) {
+                await policyAPI.deleteApplicationPolicy(platform, profileId, appToDelete.id);
+            }
+            setPolicies(prev => prev.filter(p => p.id !== appToDelete.id));
+            setChangedPolicies(prev => prev.filter(p => p.id !== appToDelete.id));
+            toast({
+                title: 'Success',
+                description: 'Application policy deleted successfully',
+            });
+        } catch (error) {
+            console.error('Failed to delete policy:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to delete application policy',
+                variant: 'destructive',
+            });
+        }
+        setOpenDeleteModal(false);
+        setAppToDelete(null);
+    };
+
+    const handleActionChange = (policyId: string, action: ApplicationAction) => {
+        setPolicies(prev =>
+            prev.map(p => (p.id === policyId ? { ...p, action } : p))
+        );
+        setChangedPolicies(prev => {
+            const existing = prev.find(p => p.id === policyId);
+            const policy = policies.find(p => p.id === policyId);
+            if (existing) {
+                return prev.map(p => (p.id === policyId ? { ...p, action } : p));
+            }
+            return [...prev, { ...policy, action }];
+        });
+    };
+
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            const promises: Promise<unknown>[] = [];
+
+            // Create new policies
+            const newPolicies = changedPolicies.filter(p => p.isNew);
+            for (const policy of newPolicies) {
+                const { isNew, displayName, displayVersion, id, ...policyData } = policy;
+                promises.push(policyAPI.createApplicationPolicy(platform, profileId, policyData));
+            }
+
+            // Update existing policies
+            const updatedPolicies = changedPolicies.filter(p => !p.isNew);
+            for (const policy of updatedPolicies) {
+                const { isNew, displayName, displayVersion, ...policyData } = policy;
+                if (policy.id) {
+                    promises.push(policyAPI.updateApplicationPolicy(platform, profileId, policy.id, policyData));
+                }
+            }
+
+            await Promise.all(promises);
+            setChangedPolicies([]);
+            toast({
+                title: 'Success',
+                description: 'Application policies saved successfully!',
+            });
+            onSave();
+        } catch (error) {
+            console.error('Failed to save policies:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to save application policies',
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const availableAppsWithVersions = getAvailableAppsWithVersions();
+    const hasChanges = changedPolicies.length > 0;
+
+    return (
+        <div className="space-y-6 max-w-5xl mt-6">
+            {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-500/10 rounded-full">
                         <AppWindow className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Application Policy</h3>
-                        <p className="text-sm text-muted-foreground">Manage Android applications</p>
+                        <h3 className="text-xl font-semibold">Application Policies</h3>
+                        <p className="text-sm text-muted-foreground">Manage Android application installations</p>
                     </div>
                 </div>
-                <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Policy
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOpenAddModal(true)}
+                    disabled={availableAppsWithVersions.length === 0}
+                >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Application
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className={`border-l-4 ${getActionColor(formData.action)}`}>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            {getActionIcon(formData.action)}
-                            <span className="font-medium">Action</span>
-                        </div>
-                        <Badge variant="default">{formData.action}</Badge>
-                    </CardContent>
-                </Card>
+            {/* No apps warning */}
+            {availableAppsWithVersions.length === 0 && policies.length === 0 && (
+                <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                        No applications available. Please add applications to the repository first.
+                    </AlertDescription>
+                </Alert>
+            )}
 
-                <Card className="border-l-4 border-l-blue-500">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <AppWindow className="w-4 h-4 text-blue-500" />
-                            <span className="font-medium">Application Version ID</span>
-                        </div>
-                        <p className="text-sm font-mono bg-muted/50 p-2 rounded truncate">
-                            {formData.applicationVersionId || 'Not set'}
+            {/* Policies Table */}
+            {policies.length > 0 && (
+                <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[250px]">Application</TableHead>
+                                <TableHead className="w-[150px]">Version</TableHead>
+                                <TableHead className="w-[150px]">Action</TableHead>
+                                <TableHead className="w-[100px] text-center">Status</TableHead>
+                                <TableHead className="w-[80px] text-center">Remove</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {policies.map(policy => {
+                                const appInfo = policy.displayName
+                                    ? { name: policy.displayName, version: policy.displayVersion, packageName: '' }
+                                    : getAppDisplayInfo(policy.applicationVersionId);
+
+                                return (
+                                    <TableRow key={policy.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <AppWindow className="w-4 h-4 text-muted-foreground" />
+                                                <div>
+                                                    <p className="font-medium">{appInfo.name}</p>
+                                                    {appInfo.packageName && (
+                                                        <p className="text-xs text-muted-foreground">{appInfo.packageName}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">v{appInfo.version}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Select
+                                                value={policy.action}
+                                                onValueChange={(v: ApplicationAction) => handleActionChange(policy.id!, v)}
+                                            >
+                                                <SelectTrigger className="w-[130px]">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="INSTALL">
+                                                        <div className="flex items-center gap-2">
+                                                            <Download className="w-4 h-4 text-green-500" />
+                                                            Install
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="UNINSTALL">
+                                                        <div className="flex items-center gap-2">
+                                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                                            Uninstall
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="ALLOW">
+                                                        <div className="flex items-center gap-2">
+                                                            <Check className="w-4 h-4 text-blue-500" />
+                                                            Allow
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="BLOCK">
+                                                        <div className="flex items-center gap-2">
+                                                            <Ban className="w-4 h-4 text-orange-500" />
+                                                            Block
+                                                        </div>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {policy.isNew ? (
+                                                <Badge variant="secondary">New</Badge>
+                                            ) : (
+                                                <Badge variant={getActionBadgeVariant(policy.action) as any}>
+                                                    {getActionIcon(policy.action)}
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive hover:text-destructive"
+                                                            onClick={() => handleDeletePolicy(policy)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Delete</TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+
+            {/* Empty state */}
+            {policies.length === 0 && availableAppsWithVersions.length > 0 && (
+                <Card className="border-dashed">
+                    <CardContent className="py-10 text-center">
+                        <AppWindow className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                        <h4 className="font-medium mb-2">No Application Policies</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Add applications to configure installation policies
                         </p>
+                        <Button variant="outline" onClick={() => setOpenAddModal(true)}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Application
+                        </Button>
                     </CardContent>
                 </Card>
-            </div>
+            )}
 
-            <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
-            </div>
-        </div>
-    );
-
-    if (!isEditing) {
-        return renderView();
-    }
-
-    return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-full">
-                        <Edit className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-medium">Edit Application Policy</h3>
-                        <p className="text-sm text-muted-foreground">Configure Android app management</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="space-y-4 p-4 border rounded-xl bg-card">
-                <div className="space-y-2">
-                    <Label htmlFor="applicationVersionId">Application Version ID</Label>
-                    <Input
-                        id="applicationVersionId"
-                        value={formData.applicationVersionId || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, applicationVersionId: e.target.value }))}
-                        placeholder="Enter application version UUID"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                        The UUID of the application version from the app repository
-                    </p>
-                </div>
-
-                <div className="space-y-2">
-                    <Label>Action</Label>
-                    <Select
-                        value={formData.action}
-                        onValueChange={(value: ApplicationAction) => 
-                            setFormData(prev => ({ ...prev, action: value }))
-                        }
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select action" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="INSTALL">
-                                <div className="flex items-center gap-2">
-                                    <Download className="w-4 h-4 text-green-500" />
-                                    Install
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="UNINSTALL">
-                                <div className="flex items-center gap-2">
-                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                    Uninstall
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="ALLOW">
-                                <div className="flex items-center gap-2">
-                                    <Check className="w-4 h-4 text-blue-500" />
-                                    Allow
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="BLOCK">
-                                <div className="flex items-center gap-2">
-                                    <Ban className="w-4 h-4 text-orange-500" />
-                                    Block
-                                </div>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={onCancel} disabled={loading}>
                     Cancel
                 </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                <Button onClick={handleSave} disabled={loading || !hasChanges} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Changes
                 </Button>
             </div>
-        </form>
+
+            {/* Add Application Modal */}
+            <Dialog open={openAddModal} onOpenChange={(open) => {
+                setOpenAddModal(open);
+                if (!open) resetAddModalState();
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Plus className="h-5 w-5" />
+                            Add Application
+                        </DialogTitle>
+                        <DialogDescription>
+                            Select an application and configure the policy action.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        {availableAppsWithVersions.length === 0 ? (
+                            <Alert>
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                    All available applications have been added to this policy.
+                                </AlertDescription>
+                            </Alert>
+                        ) : (
+                            <>
+                                <div className="space-y-2">
+                                    <Label>Application</Label>
+                                    <Select
+                                        value={selectedAppId}
+                                        onValueChange={(v) => {
+                                            setSelectedAppId(v);
+                                            setSelectedVersionId('');
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select an application" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableAppsWithVersions.map(app => (
+                                                <SelectItem key={app.id} value={app.id}>
+                                                    <div className="flex items-center gap-2">
+                                                        <AppWindow className="h-4 w-4" />
+                                                        {app.name}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {selectedAppId && (
+                                    <div className="space-y-2">
+                                        <Label>Version</Label>
+                                        <Select value={selectedVersionId} onValueChange={setSelectedVersionId}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a version" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableAppsWithVersions
+                                                    .find(a => a.id === selectedAppId)
+                                                    ?.availableVersions.map(v => (
+                                                        <SelectItem key={v.id} value={v.id}>
+                                                            v{v.versionName || v.versionCode}
+                                                        </SelectItem>
+                                                    ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <Label>Action</Label>
+                                    <Select value={selectedAction} onValueChange={(v: ApplicationAction) => setSelectedAction(v)}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="INSTALL">
+                                                <div className="flex items-center gap-2">
+                                                    <Download className="w-4 h-4 text-green-500" />
+                                                    Install
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="UNINSTALL">
+                                                <div className="flex items-center gap-2">
+                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                    Uninstall
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="ALLOW">
+                                                <div className="flex items-center gap-2">
+                                                    <Check className="w-4 h-4 text-blue-500" />
+                                                    Allow
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="BLOCK">
+                                                <div className="flex items-center gap-2">
+                                                    <Ban className="w-4 h-4 text-orange-500" />
+                                                    Block
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenAddModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleAddApplication} disabled={!selectedAppId || !selectedVersionId}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Application
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Modal */}
+            <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <Trash2 className="h-5 w-5" />
+                            Delete Application Policy
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete this application policy? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            Deleting this policy will remove the associated application configuration from this profile.
+                        </AlertDescription>
+                    </Alert>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 }

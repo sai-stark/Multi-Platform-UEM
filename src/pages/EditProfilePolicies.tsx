@@ -99,7 +99,7 @@ import {
   UserPlus,
   Wifi,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 // Animation variants
@@ -820,39 +820,68 @@ function PolicyCardGrid({
   const isIos = platform === 'ios';
   const isAndroid = platform === 'android';
 
+  // Android-specific: check which restrictions are configured
+  const hasSecurityRestriction = !!(restrictionsPolicy as any)?.security;
+  const hasKioskRestriction = !!(restrictionsPolicy as any)?.kiosk;
+  const hasLocationRestriction = !!(restrictionsPolicy as any)?.location;
+  const hasTetheringRestriction = !!(restrictionsPolicy as any)?.tethering;
+  const hasPhoneRestriction = !!(restrictionsPolicy as any)?.phone;
+  const hasDateTimeRestriction = !!(restrictionsPolicy as any)?.dateTime;
+  const hasDisplayRestriction = !!(restrictionsPolicy as any)?.display;
+  const hasMiscRestriction = !!(restrictionsPolicy as any)?.miscellaneous;
+  const hasConnectivityRestriction = !!(restrictionsPolicy as any)?.connectivity;
+  const hasNetworkRestriction = !!(restrictionsPolicy as any)?.network;
+  const hasStorageRestriction = !!(restrictionsPolicy as any)?.syncStorage;
+
   // Count active policies
   const activePolicies = [
     hasPasscode, hasWifi, hasMail, hasRestrictions, hasScep, hasMdm,
     hasWebApps, hasNotifications, hasLockScreen
   ].filter(Boolean).length;
 
-  // Determine available policies that are not configured
-  const availablePolicies: { type: string; title: string; description: string; icon: React.ReactNode; show: boolean }[] = [
+  // iOS available policies (not configured)
+  const iosAvailablePolicies: { type: string; title: string; description: string; icon: React.ReactNode; show: boolean }[] = [
     { type: 'passcode', title: 'Passcode', description: 'Security requirements', icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasPasscode },
     { type: 'wifi', title: 'WiFi', description: 'Network configuration', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWifi },
     { type: 'mail', title: 'Mail', description: 'Email configuration', icon: <Mail className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasMail },
     { type: 'restrictions', title: 'Restrictions', description: 'Device restrictions', icon: <Ban className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasRestrictions },
-    { type: 'webApps', title: 'Web Apps', description: 'Web application links', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: !hasWebApps },
+    { type: 'webApps', title: 'Web Apps', description: 'Web application links', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWebApps },
     { type: 'notifications', title: 'Notifications', description: 'Notification settings', icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasNotifications },
     { type: 'lockScreenMessage', title: 'Lock Screen', description: 'Lock screen message', icon: <MessageSquare className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasLockScreen },
-    // Android-specific policies and restrictions
-    { type: 'securityRestriction', title: 'Security', description: 'Camera & screen capture', icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'kioskRestriction', title: 'Kiosk', description: 'Lock to specific apps', icon: <Monitor className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'locationRestriction', title: 'Location', description: 'GPS controls', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'tetheringRestriction', title: 'Tethering', description: 'Wi-Fi hotspot control', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'phoneRestriction', title: 'Phone', description: 'Outgoing calls', icon: <Smartphone className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'dateTimeRestriction', title: 'Date/Time', description: 'Automatic time', icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'displayRestriction', title: 'Display', description: 'Screen timeout', icon: <Monitor className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'miscRestriction', title: 'Miscellaneous', description: 'Factory reset', icon: <Settings className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'connectivityRestriction', title: 'Connectivity', description: 'Bluetooth control', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'networkRestriction', title: 'Network', description: 'Wi-Fi control', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'storageRestriction', title: 'Storage', description: 'USB mass storage', icon: <Server className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'androidApplication', title: 'Applications', description: 'Android app management', icon: <Smartphone className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'androidWebApp', title: 'Web Apps', description: 'Web app shortcuts', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'commonSettings', title: 'Common Settings', description: 'Device naming & settings', icon: <Settings className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'deviceTheme', title: 'Device Theme', description: 'Light/Dark mode', icon: <Palette className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-    { type: 'enrollment', title: 'Enrollment', description: 'Enrollment settings', icon: <UserPlus className="w-5 h-5 text-muted-foreground" />, show: isAndroid },
-  ].filter(p => p.show);
+  ].filter(p => p.show).sort((a, b) => a.title.localeCompare(b.title));
+
+  // Android Policies (not restrictions) - sorted alphabetically
+  const androidPolicies = [
+    { type: 'androidApplication', title: 'Applications', description: 'Android app management', icon: <Smartphone className="w-5 h-5" />, configured: hasApplications },
+    { type: 'commonSettings', title: 'Common Settings', description: 'Device naming & settings', icon: <Settings className="w-5 h-5" />, configured: false },
+    { type: 'deviceTheme', title: 'Device Theme', description: 'Light/Dark mode', icon: <Palette className="w-5 h-5" />, configured: false },
+    { type: 'enrollment', title: 'Enrollment', description: 'Enrollment settings', icon: <UserPlus className="w-5 h-5" />, configured: false },
+    { type: 'androidWebApp', title: 'Web Apps', description: 'Web app shortcuts', icon: <Globe className="w-5 h-5" />, configured: hasWebApps },
+  ].sort((a, b) => a.title.localeCompare(b.title));
+
+  // Android Restrictions - sorted alphabetically
+  const androidRestrictions = [
+    { type: 'connectivityRestriction', title: 'Connectivity', description: 'Bluetooth control', icon: <Wifi className="w-5 h-5" />, configured: hasConnectivityRestriction },
+    { type: 'dateTimeRestriction', title: 'Date/Time', description: 'Automatic time', icon: <Bell className="w-5 h-5" />, configured: hasDateTimeRestriction },
+    { type: 'displayRestriction', title: 'Display', description: 'Screen timeout', icon: <Monitor className="w-5 h-5" />, configured: hasDisplayRestriction },
+    { type: 'kioskRestriction', title: 'Kiosk', description: 'Lock to specific apps', icon: <Monitor className="w-5 h-5" />, configured: hasKioskRestriction },
+    { type: 'locationRestriction', title: 'Location', description: 'GPS controls', icon: <Globe className="w-5 h-5" />, configured: hasLocationRestriction },
+    { type: 'miscRestriction', title: 'Miscellaneous', description: 'Factory reset', icon: <Settings className="w-5 h-5" />, configured: hasMiscRestriction },
+    { type: 'networkRestriction', title: 'Network', description: 'Wi-Fi control', icon: <Wifi className="w-5 h-5" />, configured: hasNetworkRestriction },
+    { type: 'phoneRestriction', title: 'Phone', description: 'Outgoing calls', icon: <Smartphone className="w-5 h-5" />, configured: hasPhoneRestriction },
+    { type: 'securityRestriction', title: 'Security', description: 'Camera & screen capture', icon: <Shield className="w-5 h-5" />, configured: hasSecurityRestriction },
+    { type: 'storageRestriction', title: 'Storage', description: 'USB mass storage', icon: <Server className="w-5 h-5" />, configured: hasStorageRestriction },
+    { type: 'tetheringRestriction', title: 'Tethering', description: 'Wi-Fi hotspot control', icon: <Wifi className="w-5 h-5" />, configured: hasTetheringRestriction },
+  ].sort((a, b) => a.title.localeCompare(b.title));
+
+  // Split Android items into configured vs available
+  const configuredAndroidPolicies = androidPolicies.filter(p => p.configured);
+  const availableAndroidPolicies = androidPolicies.filter(p => !p.configured);
+  const configuredAndroidRestrictions = androidRestrictions.filter(r => r.configured);
+  const availableAndroidRestrictions = androidRestrictions.filter(r => !r.configured);
+
+  // For iOS: merge into availablePolicies for backward compatibility
+  const availablePolicies = iosAvailablePolicies;
 
   return (
     <motion.div
@@ -862,8 +891,8 @@ function PolicyCardGrid({
       animate="visible"
       className="space-y-8"
     >
-      {/* Active Policies Section */}
-      {activePolicies > 0 && (
+      {/* iOS: Active Policies Section */}
+      {isIos && activePolicies > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Active Policies</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1020,7 +1049,7 @@ function PolicyCardGrid({
               </UniformPolicyCard>
             )}
 
-            {/* Applications Policy Card - always shown */}
+            {/* Applications Policy Card - always shown for iOS */}
             <UniformPolicyCard>
               <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-orange-500 h-full flex flex-col" onClick={() => onSelectPolicy('applications')}>
                 <CardHeader className="pb-2">
@@ -1038,8 +1067,8 @@ function PolicyCardGrid({
         </div>
       )}
 
-      {/* Available Policies Section (grayed out) */}
-      {availablePolicies.length > 0 && (
+      {/* iOS: Available Policies Section */}
+      {isIos && availablePolicies.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-muted-foreground">Available Policies</h3>
           <p className="text-sm text-muted-foreground/70">Click on a policy to configure it</p>
@@ -1057,8 +1086,8 @@ function PolicyCardGrid({
         </div>
       )}
 
-      {/* Show applications card in available section if no active policies exist */}
-      {activePolicies === 0 && (
+      {/* iOS: Show applications card if no active policies exist */}
+      {isIos && activePolicies === 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Manage Applications</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1075,6 +1104,104 @@ function PolicyCardGrid({
                 </CardContent>
               </Card>
             </UniformPolicyCard>
+          </div>
+        </div>
+      )}
+
+      {/* ===== ANDROID SECTIONS ===== */}
+
+      {/* Android: Configured Policies Section */}
+      {isAndroid && configuredAndroidPolicies.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Configured Policies</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {configuredAndroidPolicies.map((policy) => (
+              <UniformPolicyCard key={policy.type}>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-primary h-full flex flex-col" 
+                  onClick={() => onSelectPolicy(policy.type)}
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {React.cloneElement(policy.icon as React.ReactElement, { className: "w-5 h-5 text-primary" })}
+                      {policy.title}
+                    </CardTitle>
+                    <CardDescription>{policy.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Configured</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">Click to edit</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Android: Configured Restrictions Section */}
+      {isAndroid && configuredAndroidRestrictions.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Configured Restrictions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {configuredAndroidRestrictions.map((restriction) => (
+              <UniformPolicyCard key={restriction.type}>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-destructive h-full flex flex-col" 
+                  onClick={() => onSelectPolicy(restriction.type)}
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {React.cloneElement(restriction.icon as React.ReactElement, { className: "w-5 h-5 text-destructive" })}
+                      {restriction.title}
+                    </CardTitle>
+                    <CardDescription>{restriction.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge variant="destructive">Configured</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">Click to edit</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Android: Available Policies Section */}
+      {isAndroid && availableAndroidPolicies.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-muted-foreground">Available Policies</h3>
+          <p className="text-sm text-muted-foreground/70">Click on a policy to configure it</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availableAndroidPolicies.map((policy) => (
+              <AvailablePolicyCard
+                key={policy.type}
+                icon={React.cloneElement(policy.icon as React.ReactElement, { className: "w-5 h-5 text-muted-foreground" })}
+                title={policy.title}
+                description={policy.description}
+                onClick={() => onSelectPolicy(policy.type)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Android: Available Restrictions Section */}
+      {isAndroid && availableAndroidRestrictions.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-muted-foreground">Available Restrictions</h3>
+          <p className="text-sm text-muted-foreground/70">Click on a restriction to configure it</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availableAndroidRestrictions.map((restriction) => (
+              <AvailablePolicyCard
+                key={restriction.type}
+                icon={React.cloneElement(restriction.icon as React.ReactElement, { className: "w-5 h-5 text-muted-foreground" })}
+                title={restriction.title}
+                description={restriction.description}
+                onClick={() => onSelectPolicy(restriction.type)}
+              />
+            ))}
           </div>
         </div>
       )}

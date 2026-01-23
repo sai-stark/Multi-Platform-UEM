@@ -3,9 +3,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { ConnectivityRestriction as ConnectivityRestrictionType, Platform } from '@/types/models';
-import { Bluetooth, Edit, Loader2, Save } from 'lucide-react';
+import { ConnectivityRestriction as ConnectivityRestrictionType, ControlType, Platform } from '@/types/models';
+import { Bluetooth, Edit, Loader2, Nfc, Printer, Radio, Save, Send } from 'lucide-react';
 import { useState } from 'react';
 
 interface ConnectivityRestrictionProps {
@@ -21,7 +28,11 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     const [formData, setFormData] = useState<Partial<ConnectivityRestrictionType>>({
-        allowBluetooth: initialData?.allowBluetooth ?? true,
+        disableOutgoingBeam: initialData?.disableOutgoingBeam ?? true,
+        disablePrinting: initialData?.disablePrinting ?? true,
+        nfc: initialData?.nfc || 'USER_CONTROLLED',
+        bluetooth: initialData?.bluetooth || 'USER_CONTROLLED',
+        devicePolicyType: 'AndroidConnectivityRestriction',
         ...initialData
     });
 
@@ -51,16 +62,33 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
         }
     };
 
+    const getControlLabel = (control?: ControlType) => {
+        switch (control) {
+            case 'ENABLE': return 'Always On';
+            case 'DISABLE': return 'Always Off';
+            case 'USER_CONTROLLED': return 'User Controlled';
+            default: return 'User Controlled';
+        }
+    };
+
+    const getControlColor = (control?: ControlType) => {
+        switch (control) {
+            case 'ENABLE': return 'border-l-green-500';
+            case 'DISABLE': return 'border-l-red-500';
+            default: return 'border-l-blue-500';
+        }
+    };
+
     const renderView = () => (
         <div className="space-y-6 max-w-4xl mt-6">
             <div className="flex items-center justify-between pb-4 border-b">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-500/10 rounded-full">
-                        <Bluetooth className="w-6 h-6 text-blue-500" />
+                        <Radio className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
                         <h3 className="text-xl font-semibold">Connectivity Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Bluetooth controls</p>
+                        <p className="text-sm text-muted-foreground">Bluetooth, NFC, and other connections</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
@@ -69,17 +97,51 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                 </Button>
             </div>
 
-            <Card className={`border-l-4 ${formData.allowBluetooth ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Bluetooth className="w-5 h-5 text-blue-500" />
-                        <span className="font-medium">Bluetooth</span>
-                    </div>
-                    <Badge variant={formData.allowBluetooth ? 'default' : 'destructive'}>
-                        {formData.allowBluetooth ? 'Allowed' : 'Blocked'}
-                    </Badge>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className={`border-l-4 ${getControlColor(formData.bluetooth)}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Bluetooth className="w-5 h-5 text-blue-500" />
+                            <span className="font-medium">Bluetooth</span>
+                        </div>
+                        <Badge variant="secondary">{getControlLabel(formData.bluetooth)}</Badge>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${getControlColor(formData.nfc)}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Nfc className="w-5 h-5 text-green-500" />
+                            <span className="font-medium">NFC</span>
+                        </div>
+                        <Badge variant="secondary">{getControlLabel(formData.nfc)}</Badge>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${formData.disableOutgoingBeam ? 'border-l-green-500' : 'border-l-gray-300'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Send className="w-5 h-5 text-purple-500" />
+                            <span className="font-medium">Outgoing Beam</span>
+                        </div>
+                        <Badge variant={formData.disableOutgoingBeam ? 'default' : 'secondary'}>
+                            {formData.disableOutgoingBeam ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${formData.disablePrinting ? 'border-l-green-500' : 'border-l-gray-300'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Printer className="w-5 h-5 text-orange-500" />
+                            <span className="font-medium">Printing</span>
+                        </div>
+                        <Badge variant={formData.disablePrinting ? 'default' : 'secondary'}>
+                            {formData.disablePrinting ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="flex justify-end pt-4 border-t">
                 <Button variant="outline" onClick={onCancel}>Close</Button>
@@ -100,26 +162,115 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                     </div>
                     <div>
                         <h3 className="text-lg font-medium">Edit Connectivity Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure Bluetooth policy</p>
+                        <p className="text-sm text-muted-foreground">Configure Bluetooth, NFC, and other policies</p>
                     </div>
                 </div>
             </div>
 
-            <div className="p-4 border rounded-xl bg-card">
-                <div className="flex items-center justify-between">
-                    <Label className="flex items-start gap-3">
-                        <Bluetooth className="w-5 h-5 mt-0.5 text-blue-500" />
-                        <div>
-                            <span className="font-medium">Allow Bluetooth</span>
-                            <p className="font-normal text-xs text-muted-foreground">
-                                Enable Bluetooth connectivity
-                            </p>
-                        </div>
-                    </Label>
-                    <Switch
-                        checked={formData.allowBluetooth}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, allowBluetooth: c }))}
-                    />
+            <div className="space-y-6 p-1">
+                {/* Bluetooth Control */}
+                <div className="space-y-2">
+                    <Label>Bluetooth Control</Label>
+                    <Select
+                        value={formData.bluetooth}
+                        onValueChange={(value: ControlType) => 
+                            setFormData(prev => ({ ...prev, bluetooth: value }))
+                        }
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Bluetooth control" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ENABLE">
+                                <div className="flex items-center gap-2">
+                                    <Bluetooth className="w-4 h-4 text-green-500" />
+                                    Always On - Force Bluetooth enabled
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="DISABLE">
+                                <div className="flex items-center gap-2">
+                                    <Bluetooth className="w-4 h-4 text-red-500" />
+                                    Always Off - Force Bluetooth disabled
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="USER_CONTROLLED">
+                                <div className="flex items-center gap-2">
+                                    <Bluetooth className="w-4 h-4 text-blue-500" />
+                                    User Controlled - Let user decide
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* NFC Control */}
+                <div className="space-y-2">
+                    <Label>NFC Control</Label>
+                    <Select
+                        value={formData.nfc}
+                        onValueChange={(value: ControlType) => 
+                            setFormData(prev => ({ ...prev, nfc: value }))
+                        }
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select NFC control" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ENABLE">
+                                <div className="flex items-center gap-2">
+                                    <Nfc className="w-4 h-4 text-green-500" />
+                                    Always On - Force NFC enabled
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="DISABLE">
+                                <div className="flex items-center gap-2">
+                                    <Nfc className="w-4 h-4 text-red-500" />
+                                    Always Off - Force NFC disabled
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="USER_CONTROLLED">
+                                <div className="flex items-center gap-2">
+                                    <Nfc className="w-4 h-4 text-blue-500" />
+                                    User Controlled - Let user decide
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Toggle Switches */}
+                <div className="space-y-4 p-4 border rounded-xl bg-card">
+                    <div className="flex items-center justify-between py-3 border-b">
+                        <Label className="flex items-start gap-3">
+                            <Send className="w-5 h-5 mt-0.5 text-purple-500" />
+                            <div>
+                                <span className="font-medium">Disable Outgoing Beam</span>
+                                <p className="font-normal text-xs text-muted-foreground">
+                                    Block NFC beam for file sharing
+                                </p>
+                            </div>
+                        </Label>
+                        <Switch
+                            checked={formData.disableOutgoingBeam}
+                            onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableOutgoingBeam: c }))}
+                        />
+                    </div>
+
+                    <div className="flex items-center justify-between py-3">
+                        <Label className="flex items-start gap-3">
+                            <Printer className="w-5 h-5 mt-0.5 text-orange-500" />
+                            <div>
+                                <span className="font-medium">Disable Printing</span>
+                                <p className="font-normal text-xs text-muted-foreground">
+                                    Block printing to any printer
+                                </p>
+                            </div>
+                        </Label>
+                        <Switch
+                            checked={formData.disablePrinting}
+                            onCheckedChange={(c) => setFormData(prev => ({ ...prev, disablePrinting: c }))}
+                        />
+                    </div>
                 </div>
             </div>
 

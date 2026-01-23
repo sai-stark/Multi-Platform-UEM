@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { MiscellaneousRestriction as MiscellaneousRestrictionType, Platform } from '@/types/models';
-import { Edit, Loader2, RefreshCw, Save, Settings } from 'lucide-react';
+import { Edit, Loader2, RefreshCw, Save, Settings, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 interface MiscellaneousRestrictionProps {
@@ -21,7 +21,9 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     const [formData, setFormData] = useState<Partial<MiscellaneousRestrictionType>>({
-        allowFactoryReset: initialData?.allowFactoryReset ?? false,
+        disableAddUser: initialData?.disableAddUser ?? true,
+        disableFactoryReset: initialData?.disableFactoryReset ?? true,
+        devicePolicyType: 'AndroidMiscellaneousRestriction',
         ...initialData
     });
 
@@ -60,7 +62,7 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                     </div>
                     <div>
                         <h3 className="text-xl font-semibold">Miscellaneous Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Factory reset and other controls</p>
+                        <p className="text-sm text-muted-foreground">System-level controls</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
@@ -69,22 +71,41 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                 </Button>
             </div>
 
-            <Card className={`border-l-4 ${formData.allowFactoryReset ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <RefreshCw className="w-5 h-5 text-amber-500" />
-                        <span className="font-medium">Factory Reset</span>
-                    </div>
-                    <Badge variant={formData.allowFactoryReset ? 'default' : 'destructive'}>
-                        {formData.allowFactoryReset ? 'Allowed' : 'Blocked'}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        {formData.allowFactoryReset 
-                            ? 'Users can factory reset the device' 
-                            : 'Factory reset is disabled'}
-                    </p>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className={`border-l-4 ${formData.disableAddUser ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <UserPlus className="w-5 h-5 text-blue-500" />
+                            <span className="font-medium">Add User</span>
+                        </div>
+                        <Badge variant={formData.disableAddUser ? 'default' : 'destructive'}>
+                            {formData.disableAddUser ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableAddUser 
+                                ? 'Users cannot add new accounts' 
+                                : 'Multiple accounts can be added'}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${formData.disableFactoryReset ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <RefreshCw className="w-5 h-5 text-amber-500" />
+                            <span className="font-medium">Factory Reset</span>
+                        </div>
+                        <Badge variant={formData.disableFactoryReset ? 'default' : 'destructive'}>
+                            {formData.disableFactoryReset ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableFactoryReset 
+                                ? 'Factory reset is blocked' 
+                                : 'Device can be factory reset'}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="flex justify-end pt-4 border-t">
                 <Button variant="outline" onClick={onCancel}>Close</Button>
@@ -110,20 +131,36 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                 </div>
             </div>
 
-            <div className="p-4 border rounded-xl bg-card">
-                <div className="flex items-center justify-between">
+            <div className="space-y-4 p-4 border rounded-xl bg-card">
+                <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <RefreshCw className="w-5 h-5 mt-0.5 text-amber-500" />
+                        <UserPlus className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Allow Factory Reset</span>
+                            <span className="font-medium">Disable Add User</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Allow users to factory reset the device
+                                Prevent adding new user accounts
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.allowFactoryReset}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, allowFactoryReset: c }))}
+                        checked={formData.disableAddUser}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableAddUser: c }))}
+                    />
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                    <Label className="flex items-start gap-3">
+                        <RefreshCw className="w-5 h-5 mt-0.5 text-amber-500" />
+                        <div>
+                            <span className="font-medium">Disable Factory Reset</span>
+                            <p className="font-normal text-xs text-muted-foreground">
+                                Block factory reset from settings
+                            </p>
+                        </div>
+                    </Label>
+                    <Switch
+                        checked={formData.disableFactoryReset}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableFactoryReset: c }))}
                     />
                 </div>
             </div>

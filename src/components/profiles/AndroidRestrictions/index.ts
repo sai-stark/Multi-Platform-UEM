@@ -10,3 +10,4 @@ export { MiscellaneousRestriction } from './MiscellaneousRestriction';
 export { ConnectivityRestriction } from './ConnectivityRestriction';
 export { NetworkRestriction } from './NetworkRestriction';
 export { SyncStorageRestriction } from './SyncStorageRestriction';
+export { ApplicationsRestriction } from './ApplicationsRestriction';

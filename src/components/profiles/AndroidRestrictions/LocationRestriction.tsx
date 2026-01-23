@@ -3,9 +3,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LocationRestriction as LocationRestrictionType, Platform } from '@/types/models';
-import { Edit, Loader2, MapPin, Save } from 'lucide-react';
+import { ControlType, LocationRestriction as LocationRestrictionType, Platform } from '@/types/models';
+import { Edit, Loader2, MapPin, MapPinOff, Save, Share2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface LocationRestrictionProps {
@@ -21,7 +28,9 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     const [formData, setFormData] = useState<Partial<LocationRestrictionType>>({
-        forceGps: initialData?.forceGps ?? false,
+        location: initialData?.location || 'USER_CONTROLLED',
+        disableLocationSharing: initialData?.disableLocationSharing ?? true,
+        devicePolicyType: 'AndroidLocationRestriction',
         ...initialData
     });
 
@@ -51,6 +60,23 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
         }
     };
 
+    const getLocationLabel = (control?: ControlType) => {
+        switch (control) {
+            case 'ENABLE': return 'Always Enabled';
+            case 'DISABLE': return 'Always Disabled';
+            case 'USER_CONTROLLED': return 'User Controlled';
+            default: return 'User Controlled';
+        }
+    };
+
+    const getLocationColor = (control?: ControlType) => {
+        switch (control) {
+            case 'ENABLE': return 'border-l-green-500';
+            case 'DISABLE': return 'border-l-red-500';
+            default: return 'border-l-blue-500';
+        }
+    };
+
     const renderView = () => (
         <div className="space-y-6 max-w-4xl mt-6">
             <div className="flex items-center justify-between pb-4 border-b">
@@ -69,22 +95,39 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                 </Button>
             </div>
 
-            <Card className={`border-l-4 ${formData.forceGps ? 'border-l-green-500' : 'border-l-gray-300'}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <MapPin className="w-5 h-5 text-red-500" />
-                        <span className="font-medium">Force GPS On</span>
-                    </div>
-                    <Badge variant={formData.forceGps ? 'default' : 'secondary'}>
-                        {formData.forceGps ? 'Enabled' : 'Disabled'}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        {formData.forceGps 
-                            ? 'Users cannot disable location services' 
-                            : 'Users can control location settings'}
-                    </p>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className={`border-l-4 ${getLocationColor(formData.location)}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <MapPin className="w-5 h-5 text-red-500" />
+                            <span className="font-medium">Location Services</span>
+                        </div>
+                        <Badge variant="secondary">{getLocationLabel(formData.location)}</Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.location === 'ENABLE' && 'GPS is always on, users cannot disable'}
+                            {formData.location === 'DISABLE' && 'GPS is always off, users cannot enable'}
+                            {formData.location === 'USER_CONTROLLED' && 'Users can toggle location settings'}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${formData.disableLocationSharing ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Share2 className="w-5 h-5 text-purple-500" />
+                            <span className="font-medium">Location Sharing</span>
+                        </div>
+                        <Badge variant={formData.disableLocationSharing ? 'default' : 'destructive'}>
+                            {formData.disableLocationSharing ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableLocationSharing 
+                                ? 'Users cannot share location with other apps' 
+                                : 'Location sharing is allowed'}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="flex justify-end pt-4 border-t">
                 <Button variant="outline" onClick={onCancel}>Close</Button>
@@ -110,21 +153,60 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                 </div>
             </div>
 
-            <div className="p-4 border rounded-xl bg-card">
-                <div className="flex items-center justify-between">
-                    <Label className="flex items-start gap-3">
-                        <MapPin className="w-5 h-5 mt-0.5 text-red-500" />
-                        <div>
-                            <span className="font-medium">Force GPS On</span>
-                            <p className="font-normal text-xs text-muted-foreground">
-                                Prevent users from disabling location services
-                            </p>
-                        </div>
-                    </Label>
-                    <Switch
-                        checked={formData.forceGps}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, forceGps: c }))}
-                    />
+            <div className="space-y-6 p-1">
+                <div className="space-y-2">
+                    <Label>Location Services Control</Label>
+                    <Select
+                        value={formData.location}
+                        onValueChange={(value: ControlType) => 
+                            setFormData(prev => ({ ...prev, location: value }))
+                        }
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select location control" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ENABLE">
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-green-500" />
+                                    Always Enabled - Force GPS on
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="DISABLE">
+                                <div className="flex items-center gap-2">
+                                    <MapPinOff className="w-4 h-4 text-red-500" />
+                                    Always Disabled - Force GPS off
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="USER_CONTROLLED">
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-blue-500" />
+                                    User Controlled - Let user decide
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                        Control whether location services can be toggled by users
+                    </p>
+                </div>
+
+                <div className="p-4 rounded-xl border bg-card">
+                    <div className="flex items-center justify-between">
+                        <Label className="flex items-start gap-3">
+                            <Share2 className="w-5 h-5 mt-0.5 text-purple-500" />
+                            <div>
+                                <span className="font-medium">Disable Location Sharing</span>
+                                <p className="font-normal text-xs text-muted-foreground">
+                                    Block apps from sharing device location
+                                </p>
+                            </div>
+                        </Label>
+                        <Switch
+                            checked={formData.disableLocationSharing}
+                            onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableLocationSharing: c }))}
+                        />
+                    </div>
                 </div>
             </div>
 

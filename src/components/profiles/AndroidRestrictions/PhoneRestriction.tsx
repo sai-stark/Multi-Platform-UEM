@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { PhoneRestriction as PhoneRestrictionType, Platform } from '@/types/models';
-import { Edit, Loader2, Phone, Save } from 'lucide-react';
+import { Edit, Loader2, MessageSquare, Phone, PhoneOff, Save } from 'lucide-react';
 import { useState } from 'react';
 
 interface PhoneRestrictionProps {
@@ -21,7 +21,9 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     const [formData, setFormData] = useState<Partial<PhoneRestrictionType>>({
-        allowOutgoingCalls: initialData?.allowOutgoingCalls ?? true,
+        disableSms: initialData?.disableSms ?? false,
+        disableCalls: initialData?.disableCalls ?? false,
+        devicePolicyType: 'AndroidPhoneRestriction',
         ...initialData
     });
 
@@ -60,7 +62,7 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                     </div>
                     <div>
                         <h3 className="text-xl font-semibold">Phone Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Outgoing call controls</p>
+                        <p className="text-sm text-muted-foreground">Call and SMS controls</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
@@ -69,17 +71,44 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                 </Button>
             </div>
 
-            <Card className={`border-l-4 ${formData.allowOutgoingCalls ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Phone className="w-5 h-5 text-green-500" />
-                        <span className="font-medium">Outgoing Calls</span>
-                    </div>
-                    <Badge variant={formData.allowOutgoingCalls ? 'default' : 'destructive'}>
-                        {formData.allowOutgoingCalls ? 'Allowed' : 'Blocked'}
-                    </Badge>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className={`border-l-4 ${formData.disableCalls ? 'border-l-red-500' : 'border-l-green-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            {formData.disableCalls 
+                                ? <PhoneOff className="w-5 h-5 text-red-500" />
+                                : <Phone className="w-5 h-5 text-green-500" />
+                            }
+                            <span className="font-medium">Phone Calls</span>
+                        </div>
+                        <Badge variant={formData.disableCalls ? 'destructive' : 'default'}>
+                            {formData.disableCalls ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableCalls 
+                                ? 'Users cannot make or receive calls' 
+                                : 'Phone calls are allowed'}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${formData.disableSms ? 'border-l-red-500' : 'border-l-green-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <MessageSquare className="w-5 h-5 text-blue-500" />
+                            <span className="font-medium">SMS Messages</span>
+                        </div>
+                        <Badge variant={formData.disableSms ? 'destructive' : 'default'}>
+                            {formData.disableSms ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableSms 
+                                ? 'Users cannot send or receive SMS' 
+                                : 'SMS messaging is allowed'}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="flex justify-end pt-4 border-t">
                 <Button variant="outline" onClick={onCancel}>Close</Button>
@@ -100,25 +129,41 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                     </div>
                     <div>
                         <h3 className="text-lg font-medium">Edit Phone Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure phone call policy</p>
+                        <p className="text-sm text-muted-foreground">Configure call and SMS policies</p>
                     </div>
                 </div>
             </div>
 
-            <div className="p-4 border rounded-xl bg-card">
-                <div className="flex items-center justify-between">
+            <div className="space-y-4 p-4 border rounded-xl bg-card">
+                <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <Phone className="w-5 h-5 mt-0.5 text-green-500" />
+                        <PhoneOff className="w-5 h-5 mt-0.5 text-red-500" />
                         <div>
-                            <span className="font-medium">Allow Outgoing Calls</span>
+                            <span className="font-medium">Disable Calls</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Enable users to make phone calls
+                                Block all incoming and outgoing phone calls
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.allowOutgoingCalls}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, allowOutgoingCalls: c }))}
+                        checked={formData.disableCalls}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableCalls: c }))}
+                    />
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                    <Label className="flex items-start gap-3">
+                        <MessageSquare className="w-5 h-5 mt-0.5 text-blue-500" />
+                        <div>
+                            <span className="font-medium">Disable SMS</span>
+                            <p className="font-normal text-xs text-muted-foreground">
+                                Block sending and receiving text messages
+                            </p>
+                        </div>
+                    </Label>
+                    <Switch
+                        checked={formData.disableSms}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableSms: c }))}
                     />
                 </div>
             </div>

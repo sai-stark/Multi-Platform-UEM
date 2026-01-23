@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Platform, SyncStorageRestriction as SyncStorageRestrictionType } from '@/types/models';
-import { Edit, HardDrive, Loader2, Save } from 'lucide-react';
+import { Edit, HardDrive, Loader2, Save, Usb } from 'lucide-react';
 import { useState } from 'react';
 
 interface SyncStorageRestrictionProps {
@@ -21,7 +21,9 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     const [formData, setFormData] = useState<Partial<SyncStorageRestrictionType>>({
-        allowUsbMassStorage: initialData?.allowUsbMassStorage ?? true,
+        disableExternalMediaMount: initialData?.disableExternalMediaMount ?? true,
+        disableUsbTransfer: initialData?.disableUsbTransfer ?? true,
+        devicePolicyType: 'AndroidSyncStorageRestriction',
         ...initialData
     });
 
@@ -59,8 +61,8 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                         <HardDrive className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Storage Restriction</h3>
-                        <p className="text-sm text-muted-foreground">USB mass storage controls</p>
+                        <h3 className="text-xl font-semibold">Sync/Storage Restriction</h3>
+                        <p className="text-sm text-muted-foreground">External storage and USB controls</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
@@ -69,17 +71,41 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                 </Button>
             </div>
 
-            <Card className={`border-l-4 ${formData.allowUsbMassStorage ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <HardDrive className="w-5 h-5 text-orange-500" />
-                        <span className="font-medium">USB Mass Storage</span>
-                    </div>
-                    <Badge variant={formData.allowUsbMassStorage ? 'default' : 'destructive'}>
-                        {formData.allowUsbMassStorage ? 'Allowed' : 'Blocked'}
-                    </Badge>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className={`border-l-4 ${formData.disableExternalMediaMount ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <HardDrive className="w-5 h-5 text-orange-500" />
+                            <span className="font-medium">External Media Mount</span>
+                        </div>
+                        <Badge variant={formData.disableExternalMediaMount ? 'default' : 'destructive'}>
+                            {formData.disableExternalMediaMount ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableExternalMediaMount 
+                                ? 'SD cards and external storage blocked' 
+                                : 'External storage can be mounted'}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className={`border-l-4 ${formData.disableUsbTransfer ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Usb className="w-5 h-5 text-blue-500" />
+                            <span className="font-medium">USB File Transfer</span>
+                        </div>
+                        <Badge variant={formData.disableUsbTransfer ? 'default' : 'destructive'}>
+                            {formData.disableUsbTransfer ? 'Disabled' : 'Allowed'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {formData.disableUsbTransfer 
+                                ? 'USB data transfer blocked' 
+                                : 'Files can be transferred via USB'}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             <div className="flex justify-end pt-4 border-t">
                 <Button variant="outline" onClick={onCancel}>Close</Button>
@@ -100,25 +126,41 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                     </div>
                     <div>
                         <h3 className="text-lg font-medium">Edit Storage Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure USB storage policy</p>
+                        <p className="text-sm text-muted-foreground">Configure storage and sync policies</p>
                     </div>
                 </div>
             </div>
 
-            <div className="p-4 border rounded-xl bg-card">
-                <div className="flex items-center justify-between">
+            <div className="space-y-4 p-4 border rounded-xl bg-card">
+                <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
                         <HardDrive className="w-5 h-5 mt-0.5 text-orange-500" />
                         <div>
-                            <span className="font-medium">Allow USB Mass Storage</span>
+                            <span className="font-medium">Disable External Media Mount</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Enable USB file transfer
+                                Block mounting of SD cards and external storage
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.allowUsbMassStorage}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, allowUsbMassStorage: c }))}
+                        checked={formData.disableExternalMediaMount}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableExternalMediaMount: c }))}
+                    />
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                    <Label className="flex items-start gap-3">
+                        <Usb className="w-5 h-5 mt-0.5 text-blue-500" />
+                        <div>
+                            <span className="font-medium">Disable USB Transfer</span>
+                            <p className="font-normal text-xs text-muted-foreground">
+                                Block file transfer over USB connection
+                            </p>
+                        </div>
+                    </Label>
+                    <Switch
+                        checked={formData.disableUsbTransfer}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableUsbTransfer: c }))}
                     />
                 </div>
             </div>
