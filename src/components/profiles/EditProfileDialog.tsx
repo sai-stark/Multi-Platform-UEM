@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAssetUrl } from "@/config/env";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType } from "@/types/models";
 import { Pencil } from "lucide-react";
@@ -65,6 +66,7 @@ export function EditProfileDialog({
   onProfileUpdated,
   profile,
 }: EditProfileDialogProps) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -261,25 +263,25 @@ export function EditProfileDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="w-5 h-5" />
-            Edit Profile
+            {t('profiles.edit.title')}
           </DialogTitle>
           <DialogDescription>
-            Update the profile name and description. Platform cannot be changed.
+            {t('profiles.edit.description')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="edit-name" className="flex items-center gap-1">
-              Profile Name
+              {t('profiles.add.name')}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
-              <span className="sr-only">(required)</span>
+              <span className="sr-only">({t('common.required')})</span>
             </Label>
             <Input
               id="edit-name"
-              placeholder="e.g., Corporate Android Policy"
+              placeholder={t('profiles.add.namePlaceholder')}
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
               onBlur={() => handleBlur("name")}
@@ -336,15 +338,15 @@ export function EditProfileDialog({
 
           <div className="space-y-2">
             <Label htmlFor="edit-description" className="flex items-center gap-1">
-              Description
+              {t('profiles.add.profileDescription')}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
-              <span className="sr-only">(required)</span>
+              <span className="sr-only">({t('common.required')})</span>
             </Label>
             <Textarea
               id="edit-description"
-              placeholder="Describe the purpose of this profile..."
+              placeholder={t('profiles.add.descriptionPlaceholder')}
               value={formData.description}
               onChange={(e) => handleDescriptionChange(e.target.value)}
               onBlur={() => handleBlur("description")}
@@ -391,10 +393,10 @@ export function EditProfileDialog({
               onClick={() => handleOpenChange(false)}
               disabled={loading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={loading || !hasChanges}>
-              {loading ? "Updating..." : "Update Profile"}
+              {loading ? t('profiles.edit.updating') : t('profiles.edit.update')}
             </Button>
           </DialogFooter>
         </form>

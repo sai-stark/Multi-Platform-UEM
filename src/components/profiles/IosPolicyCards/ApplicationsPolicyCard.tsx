@@ -1,10 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 import { Grid } from 'lucide-react';
 import { BasePolicyCardProps, itemVariants } from './types';
 
 export function ApplicationsPolicyCard({ onClick }: BasePolicyCardProps) {
+    const { t } = useLanguage();
+    
     return (
         <motion.div variants={itemVariants}>
             <Card
@@ -13,13 +16,13 @@ export function ApplicationsPolicyCard({ onClick }: BasePolicyCardProps) {
             >
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center gap-2">
-                        <Grid className="w-5 h-5 text-orange-500" /> Applications
+                        <Grid className="w-5 h-5 text-orange-500" /> {t('policy.applications')}
                     </CardTitle>
-                    <CardDescription>Manage app catalog</CardDescription>
+                    <CardDescription>{t('policy.applications.desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button variant="outline" size="sm" className="w-full">
-                        Manage Apps
+                        {t('common.configure')}
                     </Button>
                 </CardContent>
             </Card>

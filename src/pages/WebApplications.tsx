@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { WebApplicationService } from '@/api/services/webApps';
+import { WebApplication } from '@/types/models';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Globe, 
   Plus, 
@@ -8,56 +10,226 @@ import {
   XCircle,
   Clock,
   ExternalLink,
-  Link2
+  Link2,
+  Loader2,
+  ImageIcon,
+  Edit,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { DataTable, Column } from '@/components/ui/data-table';
 
-interface WebApp {
-  id: string;
-  name: string;
-  url: string;
-  category: string;
-  deployedDevices: number;
-  status: 'published' | 'draft' | 'archived';
-  displayMode: 'Browser' | 'Fullscreen' | 'Standalone';
-  lastModified: string;
-}
-
-const mockWebApps: WebApp[] = [
-  { id: '1', name: 'Corporate Intranet', url: 'https://intranet.cdot.in', category: 'Internal', deployedDevices: 5200, status: 'published', displayMode: 'Standalone', lastModified: '2024-01-12' },
-  { id: '2', name: 'HR Portal', url: 'https://hr.cdot.in', category: 'Internal', deployedDevices: 4800, status: 'published', displayMode: 'Standalone', lastModified: '2024-01-10' },
-  { id: '3', name: 'Project Management', url: 'https://projects.cdot.in', category: 'Productivity', deployedDevices: 3200, status: 'published', displayMode: 'Browser', lastModified: '2024-01-14' },
-  { id: '4', name: 'Training Portal', url: 'https://training.cdot.in', category: 'Training', deployedDevices: 2100, status: 'published', displayMode: 'Fullscreen', lastModified: '2024-01-11' },
-  { id: '5', name: 'IT Support Desk', url: 'https://support.cdot.in', category: 'Support', deployedDevices: 5200, status: 'published', displayMode: 'Standalone', lastModified: '2024-01-08' },
-  { id: '6', name: 'New CRM System', url: 'https://crm-beta.cdot.in', category: 'Sales', deployedDevices: 0, status: 'draft', displayMode: 'Standalone', lastModified: '2024-01-15' },
-  { id: '7', name: 'Legacy ERP', url: 'https://erp-old.cdot.in', category: 'Enterprise', deployedDevices: 120, status: 'archived', displayMode: 'Browser', lastModified: '2023-12-01' },
-  { id: '8', name: 'Employee Directory', url: 'https://directory.cdot.in', category: 'Internal', deployedDevices: 4500, status: 'published', displayMode: 'Standalone', lastModified: '2024-01-13' },
-];
-
-const statusConfig = {
-  published: { label: 'Published', icon: CheckCircle, className: 'status-badge--compliant' },
-  draft: { label: 'Draft', icon: Clock, className: 'status-badge--pending' },
-  archived: { label: 'Archived', icon: XCircle, className: 'status-badge--non-compliant' },
-};
-
 const WebApplications = () => {
-  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [webApps, setWebApps] = useState<WebApplication[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const stats = {
-    total: mockWebApps.length,
-    published: mockWebApps.filter(a => a.status === 'published').length,
-    draft: mockWebApps.filter(a => a.status === 'draft').length,
-    archived: mockWebApps.filter(a => a.status === 'archived').length,
+  // Add/Edit Modal states
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [editingApp, setEditingApp] = useState<WebApplication | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
+
+  // Delete Modal states
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [appToDelete, setAppToDelete] = useState<WebApplication | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Form fields
+  const [formData, setFormData] = useState({
+    name: '',
+    pageUrl: '',
+    iconText: '',
+    icon: '',
+  });
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+
+  const fetchWebApps = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    else setRefreshing(true);
+    
+    try {
+      const response = await WebApplicationService.getWebApplications();
+      setWebApps(response.content || []);
+    } catch (error) {
+      console.error('Failed to fetch web applications:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch web applications',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchWebApps();
+  }, [fetchWebApps]);
+
+  const resetFormData = () => {
+    setFormData({
+      name: '',
+      pageUrl: '',
+      iconText: '',
+      icon: '',
+    });
+    setIconPreview(null);
+    setEditingApp(null);
   };
 
-  const categories = [...new Set(mockWebApps.map(app => app.category))];
+  const handleOpenAddModal = () => {
+    resetFormData();
+    setOpenAddModal(true);
+  };
 
-  const columns: Column<WebApp>[] = [
+  const handleOpenEditModal = (app: WebApplication) => {
+    setEditingApp(app);
+    setFormData({
+      name: app.name,
+      pageUrl: app.pageUrl,
+      iconText: app.iconText,
+      icon: app.icon,
+    });
+    setIconPreview(app.icon ? `data:image/png;base64,${app.icon}` : null);
+    setOpenAddModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenAddModal(false);
+    resetFormData();
+  };
+
+  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        const base64Data = base64String.split(',')[1]; // Remove data:image/...;base64, prefix
+        setFormData(prev => ({ ...prev, icon: base64Data }));
+        setIconPreview(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Name is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!formData.pageUrl.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'URL is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!formData.iconText.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Icon text is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!formData.icon.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Icon is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setFormLoading(true);
+    try {
+      if (editingApp) {
+        // Update existing app
+        await WebApplicationService.updateWebApplication(editingApp.id, formData);
+        toast({
+          title: 'Success',
+          description: 'Web application updated successfully',
+        });
+      } else {
+        // Create new app
+        await WebApplicationService.createWebApplication(formData);
+        toast({
+          title: 'Success',
+          description: 'Web application created successfully',
+        });
+      }
+      handleCloseModal();
+      fetchWebApps(false);
+    } catch (error) {
+      console.error('Failed to save web application:', error);
+      toast({
+        title: 'Error',
+        description: editingApp ? 'Failed to update web application' : 'Failed to create web application',
+        variant: 'destructive',
+      });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (app: WebApplication) => {
+    setAppToDelete(app);
+    setOpenDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!appToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      await WebApplicationService.deleteWebApplication(appToDelete.id);
+      toast({
+        title: 'Success',
+        description: 'Web application deleted successfully',
+      });
+      setOpenDeleteModal(false);
+      setAppToDelete(null);
+      fetchWebApps(false);
+    } catch (error) {
+      console.error('Failed to delete web application:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete web application',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const stats = {
+    total: webApps.length,
+    totalDevices: webApps.reduce((sum, app) => sum + (app.deviceCount || 0), 0),
+  };
+
+  const columns: Column<WebApplication>[] = [
     {
       key: 'name',
       header: 'Web Application',
@@ -66,90 +238,90 @@ const WebApplications = () => {
       searchable: true,
       render: (_, item) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-            <Globe className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
+            {item.icon ? (
+              <img 
+                src={`data:image/png;base64,${item.icon}`} 
+                alt={item.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Globe className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+            )}
           </div>
           <div>
             <p className="font-medium text-foreground">{item.name}</p>
             <a 
-              href={item.url} 
+              href={item.pageUrl} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-xs text-info hover:underline flex items-center gap-1"
               onClick={(e) => e.stopPropagation()}
             >
               <Link2 className="w-3 h-3" aria-hidden="true" />
-              {item.url}
+              {item.pageUrl}
             </a>
           </div>
         </div>
       ),
     },
     {
-      key: 'category',
-      header: 'Category',
-      accessor: (item) => item.category,
+      key: 'iconText',
+      header: 'Icon Text',
+      accessor: (item) => item.iconText,
       sortable: true,
-      filterable: true,
       render: (value) => <span className="text-muted-foreground">{value}</span>,
     },
     {
-      key: 'displayMode',
-      header: 'Display Mode',
-      accessor: (item) => item.displayMode,
-      sortable: true,
-      filterable: true,
-      render: (value) => <span className="text-muted-foreground">{value}</span>,
-    },
-    {
-      key: 'deployedDevices',
-      header: 'Deployed',
-      accessor: (item) => item.deployedDevices,
+      key: 'deviceCount',
+      header: 'Deployed Devices',
+      accessor: (item) => item.deviceCount,
       sortable: true,
       align: 'right',
-      render: (value) => <span className="font-mono">{value.toLocaleString()}</span>,
+      render: (value) => <span className="font-mono">{(value || 0).toLocaleString()}</span>,
     },
     {
-      key: 'status',
-      header: 'Status',
-      accessor: (item) => item.status,
+      key: 'modificationTime',
+      header: 'Last Modified',
+      accessor: (item) => item.modificationTime || '',
       sortable: true,
-      filterable: true,
-      render: (_, item) => {
-        const status = statusConfig[item.status];
-        const StatusIcon = status.icon;
-        return (
-          <span className={cn('status-badge', status.className)}>
-            <StatusIcon className="w-3.5 h-3.5" aria-hidden="true" />
-            {status.label}
-          </span>
-        );
-      },
+      render: (value) => (
+        <span className="text-muted-foreground">
+          {value ? new Date(value).toLocaleDateString() : 'N/A'}
+        </span>
+      ),
     },
   ];
 
-  const rowActions = (app: WebApp) => (
+  const rowActions = (app: WebApplication) => (
     <>
-      <DropdownMenuItem onClick={() => window.open(app.url, '_blank')}>
+      <DropdownMenuItem onClick={() => window.open(app.pageUrl, '_blank')}>
         <ExternalLink className="w-4 h-4 mr-2" />
         Open URL
       </DropdownMenuItem>
-      <DropdownMenuItem>View Details</DropdownMenuItem>
-      <DropdownMenuItem>Edit Web App</DropdownMenuItem>
-      <DropdownMenuItem>Deploy to Devices</DropdownMenuItem>
-      <DropdownMenuItem>Duplicate</DropdownMenuItem>
-      {app.status === 'published' && (
-        <DropdownMenuItem className="text-warning">Archive</DropdownMenuItem>
-      )}
-      {app.status === 'archived' && (
-        <DropdownMenuItem className="text-success">Restore</DropdownMenuItem>
-      )}
-      {app.status === 'draft' && (
-        <DropdownMenuItem className="text-success">Publish</DropdownMenuItem>
-      )}
-      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+      <DropdownMenuItem onClick={() => handleOpenEditModal(app)}>
+        <Edit className="w-4 h-4 mr-2" />
+        Edit Web App
+      </DropdownMenuItem>
+      <DropdownMenuItem 
+        className="text-destructive"
+        onClick={() => handleDeleteClick(app)}
+      >
+        <Trash2 className="w-4 h-4 mr-2" />
+        Delete
+      </DropdownMenuItem>
     </>
   );
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -164,14 +336,24 @@ const WebApplications = () => {
               Manage web apps and bookmarks for your device fleet
             </p>
           </div>
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            Add Web App
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => fetchWebApps(false)}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button className="gap-2" onClick={handleOpenAddModal}>
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              Add Web App
+            </Button>
+          </div>
         </header>
 
         {/* Stats Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Web application statistics">
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4" aria-label="Web application statistics">
           <article className="stat-card">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
@@ -189,30 +371,8 @@ const WebApplications = () => {
                 <CheckCircle className="w-5 h-5 text-success" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.published}</p>
-                <p className="text-sm text-muted-foreground">Published</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-warning" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.draft}</p>
-                <p className="text-sm text-muted-foreground">Drafts</p>
-              </div>
-            </div>
-          </article>
-          <article className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <XCircle className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="stat-card__value text-2xl">{stats.archived}</p>
-                <p className="text-sm text-muted-foreground">Archived</p>
+                <p className="stat-card__value text-2xl">{stats.totalDevices.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Deployments</p>
               </div>
             </div>
           </article>
@@ -221,10 +381,10 @@ const WebApplications = () => {
         {/* Web Applications Table */}
         <div className="rounded-md border bg-card shadow-sm p-4">
           <DataTable
-            data={mockWebApps}
+            data={webApps}
             columns={columns}
             globalSearchPlaceholder="Search web apps..."
-            emptyMessage="No web applications match your filters."
+            emptyMessage="No web applications found. Click 'Add Web App' to create one."
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}
@@ -233,6 +393,150 @@ const WebApplications = () => {
           />
         </div>
       </div>
+
+      {/* Add/Edit Web App Modal */}
+      <Dialog open={openAddModal} onOpenChange={(open) => {
+        if (!open) handleCloseModal();
+        else setOpenAddModal(open);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {editingApp ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+              {editingApp ? 'Edit Web Application' : 'Add Web Application'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingApp 
+                ? 'Update the web application details below.' 
+                : 'Create a new web application shortcut for deployment.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                placeholder="My Web App"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pageUrl">URL *</Label>
+              <Input
+                id="pageUrl"
+                type="url"
+                placeholder="https://example.com"
+                value={formData.pageUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, pageUrl: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="iconText">Icon Text *</Label>
+              <Input
+                id="iconText"
+                placeholder="App shortcut label"
+                value={formData.iconText}
+                onChange={(e) => setFormData(prev => ({ ...prev, iconText: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Text shown below the icon on device
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="icon">Icon *</Label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden">
+                  {iconPreview ? (
+                    <img 
+                      src={iconPreview} 
+                      alt="Icon preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <Input
+                    id="icon"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIconChange}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG or JPG, max 512x512px recommended
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseModal} disabled={formLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={formLoading}>
+              {formLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {editingApp ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  {editingApp ? 'Update' : 'Create'} Web App
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Delete Web Application
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{appToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setOpenDeleteModal(false)} 
+              disabled={deleteLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

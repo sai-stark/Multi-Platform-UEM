@@ -40,6 +40,7 @@ import { AndroidWebApplicationPolicy, IosWebApplicationPolicy, WebApplication } 
 import { Globe, Layout, Loader2, Pencil, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WebApplicationPolicyProps {
     profileId: string;
@@ -58,6 +59,7 @@ export function WebApplicationPolicyEditor({
     onSave,
     onCancel,
 }: WebApplicationPolicyProps) {
+    const { t } = useLanguage();
     const [policies, setPolicies] = useState<(AndroidWebApplicationPolicy | IosWebApplicationPolicy)[]>(initialData || []);
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -477,7 +479,7 @@ export function WebApplicationPolicyEditor({
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t('common.cancel')}</Button>
                         <Button onClick={handleSave}>Save</Button>
                     </DialogFooter>
                 </DialogContent>
@@ -493,7 +495,7 @@ export function WebApplicationPolicyEditor({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
                             Delete
                         </AlertDialogAction>
@@ -502,7 +504,7 @@ export function WebApplicationPolicyEditor({
             </AlertDialog>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );

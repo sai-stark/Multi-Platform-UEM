@@ -13,6 +13,7 @@ import {
 import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { FullProfile, Platform } from "@/types/models";
 import { ProfileService } from "@/api/services/profiles";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 import {
   Apple,
@@ -50,6 +51,7 @@ type ProfileDetailsData = FullProfile & {
 export default function ProfileDetails() {
   const { platform, id } = useParams<{ platform: string; id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<ProfileDetailsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function ProfileDetails() {
 
   const fetchProfile = async () => {
     if (!platform || !id) {
-      setError("Invalid profile parameters");
+      setError(t('profiles.invalidParameters'));
       setLoading(false);
       return;
     }
@@ -77,7 +79,7 @@ export default function ProfileDetails() {
       } as ProfileDetailsData);
     } catch (err) {
       console.error("Failed to fetch profile:", err);
-      setError("Failed to load profile details");
+      setError(t('profiles.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -124,7 +126,7 @@ export default function ProfileDetails() {
     return (
       <MainLayout>
         <div className="flex h-full items-center justify-center">
-          <LoadingAnimation message="Loading profile details..." />
+          <LoadingAnimation message={t('profiles.loadingDetails')} />
         </div>
       </MainLayout>
     );
@@ -142,7 +144,7 @@ export default function ProfileDetails() {
     return (
       <MainLayout>
         <div className="p-8 text-center text-muted-foreground">
-          Profile not found.
+          {t('profiles.profileNotFound')}
         </div>
       </MainLayout>
     );
@@ -181,18 +183,18 @@ export default function ProfileDetails() {
     const renderAuditInfo = (policy: any) => (
       <div className="mt-4 pt-4 border-t space-y-2">
         <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-          Audit Information
+          {t('profileDetails.auditInfo')}
         </h4>
-        {renderInfoRow("Created By", policy.createdBy)}
+        {renderInfoRow(t('profiles.table.createdBy'), policy.createdBy)}
         {renderInfoRow(
-          "Created On",
+          t('profileDetails.createdOn'),
           policy.creationTime
             ? new Date(policy.creationTime).toLocaleString()
             : "-"
         )}
-        {renderInfoRow("Last Modified By", policy.lastModifiedBy)}
+        {renderInfoRow(t('profiles.table.lastModifiedBy'), policy.lastModifiedBy)}
         {renderInfoRow(
-          "Last Modified",
+          t('profileDetails.lastModified'),
           policy.modificationTime
             ? new Date(policy.modificationTime).toLocaleString()
             : "-"
@@ -610,7 +612,7 @@ export default function ProfileDetails() {
         {/* Back Navigation */}
         <Button variant="ghost" size="sm" onClick={() => navigate('/profiles')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" />
-            Back to Profiles
+            {t('profiles.actions.backToProfiles')}
         </Button>
 
         {/* Header */}
@@ -632,7 +634,7 @@ export default function ProfileDetails() {
                 onClick={() => navigate(`/profiles/${platform}/${id}/policies`)}
               >
                 <Edit className="w-4 h-4" />
-                Edit Policies
+                {t('profiles.actions.editPolicies')}
               </Button>
               {profile.status !== "PUBLISHED" && (
                 <Button
@@ -641,7 +643,7 @@ export default function ProfileDetails() {
                   disabled={publishing}
                 >
                   <Send className="w-4 h-4" />
-                  {publishing ? "Publishing..." : "Publish"}
+                  {publishing ? t('profiles.publish.publishing') : t('profiles.publish.publish')}
                 </Button>
               )}
             </div>
@@ -665,7 +667,7 @@ export default function ProfileDetails() {
           >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Status</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('profileDetails.status')}</CardTitle>
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -673,7 +675,7 @@ export default function ProfileDetails() {
                   {profile.status}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Current profile state
+                  {t('profileDetails.currentState')}
                 </p>
               </CardContent>
             </Card>
@@ -682,7 +684,7 @@ export default function ProfileDetails() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Deployed Devices
+                    {t('profileDetails.deployedDevices')}
                   </CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -691,7 +693,7 @@ export default function ProfileDetails() {
                     {profile.deviceCount || profile.deployedDevices || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Active installations
+                    {t('profileDetails.activeInstallations')}
                   </p>
                 </CardContent>
               </Card>
@@ -699,7 +701,7 @@ export default function ProfileDetails() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Compliance
+                  {t('profileDetails.compliance')}
                 </CardTitle>
                 <Shield className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
@@ -708,7 +710,7 @@ export default function ProfileDetails() {
                   {profile.complianceRate || "-"}%
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Device compliance rate
+                  {t('profileDetails.complianceRate')}
                 </p>
               </CardContent>
             </Card>
@@ -716,7 +718,7 @@ export default function ProfileDetails() {
             {profile.platform?.toLowerCase() !== "ios" && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Version</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('common.version')}</CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -724,7 +726,7 @@ export default function ProfileDetails() {
                     v{profile.version || "-"}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Current revision
+                    {t('profileDetails.currentRevision')}
                   </p>
                 </CardContent>
               </Card>
@@ -734,30 +736,30 @@ export default function ProfileDetails() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="h-full">
               <CardHeader>
-                <CardTitle>Profile Details</CardTitle>
+                <CardTitle>{t('profileDetails.title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Profile Name
+                    {t('profiles.table.name')}
                   </span>
                   <span className="font-medium">{profile.name}</span>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Description
+                    {t('common.description')}
                   </span>
                   <span className="text-sm">{profile.description}</span>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Platform
+                    {t('common.platform')}
                   </span>
                   <span className="capitalize">{profile.platform}</span>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Category
+                    {t('profileDetails.category')}
                   </span>
                   <span className="capitalize">{profile.category}</span>
                 </div>
@@ -766,18 +768,18 @@ export default function ProfileDetails() {
 
             <Card className="h-full">
               <CardHeader>
-                <CardTitle>Metadata</CardTitle>
+                <CardTitle>{t('profileDetails.metadata')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Created By
+                    {t('profiles.table.createdBy')}
                   </span>
                   <span>{profile.createdBy}</span>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Created On
+                    {t('profileDetails.createdOn')}
                   </span>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -788,13 +790,13 @@ export default function ProfileDetails() {
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Last Modified By
+                    {t('profiles.table.lastModifiedBy')}
                   </span>
                   <span>{profile.lastModifiedBy}</span>
                 </div>
                 <div className="grid grid-cols-[140px_1fr] gap-4 items-center">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Last Modified
+                    {t('profileDetails.lastModified')}
                   </span>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -810,7 +812,7 @@ export default function ProfileDetails() {
 
         {/* Configured Policies Section */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Configured Policies</h2>
+          <h2 className="text-lg font-semibold">{t('policyEditor.configuredPolicies')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Passcode Policy */}
             {profile.passCodePolicy && (
@@ -821,28 +823,28 @@ export default function ProfileDetails() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Shield className="w-4 h-4 text-primary" />
-                    Passcode Policy
+                    {t('policy.passcode')}
                   </CardTitle>
-                  <Badge variant="secondary">Active</Badge>
+                  <Badge variant="secondary">{t('common.enabled')}</Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div className="flex justify-between">
-                      <span>Min Length:</span>
+                      <span>{t('policy.field.minLength')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.passCodePolicy.minLength}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Alphanumeric:</span>
+                      <span>{t('policy.field.alphanumeric')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.passCodePolicy.requireAlphanumericPasscode
-                          ? "Yes"
-                          : "No"}
+                          ? t('common.yes')
+                          : t('common.no')}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Max Attempts:</span>
+                      <span>{t('policy.field.maxFailedAttempts')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.passCodePolicy.maximumFailedAttempts}
                       </span>
@@ -861,20 +863,20 @@ export default function ProfileDetails() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Wifi className="w-4 h-4 text-info" />
-                    WiFi Configuration
+                    {t('policy.wifi')}
                   </CardTitle>
-                  <Badge variant="secondary">Active</Badge>
+                  <Badge variant="secondary">{t('common.enabled')}</Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div className="flex justify-between">
-                      <span>SSID:</span>
+                      <span>{t('policy.field.ssid')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.wifiPolicy.ssid}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Encryption:</span>
+                      <span>{t('policy.field.encryptionType')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.wifiPolicy.encryptionType || "-"}
                       </span>
@@ -893,20 +895,20 @@ export default function ProfileDetails() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Key className="w-4 h-4 text-warning" />
-                    SCEP Policy
+                    {t('policy.scep')}
                   </CardTitle>
-                  <Badge variant="secondary">Active</Badge>
+                  <Badge variant="secondary">{t('common.enabled')}</Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div className="flex justify-between">
-                      <span>Name:</span>
+                      <span>{t('common.name')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.scepPolicy.scepName || "-"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>URL:</span>
+                      <span>{t('policy.field.url')}:</span>
                       <span
                         className="font-medium text-foreground truncate max-w-[150px]"
                         title={profile.scepPolicy.url}
@@ -915,7 +917,7 @@ export default function ProfileDetails() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Key Size:</span>
+                      <span>{t('policy.field.keySize')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.scepPolicy.keysize || "-"}
                       </span>
@@ -934,14 +936,14 @@ export default function ProfileDetails() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Server className="w-4 h-4 text-success" />
-                    MDM Policy
+                    {t('policy.mdm')}
                   </CardTitle>
-                  <Badge variant="secondary">Active</Badge>
+                  <Badge variant="secondary">{t('common.enabled')}</Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div className="flex justify-between">
-                      <span>Server URL:</span>
+                      <span>{t('policy.field.serverUrl')}:</span>
                       <span
                         className="font-medium text-foreground truncate max-w-[150px]"
                         title={profile.mdmPolicy.serverURL}
@@ -950,7 +952,7 @@ export default function ProfileDetails() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Topic:</span>
+                      <span>{t('policy.field.topic')}:</span>
                       <span
                         className="font-medium text-foreground truncate max-w-[150px]"
                         title={profile.mdmPolicy.topic}
@@ -959,7 +961,7 @@ export default function ProfileDetails() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Check-in URL:</span>
+                      <span>{t('policy.field.checkInUrl')}:</span>
                       <span
                         className="font-medium text-foreground truncate max-w-[150px]"
                         title={profile.mdmPolicy.checkInURL}
@@ -981,7 +983,7 @@ export default function ProfileDetails() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Globe className="w-4 h-4 text-blue-500" />
-                    Web Clip Policies
+                    {t('policy.webClip')}
                   </CardTitle>
                   <Badge variant="secondary">
                     {profile.webClipPolicies.length}
@@ -1028,7 +1030,7 @@ export default function ProfileDetails() {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                       <Bell className="w-4 h-4 text-purple-500" />
-                      Notification Policies
+                      {t('policy.notifications')}
                     </CardTitle>
                     <Badge variant="secondary">
                       {profile.notificationPolicies.length}
@@ -1071,7 +1073,7 @@ export default function ProfileDetails() {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                       <Package className="w-4 h-4 text-orange-500" />
-                      Application Policies
+                      {t('policy.applications')}
                     </CardTitle>
                     <Badge variant="secondary">
                       {profile.applicationPolicies.length}
@@ -1115,14 +1117,14 @@ export default function ProfileDetails() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Mail className="w-4 h-4 text-blue-600" />
-                    Mail Policy
+                    {t('policy.mail')}
                   </CardTitle>
-                  <Badge variant="secondary">Active</Badge>
+                  <Badge variant="secondary">{t('common.enabled')}</Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground space-y-1">
                     <div className="flex justify-between">
-                      <span>Account:</span>
+                      <span>{t('policy.field.accountName')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.mailPolicy.emailAccountName ||
                           profile.mailPolicy.emailAddress ||
@@ -1130,13 +1132,13 @@ export default function ProfileDetails() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Type:</span>
+                      <span>{t('common.type')}:</span>
                       <span className="font-medium text-foreground">
                         {profile.mailPolicy.emailAccountType || "-"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Server:</span>
+                      <span>{t('policy.field.incomingServer')}:</span>
                       <span
                         className="font-medium text-foreground truncate max-w-[150px]"
                         title={profile.mailPolicy.incomingMailServerHostName}
@@ -1158,9 +1160,9 @@ export default function ProfileDetails() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Shield className="w-4 h-4 text-gray-600" />
-                    Lock Screen Policy
+                    {t('policy.lockScreenMessage')}
                   </CardTitle>
-                  <Badge variant="secondary">Active</Badge>
+                  <Badge variant="secondary">{t('common.enabled')}</Badge>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground space-y-1">

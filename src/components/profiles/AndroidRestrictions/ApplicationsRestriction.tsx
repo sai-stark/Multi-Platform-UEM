@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { ApplicationsRestriction as ApplicationsRestrictionType, Platform } from '@/types/models';
 import { AppWindow, Download, Edit, Loader2, Save, Settings, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ApplicationsRestrictionProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface ApplicationsRestrictionProps {
 }
 
 export function ApplicationsRestriction({ platform, profileId, initialData, onSave, onCancel }: ApplicationsRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -62,13 +64,13 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                         <AppWindow className="w-6 h-6 text-purple-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Applications Restriction</h3>
-                        <p className="text-sm text-muted-foreground">App install, uninstall, and control settings</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.applications')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.apps.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -77,10 +79,10 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Download className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">App Install</span>
+                            <span className="font-medium">{t('restrictions.apps.install')}</span>
                         </div>
                         <Badge variant={formData.disableAppInstall ? 'default' : 'secondary'}>
-                            {formData.disableAppInstall ? 'Blocked' : 'Allowed'}
+                            {formData.disableAppInstall ? t('restrictions.blocked') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -89,10 +91,10 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Trash2 className="w-5 h-5 text-red-500" />
-                            <span className="font-medium">App Uninstall</span>
+                            <span className="font-medium">{t('restrictions.apps.uninstall')}</span>
                         </div>
                         <Badge variant={formData.disableAppUninstall ? 'default' : 'secondary'}>
-                            {formData.disableAppUninstall ? 'Blocked' : 'Allowed'}
+                            {formData.disableAppUninstall ? t('restrictions.blocked') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -101,17 +103,17 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Settings className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">App Control</span>
+                            <span className="font-medium">{t('restrictions.apps.control')}</span>
                         </div>
                         <Badge variant={formData.disableAppControl ? 'default' : 'secondary'}>
-                            {formData.disableAppControl ? 'Blocked' : 'Allowed'}
+                            {formData.disableAppControl ? t('restrictions.blocked') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -128,8 +130,8 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                         <Edit className="w-5 h-5 text-purple-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Applications Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure app management policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.applications')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.apps.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -139,9 +141,9 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                     <Label className="flex items-start gap-3">
                         <Download className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Disable App Install</span>
+                            <span className="font-medium">{t('restrictions.apps.disableInstall')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block users from installing new apps
+                                {t('restrictions.apps.disableInstallDesc')}
                             </p>
                         </div>
                     </Label>
@@ -155,9 +157,9 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                     <Label className="flex items-start gap-3">
                         <Trash2 className="w-5 h-5 mt-0.5 text-red-500" />
                         <div>
-                            <span className="font-medium">Disable App Uninstall</span>
+                            <span className="font-medium">{t('restrictions.apps.disableUninstall')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block users from uninstalling apps
+                                {t('restrictions.apps.disableUninstallDesc')}
                             </p>
                         </div>
                     </Label>
@@ -171,9 +173,9 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
                     <Label className="flex items-start gap-3">
                         <Settings className="w-5 h-5 mt-0.5 text-orange-500" />
                         <div>
-                            <span className="font-medium">Disable App Control</span>
+                            <span className="font-medium">{t('restrictions.apps.disableControl')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block access to app settings (force stop, clear data)
+                                {t('restrictions.apps.disableControlDesc')}
                             </p>
                         </div>
                     </Label>
@@ -186,11 +188,11 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

@@ -49,6 +49,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AndroidApplicationPolicyProps {
     platform: Platform;
@@ -65,6 +66,7 @@ interface ExtendedApplicationPolicy extends Partial<AndroidApplicationPolicyType
 }
 
 export function AndroidApplicationPolicy({ platform, profileId, initialData = [], onSave, onCancel }: AndroidApplicationPolicyProps) {
+    const { t } = useLanguage();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [policies, setPolicies] = useState<ExtendedApplicationPolicy[]>(initialData || []);
@@ -90,14 +92,14 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
             } catch (error) {
                 console.error('Failed to fetch applications:', error);
                 toast({
-                    title: 'Error',
-                    description: 'Failed to fetch applications',
+                    title: t('common.error'),
+                    description: t('policies.application.saveFailed'),
                     variant: 'destructive',
                 });
             }
         };
         fetchApplications();
-    }, [platform, toast]);
+    }, [platform, toast, t]);
 
     // Get available app names (excluding already selected versions)
     const getAvailableAppsWithVersions = () => {
@@ -162,8 +164,8 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
     const handleAddApplication = () => {
         if (!selectedAppId || !selectedVersionId) {
             toast({
-                title: 'Error',
-                description: 'Please select both app and version',
+                title: t('common.error'),
+                description: t('policies.application.selectAppVersion'),
                 variant: 'destructive',
             });
             return;
@@ -174,8 +176,8 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
 
         if (!selectedApp || !selectedVersion) {
             toast({
-                title: 'Error',
-                description: 'Selected application not found',
+                title: t('common.error'),
+                description: t('policies.application.appNotFound'),
                 variant: 'destructive',
             });
             return;
@@ -212,14 +214,14 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
             setPolicies(prev => prev.filter(p => p.id !== appToDelete.id));
             setChangedPolicies(prev => prev.filter(p => p.id !== appToDelete.id));
             toast({
-                title: 'Success',
-                description: 'Application policy deleted successfully',
+                title: t('common.success'),
+                description: t('policies.application.deleteSuccess'),
             });
         } catch (error) {
             console.error('Failed to delete policy:', error);
             toast({
-                title: 'Error',
-                description: 'Failed to delete application policy',
+                title: t('common.error'),
+                description: t('policies.application.deleteFailed'),
                 variant: 'destructive',
             });
         }
@@ -265,15 +267,15 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
             await Promise.all(promises);
             setChangedPolicies([]);
             toast({
-                title: 'Success',
-                description: 'Application policies saved successfully!',
+                title: t('common.success'),
+                description: t('policies.application.saveSuccess'),
             });
             onSave();
         } catch (error) {
             console.error('Failed to save policies:', error);
             toast({
-                title: 'Error',
-                description: 'Failed to save application policies',
+                title: t('common.error'),
+                description: t('policies.application.saveFailed'),
                 variant: 'destructive',
             });
         } finally {
@@ -293,8 +295,8 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                         <AppWindow className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Application Policies</h3>
-                        <p className="text-sm text-muted-foreground">Manage Android application installations</p>
+                        <h3 className="text-xl font-semibold">{t('policies.application.title')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('policies.application.subtitle')}</p>
                     </div>
                 </div>
                 <Button
@@ -304,7 +306,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                     disabled={availableAppsWithVersions.length === 0}
                 >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Application
+                    {t('policies.application.addApp')}
                 </Button>
             </div>
 
@@ -313,7 +315,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                 <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                        No applications available. Please add applications to the repository first.
+                        {t('policies.application.noAppsWarning')}
                     </AlertDescription>
                 </Alert>
             )}
@@ -324,11 +326,11 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[250px]">Application</TableHead>
-                                <TableHead className="w-[150px]">Version</TableHead>
-                                <TableHead className="w-[150px]">Action</TableHead>
-                                <TableHead className="w-[100px] text-center">Status</TableHead>
-                                <TableHead className="w-[80px] text-center">Remove</TableHead>
+                                <TableHead className="w-[250px]">{t('policies.table.application')}</TableHead>
+                                <TableHead className="w-[150px]">{t('policies.table.version')}</TableHead>
+                                <TableHead className="w-[150px]">{t('policies.table.action')}</TableHead>
+                                <TableHead className="w-[100px] text-center">{t('policies.table.status')}</TableHead>
+                                <TableHead className="w-[80px] text-center">{t('policies.table.remove')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -365,25 +367,25 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                                                     <SelectItem value="INSTALL">
                                                         <div className="flex items-center gap-2">
                                                             <Download className="w-4 h-4 text-green-500" />
-                                                            Install
+                                                            {t('policies.action.install')}
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="UNINSTALL">
                                                         <div className="flex items-center gap-2">
                                                             <Trash2 className="w-4 h-4 text-red-500" />
-                                                            Uninstall
+                                                            {t('policies.action.uninstall')}
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="ALLOW">
                                                         <div className="flex items-center gap-2">
                                                             <Check className="w-4 h-4 text-blue-500" />
-                                                            Allow
+                                                            {t('policies.action.allow')}
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem value="BLOCK">
                                                         <div className="flex items-center gap-2">
                                                             <Ban className="w-4 h-4 text-orange-500" />
-                                                            Block
+                                                            {t('policies.action.block')}
                                                         </div>
                                                     </SelectItem>
                                                 </SelectContent>
@@ -391,7 +393,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                                         </TableCell>
                                         <TableCell className="text-center">
                                             {policy.isNew ? (
-                                                <Badge variant="secondary">New</Badge>
+                                                <Badge variant="secondary">{t('policies.action.new')}</Badge>
                                             ) : (
                                                 <Badge variant={getActionBadgeVariant(policy.action) as any}>
                                                     {getActionIcon(policy.action)}
@@ -411,7 +413,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </TooltipTrigger>
-                                                    <TooltipContent>Delete</TooltipContent>
+                                                    <TooltipContent>{t('common.delete')}</TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         </TableCell>
@@ -428,13 +430,13 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                 <Card className="border-dashed">
                     <CardContent className="py-10 text-center">
                         <AppWindow className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                        <h4 className="font-medium mb-2">No Application Policies</h4>
+                        <h4 className="font-medium mb-2">{t('policies.application.noAppPolicies')}</h4>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Add applications to configure installation policies
+                            {t('policies.application.addAppsDesc')}
                         </p>
                         <Button variant="outline" onClick={() => setOpenAddModal(true)}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Add Application
+                            {t('policies.application.addApp')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -443,11 +445,11 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
             {/* Action buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="outline" onClick={onCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button onClick={handleSave} disabled={loading || !hasChanges} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
 
@@ -460,10 +462,10 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Plus className="h-5 w-5" />
-                            Add Application
+                            {t('policies.application.addApp')}
                         </DialogTitle>
                         <DialogDescription>
-                            Select an application and configure the policy action.
+                            {t('policies.application.configureAction')}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -472,13 +474,13 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                             <Alert>
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertDescription>
-                                    All available applications have been added to this policy.
+                                    {t('policies.application.allAppsAdded')}
                                 </AlertDescription>
                             </Alert>
                         ) : (
                             <>
                                 <div className="space-y-2">
-                                    <Label>Application</Label>
+                                    <Label>{t('policies.table.application')}</Label>
                                     <Select
                                         value={selectedAppId}
                                         onValueChange={(v) => {
@@ -487,7 +489,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                                         }}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select an application" />
+                                            <SelectValue placeholder={t('policies.application.selectApp')} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {availableAppsWithVersions.map(app => (
@@ -504,10 +506,10 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
 
                                 {selectedAppId && (
                                     <div className="space-y-2">
-                                        <Label>Version</Label>
+                                        <Label>{t('policies.table.version')}</Label>
                                         <Select value={selectedVersionId} onValueChange={setSelectedVersionId}>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select a version" />
+                                                <SelectValue placeholder={t('policies.application.selectVersion')} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {availableAppsWithVersions
@@ -523,7 +525,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                                 )}
 
                                 <div className="space-y-2">
-                                    <Label>Action</Label>
+                                    <Label>{t('policies.table.action')}</Label>
                                     <Select value={selectedAction} onValueChange={(v: ApplicationAction) => setSelectedAction(v)}>
                                         <SelectTrigger>
                                             <SelectValue />
@@ -532,25 +534,25 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                                             <SelectItem value="INSTALL">
                                                 <div className="flex items-center gap-2">
                                                     <Download className="w-4 h-4 text-green-500" />
-                                                    Install
+                                                    {t('policies.action.install')}
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="UNINSTALL">
                                                 <div className="flex items-center gap-2">
                                                     <Trash2 className="w-4 h-4 text-red-500" />
-                                                    Uninstall
+                                                    {t('policies.action.uninstall')}
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="ALLOW">
                                                 <div className="flex items-center gap-2">
                                                     <Check className="w-4 h-4 text-blue-500" />
-                                                    Allow
+                                                    {t('policies.action.allow')}
                                                 </div>
                                             </SelectItem>
                                             <SelectItem value="BLOCK">
                                                 <div className="flex items-center gap-2">
                                                     <Ban className="w-4 h-4 text-orange-500" />
-                                                    Block
+                                                    {t('policies.action.block')}
                                                 </div>
                                             </SelectItem>
                                         </SelectContent>
@@ -562,11 +564,11 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setOpenAddModal(false)}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={handleAddApplication} disabled={!selectedAppId || !selectedVersionId}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Add Application
+                            {t('policies.application.addApp')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -578,25 +580,25 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-destructive">
                             <Trash2 className="h-5 w-5" />
-                            Delete Application Policy
+                            {t('policies.application.deleteTitle')}
                         </DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete this application policy? This action cannot be undone.
+                            {t('policies.application.deleteConfirm')}
                         </DialogDescription>
                     </DialogHeader>
                     <Alert>
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
-                            Deleting this policy will remove the associated application configuration from this profile.
+                            {t('policies.application.deleteWarning')}
                         </AlertDescription>
                     </Alert>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button variant="destructive" onClick={confirmDelete}>
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

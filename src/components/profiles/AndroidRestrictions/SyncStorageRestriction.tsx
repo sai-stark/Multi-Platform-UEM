@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Platform, SyncStorageRestriction as SyncStorageRestrictionType } from '@/types/models';
 import { Edit, HardDrive, Loader2, Save, Usb } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SyncStorageRestrictionProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface SyncStorageRestrictionProps {
 }
 
 export function SyncStorageRestriction({ platform, profileId, initialData, onSave, onCancel }: SyncStorageRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -61,13 +63,13 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                         <HardDrive className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Sync/Storage Restriction</h3>
-                        <p className="text-sm text-muted-foreground">External storage and USB controls</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.storage')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.storage.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -76,15 +78,15 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <HardDrive className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">External Media Mount</span>
+                            <span className="font-medium">{t('restrictions.storage.externalMedia')}</span>
                         </div>
                         <Badge variant={formData.disableExternalMediaMount ? 'default' : 'destructive'}>
-                            {formData.disableExternalMediaMount ? 'Disabled' : 'Allowed'}
+                            {formData.disableExternalMediaMount ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableExternalMediaMount 
-                                ? 'SD cards and external storage blocked' 
-                                : 'External storage can be mounted'}
+                                ? t('restrictions.storage.externalBlockedDesc') 
+                                : t('restrictions.storage.externalAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -93,22 +95,22 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Usb className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">USB File Transfer</span>
+                            <span className="font-medium">{t('restrictions.storage.usbTransfer')}</span>
                         </div>
                         <Badge variant={formData.disableUsbTransfer ? 'default' : 'destructive'}>
-                            {formData.disableUsbTransfer ? 'Disabled' : 'Allowed'}
+                            {formData.disableUsbTransfer ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableUsbTransfer 
-                                ? 'USB data transfer blocked' 
-                                : 'Files can be transferred via USB'}
+                                ? t('restrictions.storage.usbBlockedDesc') 
+                                : t('restrictions.storage.usbAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -125,8 +127,8 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                         <Edit className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Storage Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure storage and sync policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.storage')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.storage.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -136,9 +138,9 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                     <Label className="flex items-start gap-3">
                         <HardDrive className="w-5 h-5 mt-0.5 text-orange-500" />
                         <div>
-                            <span className="font-medium">Disable External Media Mount</span>
+                            <span className="font-medium">{t('restrictions.storage.disableExternalMedia')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block mounting of SD cards and external storage
+                                {t('restrictions.storage.disableExternalMediaDesc')}
                             </p>
                         </div>
                     </Label>
@@ -152,9 +154,9 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                     <Label className="flex items-start gap-3">
                         <Usb className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Disable USB Transfer</span>
+                            <span className="font-medium">{t('restrictions.storage.disableUsbTransfer')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block file transfer over USB connection
+                                {t('restrictions.storage.disableUsbTransferDesc')}
                             </p>
                         </div>
                     </Label>
@@ -167,11 +169,11 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

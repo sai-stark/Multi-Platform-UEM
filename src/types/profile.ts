@@ -7,7 +7,7 @@ import {
     IosMdmConfiguration,
     IosWiFiConfiguration
 } from './ios';
-import { IosApplicationPolicy } from './policy';
+import { IosApplicationPolicy, IosWebApplicationPolicy } from './policy';
 
 // Profile types as per OpenAPI spec
 export type ProfileType = 'AndroidProfile' | 'IosProfile' | 'IosFullProfile' | 'AndroidFullProfile';
@@ -73,22 +73,6 @@ export interface IosScepPolicyRes {
         uniformResourceIdentifier?: string;
         ntPrincipalName?: string;
     };
-}
-
-export interface IosWebApplicationPolicy {
-    id?: string;
-    name?: string;
-    fullScreen?: boolean;
-    ignoreManifestScope?: boolean;
-    isRemovable?: boolean;
-    label?: string;
-    precomposed?: boolean;
-    url?: string;
-    policyType?: string;
-    creationTime?: string;
-    modificationTime?: string;
-    createdBy?: string;
-    lastModifiedBy?: string;
 }
 
 // Full Profile interface matching API response (detail view with all policies)

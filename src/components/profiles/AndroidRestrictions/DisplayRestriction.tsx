@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { DisplayRestriction as DisplayRestrictionType, Platform } from '@/types/models';
 import { Edit, Loader2, Monitor, Moon, Save, Sun, Timer } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DisplayRestrictionProps {
     platform: Platform;
@@ -19,6 +20,7 @@ interface DisplayRestrictionProps {
 }
 
 export function DisplayRestriction({ platform, profileId, initialData, onSave, onCancel }: DisplayRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -59,9 +61,9 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
     };
 
     const formatTimeout = (seconds?: number) => {
-        if (!seconds || seconds === 0) return 'Never';
-        if (seconds < 60) return `${seconds} seconds`;
-        return `${Math.floor(seconds / 60)} minutes`;
+        if (!seconds || seconds === 0) return t('restrictions.display.never');
+        if (seconds < 60) return `${seconds} ${t('restrictions.display.seconds')}`;
+        return `${Math.floor(seconds / 60)} ${t('restrictions.display.minutes')}`;
     };
 
     const isFixedBrightness = formData.brightnessPolicy?.brightness === 'FixedBrightness';
@@ -74,13 +76,13 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                         <Monitor className="w-6 h-6 text-indigo-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Display Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Screen and brightness settings</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.display')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.display.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -89,11 +91,11 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Timer className="w-5 h-5 text-indigo-500" />
-                            <span className="font-medium">Screen Timeout</span>
+                            <span className="font-medium">{t('restrictions.display.screenTimeout')}</span>
                         </div>
                         <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-bold">{formData.screenTimeoutSeconds || 0}</span>
-                            <span className="text-muted-foreground">seconds</span>
+                            <span className="text-muted-foreground">{t('restrictions.display.seconds')}</span>
                         </div>
                         <Badge variant="secondary" className="mt-2">
                             {formatTimeout(formData.screenTimeoutSeconds)}
@@ -105,12 +107,12 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Sun className="w-5 h-5 text-yellow-500" />
-                            <span className="font-medium">Brightness</span>
+                            <span className="font-medium">{t('restrictions.display.brightness')}</span>
                         </div>
                         <Badge variant="secondary">
                             {isFixedBrightness 
-                                ? `Fixed (${(formData.brightnessPolicy as any)?.brightnessLevel || 50}%)`
-                                : 'Adaptive'}
+                                ? `${t('restrictions.display.fixed')} (${(formData.brightnessPolicy as any)?.brightnessLevel || 50}%)`
+                                : t('restrictions.display.adaptive')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -119,17 +121,17 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Moon className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">Ambient Display</span>
+                            <span className="font-medium">{t('restrictions.display.ambientDisplay')}</span>
                         </div>
                         <Badge variant={formData.disableAmbientDisplay ? 'default' : 'secondary'}>
-                            {formData.disableAmbientDisplay ? 'Disabled' : 'Enabled'}
+                            {formData.disableAmbientDisplay ? t('common.disabled') : t('common.enabled')}
                         </Badge>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -146,8 +148,8 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                         <Edit className="w-5 h-5 text-indigo-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Display Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure screen and brightness policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.display')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.display.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -155,7 +157,7 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
             <div className="space-y-6 p-1">
                 {/* Screen Timeout */}
                 <div className="space-y-2">
-                    <Label htmlFor="screenTimeoutSeconds">Screen Timeout (seconds)</Label>
+                    <Label htmlFor="screenTimeoutSeconds">{t('restrictions.display.screenTimeoutLabel')}</Label>
                     <Input
                         id="screenTimeoutSeconds"
                         type="number"
@@ -165,13 +167,13 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                         onChange={(e) => setFormData(prev => ({ ...prev, screenTimeoutSeconds: Number(e.target.value) }))}
                     />
                     <p className="text-xs text-muted-foreground">
-                        Time in seconds before the screen turns off (0 = never). Current: {formatTimeout(formData.screenTimeoutSeconds)}
+                        {t('restrictions.display.screenTimeoutDesc')} {formatTimeout(formData.screenTimeoutSeconds)}
                     </p>
                 </div>
 
                 {/* Brightness Policy */}
                 <div className="space-y-2">
-                    <Label>Brightness Policy</Label>
+                    <Label>{t('restrictions.display.brightnessPolicy')}</Label>
                     <div className="flex gap-2 mb-2">
                         <Button
                             type="button"
@@ -183,7 +185,7 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                             }))}
                         >
                             <Sun className="w-4 h-4 mr-2" />
-                            Adaptive
+                            {t('restrictions.display.adaptive')}
                         </Button>
                         <Button
                             type="button"
@@ -195,12 +197,12 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                             }))}
                         >
                             <Monitor className="w-4 h-4 mr-2" />
-                            Fixed
+                            {t('restrictions.display.fixed')}
                         </Button>
                     </div>
                     {isFixedBrightness && (
                         <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                            <Label>Brightness Level: {(formData.brightnessPolicy as any)?.brightnessLevel || 50}%</Label>
+                            <Label>{t('restrictions.display.brightnessLevel')}: {(formData.brightnessPolicy as any)?.brightnessLevel || 50}%</Label>
                             <Slider
                                 value={[(formData.brightnessPolicy as any)?.brightnessLevel || 50]}
                                 onValueChange={([value]) => setFormData(prev => ({
@@ -221,9 +223,9 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Timer className="w-5 h-5 mt-0.5 text-indigo-500" />
                             <div>
-                                <span className="font-medium">Disable Screen Timeout Setting</span>
+                                <span className="font-medium">{t('restrictions.display.disableTimeoutSetting')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Prevent users from changing screen timeout
+                                    {t('restrictions.display.disableTimeoutSettingDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -237,9 +239,9 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Sun className="w-5 h-5 mt-0.5 text-yellow-500" />
                             <div>
-                                <span className="font-medium">Disable Brightness Setting</span>
+                                <span className="font-medium">{t('restrictions.display.disableBrightnessSetting')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Prevent users from adjusting brightness
+                                    {t('restrictions.display.disableBrightnessSettingDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -253,9 +255,9 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Moon className="w-5 h-5 mt-0.5 text-purple-500" />
                             <div>
-                                <span className="font-medium">Disable Ambient Display</span>
+                                <span className="font-medium">{t('restrictions.display.disableAmbientDisplay')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Turn off always-on display features
+                                    {t('restrictions.display.disableAmbientDisplayDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -269,11 +271,11 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

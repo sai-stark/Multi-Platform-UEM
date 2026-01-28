@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { ControlType, LocationRestriction as LocationRestrictionType, Platform } from '@/types/models';
 import { Edit, Loader2, MapPin, MapPinOff, Save, Share2 } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LocationRestrictionProps {
     platform: Platform;
@@ -24,6 +25,7 @@ interface LocationRestrictionProps {
 }
 
 export function LocationRestriction({ platform, profileId, initialData, onSave, onCancel }: LocationRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -62,10 +64,10 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
 
     const getLocationLabel = (control?: ControlType) => {
         switch (control) {
-            case 'ENABLE': return 'Always Enabled';
-            case 'DISABLE': return 'Always Disabled';
-            case 'USER_CONTROLLED': return 'User Controlled';
-            default: return 'User Controlled';
+            case 'ENABLE': return t('restrictions.location.alwaysEnabled');
+            case 'DISABLE': return t('restrictions.location.alwaysDisabled');
+            case 'USER_CONTROLLED': return t('restrictions.control.userControlled');
+            default: return t('restrictions.control.userControlled');
         }
     };
 
@@ -85,13 +87,13 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                         <MapPin className="w-6 h-6 text-red-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Location Restriction</h3>
-                        <p className="text-sm text-muted-foreground">GPS and location services control</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.location')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.location.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -100,13 +102,13 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <MapPin className="w-5 h-5 text-red-500" />
-                            <span className="font-medium">Location Services</span>
+                            <span className="font-medium">{t('restrictions.location.services')}</span>
                         </div>
                         <Badge variant="secondary">{getLocationLabel(formData.location)}</Badge>
                         <p className="text-xs text-muted-foreground mt-2">
-                            {formData.location === 'ENABLE' && 'GPS is always on, users cannot disable'}
-                            {formData.location === 'DISABLE' && 'GPS is always off, users cannot enable'}
-                            {formData.location === 'USER_CONTROLLED' && 'Users can toggle location settings'}
+                            {formData.location === 'ENABLE' && t('restrictions.location.gpsAlwaysOnDesc')}
+                            {formData.location === 'DISABLE' && t('restrictions.location.gpsAlwaysOffDesc')}
+                            {formData.location === 'USER_CONTROLLED' && t('restrictions.location.userToggleDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -115,22 +117,22 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Share2 className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">Location Sharing</span>
+                            <span className="font-medium">{t('restrictions.location.sharing')}</span>
                         </div>
                         <Badge variant={formData.disableLocationSharing ? 'default' : 'destructive'}>
-                            {formData.disableLocationSharing ? 'Disabled' : 'Allowed'}
+                            {formData.disableLocationSharing ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableLocationSharing 
-                                ? 'Users cannot share location with other apps' 
-                                : 'Location sharing is allowed'}
+                                ? t('restrictions.location.sharingDisabledDesc') 
+                                : t('restrictions.location.sharingAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -147,15 +149,15 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                         <Edit className="w-5 h-5 text-red-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Location Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure GPS and location policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.location')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.location.editDesc')}</p>
                     </div>
                 </div>
             </div>
 
             <div className="space-y-6 p-1">
                 <div className="space-y-2">
-                    <Label>Location Services Control</Label>
+                    <Label>{t('restrictions.location.servicesControl')}</Label>
                     <Select
                         value={formData.location}
                         onValueChange={(value: ControlType) => 
@@ -163,31 +165,31 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                         }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select location control" />
+                            <SelectValue placeholder={t('restrictions.location.servicesControl')} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ENABLE">
                                 <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4 text-green-500" />
-                                    Always Enabled - Force GPS on
+                                    {t('restrictions.location.alwaysEnabled')} - {t('restrictions.location.forceGpsOn')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="DISABLE">
                                 <div className="flex items-center gap-2">
                                     <MapPinOff className="w-4 h-4 text-red-500" />
-                                    Always Disabled - Force GPS off
+                                    {t('restrictions.location.alwaysDisabled')} - {t('restrictions.location.forceGpsOff')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="USER_CONTROLLED">
                                 <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4 text-blue-500" />
-                                    User Controlled - Let user decide
+                                    {t('restrictions.control.userControlled')} - {t('restrictions.control.letUserDecide')}
                                 </div>
                             </SelectItem>
                         </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                        Control whether location services can be toggled by users
+                        {t('restrictions.location.controlDesc')}
                     </p>
                 </div>
 
@@ -196,9 +198,9 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
                         <Label className="flex items-start gap-3">
                             <Share2 className="w-5 h-5 mt-0.5 text-purple-500" />
                             <div>
-                                <span className="font-medium">Disable Location Sharing</span>
+                                <span className="font-medium">{t('restrictions.location.disableSharing')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block apps from sharing device location
+                                    {t('restrictions.location.disableSharingDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -212,11 +214,11 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

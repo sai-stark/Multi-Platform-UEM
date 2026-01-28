@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { KioskRestriction as KioskRestrictionType, Platform } from '@/types/models';
 import { Bell, Edit, Home, Lock, Loader2, Power, Rows, Save, Square } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface KioskRestrictionProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface KioskRestrictionProps {
 }
 
 export function KioskRestriction({ platform, profileId, initialData, onSave, onCancel }: KioskRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -66,13 +68,13 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                         <Square className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Kiosk Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Kiosk mode UI controls</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.kiosk')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.kiosk.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -81,10 +83,10 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Home className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Home Button</span>
+                            <span className="font-medium">{t('restrictions.kiosk.homeButton')}</span>
                         </div>
                         <Badge variant={formData.enableHomeButton ? 'default' : 'secondary'}>
-                            {formData.enableHomeButton ? 'Enabled' : 'Hidden'}
+                            {formData.enableHomeButton ? t('common.enabled') : t('restrictions.kiosk.hidden')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -93,10 +95,10 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Rows className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">Recents Button</span>
+                            <span className="font-medium">{t('restrictions.kiosk.recentsButton')}</span>
                         </div>
                         <Badge variant={formData.enableRecentsButton ? 'default' : 'secondary'}>
-                            {formData.enableRecentsButton ? 'Enabled' : 'Hidden'}
+                            {formData.enableRecentsButton ? t('common.enabled') : t('restrictions.kiosk.hidden')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -105,10 +107,10 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Bell className="w-5 h-5 text-yellow-500" />
-                            <span className="font-medium">Notifications</span>
+                            <span className="font-medium">{t('restrictions.kiosk.notifications')}</span>
                         </div>
                         <Badge variant={formData.enableNotifications ? 'default' : 'secondary'}>
-                            {formData.enableNotifications ? 'Shown' : 'Hidden'}
+                            {formData.enableNotifications ? t('restrictions.kiosk.shown') : t('restrictions.kiosk.hidden')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -117,10 +119,10 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Rows className="w-5 h-5 text-cyan-500" />
-                            <span className="font-medium">Status Bar</span>
+                            <span className="font-medium">{t('restrictions.kiosk.statusBar')}</span>
                         </div>
                         <Badge variant={formData.enableStatusBar ? 'default' : 'secondary'}>
-                            {formData.enableStatusBar ? 'Visible' : 'Hidden'}
+                            {formData.enableStatusBar ? t('restrictions.kiosk.visible') : t('restrictions.kiosk.hidden')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -129,10 +131,10 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Lock className="w-5 h-5 text-green-500" />
-                            <span className="font-medium">Screen Lock</span>
+                            <span className="font-medium">{t('restrictions.kiosk.screenLock')}</span>
                         </div>
                         <Badge variant={formData.enableScreenLock ? 'default' : 'secondary'}>
-                            {formData.enableScreenLock ? 'Enabled' : 'Disabled'}
+                            {formData.enableScreenLock ? t('common.enabled') : t('common.disabled')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -141,17 +143,17 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Power className="w-5 h-5 text-red-500" />
-                            <span className="font-medium">Power Button</span>
+                            <span className="font-medium">{t('restrictions.kiosk.powerButton')}</span>
                         </div>
                         <Badge variant={formData.lockPowerButton ? 'secondary' : 'default'}>
-                            {formData.lockPowerButton ? 'Locked' : 'Unlocked'}
+                            {formData.lockPowerButton ? t('restrictions.locked') : t('restrictions.unlocked')}
                         </Badge>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -168,8 +170,8 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                         <Edit className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Kiosk Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure kiosk mode UI elements</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.kiosk')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.kiosk.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -179,9 +181,9 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <Home className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Enable Home Button</span>
+                            <span className="font-medium">{t('restrictions.kiosk.enableHomeButton')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Show the home button in kiosk mode
+                                {t('restrictions.kiosk.enableHomeButtonDesc')}
                             </p>
                         </div>
                     </Label>
@@ -195,9 +197,9 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <Rows className="w-5 h-5 mt-0.5 text-purple-500" />
                         <div>
-                            <span className="font-medium">Enable Recents Button</span>
+                            <span className="font-medium">{t('restrictions.kiosk.enableRecentsButton')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Allow access to recent apps
+                                {t('restrictions.kiosk.enableRecentsButtonDesc')}
                             </p>
                         </div>
                     </Label>
@@ -211,9 +213,9 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <Bell className="w-5 h-5 mt-0.5 text-yellow-500" />
                         <div>
-                            <span className="font-medium">Enable Notifications</span>
+                            <span className="font-medium">{t('restrictions.kiosk.enableNotifications')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Show system notifications
+                                {t('restrictions.kiosk.enableNotificationsDesc')}
                             </p>
                         </div>
                     </Label>
@@ -227,9 +229,9 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <Rows className="w-5 h-5 mt-0.5 text-cyan-500" />
                         <div>
-                            <span className="font-medium">Enable Status Bar</span>
+                            <span className="font-medium">{t('restrictions.kiosk.enableStatusBar')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Show the system status bar
+                                {t('restrictions.kiosk.enableStatusBarDesc')}
                             </p>
                         </div>
                     </Label>
@@ -243,9 +245,9 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <Lock className="w-5 h-5 mt-0.5 text-green-500" />
                         <div>
-                            <span className="font-medium">Enable Screen Lock</span>
+                            <span className="font-medium">{t('restrictions.kiosk.enableScreenLock')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Allow device screen lock
+                                {t('restrictions.kiosk.enableScreenLockDesc')}
                             </p>
                         </div>
                     </Label>
@@ -259,9 +261,9 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <Power className="w-5 h-5 mt-0.5 text-red-500" />
                         <div>
-                            <span className="font-medium">Lock Power Button</span>
+                            <span className="font-medium">{t('restrictions.kiosk.lockPowerButton')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Disable power button functionality
+                                {t('restrictions.kiosk.lockPowerButtonDesc')}
                             </p>
                         </div>
                     </Label>
@@ -275,9 +277,9 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <Square className="w-5 h-5 mt-0.5 text-orange-500" />
                         <div>
-                            <span className="font-medium">Exit Kiosk Button</span>
+                            <span className="font-medium">{t('restrictions.kiosk.exitKioskButton')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Show button to exit kiosk mode (requires admin PIN)
+                                {t('restrictions.kiosk.exitKioskButtonDesc')}
                             </p>
                         </div>
                     </Label>
@@ -290,11 +292,11 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile } from "@/types/models";
 import { Send } from "lucide-react";
@@ -27,6 +28,7 @@ export function PublishProfileDialog({
   onProfilePublished,
   profile,
 }: PublishProfileDialogProps) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
 
   const handlePublish = async () => {
@@ -75,24 +77,23 @@ export function PublishProfileDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Send className="w-5 h-5" />
-            Publish Profile
+            {t('profiles.publish.title')}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to publish the profile{" "}
+            {t('profiles.publish.description')}{" "}
             <span className="font-semibold text-foreground">
               "{profile?.name}"
             </span>
-            ? Once published, the profile will be available for deployment to devices.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handlePublish}
             disabled={loading}
             className="bg-primary hover:bg-primary/90"
           >
-            {loading ? "Publishing..." : "Publish Profile"}
+            {loading ? t('profiles.publish.publishing') : t('profiles.publish.publish')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

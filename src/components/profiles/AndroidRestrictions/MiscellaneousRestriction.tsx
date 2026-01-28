@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { MiscellaneousRestriction as MiscellaneousRestrictionType, Platform } from '@/types/models';
 import { Edit, Loader2, RefreshCw, Save, Settings, UserPlus } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MiscellaneousRestrictionProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface MiscellaneousRestrictionProps {
 }
 
 export function MiscellaneousRestriction({ platform, profileId, initialData, onSave, onCancel }: MiscellaneousRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -61,13 +63,13 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                         <Settings className="w-6 h-6 text-amber-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Miscellaneous Restriction</h3>
-                        <p className="text-sm text-muted-foreground">System-level controls</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.miscellaneous')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.misc.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -76,15 +78,15 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <UserPlus className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Add User</span>
+                            <span className="font-medium">{t('restrictions.misc.addUser')}</span>
                         </div>
                         <Badge variant={formData.disableAddUser ? 'default' : 'destructive'}>
-                            {formData.disableAddUser ? 'Disabled' : 'Allowed'}
+                            {formData.disableAddUser ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableAddUser 
-                                ? 'Users cannot add new accounts' 
-                                : 'Multiple accounts can be added'}
+                                ? t('restrictions.misc.addUserDisabledDesc') 
+                                : t('restrictions.misc.addUserAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -93,22 +95,22 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <RefreshCw className="w-5 h-5 text-amber-500" />
-                            <span className="font-medium">Factory Reset</span>
+                            <span className="font-medium">{t('restrictions.misc.factoryReset')}</span>
                         </div>
                         <Badge variant={formData.disableFactoryReset ? 'default' : 'destructive'}>
-                            {formData.disableFactoryReset ? 'Disabled' : 'Allowed'}
+                            {formData.disableFactoryReset ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableFactoryReset 
-                                ? 'Factory reset is blocked' 
-                                : 'Device can be factory reset'}
+                                ? t('restrictions.misc.factoryResetDisabledDesc') 
+                                : t('restrictions.misc.factoryResetAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -125,8 +127,8 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                         <Edit className="w-5 h-5 text-amber-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Miscellaneous Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure system-level controls</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.miscellaneous')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.misc.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -136,9 +138,9 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                     <Label className="flex items-start gap-3">
                         <UserPlus className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Disable Add User</span>
+                            <span className="font-medium">{t('restrictions.misc.disableAddUser')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Prevent adding new user accounts
+                                {t('restrictions.misc.disableAddUserDesc')}
                             </p>
                         </div>
                     </Label>
@@ -152,9 +154,9 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                     <Label className="flex items-start gap-3">
                         <RefreshCw className="w-5 h-5 mt-0.5 text-amber-500" />
                         <div>
-                            <span className="font-medium">Disable Factory Reset</span>
+                            <span className="font-medium">{t('restrictions.misc.disableFactoryReset')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block factory reset from settings
+                                {t('restrictions.misc.disableFactoryResetDesc')}
                             </p>
                         </div>
                     </Label>
@@ -167,11 +169,11 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

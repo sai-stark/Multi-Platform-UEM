@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAssetUrl } from "@/config/env";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile } from "@/types/models";
 import { Copy } from "lucide-react";
@@ -71,6 +72,7 @@ export function CloneProfileDialog({
   onProfileCloned,
   profile,
 }: CloneProfileDialogProps) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -287,11 +289,10 @@ export function CloneProfileDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Copy className="w-5 h-5" />
-                Clone Profile
+                {t('profiles.clone.title')}
               </DialogTitle>
               <DialogDescription>
-                Create a copy of "{profile?.name}" with a new name and
-                description.
+                {t('profiles.clone.description')} "{profile?.name}"
               </DialogDescription>
             </DialogHeader>
 
@@ -312,15 +313,15 @@ export function CloneProfileDialog({
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div className="space-y-2">
                 <Label htmlFor="clone-name" className="flex items-center gap-1">
-                  Profile Name
+                  {t('profiles.clone.newName')}
                   <span className="text-destructive" aria-hidden="true">
                     *
                   </span>
-                  <span className="sr-only">(required)</span>
+                  <span className="sr-only">({t('common.required')})</span>
                 </Label>
                 <Input
                   id="clone-name"
-                  placeholder="e.g., Corporate Android Policy"
+                  placeholder={t('profiles.add.namePlaceholder')}
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   onBlur={() => handleBlur("name")}
@@ -356,15 +357,15 @@ export function CloneProfileDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="clone-description" className="flex items-center gap-1">
-                  Description
+                  {t('profiles.add.profileDescription')}
                   <span className="text-destructive" aria-hidden="true">
                     *
                   </span>
-                  <span className="sr-only">(required)</span>
+                  <span className="sr-only">({t('common.required')})</span>
                 </Label>
                 <Textarea
                   id="clone-description"
-                  placeholder="Describe the purpose of this profile..."
+                  placeholder={t('profiles.add.descriptionPlaceholder')}
                   value={formData.description}
                   onChange={(e) => handleDescriptionChange(e.target.value)}
                   onBlur={() => handleBlur("description")}
@@ -411,10 +412,10 @@ export function CloneProfileDialog({
                   onClick={() => handleOpenChange(false)}
                   disabled={loading}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Cloning..." : "Clone Profile"}
+                  {loading ? t('profiles.clone.cloning') : t('profiles.clone.clone')}
                 </Button>
               </DialogFooter>
             </form>

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EAPClientConfiguration, EAPType, IosWiFiConfiguration, TLSVersion, TTLSInnerAuth } from '@/types/models';
 import { Edit, Eye, EyeOff, Globe, Lock, Shield, Trash2, Wifi } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WifiPolicyProps {
     profileId: string;
@@ -46,6 +47,7 @@ const EAP_TYPE_LABELS: Record<EAPType, string> = {
 };
 
 export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPolicyProps) {
+    const { t } = useLanguage();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     // If we have an ID, start in view mode. Otherwise, start in edit mode.
@@ -283,7 +285,7 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );

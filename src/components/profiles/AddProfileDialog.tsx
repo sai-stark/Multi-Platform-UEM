@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getAssetUrl } from "@/config/env";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType } from "@/types/models";
 import { Layout } from "lucide-react";
@@ -87,6 +88,7 @@ export function AddProfileDialog({
   onProfileAdded,
   defaultPlatform = "android",
 }: AddProfileDialogProps) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -300,25 +302,25 @@ export function AddProfileDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Layout className="w-5 h-5" />
-                Create New Profile
+                {t('profiles.add.title')}
               </DialogTitle>
               <DialogDescription>
-                Create a new device profile to apply policies and configurations.
+                {t('profiles.add.description')}
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-1">
-              Profile Name
+              {t('profiles.add.name')}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
-              <span className="sr-only">(required)</span>
+              <span className="sr-only">({t('common.required')})</span>
             </Label>
             <Input
               id="name"
-              placeholder="e.g., Corporate Android Policy"
+              placeholder={t('profiles.add.namePlaceholder')}
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
               onBlur={() => handleBlur("name")}
@@ -354,11 +356,11 @@ export function AddProfileDialog({
 
           <div className="space-y-2">
             <Label htmlFor="platform" className="flex items-center gap-1">
-              Platform
+              {t('profiles.table.platform')}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
-              <span className="sr-only">(required)</span>
+              <span className="sr-only">({t('common.required')})</span>
             </Label>
             <Select
               value={formData.platform}
@@ -367,7 +369,7 @@ export function AddProfileDialog({
               }
             >
               <SelectTrigger id="platform" aria-describedby="platform-hint">
-                <SelectValue placeholder="Select platform" />
+                <SelectValue placeholder={t('profiles.add.selectPlatform')} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
                 <SelectItem value="android">
@@ -412,15 +414,15 @@ export function AddProfileDialog({
 
           <div className="space-y-2">
             <Label htmlFor="description" className="flex items-center gap-1">
-              Description
+              {t('profiles.add.profileDescription')}
               <span className="text-destructive" aria-hidden="true">
                 *
               </span>
-              <span className="sr-only">(required)</span>
+              <span className="sr-only">({t('common.required')})</span>
             </Label>
             <Textarea
               id="description"
-              placeholder="Describe the purpose of this profile..."
+              placeholder={t('profiles.add.descriptionPlaceholder')}
               value={formData.description}
               onChange={(e) => handleDescriptionChange(e.target.value)}
               onBlur={() => handleBlur("description")}
@@ -467,10 +469,10 @@ export function AddProfileDialog({
                 onClick={() => handleOpenChange(false)}
                 disabled={loading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create Profile"}
+                {loading ? t('profiles.add.creating') : t('profiles.add.create')}
               </Button>
             </DialogFooter>
           </form>

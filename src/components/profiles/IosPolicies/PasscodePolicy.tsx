@@ -34,6 +34,7 @@ import {
     User
 } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PasscodePolicyProps {
     platform: Platform;
@@ -51,6 +52,7 @@ const isIosPolicy = (data: any): data is IosPasscodeRestrictionPolicy => {
 };
 
 export function PasscodePolicy({ platform, profileId, initialData, onSave, onCancel }: PasscodePolicyProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     // If we have an ID, start in view mode. Otherwise, start in edit mode.
     const [isEditing, setIsEditing] = useState(!initialData?.id && !(initialData as any)?.passcodeId);
@@ -526,7 +528,7 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                 )}
 
                 <div className="flex justify-end pt-4 border-t">
-                    <Button variant="outline" onClick={onCancel}>Close</Button>
+                    <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
                 </div>
             </div>
         );

@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WebApplicationPolicy } from '@/types/models';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 import { BasePolicyCardProps, itemVariants } from './types';
@@ -11,6 +12,8 @@ interface WebApplicationsPolicyCardProps extends BasePolicyCardProps {
 }
 
 export function WebApplicationsPolicyCard({ policies, onClick }: WebApplicationsPolicyCardProps) {
+    const { t } = useLanguage();
+    
     return (
         <motion.div variants={itemVariants}>
             <Card
@@ -19,22 +22,22 @@ export function WebApplicationsPolicyCard({ policies, onClick }: WebApplications
             >
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center gap-2">
-                        <Globe className="w-5 h-5 text-blue-500" /> Web Apps
+                        <Globe className="w-5 h-5 text-blue-500" /> {t('policy.webApplications')}
                     </CardTitle>
-                    <CardDescription>Manage web shortcuts</CardDescription>
+                    <CardDescription>{t('policy.webApplications.desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center justify-between mb-4">
-                        <Badge>Active</Badge>
+                        <Badge>{t('common.enabled')}</Badge>
                     </div>
                     <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Configured Web Apps</span>
-                            <span className="font-medium">{policies.length} Shortcuts</span>
+                            <span className="text-muted-foreground">{t('nav.webApplications')}</span>
+                            <span className="font-medium">{policies.length}</span>
                         </div>
                     </div>
                     <Button variant="secondary" className="w-full" onClick={onClick}>
-                        View Policy
+                        {t('common.configure')}
                     </Button>
                 </CardContent>
             </Card>

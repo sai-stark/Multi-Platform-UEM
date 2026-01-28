@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Platform, TetheringRestriction as TetheringRestrictionType } from '@/types/models';
 import { Edit, Loader2, Save, Share2, Wifi } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TetheringRestrictionProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface TetheringRestrictionProps {
 }
 
 export function TetheringRestriction({ platform, profileId, initialData, onSave, onCancel }: TetheringRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -61,13 +63,13 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                         <Share2 className="w-6 h-6 text-purple-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Tethering Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Hotspot and tethering controls</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.tethering')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.tethering.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -76,15 +78,15 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Share2 className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">All Tethering</span>
+                            <span className="font-medium">{t('restrictions.tethering.allTethering')}</span>
                         </div>
                         <Badge variant={formData.disableTethering ? 'default' : 'destructive'}>
-                            {formData.disableTethering ? 'Disabled' : 'Allowed'}
+                            {formData.disableTethering ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableTethering 
-                                ? 'All tethering modes blocked' 
-                                : 'USB/Bluetooth tethering allowed'}
+                                ? t('restrictions.tethering.allBlockedDesc') 
+                                : t('restrictions.tethering.allAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -93,22 +95,22 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Wifi className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Wi-Fi Hotspot</span>
+                            <span className="font-medium">{t('restrictions.tethering.wifiHotspot')}</span>
                         </div>
                         <Badge variant={formData.disableWifiTethering ? 'default' : 'destructive'}>
-                            {formData.disableWifiTethering ? 'Disabled' : 'Allowed'}
+                            {formData.disableWifiTethering ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableWifiTethering 
-                                ? 'Mobile hotspot is blocked' 
-                                : 'Users can create hotspots'}
+                                ? t('restrictions.tethering.hotspotBlockedDesc') 
+                                : t('restrictions.tethering.hotspotAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -125,8 +127,8 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                         <Edit className="w-5 h-5 text-purple-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Tethering Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure hotspot and tethering policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.tethering')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.tethering.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -136,9 +138,9 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                     <Label className="flex items-start gap-3">
                         <Share2 className="w-5 h-5 mt-0.5 text-purple-500" />
                         <div>
-                            <span className="font-medium">Disable Tethering</span>
+                            <span className="font-medium">{t('restrictions.tethering.disableTethering')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block all tethering (USB, Bluetooth)
+                                {t('restrictions.tethering.disableTetheringDesc')}
                             </p>
                         </div>
                     </Label>
@@ -152,9 +154,9 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
                     <Label className="flex items-start gap-3">
                         <Wifi className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Disable Wi-Fi Tethering</span>
+                            <span className="font-medium">{t('restrictions.tethering.disableWifiTethering')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block mobile Wi-Fi hotspot functionality
+                                {t('restrictions.tethering.disableWifiTetheringDesc')}
                             </p>
                         </div>
                     </Label>
@@ -167,11 +169,11 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

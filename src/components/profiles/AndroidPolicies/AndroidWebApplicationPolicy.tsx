@@ -48,6 +48,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AndroidWebApplicationPolicyProps {
     platform: Platform;
@@ -63,6 +64,7 @@ interface ExtendedWebApplicationPolicy extends Partial<AndroidWebApplicationPoli
 }
 
 export function AndroidWebApplicationPolicy({ platform, profileId, initialData = [], onSave, onCancel }: AndroidWebApplicationPolicyProps) {
+    const { t } = useLanguage();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [policies, setPolicies] = useState<ExtendedWebApplicationPolicy[]>(initialData || []);
@@ -86,14 +88,14 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
             } catch (error) {
                 console.error('Failed to fetch web applications:', error);
                 toast({
-                    title: 'Error',
-                    description: 'Failed to fetch web applications',
+                    title: t('common.error'),
+                    description: t('policies.webApp.saveFailed'),
                     variant: 'destructive',
                 });
             }
         };
         fetchWebApps();
-    }, [toast]);
+    }, [toast, t]);
 
     // Get available web apps (excluding already selected ones)
     const getAvailableWebApps = () => {
@@ -120,8 +122,8 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
     const handleAddWebApp = () => {
         if (!selectedWebAppId) {
             toast({
-                title: 'Error',
-                description: 'Please select a web application',
+                title: t('common.error'),
+                description: t('policies.webApp.selectWebApp'),
                 variant: 'destructive',
             });
             return;
@@ -130,8 +132,8 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
         const selectedApp = availableWebApps.find(app => app.id === selectedWebAppId);
         if (!selectedApp) {
             toast({
-                title: 'Error',
-                description: 'Selected web application not found',
+                title: t('common.error'),
+                description: t('policies.webApp.appNotFound'),
                 variant: 'destructive',
             });
             return;
@@ -169,14 +171,14 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
             setPolicies(prev => prev.filter(p => p.id !== appToDelete.id));
             setChangedPolicies(prev => prev.filter(p => p.id !== appToDelete.id));
             toast({
-                title: 'Success',
-                description: 'Web application policy deleted successfully',
+                title: t('common.success'),
+                description: t('policies.webApp.deleteSuccess'),
             });
         } catch (error) {
             console.error('Failed to delete policy:', error);
             toast({
-                title: 'Error',
-                description: 'Failed to delete web application policy',
+                title: t('common.error'),
+                description: t('policies.webApp.deleteFailed'),
                 variant: 'destructive',
             });
         }
@@ -232,15 +234,15 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
             await Promise.all(promises);
             setChangedPolicies([]);
             toast({
-                title: 'Success',
-                description: 'Web application policies saved successfully!',
+                title: t('common.success'),
+                description: t('policies.webApp.saveSuccess'),
             });
             onSave();
         } catch (error) {
             console.error('Failed to save policies:', error);
             toast({
-                title: 'Error',
-                description: 'Failed to save web application policies',
+                title: t('common.error'),
+                description: t('policies.webApp.saveFailed'),
                 variant: 'destructive',
             });
         } finally {
@@ -260,8 +262,8 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                         <Globe className="w-6 h-6 text-purple-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Web Application Policies</h3>
-                        <p className="text-sm text-muted-foreground">Manage web app shortcuts for Android</p>
+                        <h3 className="text-xl font-semibold">{t('policies.webApp.title')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('policies.webApp.subtitle')}</p>
                     </div>
                 </div>
                 <Button
@@ -271,7 +273,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                     disabled={availableWebAppsFiltered.length === 0}
                 >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Web App
+                    {t('policies.webApp.addWebApp')}
                 </Button>
             </div>
 
@@ -280,7 +282,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                 <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                        No web applications available. Please add web applications first.
+                        {t('policies.webApp.noAppsWarning')}
                     </AlertDescription>
                 </Alert>
             )}
@@ -291,12 +293,12 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[200px]">Web App Name</TableHead>
-                                <TableHead className="w-[150px]">Screen Type</TableHead>
-                                <TableHead className="w-[120px]">Key Code</TableHead>
-                                <TableHead className="w-[150px]">Order / Bottom</TableHead>
-                                <TableHead className="w-[100px] text-center">Status</TableHead>
-                                <TableHead className="w-[80px] text-center">Remove</TableHead>
+                                <TableHead className="w-[200px]">{t('policies.table.webAppName')}</TableHead>
+                                <TableHead className="w-[150px]">{t('policies.table.screenType')}</TableHead>
+                                <TableHead className="w-[120px]">{t('policies.table.keyCode')}</TableHead>
+                                <TableHead className="w-[150px]">{t('policies.table.orderBottom')}</TableHead>
+                                <TableHead className="w-[100px] text-center">{t('policies.table.status')}</TableHead>
+                                <TableHead className="w-[80px] text-center">{t('policies.table.remove')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -314,12 +316,12 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs">Order</Label>
+                                                <Label className="text-xs">{t('policies.action.order')}</Label>
                                                 <Switch
                                                     checked={isBottomPosition}
                                                     onCheckedChange={(checked) => handleScreenTypeChange(policy.id!, checked)}
                                                 />
-                                                <Label className="text-xs">Bottom</Label>
+                                                <Label className="text-xs">{t('policies.action.bottom')}</Label>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -341,14 +343,14 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                                                     className="w-20"
                                                 />
                                             ) : (
-                                                <Badge variant="secondary">Bottom</Badge>
+                                                <Badge variant="secondary">{t('policies.action.bottom')}</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-center">
                                             {policy.isNew ? (
-                                                <Badge variant="secondary">New</Badge>
+                                                <Badge variant="secondary">{t('policies.action.new')}</Badge>
                                             ) : (
-                                                <Badge variant="outline">Saved</Badge>
+                                                <Badge variant="outline">{t('policies.action.saved')}</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-center">
@@ -364,7 +366,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </TooltipTrigger>
-                                                    <TooltipContent>Delete</TooltipContent>
+                                                    <TooltipContent>{t('common.delete')}</TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         </TableCell>
@@ -381,13 +383,13 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                 <Card className="border-dashed">
                     <CardContent className="py-10 text-center">
                         <Globe className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                        <h4 className="font-medium mb-2">No Web Application Policies</h4>
+                        <h4 className="font-medium mb-2">{t('policies.webApp.noAppPolicies')}</h4>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Add web apps to create shortcut configurations
+                            {t('policies.webApp.addAppsDesc')}
                         </p>
                         <Button variant="outline" onClick={() => setOpenAddModal(true)}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Add Web App
+                            {t('policies.webApp.addWebApp')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -396,11 +398,11 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
             {/* Action buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="outline" onClick={onCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button onClick={handleSave} disabled={loading || !hasChanges} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
 
@@ -413,10 +415,10 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Plus className="h-5 w-5" />
-                            Add Web Application
+                            {t('policies.webApp.addWebApplication')}
                         </DialogTitle>
                         <DialogDescription>
-                            Select a web application to add to this policy.
+                            {t('policies.webApp.configureAction')}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -425,15 +427,15 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                             <Alert>
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertDescription>
-                                    All available web applications have been added to this policy.
+                                    {t('policies.webApp.allAppsAdded')}
                                 </AlertDescription>
                             </Alert>
                         ) : (
                             <div className="space-y-2">
-                                <Label>Web Application</Label>
+                                <Label>{t('policies.table.webAppName')}</Label>
                                 <Select value={selectedWebAppId} onValueChange={setSelectedWebAppId}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select a web application" />
+                                        <SelectValue placeholder={t('policies.webApp.selectApp')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableWebAppsFiltered.map(app => (
@@ -452,11 +454,11 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setOpenAddModal(false)}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={handleAddWebApp} disabled={!selectedWebAppId}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Add Web Application
+                            {t('policies.webApp.addWebApplication')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -468,25 +470,25 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-destructive">
                             <Trash2 className="h-5 w-5" />
-                            Delete Web Application Policy
+                            {t('policies.webApp.deleteTitle')}
                         </DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete this web application policy? This action cannot be undone.
+                            {t('policies.webApp.deleteConfirm')}
                         </DialogDescription>
                     </DialogHeader>
                     <Alert>
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
-                            Deleting this policy will remove the web app shortcut configuration from this profile.
+                            {t('policies.webApp.deleteWarning')}
                         </AlertDescription>
                     </Alert>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button variant="destructive" onClick={confirmDelete}>
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

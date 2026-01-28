@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IosMailPolicy } from '@/types/models';
 import { Edit, Mail, Server, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MailPolicyProps {
     profileId: string;
@@ -40,6 +41,7 @@ const defaultMailPolicy: Partial<IosMailPolicy> = {
 };
 
 export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPolicyProps) {
+    const { t } = useLanguage();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     // If we have an ID, start in view mode. Otherwise, start in edit mode.
@@ -234,7 +236,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );

@@ -12,6 +12,7 @@ import {
 } from '@/types/models';
 import { Ban, Edit } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Composite interface for the editor
 export interface RestrictionsComposite {
@@ -30,6 +31,7 @@ interface RestrictionsPolicyProps {
 }
 
 export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }: RestrictionsPolicyProps) {
+    const { t } = useLanguage();
     // If we have an ID or any set data, start in view mode.
     // However, RestrictionsComposite doesn't have an ID itself. We check if initialData is provided.
     // Let's assume if initialData is provided, it's view mode.
@@ -165,7 +167,7 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -273,7 +275,7 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
                 <Button variant="outline" onClick={handleCancelClick}>
                     Cancel
                 </Button>
-                <Button onClick={() => onSave(data)}>Save Changes</Button>
+                <Button onClick={() => onSave(data)}>{t('common.save')}</Button>
             </CardFooter>
         </div>
     );

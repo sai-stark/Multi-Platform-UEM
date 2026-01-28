@@ -14,6 +14,7 @@ import {
 import { DeviceThemePolicy as DeviceThemePolicyType, IconSize, Platform, ScreenOrientation } from '@/types/models';
 import { Edit, Image, Loader2, Maximize, Palette, Save, Type } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DeviceThemePolicyProps {
     platform: Platform;
@@ -24,6 +25,7 @@ interface DeviceThemePolicyProps {
 }
 
 export function DeviceThemePolicy({ platform, profileId, initialData, onSave, onCancel }: DeviceThemePolicyProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [useBackgroundImage, setUseBackgroundImage] = useState(!!initialData?.backgroundImage);
@@ -75,19 +77,19 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
 
     const getIconSizeLabel = (size?: IconSize) => {
         switch (size) {
-            case 'SMALL': return 'Small';
-            case 'MEDIUM': return 'Medium';
-            case 'LARGE': return 'Large';
-            default: return 'Medium';
+            case 'SMALL': return t('deviceTheme.iconSize.small');
+            case 'MEDIUM': return t('deviceTheme.iconSize.medium');
+            case 'LARGE': return t('deviceTheme.iconSize.large');
+            default: return t('deviceTheme.iconSize.medium');
         }
     };
 
     const getOrientationLabel = (orientation?: ScreenOrientation) => {
         switch (orientation) {
-            case 'PORTRAIT': return 'Portrait';
-            case 'LANDSCAPE': return 'Landscape';
-            case 'NONE': return 'Auto (None)';
-            default: return 'Auto';
+            case 'PORTRAIT': return t('deviceTheme.screenOrientation.portrait');
+            case 'LANDSCAPE': return t('deviceTheme.screenOrientation.landscape');
+            case 'NONE': return t('deviceTheme.screenOrientation.auto');
+            default: return t('deviceTheme.screenOrientation.auto');
         }
     };
 
@@ -99,13 +101,13 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                         <Palette className="w-6 h-6 text-purple-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Device Theme</h3>
-                        <p className="text-sm text-muted-foreground">Launcher appearance configuration</p>
+                        <h3 className="text-xl font-semibold">{t('deviceTheme.title')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('deviceTheme.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Theme
+                    {t('deviceTheme.editTheme')}
                 </Button>
             </div>
 
@@ -114,14 +116,14 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Type className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">App Names Color</span>
+                            <span className="font-medium">{t('deviceTheme.appNamesColor')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div 
                                 className="w-6 h-6 rounded border"
                                 style={{ backgroundColor: formData.appNamesColor }}
                             />
-                            <span className="font-mono text-sm">{formData.appNamesColor || 'Not set'}</span>
+                            <span className="font-mono text-sm">{formData.appNamesColor || t('deviceTheme.notSet')}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -130,7 +132,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Maximize className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Icon Size</span>
+                            <span className="font-medium">{t('deviceTheme.iconSize')}</span>
                         </div>
                         <Badge variant="secondary">{getIconSizeLabel(formData.iconSize)}</Badge>
                     </CardContent>
@@ -140,7 +142,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Maximize className="w-5 h-5 text-green-500" />
-                            <span className="font-medium">Screen Orientation</span>
+                            <span className="font-medium">{t('deviceTheme.screenOrientation')}</span>
                         </div>
                         <Badge variant="secondary">{getOrientationLabel(formData.screenOrientation)}</Badge>
                     </CardContent>
@@ -150,7 +152,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Image className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">Background</span>
+                            <span className="font-medium">{t('deviceTheme.background')}</span>
                         </div>
                         {formData.backgroundImage ? (
                             <span className="text-sm truncate">{formData.backgroundImage}</span>
@@ -160,7 +162,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                                     className="w-6 h-6 rounded border"
                                     style={{ backgroundColor: formData.backgroundColor }}
                                 />
-                                <span className="font-mono text-sm">{formData.backgroundColor || 'Not set'}</span>
+                                <span className="font-mono text-sm">{formData.backgroundColor || t('deviceTheme.notSet')}</span>
                             </div>
                         )}
                     </CardContent>
@@ -171,7 +173,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                         <CardContent className="p-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <Type className="w-5 h-5 text-cyan-500" />
-                                <span className="font-medium">Screen Signature</span>
+                                <span className="font-medium">{t('deviceTheme.screenSignature')}</span>
                             </div>
                             <span className="text-sm">{formData.screenSignature}</span>
                         </CardContent>
@@ -180,7 +182,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -197,8 +199,8 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                         <Edit className="w-5 h-5 text-purple-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Device Theme</h3>
-                        <p className="text-sm text-muted-foreground">Configure launcher appearance for managed devices</p>
+                        <h3 className="text-lg font-medium">{t('deviceTheme.editTitle')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('deviceTheme.editSubtitle')}</p>
                     </div>
                 </div>
             </div>
@@ -206,7 +208,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
             <div className="space-y-6 p-1">
                 {/* App Names Color */}
                 <div className="space-y-2">
-                    <Label htmlFor="appNamesColor">App Names Color</Label>
+                    <Label htmlFor="appNamesColor">{t('deviceTheme.appNamesColor')}</Label>
                     <div className="flex gap-2">
                         <Input
                             id="appNamesColor"
@@ -224,13 +226,13 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                         />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        Color for app name labels on the launcher (hex format: #RRGGBB)
+                        {t('deviceTheme.appNamesColor.desc')}
                     </p>
                 </div>
 
                 {/* Icon Size */}
                 <div className="space-y-2">
-                    <Label>Icon Size</Label>
+                    <Label>{t('deviceTheme.iconSize')}</Label>
                     <Select
                         value={formData.iconSize}
                         onValueChange={(value: IconSize) => 
@@ -238,22 +240,22 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                         }
                     >
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select icon size" />
+                            <SelectValue placeholder={t('deviceTheme.iconSize')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="SMALL">Small</SelectItem>
-                            <SelectItem value="MEDIUM">Medium</SelectItem>
-                            <SelectItem value="LARGE">Large</SelectItem>
+                            <SelectItem value="SMALL">{t('deviceTheme.iconSize.small')}</SelectItem>
+                            <SelectItem value="MEDIUM">{t('deviceTheme.iconSize.medium')}</SelectItem>
+                            <SelectItem value="LARGE">{t('deviceTheme.iconSize.large')}</SelectItem>
                         </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                        Size of app icons on the launcher
+                        {t('deviceTheme.iconSize.desc')}
                     </p>
                 </div>
 
                 {/* Screen Orientation */}
                 <div className="space-y-2">
-                    <Label>Screen Orientation</Label>
+                    <Label>{t('deviceTheme.screenOrientation')}</Label>
                     <Select
                         value={formData.screenOrientation}
                         onValueChange={(value: ScreenOrientation) => 
@@ -261,22 +263,22 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                         }
                     >
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select orientation" />
+                            <SelectValue placeholder={t('deviceTheme.screenOrientation')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="NONE">Auto (Follow device)</SelectItem>
-                            <SelectItem value="PORTRAIT">Portrait</SelectItem>
-                            <SelectItem value="LANDSCAPE">Landscape</SelectItem>
+                            <SelectItem value="NONE">{t('deviceTheme.screenOrientation.auto')}</SelectItem>
+                            <SelectItem value="PORTRAIT">{t('deviceTheme.screenOrientation.portrait')}</SelectItem>
+                            <SelectItem value="LANDSCAPE">{t('deviceTheme.screenOrientation.landscape')}</SelectItem>
                         </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                        Lock screen orientation or allow device to auto-rotate
+                        {t('deviceTheme.screenOrientation.desc')}
                     </p>
                 </div>
 
                 {/* Background Type Toggle */}
                 <div className="space-y-2">
-                    <Label>Background Type</Label>
+                    <Label>{t('deviceTheme.backgroundType')}</Label>
                     <div className="flex gap-2">
                         <Button
                             type="button"
@@ -285,7 +287,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                             onClick={() => setUseBackgroundImage(false)}
                         >
                             <Palette className="w-4 h-4 mr-2" />
-                            Solid Color
+                            {t('deviceTheme.solidColor')}
                         </Button>
                         <Button
                             type="button"
@@ -294,7 +296,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                             onClick={() => setUseBackgroundImage(true)}
                         >
                             <Image className="w-4 h-4 mr-2" />
-                            Image URL
+                            {t('deviceTheme.imageUrl')}
                         </Button>
                     </div>
                 </div>
@@ -302,7 +304,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                 {/* Background Color or Image */}
                 {!useBackgroundImage ? (
                     <div className="space-y-2">
-                        <Label htmlFor="backgroundColor">Background Color</Label>
+                        <Label htmlFor="backgroundColor">{t('deviceTheme.backgroundColor')}</Label>
                         <div className="flex gap-2">
                             <Input
                                 id="backgroundColor"
@@ -322,7 +324,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        <Label htmlFor="backgroundImage">Background Image URL</Label>
+                        <Label htmlFor="backgroundImage">{t('deviceTheme.backgroundImage')}</Label>
                         <Input
                             id="backgroundImage"
                             value={formData.backgroundImage || ''}
@@ -331,14 +333,14 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                             type="url"
                         />
                         <p className="text-xs text-muted-foreground">
-                            URL to the wallpaper image for the device launcher
+                            {t('deviceTheme.backgroundImage.desc')}
                         </p>
                     </div>
                 )}
 
                 {/* Screen Signature */}
                 <div className="space-y-2">
-                    <Label htmlFor="screenSignature">Screen Signature (Optional)</Label>
+                    <Label htmlFor="screenSignature">{t('deviceTheme.screenSignature')}</Label>
                     <Input
                         id="screenSignature"
                         value={formData.screenSignature || ''}
@@ -346,18 +348,18 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                         placeholder="Company managed device"
                     />
                     <p className="text-xs text-muted-foreground">
-                        Text displayed on the device screen (e.g., organization branding)
+                        {t('deviceTheme.screenSignature.desc')}
                     </p>
                 </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

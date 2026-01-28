@@ -101,6 +101,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Animation variants
 const containerVariants = {
@@ -116,6 +117,7 @@ const containerVariants = {
 export default function EditProfilePolicies() {
   const { platform, id } = useParams<{ platform: string; id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<FullProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePolicyType, setActivePolicyType] = useState<string | null>(null);
@@ -257,7 +259,7 @@ export default function EditProfilePolicies() {
   if (loading) {
     return (
       <MainLayout>
-        <LoadingAnimation message="Fetching profile policies..." />
+        <LoadingAnimation message={t('editPolicies.loading')} />
       </MainLayout>
     );
   }
@@ -266,7 +268,7 @@ export default function EditProfilePolicies() {
     return (
       <MainLayout>
         <div className="p-8 text-center text-muted-foreground">
-          Profile not found.
+          {t('profiles.profileNotFound')}
         </div>
       </MainLayout>
     );
@@ -291,11 +293,10 @@ export default function EditProfilePolicies() {
           <div className="flex-1">
             <h1 className="text-2xl font-bold flex items-center gap-3">
               {getPlatformIcon(profile.platform)}
-              Edit Policies: {profile.name}
+              {t('editPolicies.title')}: {profile.name}
             </h1>
             <p className="text-muted-foreground">
-              Configure device restrictions, applications, and security
-              policies.
+              {t('editPolicies.subtitle')}
             </p>
           </div>
         </motion.div>
@@ -804,6 +805,8 @@ function PolicyCardGrid({
   mdmPolicy,
   onSelectPolicy,
 }: PolicyCardGridProps) {
+  const { t } = useLanguage();
+  
   // Check which policies are configured (active)
   const hasPasscode = !!passcodePolicy;
   const hasWifi = !!wifiPolicy;
@@ -841,37 +844,37 @@ function PolicyCardGrid({
 
   // iOS available policies (not configured)
   const iosAvailablePolicies: { type: string; title: string; description: string; icon: React.ReactNode; show: boolean }[] = [
-    { type: 'passcode', title: 'Passcode', description: 'Security requirements', icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasPasscode },
-    { type: 'wifi', title: 'WiFi', description: 'Network configuration', icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWifi },
-    { type: 'mail', title: 'Mail', description: 'Email configuration', icon: <Mail className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasMail },
-    { type: 'restrictions', title: 'Restrictions', description: 'Device restrictions', icon: <Ban className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasRestrictions },
-    { type: 'webApps', title: 'Web Apps', description: 'Web application links', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWebApps },
-    { type: 'notifications', title: 'Notifications', description: 'Notification settings', icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasNotifications },
-    { type: 'lockScreenMessage', title: 'Lock Screen', description: 'Lock screen message', icon: <MessageSquare className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasLockScreen },
+    { type: 'passcode', title: t('policies.ios.passcode'), description: t('policies.ios.passcode.desc'), icon: <Shield className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasPasscode },
+    { type: 'wifi', title: t('policies.ios.wifi'), description: t('policies.ios.wifi.desc'), icon: <Wifi className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWifi },
+    { type: 'mail', title: t('policies.ios.mail'), description: t('policies.ios.mail.desc'), icon: <Mail className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasMail },
+    { type: 'restrictions', title: t('policies.ios.restrictions'), description: t('policies.ios.restrictions.desc'), icon: <Ban className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasRestrictions },
+    { type: 'webApps', title: t('policies.ios.webApps'), description: t('policies.ios.webApps.desc'), icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWebApps },
+    { type: 'notifications', title: t('policies.ios.notifications'), description: t('policies.ios.notifications.desc'), icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasNotifications },
+    { type: 'lockScreenMessage', title: t('policies.ios.lockScreen'), description: t('policies.ios.lockScreen.desc'), icon: <MessageSquare className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasLockScreen },
   ].filter(p => p.show).sort((a, b) => a.title.localeCompare(b.title));
 
   // Android Policies (not restrictions) - sorted alphabetically
   const androidPolicies = [
-    { type: 'androidApplication', title: 'Applications', description: 'Android app management', icon: <Smartphone className="w-5 h-5" />, configured: hasApplications },
-    { type: 'commonSettings', title: 'Common Settings', description: 'Device naming & settings', icon: <Settings className="w-5 h-5" />, configured: false },
-    { type: 'deviceTheme', title: 'Device Theme', description: 'Light/Dark mode', icon: <Palette className="w-5 h-5" />, configured: false },
-    { type: 'enrollment', title: 'Enrollment', description: 'Enrollment settings', icon: <UserPlus className="w-5 h-5" />, configured: false },
-    { type: 'androidWebApp', title: 'Web Apps', description: 'Web app shortcuts', icon: <Globe className="w-5 h-5" />, configured: hasWebApps },
+    { type: 'androidApplication', title: t('policies.android.applications'), description: t('policies.android.applications.desc'), icon: <Smartphone className="w-5 h-5" />, configured: hasApplications },
+    { type: 'commonSettings', title: t('policies.android.commonSettings'), description: t('policies.android.commonSettings.desc'), icon: <Settings className="w-5 h-5" />, configured: false },
+    { type: 'deviceTheme', title: t('policies.android.deviceTheme'), description: t('policies.android.deviceTheme.desc'), icon: <Palette className="w-5 h-5" />, configured: false },
+    { type: 'enrollment', title: t('policies.android.enrollment'), description: t('policies.android.enrollment.desc'), icon: <UserPlus className="w-5 h-5" />, configured: false },
+    { type: 'androidWebApp', title: t('policies.android.webApps'), description: t('policies.android.webApps.desc'), icon: <Globe className="w-5 h-5" />, configured: hasWebApps },
   ].sort((a, b) => a.title.localeCompare(b.title));
 
   // Android Restrictions - sorted alphabetically
   const androidRestrictions = [
-    { type: 'connectivityRestriction', title: 'Connectivity', description: 'Bluetooth control', icon: <Wifi className="w-5 h-5" />, configured: hasConnectivityRestriction },
-    { type: 'dateTimeRestriction', title: 'Date/Time', description: 'Automatic time', icon: <Bell className="w-5 h-5" />, configured: hasDateTimeRestriction },
-    { type: 'displayRestriction', title: 'Display', description: 'Screen timeout', icon: <Monitor className="w-5 h-5" />, configured: hasDisplayRestriction },
-    { type: 'kioskRestriction', title: 'Kiosk', description: 'Lock to specific apps', icon: <Monitor className="w-5 h-5" />, configured: hasKioskRestriction },
-    { type: 'locationRestriction', title: 'Location', description: 'GPS controls', icon: <Globe className="w-5 h-5" />, configured: hasLocationRestriction },
-    { type: 'miscRestriction', title: 'Miscellaneous', description: 'Factory reset', icon: <Settings className="w-5 h-5" />, configured: hasMiscRestriction },
-    { type: 'networkRestriction', title: 'Network', description: 'Wi-Fi control', icon: <Wifi className="w-5 h-5" />, configured: hasNetworkRestriction },
-    { type: 'phoneRestriction', title: 'Phone', description: 'Outgoing calls', icon: <Smartphone className="w-5 h-5" />, configured: hasPhoneRestriction },
-    { type: 'securityRestriction', title: 'Security', description: 'Camera & screen capture', icon: <Shield className="w-5 h-5" />, configured: hasSecurityRestriction },
-    { type: 'storageRestriction', title: 'Storage', description: 'USB mass storage', icon: <Server className="w-5 h-5" />, configured: hasStorageRestriction },
-    { type: 'tetheringRestriction', title: 'Tethering', description: 'Wi-Fi hotspot control', icon: <Wifi className="w-5 h-5" />, configured: hasTetheringRestriction },
+    { type: 'connectivityRestriction', title: t('restrictions.android.connectivity'), description: t('restrictions.android.connectivity.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasConnectivityRestriction },
+    { type: 'dateTimeRestriction', title: t('restrictions.android.dateTime'), description: t('restrictions.android.dateTime.desc'), icon: <Bell className="w-5 h-5" />, configured: hasDateTimeRestriction },
+    { type: 'displayRestriction', title: t('restrictions.android.display'), description: t('restrictions.android.display.desc'), icon: <Monitor className="w-5 h-5" />, configured: hasDisplayRestriction },
+    { type: 'kioskRestriction', title: t('restrictions.android.kiosk'), description: t('restrictions.android.kiosk.desc'), icon: <Monitor className="w-5 h-5" />, configured: hasKioskRestriction },
+    { type: 'locationRestriction', title: t('restrictions.android.location'), description: t('restrictions.android.location.desc'), icon: <Globe className="w-5 h-5" />, configured: hasLocationRestriction },
+    { type: 'miscRestriction', title: t('restrictions.android.miscellaneous'), description: t('restrictions.android.miscellaneous.desc'), icon: <Settings className="w-5 h-5" />, configured: hasMiscRestriction },
+    { type: 'networkRestriction', title: t('restrictions.android.network'), description: t('restrictions.android.network.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasNetworkRestriction },
+    { type: 'phoneRestriction', title: t('restrictions.android.phone'), description: t('restrictions.android.phone.desc'), icon: <Smartphone className="w-5 h-5" />, configured: hasPhoneRestriction },
+    { type: 'securityRestriction', title: t('restrictions.android.security'), description: t('restrictions.android.security.desc'), icon: <Shield className="w-5 h-5" />, configured: hasSecurityRestriction },
+    { type: 'storageRestriction', title: t('restrictions.android.storage'), description: t('restrictions.android.storage.desc'), icon: <Server className="w-5 h-5" />, configured: hasStorageRestriction },
+    { type: 'tetheringRestriction', title: t('restrictions.android.tethering'), description: t('restrictions.android.tethering.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasTetheringRestriction },
   ].sort((a, b) => a.title.localeCompare(b.title));
 
   // Split Android items into configured vs available
@@ -1070,8 +1073,8 @@ function PolicyCardGrid({
       {/* iOS: Available Policies Section */}
       {isIos && availablePolicies.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-muted-foreground">Available Policies</h3>
-          <p className="text-sm text-muted-foreground/70">Click on a policy to configure it</p>
+          <h3 className="text-lg font-semibold text-muted-foreground">{t('policyEditor.availablePolicies')}</h3>
+          <p className="text-sm text-muted-foreground/70">{t('policyEditor.clickToConfigurePolicy')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {availablePolicies.map((policy) => (
               <AvailablePolicyCard
@@ -1113,7 +1116,7 @@ function PolicyCardGrid({
       {/* Android: Configured Policies Section */}
       {isAndroid && configuredAndroidPolicies.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Configured Policies</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('policyEditor.configuredPolicies')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {configuredAndroidPolicies.map((policy) => (
               <UniformPolicyCard key={policy.type}>
@@ -1142,7 +1145,7 @@ function PolicyCardGrid({
       {/* Android: Configured Restrictions Section */}
       {isAndroid && configuredAndroidRestrictions.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Configured Restrictions</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('policyEditor.configuredRestrictions')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {configuredAndroidRestrictions.map((restriction) => (
               <UniformPolicyCard key={restriction.type}>
@@ -1171,8 +1174,8 @@ function PolicyCardGrid({
       {/* Android: Available Policies Section */}
       {isAndroid && availableAndroidPolicies.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-muted-foreground">Available Policies</h3>
-          <p className="text-sm text-muted-foreground/70">Click on a policy to configure it</p>
+          <h3 className="text-lg font-semibold text-muted-foreground">{t('policyEditor.availablePolicies')}</h3>
+          <p className="text-sm text-muted-foreground/70">{t('policyEditor.clickToConfigurePolicy')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {availableAndroidPolicies.map((policy) => (
               <AvailablePolicyCard
@@ -1190,8 +1193,8 @@ function PolicyCardGrid({
       {/* Android: Available Restrictions Section */}
       {isAndroid && availableAndroidRestrictions.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-muted-foreground">Available Restrictions</h3>
-          <p className="text-sm text-muted-foreground/70">Click on a restriction to configure it</p>
+          <h3 className="text-lg font-semibold text-muted-foreground">{t('policyEditor.availableRestrictions')}</h3>
+          <p className="text-sm text-muted-foreground/70">{t('policyEditor.clickToConfigureRestriction')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {availableAndroidRestrictions.map((restriction) => (
               <AvailablePolicyCard

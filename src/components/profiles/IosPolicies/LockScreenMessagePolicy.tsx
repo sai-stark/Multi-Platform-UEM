@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LockScreenMessagePolicy as LockScreenMessagePolicyType, Platform } from '@/types/models';
 import { Edit, Loader2, MessageSquare, Plus, Tag, Text, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LockScreenMessagePolicyProps {
     platform: Platform;
@@ -16,6 +17,7 @@ interface LockScreenMessagePolicyProps {
 }
 
 export function LockScreenMessagePolicy({ platform, profileId, initialData }: LockScreenMessagePolicyProps) {
+    const { t } = useLanguage();
     const { toast } = useToast();
     const [policy, setPolicy] = useState<LockScreenMessagePolicyType | null>(null);
     const [loading, setLoading] = useState(false);
@@ -212,7 +214,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData }: Lo
                             </p>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>{t('common.cancel')}</Button>
                             <Button type="submit">Save Configuration</Button>
                         </DialogFooter>
                     </form>
@@ -275,7 +277,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData }: Lo
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>{t('common.close')}</Button>
                         <Button onClick={() => { setIsViewDialogOpen(false); handleOpenDialog(policy!); }}>
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Configuration

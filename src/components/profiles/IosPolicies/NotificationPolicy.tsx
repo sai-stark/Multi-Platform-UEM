@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { NotificationPolicy as NotificationPolicyType, Platform } from '@/types/models';
 import { AlertTriangle, Bell, Car, CheckCircle2, Circle, Edit, Eye, Layout, Loader2, Lock, MessageSquare, Plus, Speaker, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NotificationPolicyProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface NotificationPolicyProps {
 }
 
 export function NotificationPolicy({ platform, profileId, initialData }: NotificationPolicyProps) {
+    const { t } = useLanguage();
     const { toast } = useToast();
     const [policies, setPolicies] = useState<NotificationPolicyType[]>(initialData || []);
     const [loading, setLoading] = useState(false);
@@ -309,8 +311,8 @@ export function NotificationPolicy({ platform, profileId, initialData }: Notific
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                            <Button type="submit">Save Policy</Button>
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>{t('common.cancel')}</Button>
+                            <Button type="submit">{t('common.save')}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -432,7 +434,7 @@ export function NotificationPolicy({ platform, profileId, initialData }: Notific
                     </div>
 
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="ghost" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                        <Button variant="ghost" onClick={() => setIsViewDialogOpen(false)}>{t('common.close')}</Button>
                         <Button onClick={() => { setIsViewDialogOpen(false); handleOpenDialog(viewingPolicy!); }}>
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Configuration

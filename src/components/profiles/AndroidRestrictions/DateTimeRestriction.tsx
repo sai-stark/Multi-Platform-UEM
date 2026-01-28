@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { DateTimeRestriction as DateTimeRestrictionType, Platform } from '@/types/models';
 import { Clock, Edit, Globe, Loader2, Save, Settings } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DateTimeRestrictionProps {
     platform: Platform;
@@ -25,6 +26,7 @@ interface DateTimeRestrictionProps {
 }
 
 export function DateTimeRestriction({ platform, profileId, initialData, onSave, onCancel }: DateTimeRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -66,9 +68,9 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
     const getDateTimeLabel = () => {
         if (isManualDateTime) {
             const timezone = (formData.dateTimePolicy as any)?.timezone;
-            return `Manual${timezone ? ` (${timezone})` : ''}`;
+            return `${t('restrictions.dateTime.manual')}${timezone ? ` (${timezone})` : ''}`;
         }
-        return 'Network Provided';
+        return t('restrictions.dateTime.networkProvided');
     };
 
     const renderView = () => (
@@ -79,13 +81,13 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
                         <Clock className="w-6 h-6 text-cyan-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Date/Time Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Time synchronization settings</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.dateTime')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.dateTime.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -94,13 +96,13 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Clock className="w-5 h-5 text-cyan-500" />
-                            <span className="font-medium">Date/Time Source</span>
+                            <span className="font-medium">{t('restrictions.dateTime.source')}</span>
                         </div>
                         <Badge variant="secondary">{getDateTimeLabel()}</Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {isManualDateTime 
-                                ? 'Time is set manually with a fixed timezone' 
-                                : 'Time is synchronized from the network'}
+                                ? t('restrictions.dateTime.manualDesc') 
+                                : t('restrictions.dateTime.networkDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -109,17 +111,17 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Settings className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Date/Time Settings Access</span>
+                            <span className="font-medium">{t('restrictions.dateTime.settingsAccess')}</span>
                         </div>
                         <Badge variant={formData.disableDateTimeSetting ? 'default' : 'secondary'}>
-                            {formData.disableDateTimeSetting ? 'Locked' : 'User Accessible'}
+                            {formData.disableDateTimeSetting ? t('restrictions.locked') : t('restrictions.dateTime.userAccessible')}
                         </Badge>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -136,15 +138,15 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
                         <Edit className="w-5 h-5 text-cyan-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Date/Time Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure time synchronization policy</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.dateTime')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.dateTime.editDesc')}</p>
                     </div>
                 </div>
             </div>
 
             <div className="space-y-6 p-1">
                 <div className="space-y-2">
-                    <Label>Date/Time Policy</Label>
+                    <Label>{t('restrictions.dateTime.policy')}</Label>
                     <Select
                         value={formData.dateTimePolicy?.dateTimeSetting || 'NetworkProvidedDateTime'}
                         onValueChange={(value) => {
@@ -162,19 +164,19 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
                         }}
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select date/time policy" />
+                            <SelectValue placeholder={t('restrictions.dateTime.policy')} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="NetworkProvidedDateTime">
                                 <div className="flex items-center gap-2">
                                     <Globe className="w-4 h-4 text-blue-500" />
-                                    Network Provided - Sync from network
+                                    {t('restrictions.dateTime.networkProvided')} - {t('restrictions.dateTime.syncFromNetwork')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="ManualDateTime">
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-cyan-500" />
-                                    Manual - Set timezone manually
+                                    {t('restrictions.dateTime.manual')} - {t('restrictions.dateTime.setTimezoneManually')}
                                 </div>
                             </SelectItem>
                         </SelectContent>
@@ -183,7 +185,7 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
 
                 {isManualDateTime && (
                     <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                        <Label htmlFor="timezone">Timezone</Label>
+                        <Label htmlFor="timezone">{t('restrictions.dateTime.timezone')}</Label>
                         <Input
                             id="timezone"
                             value={(formData.dateTimePolicy as any)?.timezone || ''}
@@ -197,7 +199,7 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
                             placeholder="e.g., Asia/Kolkata, America/New_York"
                         />
                         <p className="text-xs text-muted-foreground">
-                            IANA timezone identifier
+                            {t('restrictions.dateTime.timezoneDesc')}
                         </p>
                     </div>
                 )}
@@ -207,9 +209,9 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
                         <Label className="flex items-start gap-3">
                             <Settings className="w-5 h-5 mt-0.5 text-blue-500" />
                             <div>
-                                <span className="font-medium">Disable Date/Time Setting</span>
+                                <span className="font-medium">{t('restrictions.dateTime.disableSetting')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Prevent users from changing date/time settings
+                                    {t('restrictions.dateTime.disableSettingDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -223,11 +225,11 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

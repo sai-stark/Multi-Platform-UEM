@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { PhoneRestriction as PhoneRestrictionType, Platform } from '@/types/models';
 import { Edit, Loader2, MessageSquare, Phone, PhoneOff, Save } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PhoneRestrictionProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface PhoneRestrictionProps {
 }
 
 export function PhoneRestriction({ platform, profileId, initialData, onSave, onCancel }: PhoneRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -61,13 +63,13 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                         <Phone className="w-6 h-6 text-green-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Phone Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Call and SMS controls</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.phone')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.phone.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -79,15 +81,15 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                                 ? <PhoneOff className="w-5 h-5 text-red-500" />
                                 : <Phone className="w-5 h-5 text-green-500" />
                             }
-                            <span className="font-medium">Phone Calls</span>
+                            <span className="font-medium">{t('restrictions.phone.calls')}</span>
                         </div>
                         <Badge variant={formData.disableCalls ? 'destructive' : 'default'}>
-                            {formData.disableCalls ? 'Disabled' : 'Allowed'}
+                            {formData.disableCalls ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableCalls 
-                                ? 'Users cannot make or receive calls' 
-                                : 'Phone calls are allowed'}
+                                ? t('restrictions.phone.callsDisabledDesc') 
+                                : t('restrictions.phone.callsAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -96,22 +98,22 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <MessageSquare className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">SMS Messages</span>
+                            <span className="font-medium">{t('restrictions.phone.sms')}</span>
                         </div>
                         <Badge variant={formData.disableSms ? 'destructive' : 'default'}>
-                            {formData.disableSms ? 'Disabled' : 'Allowed'}
+                            {formData.disableSms ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.disableSms 
-                                ? 'Users cannot send or receive SMS' 
-                                : 'SMS messaging is allowed'}
+                                ? t('restrictions.phone.smsDisabledDesc') 
+                                : t('restrictions.phone.smsAllowedDesc')}
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -128,8 +130,8 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                         <Edit className="w-5 h-5 text-green-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Phone Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure call and SMS policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.phone')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.phone.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -139,9 +141,9 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <PhoneOff className="w-5 h-5 mt-0.5 text-red-500" />
                         <div>
-                            <span className="font-medium">Disable Calls</span>
+                            <span className="font-medium">{t('restrictions.phone.disableCalls')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block all incoming and outgoing phone calls
+                                {t('restrictions.phone.disableCallsDesc')}
                             </p>
                         </div>
                     </Label>
@@ -155,9 +157,9 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
                     <Label className="flex items-start gap-3">
                         <MessageSquare className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Disable SMS</span>
+                            <span className="font-medium">{t('restrictions.phone.disableSms')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block sending and receiving text messages
+                                {t('restrictions.phone.disableSmsDesc')}
                             </p>
                         </div>
                     </Label>
@@ -170,11 +172,11 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

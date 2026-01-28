@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { EnrollmentPolicy as EnrollmentPolicyType, Platform, WifiSecurity } from '@/types/models';
 import { Edit, Key, Loader2, Monitor, Save, Signal, Smartphone, UserPlus, Wifi } from 'lucide-react';
 import { useState } from 'react';
@@ -25,6 +26,7 @@ interface EnrollmentPolicyProps {
 }
 
 export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onCancel }: EnrollmentPolicyProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [configureWifi, setConfigureWifi] = useState(!!initialData?.wifiHotspot);
@@ -76,13 +78,13 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                         <UserPlus className="w-6 h-6 text-green-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Enrollment Policy</h3>
-                        <p className="text-sm text-muted-foreground">Device enrollment settings</p>
+                        <h3 className="text-xl font-semibold">{t('policies.android.enrollment')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('policies.android.enrollment.desc')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Policy
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -91,15 +93,15 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Monitor className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">Kiosk Mode</span>
+                            <span className="font-medium">{t('restrictions.android.kiosk')}</span>
                         </div>
                         <Badge variant={formData.isKioskMode ? 'default' : 'secondary'}>
-                            {formData.isKioskMode ? 'Enabled' : 'Disabled'}
+                            {formData.isKioskMode ? t('common.enabled') : t('common.disabled')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
                             {formData.isKioskMode 
-                                ? 'Device will be locked to managed apps' 
-                                : 'Normal device operation'}
+                                ? t('policies.android.enrollment.kioskDesc') 
+                                : t('policies.android.enrollment.normalDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -108,10 +110,10 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Signal className="w-5 h-5 text-green-500" />
-                            <span className="font-medium">Mobile Data</span>
+                            <span className="font-medium">{t('policies.android.enrollment.mobileData')}</span>
                         </div>
                         <Badge variant={formData.useMobileData ? 'default' : 'secondary'}>
-                            {formData.useMobileData ? 'Use for Enrollment' : 'Wi-Fi Only'}
+                            {formData.useMobileData ? t('policies.android.enrollment.useForEnrollment') : t('policies.android.enrollment.wifiOnly')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -120,7 +122,7 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Wifi className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Wi-Fi Configuration</span>
+                            <span className="font-medium">{t('policy.wifi')}</span>
                         </div>
                         {formData.wifiHotspot ? (
                             <div className="space-y-1">
@@ -128,14 +130,14 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                                 <Badge variant="secondary" className="ml-2">{formData.wifiHotspot.security}</Badge>
                             </div>
                         ) : (
-                            <Badge variant="secondary">Not configured</Badge>
+                            <Badge variant="secondary">{t('common.notConfigured')}</Badge>
                         )}
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -152,8 +154,8 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                         <Edit className="w-5 h-5 text-green-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Enrollment Policy</h3>
-                        <p className="text-sm text-muted-foreground">Configure device enrollment settings</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('policies.android.enrollment')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('policies.android.enrollment.desc')}</p>
                     </div>
                 </div>
             </div>
@@ -165,9 +167,9 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                         <Label className="flex items-start gap-3">
                             <Monitor className="w-5 h-5 mt-0.5 text-orange-500" />
                             <div>
-                                <span className="font-medium">Kiosk Mode</span>
+                                <span className="font-medium">{t('restrictions.android.kiosk')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Lock device to managed applications only
+                                    {t('restrictions.android.kiosk.desc')}
                                 </p>
                             </div>
                         </Label>
@@ -184,9 +186,9 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                         <Label className="flex items-start gap-3">
                             <Signal className="w-5 h-5 mt-0.5 text-green-500" />
                             <div>
-                                <span className="font-medium">Use Mobile Data</span>
+                                <span className="font-medium">{t('policies.android.enrollment.mobileData')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Allow enrollment over cellular data
+                                    {t('policies.android.enrollment.mobileDataDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -203,9 +205,9 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                         <Label className="flex items-start gap-3">
                             <Wifi className="w-5 h-5 mt-0.5 text-blue-500" />
                             <div>
-                                <span className="font-medium">Configure Wi-Fi</span>
+                                <span className="font-medium">{t('policies.android.enrollment.configureWifi')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Pre-configure Wi-Fi for enrollment
+                                    {t('policies.android.enrollment.configureWifiDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -229,11 +231,11 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                     <div className="space-y-4 p-4 rounded-xl border bg-muted/30">
                         <h4 className="font-medium flex items-center gap-2">
                             <Wifi className="w-4 h-4 text-blue-500" />
-                            Wi-Fi Hotspot Configuration
+                            {t('policies.android.enrollment.wifiConfig')}
                         </h4>
                         
                         <div className="space-y-2">
-                            <Label htmlFor="ssid">Network Name (SSID)</Label>
+                            <Label htmlFor="ssid">{t('policy.field.ssid')}</Label>
                             <div className="relative">
                                 <Smartphone className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                                 <Input
@@ -251,7 +253,7 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Security Type</Label>
+                            <Label>{t('policies.android.enrollment.securityType')}</Label>
                             <Select
                                 value={formData.wifiHotspot?.security || 'WPA'}
                                 onValueChange={(value: WifiSecurity) => setFormData(prev => ({
@@ -260,7 +262,7 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                                 }))}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select security type" />
+                                    <SelectValue placeholder={t('policies.android.enrollment.selectSecurityType')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="WPA">WPA/WPA2</SelectItem>
@@ -271,7 +273,7 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t('common.password')}</Label>
                             <div className="relative">
                                 <Key className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                                 <Input
@@ -283,7 +285,7 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                                         ...prev,
                                         wifiHotspot: { ...prev.wifiHotspot!, password: e.target.value }
                                     }))}
-                                    placeholder="Enter Wi-Fi password"
+                                    placeholder={t('policies.android.enrollment.enterPassword')}
                                     required={configureWifi}
                                 />
                             </div>
@@ -294,11 +296,11 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('common.save')}
                 </Button>
             </div>
         </form>

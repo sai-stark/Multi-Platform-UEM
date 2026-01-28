@@ -296,7 +296,7 @@ const Profiles = () => {
     const baseColumns: Column<Profile>[] = [
       {
         key: "name",
-        header: "Profile Name",
+        header: t('profiles.table.name'),
         accessor: (item) => item.name,
         sortable: true,
         searchable: true,
@@ -314,7 +314,7 @@ const Profiles = () => {
       },
       {
         key: "description",
-        header: "Description",
+        header: t('profiles.table.description'),
         accessor: (item) => item.description,
         sortable: false,
         searchable: true,
@@ -326,7 +326,7 @@ const Profiles = () => {
       },
       {
         key: "platform",
-        header: "Platform",
+        header: t('profiles.table.platform'),
         accessor: (item) => item.platform || "",
         sortable: true,
         filterable: true,
@@ -356,7 +356,7 @@ const Profiles = () => {
       },
       {
         key: "status",
-        header: "Status",
+        header: t('profiles.table.status'),
         accessor: (item) => item.status || "DRAFT",
         sortable: true,
         filterable: true,
@@ -394,7 +394,7 @@ const Profiles = () => {
       },
       {
         key: "version",
-        header: "Version",
+        header: t('profiles.table.version'),
         accessor: (item) => item.version || 0,
         sortable: true,
         render: (value, item) => {
@@ -411,7 +411,7 @@ const Profiles = () => {
       },
       {
         key: "deviceCount",
-        header: "Devices",
+        header: t('profiles.table.devices'),
         accessor: (item) => item.deviceCount || 0,
         sortable: true,
         render: (value, item) => {
@@ -424,7 +424,7 @@ const Profiles = () => {
       },
       {
         key: "modificationTime",
-        header: "Last Modified",
+        header: t('profiles.table.lastModified'),
         accessor: (item) => item.modificationTime || "",
         sortable: true,
         hidden: true,
@@ -436,7 +436,7 @@ const Profiles = () => {
       },
       {
         key: "creationTime",
-        header: "Created",
+        header: t('profiles.table.created'),
         accessor: (item) => item.creationTime || "",
         sortable: true,
         hidden: true,
@@ -448,7 +448,7 @@ const Profiles = () => {
       },
       {
         key: "createdBy",
-        header: "Created By",
+        header: t('profiles.table.createdBy'),
         accessor: (item) => item.createdBy || "",
         sortable: true,
         hidden: true,
@@ -460,7 +460,7 @@ const Profiles = () => {
       },
       {
         key: "lastModifiedBy",
-        header: "Last Modified By",
+        header: t('profiles.table.lastModifiedBy'),
         accessor: (item) => item.lastModifiedBy || "",
         sortable: true,
         hidden: true,
@@ -510,14 +510,14 @@ const Profiles = () => {
       <>
         <DropdownMenuItem onClick={() => handleEditProfile(profile)}>
           <Pencil className="w-4 h-4 mr-2" />
-          Edit Profile
+          {t('profiles.actions.edit')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => handlePublishProfile(profile)}
           disabled={!isDraft}
         >
           <Send className="w-4 h-4 mr-2" />
-          Publish Profile
+          {t('profiles.actions.publish')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() =>
@@ -525,11 +525,11 @@ const Profiles = () => {
           }
         >
           <Edit className="w-4 h-4 mr-2" />
-          Edit Policies
+          {t('profiles.actions.editPolicies')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleCloneProfile(profile)}>
           <Copy className="w-4 h-4 mr-2" />
-          Clone Profile
+          {t('profiles.actions.clone')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => handleDeleteProfile(profile)}
@@ -537,7 +537,7 @@ const Profiles = () => {
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="w-4 h-4 mr-2" />
-          Delete Profile
+          {t('profiles.actions.delete')}
         </DropdownMenuItem>
       </>
     );
@@ -549,14 +549,14 @@ const Profiles = () => {
         {/* Page Header */}
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Profiles</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('profiles.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Manage configuration profiles and policies for devices
+              {t('profiles.subtitle')}
             </p>
           </div>
           <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
             <Plus className="w-4 h-4" />
-            Create Profile
+            {t('profiles.createProfile')}
           </Button>
         </header>
 
@@ -619,7 +619,7 @@ const Profiles = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.total}</p>
-                <p className="text-sm text-muted-foreground">Total Profiles</p>
+                <p className="text-sm text-muted-foreground">{t('profiles.totalProfiles')}</p>
               </div>
             </div>
           </article>
@@ -631,7 +631,7 @@ const Profiles = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.published}</p>
-                <p className="text-sm text-muted-foreground">Published</p>
+                <p className="text-sm text-muted-foreground">{t('profiles.published')}</p>
               </div>
             </div>
           </article>
@@ -643,7 +643,7 @@ const Profiles = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.draft}</p>
-                <p className="text-sm text-muted-foreground">Draft</p>
+                <p className="text-sm text-muted-foreground">{t('profiles.draft')}</p>
               </div>
             </div>
           </article>
@@ -673,8 +673,8 @@ const Profiles = () => {
           <article className="panel flex items-center justify-center p-6 text-muted-foreground bg-muted/20 border-2 border-dashed">
             <div className="text-center">
               <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Compliance Stats</p>
-              <p className="text-xs text-muted-foreground/70">Coming soon</p>
+              <p>{t('profiles.complianceStats')}</p>
+              <p className="text-xs text-muted-foreground/70">{t('profiles.comingSoon')}</p>
             </div>
           </article>
         </section>
@@ -685,8 +685,8 @@ const Profiles = () => {
             data={profiles}
             columns={columns}
             loading={loading}
-            globalSearchPlaceholder="Search profiles..."
-            emptyMessage="No profiles found."
+            globalSearchPlaceholder={t('profiles.searchPlaceholder')}
+            emptyMessage={t('profiles.noProfilesFound')}
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { IosMailPolicy } from '@/types/models';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 import { Mail } from 'lucide-react';
 import { BasePolicyCardProps, itemVariants } from './types';
@@ -10,6 +11,8 @@ interface MailPolicyCardProps extends BasePolicyCardProps {
 }
 
 export function MailPolicyCard({ policy, onClick }: MailPolicyCardProps) {
+    const { t } = useLanguage();
+    
     return (
         <motion.div variants={itemVariants}>
             <Card
@@ -18,12 +21,12 @@ export function MailPolicyCard({ policy, onClick }: MailPolicyCardProps) {
             >
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center gap-2">
-                        <Mail className="w-5 h-5 text-purple-500" /> Mail
+                        <Mail className="w-5 h-5 text-purple-500" /> {t('policy.mail')}
                     </CardTitle>
-                    <CardDescription>Email configuration</CardDescription>
+                    <CardDescription>{t('policy.mail.desc')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Badge>Active</Badge>
+                    <Badge>{t('common.enabled')}</Badge>
                     <p className="text-sm mt-2 text-muted-foreground">{policy.name}</p>
                 </CardContent>
             </Card>

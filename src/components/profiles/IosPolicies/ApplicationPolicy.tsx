@@ -62,6 +62,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ApplicationPolicyProps {
   profileId: string;

@@ -1,0 +1,31 @@
+// Hindi - Validation messages
+export const validation = {
+    'validation.nameRequired': 'प्रोफाइल नाम आवश्यक है',
+    'validation.nameTooShort': 'नाम कम से कम 3 अक्षरों का होना चाहिए',
+    'validation.nameTooLong': 'नाम अधिकतम 30 अक्षरों का होना चाहिए',
+    'validation.nameInvalid': 'नाम में केवल अक्षर, संख्याएं, हाइफ़न और स्पेस हो सकते हैं',
+    'validation.descriptionRequired': 'विवरण आवश्यक है',
+    'validation.descriptionTooShort': 'विवरण कम से कम 5 अक्षरों का होना चाहिए',
+    'validation.descriptionTooLong': 'विवरण अधिकतम 100 अक्षरों का होना चाहिए',
+    'validation.descriptionInvalid': 'विवरण में केवल अक्षर, संख्याएं, हाइफ़न और स्पेस हो सकते हैं',
+    'validation.platformRequired': 'प्लेटफ़ॉर्म आवश्यक है',
+    'validation.fixErrors': 'कृपया जमा करने से पहले त्रुटियों को ठीक करें।',
+    'validation.noChanges': 'कोई परिवर्तन नहीं किया गया।',
+    'validation.profileInfoMissing': 'प्रोफाइल जानकारी गायब है।',
+
+    // Toast Messages
+    'toast.profileCreated': 'प्रोफाइल सफलतापूर्वक बनाई गई',
+    'toast.profileUpdated': 'प्रोफाइल सफलतापूर्वक अपडेट की गई',
+    'toast.profileCloned': 'प्रोफाइल सफलतापूर्वक क्लोन की गई',
+    'toast.profileDeleted': 'प्रोफाइल सफलतापूर्वक हटाई गई',
+    'toast.profilePublished': 'प्रोफाइल सफलतापूर्वक प्रकाशित की गई',
+    'toast.policySaved': 'नीति सफलतापूर्वक सहेजी गई',
+    'toast.policyRemoved': 'नीति सफलतापूर्वक हटाई गई',
+    'toast.error': 'एक त्रुटि हुई',
+    'toast.validationError': 'सत्यापन त्रुटि',
+    'toast.createFailed': 'प्रोफाइल बनाने में विफल। कृपया पुनः प्रयास करें।',
+    'toast.updateFailed': 'प्रोफाइल अपडेट करने में विफल। कृपया पुनः प्रयास करें।',
+    'toast.deleteFailed': 'प्रोफाइल हटाने में विफल। कृपया पुनः प्रयास करें।',
+    'toast.publishFailed': 'प्रोफाइल प्रकाशित करने में विफल। कृपया पुनः प्रयास करें।',
+    'toast.cloneFailed': 'प्रोफाइल क्लोन करने में विफल। कृपया पुनः प्रयास करें।',
+};

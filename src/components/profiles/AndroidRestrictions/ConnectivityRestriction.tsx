@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { ConnectivityRestriction as ConnectivityRestrictionType, ControlType, Platform } from '@/types/models';
 import { Bluetooth, Edit, Loader2, Nfc, Printer, Radio, Save, Send } from 'lucide-react';
 import { useState } from 'react';
@@ -24,6 +25,7 @@ interface ConnectivityRestrictionProps {
 }
 
 export function ConnectivityRestriction({ platform, profileId, initialData, onSave, onCancel }: ConnectivityRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -64,10 +66,10 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
 
     const getControlLabel = (control?: ControlType) => {
         switch (control) {
-            case 'ENABLE': return 'Always On';
-            case 'DISABLE': return 'Always Off';
-            case 'USER_CONTROLLED': return 'User Controlled';
-            default: return 'User Controlled';
+            case 'ENABLE': return t('restrictions.control.alwaysOn');
+            case 'DISABLE': return t('restrictions.control.alwaysOff');
+            case 'USER_CONTROLLED': return t('restrictions.control.userControlled');
+            default: return t('restrictions.control.userControlled');
         }
     };
 
@@ -87,13 +89,13 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                         <Radio className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Connectivity Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Bluetooth, NFC, and other connections</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.connectivity')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.android.connectivity.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -102,7 +104,7 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Bluetooth className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Bluetooth</span>
+                            <span className="font-medium">{t('restrictions.connectivity.bluetooth')}</span>
                         </div>
                         <Badge variant="secondary">{getControlLabel(formData.bluetooth)}</Badge>
                     </CardContent>
@@ -112,7 +114,7 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Nfc className="w-5 h-5 text-green-500" />
-                            <span className="font-medium">NFC</span>
+                            <span className="font-medium">{t('restrictions.connectivity.nfc')}</span>
                         </div>
                         <Badge variant="secondary">{getControlLabel(formData.nfc)}</Badge>
                     </CardContent>
@@ -122,10 +124,10 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Send className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">Outgoing Beam</span>
+                            <span className="font-medium">{t('restrictions.connectivity.outgoingBeam')}</span>
                         </div>
                         <Badge variant={formData.disableOutgoingBeam ? 'default' : 'secondary'}>
-                            {formData.disableOutgoingBeam ? 'Disabled' : 'Allowed'}
+                            {formData.disableOutgoingBeam ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -134,17 +136,17 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Printer className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">Printing</span>
+                            <span className="font-medium">{t('restrictions.connectivity.printing')}</span>
                         </div>
                         <Badge variant={formData.disablePrinting ? 'default' : 'secondary'}>
-                            {formData.disablePrinting ? 'Disabled' : 'Allowed'}
+                            {formData.disablePrinting ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -161,8 +163,8 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                         <Edit className="w-5 h-5 text-blue-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Connectivity Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure Bluetooth, NFC, and other policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.connectivity')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.connectivity.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -170,7 +172,7 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
             <div className="space-y-6 p-1">
                 {/* Bluetooth Control */}
                 <div className="space-y-2">
-                    <Label>Bluetooth Control</Label>
+                    <Label>{t('restrictions.connectivity.bluetoothControl')}</Label>
                     <Select
                         value={formData.bluetooth}
                         onValueChange={(value: ControlType) => 
@@ -178,25 +180,25 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                         }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select Bluetooth control" />
+                            <SelectValue placeholder={t('restrictions.connectivity.bluetoothControl')} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ENABLE">
                                 <div className="flex items-center gap-2">
                                     <Bluetooth className="w-4 h-4 text-green-500" />
-                                    Always On - Force Bluetooth enabled
+                                    {t('restrictions.control.alwaysOn')} - {t('restrictions.control.forceEnabled')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="DISABLE">
                                 <div className="flex items-center gap-2">
                                     <Bluetooth className="w-4 h-4 text-red-500" />
-                                    Always Off - Force Bluetooth disabled
+                                    {t('restrictions.control.alwaysOff')} - {t('restrictions.control.forceDisabled')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="USER_CONTROLLED">
                                 <div className="flex items-center gap-2">
                                     <Bluetooth className="w-4 h-4 text-blue-500" />
-                                    User Controlled - Let user decide
+                                    {t('restrictions.control.userControlled')} - {t('restrictions.control.letUserDecide')}
                                 </div>
                             </SelectItem>
                         </SelectContent>
@@ -205,7 +207,7 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
 
                 {/* NFC Control */}
                 <div className="space-y-2">
-                    <Label>NFC Control</Label>
+                    <Label>{t('restrictions.connectivity.nfcControl')}</Label>
                     <Select
                         value={formData.nfc}
                         onValueChange={(value: ControlType) => 
@@ -213,25 +215,25 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                         }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select NFC control" />
+                            <SelectValue placeholder={t('restrictions.connectivity.nfcControl')} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ENABLE">
                                 <div className="flex items-center gap-2">
                                     <Nfc className="w-4 h-4 text-green-500" />
-                                    Always On - Force NFC enabled
+                                    {t('restrictions.control.alwaysOn')} - {t('restrictions.control.forceEnabled')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="DISABLE">
                                 <div className="flex items-center gap-2">
                                     <Nfc className="w-4 h-4 text-red-500" />
-                                    Always Off - Force NFC disabled
+                                    {t('restrictions.control.alwaysOff')} - {t('restrictions.control.forceDisabled')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="USER_CONTROLLED">
                                 <div className="flex items-center gap-2">
                                     <Nfc className="w-4 h-4 text-blue-500" />
-                                    User Controlled - Let user decide
+                                    {t('restrictions.control.userControlled')} - {t('restrictions.control.letUserDecide')}
                                 </div>
                             </SelectItem>
                         </SelectContent>
@@ -244,9 +246,9 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                         <Label className="flex items-start gap-3">
                             <Send className="w-5 h-5 mt-0.5 text-purple-500" />
                             <div>
-                                <span className="font-medium">Disable Outgoing Beam</span>
+                                <span className="font-medium">{t('restrictions.connectivity.disableOutgoingBeam')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block NFC beam for file sharing
+                                    {t('restrictions.connectivity.disableOutgoingBeamDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -260,9 +262,9 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                         <Label className="flex items-start gap-3">
                             <Printer className="w-5 h-5 mt-0.5 text-orange-500" />
                             <div>
-                                <span className="font-medium">Disable Printing</span>
+                                <span className="font-medium">{t('restrictions.connectivity.disablePrinting')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block printing to any printer
+                                    {t('restrictions.connectivity.disablePrintingDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -276,11 +278,11 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

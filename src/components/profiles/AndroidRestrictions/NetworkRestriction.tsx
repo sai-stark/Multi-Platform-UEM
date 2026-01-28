@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { ControlType, NetworkRestriction as NetworkRestrictionType, Platform } from '@/types/models';
 import { Edit, Globe, Loader2, Plane, Save, Settings, Shield, Wifi, WifiOff } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NetworkRestrictionProps {
     platform: Platform;
@@ -24,6 +25,7 @@ interface NetworkRestrictionProps {
 }
 
 export function NetworkRestriction({ platform, profileId, initialData, onSave, onCancel }: NetworkRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -66,10 +68,10 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
 
     const getWifiLabel = (control?: ControlType) => {
         switch (control) {
-            case 'ENABLE': return 'Always On';
-            case 'DISABLE': return 'Always Off';
-            case 'USER_CONTROLLED': return 'User Controlled';
-            default: return 'User Controlled';
+            case 'ENABLE': return t('restrictions.control.alwaysOn');
+            case 'DISABLE': return t('restrictions.control.alwaysOff');
+            case 'USER_CONTROLLED': return t('restrictions.control.userControlled');
+            default: return t('restrictions.control.userControlled');
         }
     };
 
@@ -89,13 +91,13 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         <Wifi className="w-6 h-6 text-green-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Network Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Wi-Fi and network controls</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.network')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.network.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -104,7 +106,7 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Wifi className="w-5 h-5 text-green-500" />
-                            <span className="font-medium">Wi-Fi</span>
+                            <span className="font-medium">{t('restrictions.network.wifi')}</span>
                         </div>
                         <Badge variant="secondary">{getWifiLabel(formData.wifi)}</Badge>
                     </CardContent>
@@ -114,10 +116,10 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Settings className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Wi-Fi Config</span>
+                            <span className="font-medium">{t('restrictions.network.wifiConfig')}</span>
                         </div>
                         <Badge variant={formData.disableWifiConfig ? 'default' : 'secondary'}>
-                            {formData.disableWifiConfig ? 'Locked' : 'Editable'}
+                            {formData.disableWifiConfig ? t('restrictions.locked') : t('restrictions.network.editable')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -126,10 +128,10 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Plane className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Airplane Mode</span>
+                            <span className="font-medium">{t('restrictions.network.airplaneMode')}</span>
                         </div>
                         <Badge variant={formData.disableAirplaneMode ? 'default' : 'secondary'}>
-                            {formData.disableAirplaneMode ? 'Disabled' : 'Available'}
+                            {formData.disableAirplaneMode ? t('common.disabled') : t('restrictions.network.available')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -138,10 +140,10 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Globe className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">Data Roaming</span>
+                            <span className="font-medium">{t('restrictions.network.dataRoaming')}</span>
                         </div>
                         <Badge variant={formData.disableRoamingData ? 'default' : 'secondary'}>
-                            {formData.disableRoamingData ? 'Disabled' : 'Allowed'}
+                            {formData.disableRoamingData ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -150,10 +152,10 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Shield className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">VPN Config</span>
+                            <span className="font-medium">{t('restrictions.network.vpnConfig')}</span>
                         </div>
                         <Badge variant={formData.disableVpnConfig ? 'default' : 'secondary'}>
-                            {formData.disableVpnConfig ? 'Blocked' : 'Allowed'}
+                            {formData.disableVpnConfig ? t('restrictions.blocked') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -162,17 +164,17 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Wifi className="w-5 h-5 text-cyan-500" />
-                            <span className="font-medium">Wi-Fi Direct</span>
+                            <span className="font-medium">{t('restrictions.network.wifiDirect')}</span>
                         </div>
                         <Badge variant={formData.disableWifiDirect ? 'default' : 'secondary'}>
-                            {formData.disableWifiDirect ? 'Disabled' : 'Allowed'}
+                            {formData.disableWifiDirect ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -189,8 +191,8 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         <Edit className="w-5 h-5 text-green-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Network Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure Wi-Fi and network policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.network')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.network.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -198,7 +200,7 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
             <div className="space-y-6 p-1">
                 {/* Wi-Fi Control */}
                 <div className="space-y-2">
-                    <Label>Wi-Fi Control</Label>
+                    <Label>{t('restrictions.network.wifiControl')}</Label>
                     <Select
                         value={formData.wifi}
                         onValueChange={(value: ControlType) => 
@@ -206,25 +208,25 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select Wi-Fi control" />
+                            <SelectValue placeholder={t('restrictions.network.wifiControl')} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ENABLE">
                                 <div className="flex items-center gap-2">
                                     <Wifi className="w-4 h-4 text-green-500" />
-                                    Always On - Force Wi-Fi enabled
+                                    {t('restrictions.control.alwaysOn')} - {t('restrictions.control.forceEnabled')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="DISABLE">
                                 <div className="flex items-center gap-2">
                                     <WifiOff className="w-4 h-4 text-red-500" />
-                                    Always Off - Force Wi-Fi disabled
+                                    {t('restrictions.control.alwaysOff')} - {t('restrictions.control.forceDisabled')}
                                 </div>
                             </SelectItem>
                             <SelectItem value="USER_CONTROLLED">
                                 <div className="flex items-center gap-2">
                                     <Wifi className="w-4 h-4 text-blue-500" />
-                                    User Controlled - Let user decide
+                                    {t('restrictions.control.userControlled')} - {t('restrictions.control.letUserDecide')}
                                 </div>
                             </SelectItem>
                         </SelectContent>
@@ -237,9 +239,9 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Settings className="w-5 h-5 mt-0.5 text-blue-500" />
                             <div>
-                                <span className="font-medium">Disable Wi-Fi Config</span>
+                                <span className="font-medium">{t('restrictions.network.disableWifiConfig')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block changes to Wi-Fi settings
+                                    {t('restrictions.network.disableWifiConfigDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -253,9 +255,9 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Plane className="w-5 h-5 mt-0.5 text-blue-500" />
                             <div>
-                                <span className="font-medium">Disable Airplane Mode</span>
+                                <span className="font-medium">{t('restrictions.network.disableAirplaneMode')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block access to airplane mode
+                                    {t('restrictions.network.disableAirplaneModeDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -269,9 +271,9 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Globe className="w-5 h-5 mt-0.5 text-purple-500" />
                             <div>
-                                <span className="font-medium">Disable Roaming Data</span>
+                                <span className="font-medium">{t('restrictions.network.disableRoamingData')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block cellular data roaming
+                                    {t('restrictions.network.disableRoamingDataDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -285,9 +287,9 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Shield className="w-5 h-5 mt-0.5 text-orange-500" />
                             <div>
-                                <span className="font-medium">Disable VPN Config</span>
+                                <span className="font-medium">{t('restrictions.network.disableVpnConfig')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block VPN configuration
+                                    {t('restrictions.network.disableVpnConfigDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -301,9 +303,9 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                         <Label className="flex items-start gap-3">
                             <Wifi className="w-5 h-5 mt-0.5 text-cyan-500" />
                             <div>
-                                <span className="font-medium">Disable Wi-Fi Direct</span>
+                                <span className="font-medium">{t('restrictions.network.disableWifiDirect')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block peer-to-peer Wi-Fi connections
+                                    {t('restrictions.network.disableWifiDirectDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -317,11 +319,11 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

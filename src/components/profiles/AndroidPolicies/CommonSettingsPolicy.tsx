@@ -16,6 +16,7 @@ import { Switch } from '@/components/ui/switch';
 import { AppPermissionType, CommonSettingsPolicy as CommonSettingsPolicyType, Platform, SystemUpdatePolicy, VolumePolicy } from '@/types/models';
 import { Clock, Download, Edit, Loader2, MapPin, Monitor, Save, Settings, Volume2 } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CommonSettingsPolicyProps {
     platform: Platform;
@@ -26,6 +27,7 @@ interface CommonSettingsPolicyProps {
 }
 
 export function CommonSettingsPolicy({ platform, profileId, initialData, onSave, onCancel }: CommonSettingsPolicyProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -69,31 +71,31 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
 
     const getPermissionLabel = (perm?: AppPermissionType) => {
         switch (perm) {
-            case 'GRANT': return 'Auto Grant';
-            case 'DENY': return 'Auto Deny';
-            case 'PROMPT': return 'Prompt User';
-            default: return 'Prompt User';
+            case 'GRANT': return t('policies.commonSettings.autoGrant');
+            case 'DENY': return t('policies.commonSettings.autoDeny');
+            case 'PROMPT': return t('policies.commonSettings.promptUser');
+            default: return t('policies.commonSettings.promptUser');
         }
     };
 
     const getSystemUpdateLabel = (policy?: SystemUpdatePolicy) => {
-        if (!policy) return 'Default';
+        if (!policy) return t('policies.commonSettings.default');
         if (policy.systemUpdate === 'SCHEDULED') {
-            return `Scheduled (${(policy as any).systemUpdateScheduleFrom} - ${(policy as any).systemUpdateScheduleTo})`;
+            return `${t('policies.commonSettings.scheduled')} (${(policy as any).systemUpdateScheduleFrom} - ${(policy as any).systemUpdateScheduleTo})`;
         }
         switch (policy.systemUpdate) {
-            case 'IMMEDIATELY': return 'Install Immediately';
-            case 'POSTPONE': return 'Postpone';
-            default: return 'Default';
+            case 'IMMEDIATELY': return t('policies.commonSettings.installImmediately');
+            case 'POSTPONE': return t('policies.commonSettings.postpone');
+            default: return t('policies.commonSettings.default');
         }
     };
 
     const getVolumeLabel = (policy?: VolumePolicy) => {
-        if (!policy) return 'User Controlled';
+        if (!policy) return t('policies.commonSettings.userControlled');
         if (policy.manageVolume === 'ManagedVolume') {
-            return `Managed (${(policy as any).volume}%)`;
+            return `${t('policies.commonSettings.managed')} (${(policy as any).volume}%)`;
         }
-        return 'User Controlled';
+        return t('policies.commonSettings.userControlled');
     };
 
     const renderView = () => (
@@ -104,13 +106,13 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         <Settings className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Common Settings</h3>
-                        <p className="text-sm text-muted-foreground">Device management configuration</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.commonSettings')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('policies.commonSettings.subtitle')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -119,10 +121,10 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <MapPin className="w-5 h-5 text-red-500" />
-                            <span className="font-medium">Location Tracking</span>
+                            <span className="font-medium">{t('policies.commonSettings.locationTracking')}</span>
                         </div>
                         <Badge variant={formData.locationTracking ? 'default' : 'secondary'}>
-                            {formData.locationTracking ? 'Enabled' : 'Disabled'}
+                            {formData.locationTracking ? t('common.enabled') : t('common.disabled')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -131,7 +133,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Settings className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">App Permissions</span>
+                            <span className="font-medium">{t('policies.commonSettings.appPermissions')}</span>
                         </div>
                         <Badge variant="secondary">{getPermissionLabel(formData.defaultAppPerms)}</Badge>
                     </CardContent>
@@ -141,9 +143,9 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Clock className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">Keep Alive Time</span>
+                            <span className="font-medium">{t('policies.commonSettings.keepAliveTime')}</span>
                         </div>
-                        <span className="text-lg font-semibold">{formData.keepAliveTime} min</span>
+                        <span className="text-lg font-semibold">{formData.keepAliveTime} {t('policies.commonSettings.minutes')}</span>
                     </CardContent>
                 </Card>
 
@@ -151,10 +153,10 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Monitor className="w-5 h-5 text-indigo-500" />
-                            <span className="font-medium">Screen Capture</span>
+                            <span className="font-medium">{t('policies.commonSettings.screenCapture')}</span>
                         </div>
                         <Badge variant={formData.disableScreenCapture ? 'destructive' : 'default'}>
-                            {formData.disableScreenCapture ? 'Disabled' : 'Allowed'}
+                            {formData.disableScreenCapture ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -163,7 +165,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Download className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">System Updates</span>
+                            <span className="font-medium">{t('policies.commonSettings.systemUpdates')}</span>
                         </div>
                         <Badge variant="secondary">{getSystemUpdateLabel(formData.systemUpdatePolicy)}</Badge>
                     </CardContent>
@@ -173,7 +175,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Volume2 className="w-5 h-5 text-cyan-500" />
-                            <span className="font-medium">Volume Policy</span>
+                            <span className="font-medium">{t('policies.commonSettings.volumePolicy')}</span>
                         </div>
                         <Badge variant="secondary">{getVolumeLabel(formData.volumePolicy)}</Badge>
                     </CardContent>
@@ -181,7 +183,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -198,8 +200,8 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         <Edit className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Common Settings</h3>
-                        <p className="text-sm text-muted-foreground">Configure device management policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.commonSettings')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('policies.commonSettings.editDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -211,9 +213,9 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         <Label className="flex items-start gap-3">
                             <MapPin className="w-5 h-5 mt-0.5 text-red-500" />
                             <div>
-                                <span className="font-medium">Location Tracking</span>
+                                <span className="font-medium">{t('policies.commonSettings.locationTracking')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Track device location for management
+                                    {t('policies.commonSettings.locationTrackingDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -230,9 +232,9 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         <Label className="flex items-start gap-3">
                             <Monitor className="w-5 h-5 mt-0.5 text-indigo-500" />
                             <div>
-                                <span className="font-medium">Disable Screen Capture</span>
+                                <span className="font-medium">{t('policies.commonSettings.disableScreenCapture')}</span>
                                 <p className="font-normal text-xs text-muted-foreground">
-                                    Block screenshots and screen recording
+                                    {t('policies.commonSettings.disableScreenCaptureDesc')}
                                 </p>
                             </div>
                         </Label>
@@ -245,7 +247,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
 
                 {/* Default App Permissions */}
                 <div className="space-y-2">
-                    <Label>Default App Permissions</Label>
+                    <Label>{t('policies.commonSettings.defaultAppPerms')}</Label>
                     <Select
                         value={formData.defaultAppPerms}
                         onValueChange={(value: AppPermissionType) => 
@@ -253,22 +255,22 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         }
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select permission handling" />
+                            <SelectValue placeholder={t('policies.commonSettings.selectPermission')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="GRANT">Auto Grant - Automatically approve</SelectItem>
-                            <SelectItem value="DENY">Auto Deny - Automatically reject</SelectItem>
-                            <SelectItem value="PROMPT">Prompt User - Ask user for each permission</SelectItem>
+                            <SelectItem value="GRANT">{t('policies.commonSettings.autoGrant')} - {t('policies.commonSettings.autoApprove')}</SelectItem>
+                            <SelectItem value="DENY">{t('policies.commonSettings.autoDeny')} - {t('policies.commonSettings.autoReject')}</SelectItem>
+                            <SelectItem value="PROMPT">{t('policies.commonSettings.promptUser')} - {t('policies.commonSettings.askUser')}</SelectItem>
                         </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                        How the device handles app permission requests
+                        {t('policies.commonSettings.permissionHandlingDesc')}
                     </p>
                 </div>
 
                 {/* Keep Alive Time */}
                 <div className="space-y-2">
-                    <Label htmlFor="keepAliveTime">Keep Alive Time (minutes)</Label>
+                    <Label htmlFor="keepAliveTime">{t('policies.commonSettings.keepAliveTimeMinutes')}</Label>
                     <Input
                         id="keepAliveTime"
                         type="number"
@@ -278,13 +280,13 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         onChange={(e) => setFormData(prev => ({ ...prev, keepAliveTime: Number(e.target.value) }))}
                     />
                     <p className="text-xs text-muted-foreground">
-                        Interval for device check-in with the management server
+                        {t('policies.commonSettings.keepAliveDesc')}
                     </p>
                 </div>
 
                 {/* System Update Policy */}
                 <div className="space-y-2">
-                    <Label>System Update Policy</Label>
+                    <Label>{t('policies.commonSettings.systemUpdatePolicy')}</Label>
                     <Select
                         value={formData.systemUpdatePolicy?.systemUpdate || 'DEFAULT'}
                         onValueChange={(value) => {
@@ -306,13 +308,13 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         }}
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Select update policy" />
+                            <SelectValue placeholder={t('policies.commonSettings.selectUpdatePolicy')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="DEFAULT">Default - Follow device settings</SelectItem>
-                            <SelectItem value="IMMEDIATELY">Immediately - Install updates as soon as available</SelectItem>
-                            <SelectItem value="POSTPONE">Postpone - Delay updates</SelectItem>
-                            <SelectItem value="SCHEDULED">Scheduled - Install during specific window</SelectItem>
+                            <SelectItem value="DEFAULT">{t('policies.commonSettings.default')} - {t('policies.commonSettings.followDevice')}</SelectItem>
+                            <SelectItem value="IMMEDIATELY">{t('policies.commonSettings.installImmediately')} - {t('policies.commonSettings.installAsap')}</SelectItem>
+                            <SelectItem value="POSTPONE">{t('policies.commonSettings.postpone')} - {t('policies.commonSettings.delayUpdates')}</SelectItem>
+                            <SelectItem value="SCHEDULED">{t('policies.commonSettings.scheduled')} - {t('policies.commonSettings.installDuringWindow')}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -321,7 +323,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                 {formData.systemUpdatePolicy?.systemUpdate === 'SCHEDULED' && (
                     <div className="grid grid-cols-2 gap-4 pl-4 border-l-2 border-primary/20">
                         <div className="space-y-2">
-                            <Label>Update Window Start</Label>
+                            <Label>{t('policies.commonSettings.updateWindowStart')}</Label>
                             <Input
                                 type="time"
                                 value={(formData.systemUpdatePolicy as any).systemUpdateScheduleFrom || '02:00'}
@@ -335,7 +337,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Update Window End</Label>
+                            <Label>{t('policies.commonSettings.updateWindowEnd')}</Label>
                             <Input
                                 type="time"
                                 value={(formData.systemUpdatePolicy as any).systemUpdateScheduleTo || '05:00'}
@@ -353,7 +355,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
 
                 {/* Volume Policy */}
                 <div className="space-y-2">
-                    <Label>Volume Policy</Label>
+                    <Label>{t('policies.commonSettings.volumePolicy')}</Label>
                     <div className="flex gap-2 mb-2">
                         <Button
                             type="button"
@@ -361,7 +363,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                             size="sm"
                             onClick={() => setFormData(prev => ({ ...prev, volumePolicy: { manageVolume: 'UnmanagedVolume' } }))}
                         >
-                            User Controlled
+                            {t('policies.commonSettings.userControlled')}
                         </Button>
                         <Button
                             type="button"
@@ -369,12 +371,12 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                             size="sm"
                             onClick={() => setFormData(prev => ({ ...prev, volumePolicy: { manageVolume: 'ManagedVolume', volume: 50 } }))}
                         >
-                            Managed
+                            {t('policies.commonSettings.managed')}
                         </Button>
                     </div>
                     {formData.volumePolicy?.manageVolume === 'ManagedVolume' && (
                         <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                            <Label>Volume Level: {(formData.volumePolicy as any).volume || 50}%</Label>
+                            <Label>{t('policies.commonSettings.volumeLevel')}: {(formData.volumePolicy as any).volume || 50}%</Label>
                             <Slider
                                 value={[(formData.volumePolicy as any).volume || 50]}
                                 onValueChange={([value]) => setFormData(prev => ({
@@ -391,10 +393,10 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
 
                 {/* App Update Schedule */}
                 <div className="space-y-2">
-                    <Label>App Update Schedule</Label>
+                    <Label>{t('policies.commonSettings.appUpdateSchedule')}</Label>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">From</Label>
+                            <Label className="text-xs text-muted-foreground">{t('common.from')}</Label>
                             <Input
                                 type="time"
                                 value={formData.appUpdateSchedule?.from || '02:00'}
@@ -405,7 +407,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">To</Label>
+                            <Label className="text-xs text-muted-foreground">{t('common.to')}</Label>
                             <Input
                                 type="time"
                                 value={formData.appUpdateSchedule?.to || '05:00'}
@@ -417,18 +419,18 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        Time window for automatic app updates
+                        {t('policies.commonSettings.appUpdateScheduleDesc')}
                     </p>
                 </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('form.saveChanges')}
                 </Button>
             </div>
         </form>

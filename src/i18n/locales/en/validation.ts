@@ -1,0 +1,31 @@
+// English - Validation messages
+export const validation = {
+    'validation.nameRequired': 'Profile name is required',
+    'validation.nameTooShort': 'Name must be at least 3 characters',
+    'validation.nameTooLong': 'Name must be at most 30 characters',
+    'validation.nameInvalid': 'Name can only contain letters, numbers, hyphens and spaces',
+    'validation.descriptionRequired': 'Description is required',
+    'validation.descriptionTooShort': 'Description must be at least 5 characters',
+    'validation.descriptionTooLong': 'Description must be at most 100 characters',
+    'validation.descriptionInvalid': 'Description can only contain letters, numbers, hyphens and spaces',
+    'validation.platformRequired': 'Platform is required',
+    'validation.fixErrors': 'Please fix the errors before submitting.',
+    'validation.noChanges': 'No changes were made.',
+    'validation.profileInfoMissing': 'Profile information is missing.',
+
+    // Toast Messages
+    'toast.profileCreated': 'Profile created successfully',
+    'toast.profileUpdated': 'Profile updated successfully',
+    'toast.profileCloned': 'Profile cloned successfully',
+    'toast.profileDeleted': 'Profile deleted successfully',
+    'toast.profilePublished': 'Profile published successfully',
+    'toast.policySaved': 'Policy saved successfully',
+    'toast.policyRemoved': 'Policy removed successfully',
+    'toast.error': 'An error occurred',
+    'toast.validationError': 'Validation Error',
+    'toast.createFailed': 'Failed to create profile. Please try again.',
+    'toast.updateFailed': 'Failed to update profile. Please try again.',
+    'toast.deleteFailed': 'Failed to delete profile. Please try again.',
+    'toast.publishFailed': 'Failed to publish profile. Please try again.',
+    'toast.cloneFailed': 'Failed to clone profile. Please try again.',
+};

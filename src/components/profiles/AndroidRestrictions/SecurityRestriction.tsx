@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Platform, SecurityRestriction as SecurityRestrictionType } from '@/types/models';
 import { Code, Edit, Loader2, Lock, Save, Shield, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SecurityRestrictionProps {
     platform: Platform;
@@ -17,6 +18,7 @@ interface SecurityRestrictionProps {
 }
 
 export function SecurityRestriction({ platform, profileId, initialData, onSave, onCancel }: SecurityRestrictionProps) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -63,13 +65,13 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                         <Shield className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Security Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Device security configurations</p>
+                        <h3 className="text-xl font-semibold">{t('restrictions.android.security')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.android.security.desc')}</p>
                     </div>
                 </div>
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Settings
+                    {t('common.edit')}
                 </Button>
             </div>
 
@@ -78,13 +80,13 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Lock className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">Lock Safe Settings</span>
+                            <span className="font-medium">{t('restrictions.android.security.lockSafeSettings')}</span>
                         </div>
                         <Badge variant={formData.lockSafeSettings ? 'default' : 'secondary'}>
-                            {formData.lockSafeSettings ? 'Locked' : 'Unlocked'}
+                            {formData.lockSafeSettings ? t('restrictions.locked') : t('restrictions.unlocked')}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-2">
-                            {formData.lockSafeSettings ? 'System settings are protected' : 'Users can access settings'}
+                            {formData.lockSafeSettings ? t('restrictions.android.security.settingsProtected') : t('restrictions.android.security.usersCanAccess')}
                         </p>
                     </CardContent>
                 </Card>
@@ -93,10 +95,10 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Code className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">Developer Mode</span>
+                            <span className="font-medium">{t('restrictions.android.security.developerMode')}</span>
                         </div>
                         <Badge variant={formData.disableDevMode ? 'default' : 'destructive'}>
-                            {formData.disableDevMode ? 'Disabled' : 'Allowed'}
+                            {formData.disableDevMode ? t('common.disabled') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -105,10 +107,10 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <ShieldAlert className="w-5 h-5 text-orange-500" />
-                            <span className="font-medium">Third-Party Apps</span>
+                            <span className="font-medium">{t('restrictions.android.security.thirdPartyApps')}</span>
                         </div>
                         <Badge variant={formData.disableThirdPartyAppInstall ? 'default' : 'destructive'}>
-                            {formData.disableThirdPartyAppInstall ? 'Blocked' : 'Allowed'}
+                            {formData.disableThirdPartyAppInstall ? t('restrictions.blocked') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
@@ -117,17 +119,17 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Shield className="w-5 h-5 text-yellow-500" />
-                            <span className="font-medium">Permissive Mode</span>
+                            <span className="font-medium">{t('restrictions.android.security.permissiveMode')}</span>
                         </div>
                         <Badge variant={formData.enablePermissiveMode ? 'secondary' : 'default'}>
-                            {formData.enablePermissiveMode ? 'Enabled' : 'Disabled'}
+                            {formData.enablePermissiveMode ? t('common.enabled') : t('common.disabled')}
                         </Badge>
                     </CardContent>
                 </Card>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>Close</Button>
+                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
     );
@@ -144,8 +146,8 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                         <Edit className="w-5 h-5 text-blue-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">Edit Security Restriction</h3>
-                        <p className="text-sm text-muted-foreground">Configure device security policies</p>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.security')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('restrictions.android.security.desc')}</p>
                     </div>
                 </div>
             </div>
@@ -155,9 +157,9 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <Label className="flex items-start gap-3">
                         <Lock className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">Lock Safe Settings</span>
+                            <span className="font-medium">{t('restrictions.android.security.lockSafeSettings')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Prevent users from modifying critical system settings
+                                {t('restrictions.android.security.lockSafeSettingsDesc')}
                             </p>
                         </div>
                     </Label>
@@ -171,9 +173,9 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <Label className="flex items-start gap-3">
                         <Code className="w-5 h-5 mt-0.5 text-purple-500" />
                         <div>
-                            <span className="font-medium">Disable Developer Mode</span>
+                            <span className="font-medium">{t('restrictions.android.security.disableDeveloperMode')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block access to developer options and USB debugging
+                                {t('restrictions.android.security.disableDeveloperModeDesc')}
                             </p>
                         </div>
                     </Label>
@@ -187,9 +189,9 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <Label className="flex items-start gap-3">
                         <ShieldAlert className="w-5 h-5 mt-0.5 text-orange-500" />
                         <div>
-                            <span className="font-medium">Disable Third-Party App Install</span>
+                            <span className="font-medium">{t('restrictions.android.security.disableThirdPartyApps')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Block installation of apps from unknown sources
+                                {t('restrictions.android.security.disableThirdPartyAppsDesc')}
                             </p>
                         </div>
                     </Label>
@@ -203,9 +205,9 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
                     <Label className="flex items-start gap-3">
                         <Shield className="w-5 h-5 mt-0.5 text-yellow-500" />
                         <div>
-                            <span className="font-medium">Enable Permissive Mode</span>
+                            <span className="font-medium">{t('restrictions.android.security.enablePermissiveMode')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                Allow temporary relaxation of security policies
+                                {t('restrictions.android.security.enablePermissiveModeDesc')}
                             </p>
                         </div>
                     </Label>
@@ -218,11 +220,11 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
 
             <div className="flex justify-end gap-3 pt-6 border-t">
                 <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
+                    {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
+                    {t('common.save')}
                 </Button>
             </div>
         </form>

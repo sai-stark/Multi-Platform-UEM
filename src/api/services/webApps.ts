@@ -5,6 +5,20 @@ import {
 } from '@/types/models';
 import apiClient from '../client';
 
+export interface CreateWebApplicationRequest {
+    name: string;
+    icon: string;
+    iconText: string;
+    pageUrl: string;
+}
+
+export interface UpdateWebApplicationRequest {
+    name?: string;
+    icon?: string;
+    iconText?: string;
+    pageUrl?: string;
+}
+
 export const WebApplicationService = {
     getWebApplications: async (pageable?: Pageable, search?: string) => {
         const params = { ...pageable, search };
@@ -17,12 +31,12 @@ export const WebApplicationService = {
         return response.data;
     },
 
-    createWebApplication: async (data: any) => {
+    createWebApplication: async (data: CreateWebApplicationRequest) => {
         const response = await apiClient.post<WebApplication>('/web-applications', data);
         return response.data;
     },
 
-    updateWebApplication: async (applicationId: string, data: any) => {
+    updateWebApplication: async (applicationId: string, data: UpdateWebApplicationRequest) => {
         const response = await apiClient.put<WebApplication>(`/web-applications/${applicationId}`, data);
         return response.data;
     },

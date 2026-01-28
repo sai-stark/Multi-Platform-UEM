@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile } from "@/types/models";
 import { Trash2 } from "lucide-react";
@@ -27,6 +28,7 @@ export function DeleteProfileDialog({
   onProfileDeleted,
   profile,
 }: DeleteProfileDialogProps) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
@@ -68,24 +70,23 @@ export function DeleteProfileDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Trash2 className="w-5 h-5" />
-            Delete Profile
+            {t('profiles.delete.title')}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete the profile{" "}
+            {t('profiles.delete.description')}{" "}
             <span className="font-semibold text-foreground">
               "{profile?.name}"
             </span>
-            ? This action cannot be undone. The profile will be permanently removed.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={loading}
             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
           >
-            {loading ? "Deleting..." : "Delete Profile"}
+            {loading ? t('profiles.delete.deleting') : t('profiles.delete.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -51,6 +51,12 @@ export type ApplicationUnion = MobileApplication | WindowsApplication | LinuxApp
 export interface WebApplication {
     id: string;
     name: string;
-    url: string;
-    iconUrl?: string;
+    icon: string; // Base64 encoded icon
+    iconText: string;
+    pageUrl: string;
+    deviceCount: number;
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
 }
