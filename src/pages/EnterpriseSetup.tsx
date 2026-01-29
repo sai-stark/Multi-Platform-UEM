@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAssetUrl } from '@/config/env';
+import { useEnterprise } from '@/contexts/EnterpriseContext';
 import { toast } from '@/hooks/use-toast';
 import { AndroidEnterprise, AndroidEnterpriseSignup } from '@/types/models';
 import {
@@ -27,16 +28,19 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 // Mock mode toggle - set via environment variable OR URL parameter ?mock=true
+// Default to true until backend is ready
 const getIsMockMode = () => {
-    // Check URL parameter first for easy testing
+    // Check URL parameter for explicit override
     if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mock') === 'false') return false;
         if (urlParams.get('mock') === 'true') return true;
     }
     // Check environment variables
     if (import.meta.env.VITE_MOCK_API === 'true') return true;
-    if (!import.meta.env.VITE_API_BASE_URL) return true;
-    return false;
+    if (import.meta.env.VITE_MOCK_API === 'false') return false;
+    // Default to mock mode since backend is not ready
+    return true;
 };
 
 const MOCK_MODE = getIsMockMode();
@@ -60,6 +64,7 @@ export default function EnterpriseSetup() {
     const navigate = useNavigate();
     const location = useLocation();
     const [searchParams] = useSearchParams();
+    const { skipEnrollment, markEnrolled } = useEnterprise();
 
     // State
     const [currentStep, setCurrentStep] = useState<SetupStep>(1);
@@ -74,20 +79,24 @@ export default function EnterpriseSetup() {
     const [copied, setCopied] = useState(false);
     const [finalizationStatus, setFinalizationStatus] = useState<'pending' | 'success' | 'error'>('pending');
 
-    // Check for callback params on mount
+    // Track if we've already processed the callback to prevent duplicate calls
+    const [callbackProcessed, setCallbackProcessed] = useState(false);
+
+    // Check for callback params on mount and when URL changes
     useEffect(() => {
         const enterpriseToken = searchParams.get('enterpriseToken');
         const signId = searchParams.get('signId');
 
-        if (enterpriseToken && signId) {
+        if (enterpriseToken && signId && !callbackProcessed) {
             // We're in the callback flow
+            setCallbackProcessed(true);
             setCurrentStep(4);
             handleFinalization(enterpriseToken, signId);
-        } else {
-            // Normal flow - check enterprise status
+        } else if (!enterpriseToken && !signId && currentStep === 1) {
+            // Normal flow - check enterprise status (only on initial load)
             checkEnterpriseStatus();
         }
-    }, []);
+    }, [searchParams]);
 
     // Step 1: Check Enterprise Status
     const checkEnterpriseStatus = async () => {
@@ -196,7 +205,8 @@ export default function EnterpriseSetup() {
         try {
             if (MOCK_MODE) {
                 await mockDelay(2000);
-                // Mock: Always succeed
+                // Mock: Always succeed and mark as enrolled
+                markEnrolled();
                 setFinalizationStatus('success');
                 toast({
                     title: "Setup Complete!",
@@ -204,6 +214,8 @@ export default function EnterpriseSetup() {
                 });
             } else {
                 await EnterpriseService.setEnterpriseToken('android', signId, enterpriseToken);
+                // Mark as enrolled in context so EnrollmentGuard allows dashboard access
+                markEnrolled();
                 setFinalizationStatus('success');
                 toast({
                     title: "Setup Complete!",
@@ -268,8 +280,8 @@ export default function EnterpriseSetup() {
 
     // Skip enrollment for now
     const handleSkip = () => {
-        // Save skip status to localStorage
-        localStorage.setItem('android-enterprise-skipped', 'true');
+        // Use context function to update both localStorage AND React state
+        skipEnrollment();
         toast({
             title: "Setup Skipped",
             description: "Android features will be limited until Enterprise is configured.",
