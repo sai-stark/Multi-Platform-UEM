@@ -20,20 +20,53 @@ export interface AppAction {
     action: AppActionType;
 }
 
-// Application version
+// Application version with extended details
 export interface ApplicationVersion {
     id: string;
-    versionCode: string;
-    versionName: string;
+    version: string;
+    versionCode?: string;
+    versionName?: string;
     fileSize?: number;
     createdAt?: string;
     action?: AppActionType;
+    deviceCount?: number;
+    profileCount?: number;
+    isProduction?: boolean;
+    url?: string;
+    trackIds?: string[];
+    isMandatory?: boolean;
+    isBlocked?: boolean;
+}
+
+// Application permission
+export interface ApplicationPermission {
+    permissionId: string;
+    name?: string;
+    description?: string;
+}
+
+// Device with application installed
+export interface ApplicationDevice {
+    id: string;
+    deviceName: string;
+    serialNumber?: string;
+    model?: string;
+    osVersion?: string;
+    appVersion?: string;
+    installedAt?: string;
 }
 
 // Extended Application type with versions
 export interface Application extends MobileApplication {
     versions?: ApplicationVersion[];
     action?: AppActionType;
+    author?: string;
+    category?: string;
+    contentRating?: string;
+    description?: string;
+    appTracks?: Array<{ trackId: string; trackAlias: string }>;
+    isMandatory?: boolean;
+    isBlocked?: boolean;
 }
 
 export const ApplicationService = {

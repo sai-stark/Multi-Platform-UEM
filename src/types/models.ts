@@ -2,6 +2,7 @@ export * from './application';
 export * from './common';
 export * from './dashboard';
 export * from './device';
+export * from './enterprise';
 export * from './geofence';
 export * from './group';
 export * from './inventory';
@@ -12,4 +13,5 @@ export * from './profile';
 export * from './repository';
 export * from './security';
 export * from './restrictions';
+
 

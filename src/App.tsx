@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { deploymentPrefixPath } from "@/config/env";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
+import { EnrollmentGuard, EnterpriseProvider } from "@/contexts/EnterpriseContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -25,8 +26,47 @@ import Repositories from "./pages/Repositories";
 import RepositoryDetails from "./pages/RepositoryDetails";
 import WebApplications from "./pages/WebApplications";
 import Applications from "./pages/Applications";
+import ApplicationDetails from "./pages/ApplicationDetails";
+import EnterpriseSetup from "./pages/EnterpriseSetup";
 
 const queryClient = new QueryClient();
+
+// Separate component for routes so EnrollmentGuard can use router hooks
+function AppRoutes() {
+  return (
+    <EnrollmentGuard>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/applications" element={<Applications />} />
+        <Route path="/applications/:platform/:id" element={<ApplicationDetails />} />
+        <Route path="/web-applications" element={<WebApplications />} />
+        <Route path="/policies" element={<Policies />} />
+        <Route path="/enrollment" element={<Enrollment />} />
+        <Route path="/android/enterprise/setup" element={<EnterpriseSetup />} />
+        <Route path="/android/enterprise/callback" element={<EnterpriseSetup />} />
+        <Route path="/devices" element={<Devices />} />
+        <Route path="/devices/:platform" element={<Devices />} />
+        <Route path="/devices/:platform/:id" element={<DeviceDetails />} />
+        <Route path="/groups" element={<Groups />} />
+        <Route path="/groups/:id" element={<GroupDetails />} />
+        <Route path="/geofences" element={<Geofences />} />
+        <Route path="/geofences/new" element={<GeofenceEditor />} />
+        <Route path="/geofences/:id" element={<GeofenceEditor />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/inventory/new" element={<InventoryEditor />} />
+        <Route path="/inventory/:id" element={<InventoryEditor />} />
+        <Route path="/inventory/:id" element={<InventoryEditor />} />
+        <Route path="/profiles" element={<Profiles />} />
+        <Route path="/profiles/:platform/:id" element={<ProfileDetails />} />
+        <Route path="/profiles/:platform/:id/policies" element={<EditProfilePolicies />} />
+        <Route path="/repositories" element={<Repositories />} />
+        <Route path="/repositories/:platform/:repoId" element={<RepositoryDetails />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </EnrollmentGuard>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -36,32 +76,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter basename={deploymentPrefixPath}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/applications" element={<Applications />} />
-              <Route path="/web-applications" element={<WebApplications />} />
-              <Route path="/policies" element={<Policies />} />
-              <Route path="/enrollment" element={<Enrollment />} />
-              <Route path="/devices" element={<Devices />} />
-              <Route path="/devices/:platform" element={<Devices />} />
-              <Route path="/devices/:platform/:id" element={<DeviceDetails />} />
-              <Route path="/groups" element={<Groups />} />
-              <Route path="/groups/:id" element={<GroupDetails />} />
-              <Route path="/geofences" element={<Geofences />} />
-              <Route path="/geofences/new" element={<GeofenceEditor />} />
-              <Route path="/geofences/:id" element={<GeofenceEditor />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/inventory/new" element={<InventoryEditor />} />
-              <Route path="/inventory/:id" element={<InventoryEditor />} />
-              <Route path="/inventory/:id" element={<InventoryEditor />} />
-              <Route path="/profiles" element={<Profiles />} />
-              <Route path="/profiles/:platform/:id" element={<ProfileDetails />} />
-              <Route path="/profiles/:platform/:id/policies" element={<EditProfilePolicies />} />
-              <Route path="/repositories" element={<Repositories />} />
-              <Route path="/repositories/:platform/:repoId" element={<RepositoryDetails />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <EnterpriseProvider>
+              <AppRoutes />
+            </EnterpriseProvider>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>
@@ -70,3 +87,4 @@ const App = () => (
 );
 
 export default App;
+

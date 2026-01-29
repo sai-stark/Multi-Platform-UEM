@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Application, ApplicationService, AppActionType } from '@/api/services/applications';
-import { AddApplicationDialog } from '@/components/applications/AddApplicationDialog';
+// Commented out: Original AddApplicationDialog import
+// import { AddApplicationDialog } from '@/components/applications/AddApplicationDialog';
 import { Platform } from '@/types/models';
 import { getAssetUrl } from '@/config/env';
+import { EnterpriseService } from '@/api/services/enterprise';
 import { 
   Package, 
   Plus, 
@@ -15,13 +18,25 @@ import {
   AlertTriangle,
   Smartphone,
   Apple,
-  Monitor
+  Monitor,
+  Loader2,
+  AlertCircle,
+  Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +50,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+
+// Google API types for iframe integration
+declare global {
+  interface Window {
+    gapi: {
+      load: (api: string, callback: () => void) => void;
+      iframes: {
+        CROSS_ORIGIN_IFRAMES_FILTER: any;
+        getContext: () => {
+          openChild: (options: {
+            url: string;
+            where: HTMLElement;
+            attributes: { style: string; scrolling: string };
+          }) => {
+            on: (event: string, callback: (data?: any) => void) => void;
+            register: (
+              event: string,
+              callback: (data?: any) => void,
+              filter?: any
+            ) => void;
+          };
+        };
+      };
+    };
+  }
+}
 
 const actionConfig: Record<AppActionType, { label: string; icon: typeof CheckCircle; className: string }> = {
   MANDATORY: { label: 'Mandatory', icon: CheckCircle, className: 'status-badge--compliant' },
@@ -78,8 +119,68 @@ const platformConfig: Record<string, {
   },
 };
 
+// Function to get iframe token from localStorage or API
+const getIframeToken = async (
+  forceRefresh: boolean = false
+): Promise<string | null> => {
+  try {
+    const TOKEN_REFRESH_INTERVAL = 60 * 60 * 1000; // 60 minutes in milliseconds
+    const now = Date.now();
+
+    // Check if we should refresh based on time (every 60 minutes)
+    const lastRefreshTime = localStorage.getItem("iFrameWebTokenRefreshTime");
+    const shouldRefreshByTime = lastRefreshTime
+      ? now - parseInt(lastRefreshTime) > TOKEN_REFRESH_INTERVAL
+      : true;
+
+    // First, try to get token from localStorage (unless forcing refresh or time-based refresh needed)
+    if (!forceRefresh && !shouldRefreshByTime) {
+      const storedToken = localStorage.getItem("iFrameWebToken");
+      if (storedToken) {
+        console.log("Using stored iframe token");
+        return storedToken;
+      }
+    }
+
+    // If no token in localStorage, forcing refresh, or time-based refresh needed
+    const enterpriseName = localStorage.getItem("mdm_enterprise_display_name");
+    if (!enterpriseName) {
+      console.error("No enterprise display name found in localStorage");
+      return null;
+    }
+
+    const refreshReason = forceRefresh
+      ? "forced refresh"
+      : shouldRefreshByTime
+        ? "time-based refresh (60 minutes)"
+        : "no stored token";
+
+    console.log(
+      `Fetching new iframe token from API for enterprise: ${enterpriseName} (${refreshReason})`
+    );
+
+    // Fetch new token from API
+    const response = await EnterpriseService.generateEnterpriseWebToken('android', { parentFrameUrl: enterpriseName });
+    console.log("API response:", response);
+    if (response?.webToken) {
+      // Store the new token and refresh time in localStorage
+      localStorage.setItem("iFrameWebToken", response.webToken);
+      localStorage.setItem("iFrameWebTokenRefreshTime", now.toString());
+      console.log("New token stored and returned:", response.webToken);
+      return response.webToken;
+    }
+
+    console.error("No webToken received from API");
+    return null;
+  } catch (error) {
+    console.error("Error getting iframe token:", error);
+    return null;
+  }
+};
+
 const Applications = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [platform, setPlatform] = useState<Platform>('android');
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,6 +189,339 @@ const Applications = () => {
     open: false,
     app: null
   });
+
+  // Iframe-related state
+  const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
+  const [googleApiError, setGoogleApiError] = useState<string | null>(null);
+  const [isIframeLoading, setIsIframeLoading] = useState(false);
+  const [selectedApps, setSelectedApps] = useState<
+    Array<{
+      packageName: string;
+      productId: string;
+      action: string;
+    }>
+  >([]);
+
+  // Refs for iframe management
+  const iframeCreatedRef = useRef(false);
+  const iframeInstanceRef = useRef<any>(null);
+  const containerRef = useRef<HTMLElement | null>(null);
+  const tokenRefreshAttemptedRef = useRef(false);
+  const lastTokenRefreshTimeRef = useRef<number | null>(null);
+
+  // Initialize token refresh time tracking from localStorage
+  useEffect(() => {
+    const storedRefreshTime = localStorage.getItem("iFrameWebTokenRefreshTime");
+    if (storedRefreshTime) {
+      lastTokenRefreshTimeRef.current = parseInt(storedRefreshTime);
+    }
+  }, []);
+
+  // Handle iframe messages for app selection
+  const handleIframeMessage = (event: MessageEvent) => {
+    console.log("Received iframe message:", event);
+
+    // Check if the message is from Google Play
+    if (event.origin.includes("play.google.com")) {
+      try {
+        let data;
+        if (typeof event.data === "string" && event.data.startsWith("!_{")) {
+          const jsonStr = event.data.substring(2);
+          data = JSON.parse(jsonStr);
+        } else {
+          data =
+            typeof event.data === "string"
+              ? JSON.parse(event.data)
+              : event.data;
+        }
+
+        console.log("Parsed iframe data:", data);
+
+        if (
+          data &&
+          data.s &&
+          data.s.includes("onproductselect") &&
+          data.a &&
+          data.a.length > 0
+        ) {
+          const appData = data.a[0];
+          console.log("App selection detected:", appData);
+
+          if (appData.packageName) {
+            setSelectedApps((prev) => {
+              const exists = prev.some(
+                (app) => app.packageName === appData.packageName
+              );
+              if (!exists) {
+                return [
+                  ...prev,
+                  {
+                    packageName: appData.packageName,
+                    productId: appData.productId || appData.packageName,
+                    action: appData.action || "selected",
+                  },
+                ];
+              }
+              return prev;
+            });
+          }
+        }
+      } catch (error) {
+        console.log("Could not parse iframe message:", error);
+      }
+    }
+  };
+
+  // Helper function to create fallback iframe
+  const createFallbackIframe = (
+    container: HTMLElement,
+    url: string,
+    currentToken: string
+  ) => {
+    const fallbackIframe = document.createElement("iframe");
+    fallbackIframe.src = url;
+    fallbackIframe.style.cssText =
+      "width: 100%; min-height: 400px; border: none;";
+    fallbackIframe.scrolling = "yes";
+
+    fallbackIframe.onload = () => {
+      console.log("Fallback iframe loaded successfully");
+      setIsIframeLoading(false);
+    };
+
+    setTimeout(() => {
+      if (isIframeLoading) {
+        console.log("Fallback iframe loading timeout - hiding loading indicator");
+        setIsIframeLoading(false);
+      }
+    }, 8000);
+
+    fallbackIframe.onerror = async () => {
+      console.error("Fallback iframe failed to load");
+      setGoogleApiError("Failed to load Google Play for Work iframe");
+      setIsIframeLoading(false);
+    };
+
+    iframeInstanceRef.current = fallbackIframe;
+    container.appendChild(fallbackIframe);
+  };
+
+  // Function to initialize iframe with a specific token
+  const initializeIframeWithToken = async (
+    container: HTMLElement,
+    token: string
+  ) => {
+    const options = {
+      url: `https://play.google.com/work/embedded/search?token=${token}&mode=SELECT`,
+      where: container,
+      attributes: {
+        style: "width: 100%; min-height: 400px; border: none;",
+        scrolling: "yes",
+      },
+    };
+
+    if (window.gapi && window.gapi.iframes && window.gapi.iframes.getContext) {
+      try {
+        const iframe = window.gapi.iframes.getContext().openChild(options);
+
+        if (!iframe) {
+          console.error("Failed to create iframe, falling back to simple iframe");
+          createFallbackIframe(container, options.url, token);
+          return;
+        }
+
+        iframeInstanceRef.current = iframe;
+        iframeCreatedRef.current = true;
+
+        if (typeof iframe.on === "function") {
+          iframe.on("ready", () => {
+            console.log("Google Play for Work iframe loaded successfully");
+            setIsIframeLoading(false);
+          });
+
+          iframe.on("error", async () => {
+            setGoogleApiError("Failed to load Google Play for Work");
+            setIsIframeLoading(false);
+          });
+        }
+
+        // Fallback timeout
+        setTimeout(() => {
+          if (isIframeLoading) {
+            console.log("Iframe loading timeout - hiding loading indicator");
+            setIsIframeLoading(false);
+          }
+        }, 3000);
+
+        // Register for product selection events
+        if (
+          typeof iframe.register === "function" &&
+          window.gapi.iframes.CROSS_ORIGIN_IFRAMES_FILTER
+        ) {
+          iframe.register(
+            "onproductselect",
+            function (event: any) {
+              console.log("Product selected:", event);
+
+              if (event.action === "selected" && event.packageName) {
+                setSelectedApps((prev) => {
+                  const exists = prev.some(
+                    (app) => app.packageName === event.packageName
+                  );
+                  if (!exists) {
+                    return [
+                      ...prev,
+                      {
+                        packageName: event.packageName,
+                        productId: event.productId || event.packageName,
+                        action: event.action,
+                      },
+                    ];
+                  }
+                  return prev;
+                });
+              }
+            },
+            window.gapi.iframes.CROSS_ORIGIN_IFRAMES_FILTER
+          );
+        }
+      } catch (iframeError) {
+        console.error("Error creating Google API iframe:", iframeError);
+        createFallbackIframe(container, options.url, token);
+      }
+    } else {
+      createFallbackIframe(container, options.url, token);
+    }
+  };
+
+  // Cleanup function to destroy existing iframe
+  const cleanupIframe = () => {
+    if (containerRef.current) {
+      containerRef.current.innerHTML = "";
+    }
+
+    iframeCreatedRef.current = false;
+    iframeInstanceRef.current = null;
+    tokenRefreshAttemptedRef.current = false;
+    lastTokenRefreshTimeRef.current = null;
+
+    setIsIframeLoading(false);
+
+    window.removeEventListener("message", handleIframeMessage);
+  };
+
+  // Function to remove selected app
+  const removeSelectedApp = (index: number) => {
+    setSelectedApps((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Load Google API script
+  useEffect(() => {
+    const loadGoogleAPI = () => {
+      if (window.gapi) {
+        setIsGoogleApiLoaded(true);
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://apis.google.com/js/api.js";
+      script.async = true;
+      script.defer = true;
+
+      script.onload = () => {
+        if (window.gapi) {
+          try {
+            window.gapi.load("gapi.iframes", () => {
+              if (window.gapi.iframes && window.gapi.iframes.getContext) {
+                setIsGoogleApiLoaded(true);
+                setGoogleApiError(null);
+              } else {
+                console.warn("Google iframes API not fully loaded, using fallback");
+                setIsGoogleApiLoaded(true);
+                setGoogleApiError(null);
+              }
+            });
+          } catch (loadError) {
+            console.error("Error loading gapi.iframes:", loadError);
+            setGoogleApiError("Failed to load Google iframes API");
+          }
+        } else {
+          setGoogleApiError("Failed to load Google API");
+        }
+      };
+
+      script.onerror = () => {
+        setGoogleApiError("Failed to load Google API script");
+      };
+
+      document.head.appendChild(script);
+    };
+
+    loadGoogleAPI();
+  }, []);
+
+  // Initialize Google Play for Work iframe when dialog opens
+  useEffect(() => {
+    if (addDialogOpen && isGoogleApiLoaded && !iframeCreatedRef.current) {
+      const initializePlayStoreIframe = async () => {
+        try {
+          const container = document.getElementById("play-store-container");
+          if (!container) {
+            console.error("Container not found");
+            return;
+          }
+
+          containerRef.current = container;
+
+          if (iframeCreatedRef.current || iframeInstanceRef.current) {
+            console.log("Iframe already created, skipping...");
+            return;
+          }
+
+          container.innerHTML = "";
+          iframeCreatedRef.current = true;
+
+          setIsIframeLoading(true);
+          setGoogleApiError(null);
+
+          window.addEventListener("message", handleIframeMessage);
+
+          const token = await getIframeToken();
+          if (!token) {
+            console.error("Failed to get iframe token");
+            setGoogleApiError("Failed to get iframe token");
+            setIsIframeLoading(false);
+            return;
+          }
+
+          await initializeIframeWithToken(container, token);
+        } catch (error) {
+          console.error("Error initializing Google Play for Work:", error);
+          iframeCreatedRef.current = false;
+          iframeInstanceRef.current = null;
+          setGoogleApiError("Failed to initialize Google Play for Work");
+          setIsIframeLoading(false);
+        }
+      };
+
+      const timeoutId = setTimeout(initializePlayStoreIframe, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [addDialogOpen, isGoogleApiLoaded]);
+
+  // Cleanup when dialog closes
+  useEffect(() => {
+    if (!addDialogOpen) {
+      cleanupIframe();
+    }
+  }, [addDialogOpen]);
+
+  // Cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      cleanupIframe();
+    };
+  }, []);
 
   // Fetch applications
   const fetchApplications = async () => {
@@ -153,6 +587,47 @@ const Applications = () => {
         variant: 'destructive'
       });
     }
+  };
+
+  // Handle adding selected apps from iframe
+  const handleAddSelectedApps = async () => {
+    if (selectedApps.length === 0) {
+      toast({
+        title: "No Apps Selected",
+        description: "Please select applications from the Google Play for Work interface above.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Processing",
+      description: `Processing ${selectedApps.length} selected application(s)...`,
+    });
+
+    for (let i = 0; i < selectedApps.length; i++) {
+      const app = selectedApps[i];
+      try {
+        if (i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        await ApplicationService.createApplication(platform, {
+          packageName: app.packageName,
+        });
+      } catch (error) {
+        console.error(`Failed to add app ${app.packageName}:`, error);
+      }
+    }
+
+    setSelectedApps([]);
+    setAddDialogOpen(false);
+    fetchApplications();
+
+    toast({
+      title: "Complete",
+      description: `Finished processing ${selectedApps.length} application(s).`,
+    });
   };
 
   // Stats
@@ -247,7 +722,10 @@ const Applications = () => {
         Block App
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>View Details</DropdownMenuItem>
+      <DropdownMenuItem onClick={() => navigate(`/applications/${platform}/${app.id}`)}>
+        <Eye className="w-4 h-4 mr-2" />
+        View Details
+      </DropdownMenuItem>
       <DropdownMenuItem>Manage Versions</DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem 
@@ -411,13 +889,242 @@ const Applications = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Add Application Dialog */}
+        {/* Add Application Dialog - Platform Aware */}
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogContent className={cn(
+            "overflow-y-auto",
+            platform === 'android' 
+              ? "w-[80vw] max-w-[80vw] h-[90vh] max-h-[90vh]" 
+              : "sm:max-w-[500px]"
+          )}>
+            <DialogHeader>
+              <DialogTitle>
+                {platform === 'android' 
+                  ? 'Add Applications from Google Play for Work'
+                  : platform === 'ios'
+                    ? 'Add iOS Application'
+                    : 'Add Application'}
+              </DialogTitle>
+              <DialogDescription>
+                {platform === 'android' 
+                  ? 'Select applications from Google Play for Work to add to your organization.'
+                  : platform === 'ios'
+                    ? 'Add iOS applications via App Store or enterprise IPA files.'
+                    : 'Add applications for your selected platform.'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {/* Platform-specific content */}
+            {platform === 'android' ? (
+              /* Android: Google Play for Work Container */
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Google Play for Work</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Click "Select" on apps to add them to your selection
+                    </p>
+                  </div>
+                  <div className="border border-border rounded-lg bg-card p-4">
+                    {!isGoogleApiLoaded && !googleApiError && (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            Loading Google Play for Work...
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {googleApiError && (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold mb-2 text-foreground">
+                            Error Loading Google Play for Work
+                          </h3>
+                          <p className="text-muted-foreground mb-4">
+                            {googleApiError}
+                          </p>
+                          <Button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setGoogleApiError(null);
+                              setIsGoogleApiLoaded(false);
+                              const script = document.createElement("script");
+                              script.src = "https://apis.google.com/js/api.js";
+                              script.async = true;
+                              script.defer = true;
+
+                              script.onload = () => {
+                                if (window.gapi) {
+                                  window.gapi.load("gapi.iframes", () => {
+                                    setIsGoogleApiLoaded(true);
+                                    setGoogleApiError(null);
+                                  });
+                                } else {
+                                  setGoogleApiError("Failed to load Google API");
+                                }
+                              };
+
+                              script.onerror = () => {
+                                setGoogleApiError("Failed to load Google API script");
+                              };
+
+                              document.head.appendChild(script);
+                            }}
+                          >
+                            Retry
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="relative w-full">
+                      {isIframeLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-10">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            <p className="text-sm text-gray-600">
+                              Loading Google Play Store...
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      <div id="play-store-container" className="w-full" />
+                    </div>
+                  </div>
+
+                {/* Selected Apps Display */}
+                {selectedApps.length > 0 && (
+                  <div className="mt-3 p-3 border border-green-200 rounded-lg bg-green-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <h4 className="text-sm font-medium text-green-800">
+                          Selected ({selectedApps.length})
+                        </h4>
+                      </div>
+                      <p className="text-xs text-green-600">Ready to add</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {selectedApps.map((app, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between bg-white p-2 rounded border border-green-200 text-xs"
+                        >
+                          <span
+                            className="font-mono text-gray-700 truncate flex-1 mr-2"
+                            title={app.packageName}
+                          >
+                            {app.packageName}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSelectedApp(index)}
+                            className="h-5 w-5 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            ) : platform === 'ios' ? (
+              /* iOS: App Store / IPA Upload Interface */
+              <div className="space-y-4">
+                <div className="border border-border rounded-lg bg-muted/30 p-6">
+                  <div className="flex flex-col items-center justify-center text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                      <Apple className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        iOS App Management
+                      </h3>
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        iOS applications can be managed through Apple Business Manager 
+                        or by uploading enterprise IPA files directly.
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                      <Button variant="outline" className="flex-1" disabled>
+                        <Package className="w-4 h-4 mr-2" />
+                        Upload IPA
+                      </Button>
+                      <Button variant="outline" className="flex-1" disabled>
+                        <Apple className="w-4 h-4 mr-2" />
+                        App Store
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      iOS application management coming soon
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Other platforms placeholder */
+              <div className="border border-border rounded-lg bg-muted/30 p-6">
+                <div className="flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <Package className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Platform Not Supported
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Application management for this platform is not yet available.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAddDialogOpen(false);
+                  setSelectedApps([]);
+                  iframeCreatedRef.current = false;
+                }}
+              >
+                {platform === 'android' ? 'Cancel' : 'Close'}
+              </Button>
+              {platform === 'android' && (
+                <Button
+                  onClick={handleAddSelectedApps}
+                  disabled={
+                    !isGoogleApiLoaded ||
+                    !!googleApiError ||
+                    selectedApps.length === 0
+                  }
+                >
+                  Add Selected Applications{" "}
+                  {selectedApps.length > 0 && `(${selectedApps.length})`}
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Commented out: Original AddApplicationDialog
         <AddApplicationDialog
           open={addDialogOpen}
           onOpenChange={setAddDialogOpen}
           onApplicationAdded={fetchApplications}
           platform={platform}
         />
+        */}
       </div>
     </MainLayout>
   );
