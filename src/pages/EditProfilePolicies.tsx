@@ -881,28 +881,48 @@ function PolicyCardGrid({
   ].filter(p => p.show).sort((a, b) => a.title.localeCompare(b.title));
 
   // Android Policies (not restrictions) - sorted alphabetically
+  // ============================================================================
+  // ANDROID POLICIES
+  // Currently configured for Work Profile (WP) mode only.
+  // TODO: When Device Owner (DO) mode is implemented, uncomment DO-only policies
+  // based on the selected management mode (WP or DO).
+  // ============================================================================
   const androidPolicies = [
     { type: 'androidApplication', title: t('policies.android.applications'), description: t('policies.android.applications.desc'), icon: <Smartphone className="w-5 h-5" />, configured: hasApplications },
     { type: 'commonSettings', title: t('policies.android.commonSettings'), description: t('policies.android.commonSettings.desc'), icon: <Settings className="w-5 h-5" />, configured: false },
-    { type: 'deviceTheme', title: t('policies.android.deviceTheme'), description: t('policies.android.deviceTheme.desc'), icon: <Palette className="w-5 h-5" />, configured: false },
-    { type: 'enrollment', title: t('policies.android.enrollment'), description: t('policies.android.enrollment.desc'), icon: <UserPlus className="w-5 h-5" />, configured: false },
+    // ----- DO-ONLY POLICIES (Comment out for Work Profile) -----
+    // TODO: Uncomment when Device Owner mode is implemented
+    // { type: 'deviceTheme', title: t('policies.android.deviceTheme'), description: t('policies.android.deviceTheme.desc'), icon: <Palette className="w-5 h-5" />, configured: false },
+    // { type: 'enrollment', title: t('policies.android.enrollment'), description: t('policies.android.enrollment.desc'), icon: <UserPlus className="w-5 h-5" />, configured: false },
+    // ----- END DO-ONLY POLICIES -----
     { type: 'androidPasscode', title: t('policies.android.passcode'), description: t('policies.android.passcode.desc'), icon: <Key className="w-5 h-5" />, configured: hasAndroidPasscode },
     { type: 'androidWebApp', title: t('policies.android.webApps'), description: t('policies.android.webApps.desc'), icon: <Globe className="w-5 h-5" />, configured: hasWebApps },
   ].sort((a, b) => a.title.localeCompare(b.title));
 
-  // Android Restrictions - sorted alphabetically
+  // ============================================================================
+  // ANDROID RESTRICTIONS
+  // Currently configured for Work Profile (WP) mode only.
+  // WP supports: Location Restrictions, Security Restrictions
+  // DO supports: All restrictions (uncomment when DO mode is implemented)
+  // ============================================================================
   const androidRestrictions = [
-    { type: 'connectivityRestriction', title: t('restrictions.android.connectivity'), description: t('restrictions.android.connectivity.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasConnectivityRestriction },
-    { type: 'dateTimeRestriction', title: t('restrictions.android.dateTime'), description: t('restrictions.android.dateTime.desc'), icon: <Bell className="w-5 h-5" />, configured: hasDateTimeRestriction },
-    { type: 'displayRestriction', title: t('restrictions.android.display'), description: t('restrictions.android.display.desc'), icon: <Monitor className="w-5 h-5" />, configured: hasDisplayRestriction },
-    { type: 'kioskRestriction', title: t('restrictions.android.kiosk'), description: t('restrictions.android.kiosk.desc'), icon: <Monitor className="w-5 h-5" />, configured: hasKioskRestriction },
+    // ----- DO-ONLY RESTRICTIONS (Not supported in Work Profile) -----
+    // TODO: Uncomment when Device Owner mode is implemented
+    // { type: 'connectivityRestriction', title: t('restrictions.android.connectivity'), description: t('restrictions.android.connectivity.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasConnectivityRestriction },
+    // { type: 'dateTimeRestriction', title: t('restrictions.android.dateTime'), description: t('restrictions.android.dateTime.desc'), icon: <Bell className="w-5 h-5" />, configured: hasDateTimeRestriction },
+    // { type: 'displayRestriction', title: t('restrictions.android.display'), description: t('restrictions.android.display.desc'), icon: <Monitor className="w-5 h-5" />, configured: hasDisplayRestriction },
+    // { type: 'kioskRestriction', title: t('restrictions.android.kiosk'), description: t('restrictions.android.kiosk.desc'), icon: <Monitor className="w-5 h-5" />, configured: hasKioskRestriction },
+    // { type: 'miscRestriction', title: t('restrictions.android.miscellaneous'), description: t('restrictions.android.miscellaneous.desc'), icon: <Settings className="w-5 h-5" />, configured: hasMiscRestriction },
+    // { type: 'networkRestriction', title: t('restrictions.android.network'), description: t('restrictions.android.network.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasNetworkRestriction },
+    // { type: 'phoneRestriction', title: t('restrictions.android.phone'), description: t('restrictions.android.phone.desc'), icon: <Smartphone className="w-5 h-5" />, configured: hasPhoneRestriction },
+    // { type: 'storageRestriction', title: t('restrictions.android.storage'), description: t('restrictions.android.storage.desc'), icon: <Server className="w-5 h-5" />, configured: hasStorageRestriction },
+    // { type: 'tetheringRestriction', title: t('restrictions.android.tethering'), description: t('restrictions.android.tethering.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasTetheringRestriction },
+    // ----- END DO-ONLY RESTRICTIONS -----
+    
+    // ----- WP-SUPPORTED RESTRICTIONS -----
     { type: 'locationRestriction', title: t('restrictions.android.location'), description: t('restrictions.android.location.desc'), icon: <Globe className="w-5 h-5" />, configured: hasLocationRestriction },
-    { type: 'miscRestriction', title: t('restrictions.android.miscellaneous'), description: t('restrictions.android.miscellaneous.desc'), icon: <Settings className="w-5 h-5" />, configured: hasMiscRestriction },
-    { type: 'networkRestriction', title: t('restrictions.android.network'), description: t('restrictions.android.network.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasNetworkRestriction },
-    { type: 'phoneRestriction', title: t('restrictions.android.phone'), description: t('restrictions.android.phone.desc'), icon: <Smartphone className="w-5 h-5" />, configured: hasPhoneRestriction },
     { type: 'securityRestriction', title: t('restrictions.android.security'), description: t('restrictions.android.security.desc'), icon: <Shield className="w-5 h-5" />, configured: hasSecurityRestriction },
-    { type: 'storageRestriction', title: t('restrictions.android.storage'), description: t('restrictions.android.storage.desc'), icon: <Server className="w-5 h-5" />, configured: hasStorageRestriction },
-    { type: 'tetheringRestriction', title: t('restrictions.android.tethering'), description: t('restrictions.android.tethering.desc'), icon: <Wifi className="w-5 h-5" />, configured: hasTetheringRestriction },
+    // ----- END WP-SUPPORTED RESTRICTIONS -----
   ].sort((a, b) => a.title.localeCompare(b.title));
 
   // Split Android items into configured vs available

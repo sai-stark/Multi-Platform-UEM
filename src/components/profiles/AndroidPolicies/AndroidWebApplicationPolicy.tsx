@@ -37,6 +37,8 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { AndroidWebApplicationPolicy as AndroidWebApplicationPolicyType, Platform, WebApplication } from '@/types/models';
 import {
     AlertTriangle,
@@ -48,7 +50,6 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AndroidWebApplicationPolicyProps {
     platform: Platform;
@@ -89,7 +90,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                 console.error('Failed to fetch web applications:', error);
                 toast({
                     title: t('common.error'),
-                    description: t('policies.webApp.saveFailed'),
+                    description: getErrorMessage(error, t('policies.webApp.saveFailed')),
                     variant: 'destructive',
                 });
             }
@@ -178,7 +179,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
             console.error('Failed to delete policy:', error);
             toast({
                 title: t('common.error'),
-                description: t('policies.webApp.deleteFailed'),
+                description: getErrorMessage(error, t('policies.webApp.deleteFailed')),
                 variant: 'destructive',
             });
         }
@@ -242,7 +243,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
             console.error('Failed to save policies:', error);
             toast({
                 title: t('common.error'),
-                description: t('policies.webApp.saveFailed'),
+                description: getErrorMessage(error, t('policies.webApp.saveFailed')),
                 variant: 'destructive',
             });
         } finally {

@@ -19,6 +19,8 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import {
     AndroidPasscodePolicy as AndroidPasscodePolicyType,
     PasscodeComplexity,
@@ -49,6 +51,7 @@ interface PasscodePolicyProps {
 
 export function PasscodePolicy({ platform, profileId, initialData, onSave, onCancel }: PasscodePolicyProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.work);
 
@@ -177,6 +180,11 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
             onSave();
         } catch (error) {
             console.error('Failed to save passcode policy:', error);
+            toast({
+                title: t('common.error'),
+                description: getErrorMessage(error, t('passcodePolicy.saveFailed')),
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }
@@ -191,6 +199,11 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
             onSave();
         } catch (error) {
             console.error('Failed to delete passcode policy:', error);
+            toast({
+                title: t('common.error'),
+                description: getErrorMessage(error, t('passcodePolicy.deleteFailed')),
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }

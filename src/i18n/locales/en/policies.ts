@@ -255,6 +255,8 @@ export const policies = {
     'restrictions.blocked': 'Blocked',
     'restrictions.on': 'On',
     'restrictions.off': 'Off',
+    'restrictions.saveFailed': 'Failed to save restriction settings',
+    'restrictions.deleteFailed': 'Failed to delete restriction',
 
     // Security Restriction fields
     'restrictions.android.security.lockSafeSettings': 'Lock Safe Settings',
@@ -573,6 +575,7 @@ export const policies = {
     'policies.commonSettings.volumeLevel': 'Volume Level',
     'policies.commonSettings.appUpdateSchedule': 'App Update Schedule',
     'policies.commonSettings.appUpdateScheduleDesc': 'Time window for automatic app updates',
+    'policies.commonSettings.saveFailed': 'Failed to save common settings policy',
 
     // Application Policy fields
     'policies.application.title': 'Application Policies',
@@ -697,4 +700,6 @@ export const policies = {
     'passcodePolicy.neverExpires': '0 = never expires',
     'passcodePolicy.deleteConfirm': 'Are you sure you want to delete this passcode policy?',
     'passcodePolicy.validationError': 'Block after days must be less than wipe after days.',
+    'passcodePolicy.saveFailed': 'Failed to save passcode policy',
+    'passcodePolicy.deleteFailed': 'Failed to delete passcode policy',
 };

@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { Platform, SecurityRestriction as SecurityRestrictionType } from '@/types/models';
 import { Code, Edit, Loader2, Lock, Save, Shield, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SecurityRestrictionProps {
     platform: Platform;
@@ -19,6 +21,7 @@ interface SecurityRestrictionProps {
 
 export function SecurityRestriction({ platform, profileId, initialData, onSave, onCancel }: SecurityRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -43,6 +46,11 @@ export function SecurityRestriction({ platform, profileId, initialData, onSave, 
             onSave();
         } catch (error) {
             console.error('Failed to save security restriction:', error);
+            toast({
+                title: t('common.error'),
+                description: getErrorMessage(error, t('restrictions.saveFailed')),
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }

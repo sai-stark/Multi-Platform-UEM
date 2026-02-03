@@ -35,6 +35,8 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { AndroidApplicationPolicy as AndroidApplicationPolicyType, ApplicationAction, Platform } from '@/types/models';
 import {
     AlertTriangle,
@@ -49,7 +51,6 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AndroidApplicationPolicyProps {
     platform: Platform;
@@ -93,7 +94,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
                 console.error('Failed to fetch applications:', error);
                 toast({
                     title: t('common.error'),
-                    description: t('policies.application.saveFailed'),
+                    description: getErrorMessage(error, t('policies.application.saveFailed')),
                     variant: 'destructive',
                 });
             }
@@ -221,7 +222,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
             console.error('Failed to delete policy:', error);
             toast({
                 title: t('common.error'),
-                description: t('policies.application.deleteFailed'),
+                description: getErrorMessage(error, t('policies.application.deleteFailed')),
                 variant: 'destructive',
             });
         }
@@ -275,7 +276,7 @@ export function AndroidApplicationPolicy({ platform, profileId, initialData = []
             console.error('Failed to save policies:', error);
             toast({
                 title: t('common.error'),
-                description: t('policies.application.saveFailed'),
+                description: getErrorMessage(error, t('policies.application.saveFailed')),
                 variant: 'destructive',
             });
         } finally {

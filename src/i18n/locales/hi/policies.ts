@@ -255,6 +255,8 @@ export const policies = {
     'restrictions.blocked': 'अवरुद्ध',
     'restrictions.on': 'चालू',
     'restrictions.off': 'बंद',
+    'restrictions.saveFailed': 'प्रतिबंध सेटिंग्स सहेजने में विफल',
+    'restrictions.deleteFailed': 'प्रतिबंध हटाने में विफल',
 
     // Security Restriction fields
     'restrictions.android.security.lockSafeSettings': 'सुरक्षित सेटिंग्स लॉक करें',
@@ -574,6 +576,7 @@ export const policies = {
     'policies.commonSettings.volumeLevel': 'वॉल्यूम स्तर',
     'policies.commonSettings.appUpdateSchedule': 'ऐप अपडेट शेड्यूल',
     'policies.commonSettings.appUpdateScheduleDesc': 'स्वचालित ऐप अपडेट के लिए समय विंडो',
+    'policies.commonSettings.saveFailed': 'सामान्य सेटिंग्स नीति सहेजने में विफल',
 
     // Application Policy fields
     'policies.application.title': 'ऐप्लिकेशन नीतियां',
@@ -698,4 +701,6 @@ export const policies = {
     'passcodePolicy.neverExpires': '0 = कभी समाप्त नहीं होता',
     'passcodePolicy.deleteConfirm': 'क्या आप वाकई इस पासकोड नीति को हटाना चाहते हैं?',
     'passcodePolicy.validationError': 'ब्लॉक के दिन वाइप के दिनों से कम होने चाहिए।',
+    'passcodePolicy.saveFailed': 'पासकोड नीति सहेजने में विफल',
+    'passcodePolicy.deleteFailed': 'पासकोड नीति हटाने में विफल',
 };

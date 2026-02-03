@@ -11,10 +11,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { ControlType, LocationRestriction as LocationRestrictionType, Platform } from '@/types/models';
 import { Edit, Loader2, MapPin, MapPinOff, Save, Share2 } from 'lucide-react';
 import { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LocationRestrictionProps {
     platform: Platform;
@@ -26,6 +28,7 @@ interface LocationRestrictionProps {
 
 export function LocationRestriction({ platform, profileId, initialData, onSave, onCancel }: LocationRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -48,6 +51,11 @@ export function LocationRestriction({ platform, profileId, initialData, onSave, 
             onSave();
         } catch (error) {
             console.error('Failed to save location restriction:', error);
+            toast({
+                title: t('common.error'),
+                description: getErrorMessage(error, t('restrictions.saveFailed')),
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }
