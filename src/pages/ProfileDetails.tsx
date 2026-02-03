@@ -14,6 +14,7 @@ import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { FullProfile, Platform } from "@/types/models";
 import { ProfileService } from "@/api/services/profiles";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePlatformValidation } from "@/hooks/usePlatformValidation";
 
 import {
   Apple,
@@ -88,6 +89,25 @@ export default function ProfileDetails() {
   useEffect(() => {
     fetchProfile();
   }, [id, platform]);
+
+  // Validate URL platform matches fetched profile's actual platform
+  const { shouldRender } = usePlatformValidation(
+    platform,
+    profile?.platform,
+    loading,
+    (correctPlatform) => `/profiles/${correctPlatform}/${id}`
+  );
+
+  // Don't render if we're about to redirect due to platform mismatch
+  if (!shouldRender) {
+    return (
+      <MainLayout>
+        <div className="flex h-full items-center justify-center">
+          <LoadingAnimation message="Redirecting..." />
+        </div>
+      </MainLayout>
+    );
+  }
 
   const handlePublish = async () => {
     if (!platform || !id) return;

@@ -34,6 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
 import { getAssetUrl } from '@/config/env';
+import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 import { cn } from '@/lib/utils';
 import { DeviceApplicationList, DeviceInfo, FullProfile, Platform } from '@/types/models';
 import {
@@ -141,6 +142,26 @@ export default function DeviceDetails() {
     useEffect(() => {
         fetchDevice();
     }, [id, platform]);
+
+    // Validate URL platform matches fetched device's actual platform
+    const { shouldRender } = usePlatformValidation(
+        platform,
+        device?.platform,
+        loading,
+        (correctPlatform) => `/devices/${correctPlatform}/${id}`
+    );
+
+    // Don't render if we're about to redirect due to platform mismatch
+    if (!shouldRender) {
+        return (
+            <MainLayout>
+                <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="text-muted-foreground animate-pulse">Redirecting...</p>
+                </div>
+            </MainLayout>
+        );
+    }
 
     const handleAction = async (action: string, label: string) => {
         if (!device || !device.id) return;

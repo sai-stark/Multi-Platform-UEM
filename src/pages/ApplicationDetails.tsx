@@ -46,6 +46,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { useToast } from '@/hooks/use-toast';
+import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 
 // Action configuration for badges
 const actionConfig: Record<AppActionType, { label: string; icon: typeof CheckCircle; className: string }> = {
@@ -100,6 +101,28 @@ const ApplicationDetails = () => {
 
     fetchApplication();
   }, [platform, id, toast]);
+
+  // Validate URL platform matches fetched application's actual platform
+  const { shouldRender } = usePlatformValidation(
+    platform,
+    application?.platform,
+    loading,
+    (correctPlatform) => `/applications/${correctPlatform}/${id}`
+  );
+
+  // Don't render if we're about to redirect due to platform mismatch
+  if (!shouldRender) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Redirecting...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   // Copy to clipboard helper
   const copyToClipboard = async (text: string, fieldName: string) => {
