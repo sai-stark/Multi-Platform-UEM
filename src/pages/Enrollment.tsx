@@ -17,19 +17,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getAssetUrl } from '@/config/env';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
 import {
   Check,
   Copy,
   Download,
+  FileSearch,
   FileText,
   Info,
   Laptop,
+  MousePointer2,
   QrCode,
+  RefreshCw,
   Server,
   Settings2,
   Smartphone,
@@ -98,7 +101,7 @@ export default function Enrollment() {
   const [isQrVisible, setIsQrVisible] = useState(false);
 
   const steps = enrollmentSteps[selectedPlatform];
-  const currentProfile = profiles.find(p => p.id === selectedProfileId) || profiles[0];
+  const currentProfile = profiles.find(p => p.id === selectedProfileId);
 
   useEffect(() => {
     fetchProfiles(selectedPlatform);
@@ -119,12 +122,9 @@ export default function Enrollment() {
     setLoading(true);
     try {
       const data = await EnrollmentService.getProfiles(platform);
-      setProfiles(data);
-      if (data.length > 0) {
-        setSelectedProfileId(data[0].id);
-      } else {
-        setSelectedProfileId('');
-      }
+      const publishedProfiles = data.filter(p => p.status === 'PUBLISHED');
+      setProfiles(publishedProfiles);
+      setSelectedProfileId('');
     } catch (error) {
       console.error('Failed to fetch profiles', error);
       toast({
@@ -372,253 +372,289 @@ export default function Enrollment() {
         </section>
 
         {/* Platform Tabs */}
-        <Tabs value={selectedPlatform} onValueChange={handlePlatformChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-muted">
-            {(['android', 'ios', 'windows', 'macos', 'linux'] as Platform[]).map((platform) => {
-              const config = platformConfig[platform];
-              const Icon = config.icon;
-              return (
-                <TabsTrigger
-                  key={platform}
-                  value={platform}
-                  className="flex items-center gap-2 data-[state=active]:bg-background"
-                >
-                  {config.asset ? (
-                    <img src={config.asset} alt={config.label} className="w-4 h-4 object-contain" />
-                  ) : (
-                    <Icon className="w-4 h-4" aria-hidden="true" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {config.label}
-                  </span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+        <section
+          className="grid grid-cols-5 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
+          role="tablist"
+          aria-label="Filter by platform"
+        >
+          {(['android', 'ios', 'windows', 'macos', 'linux'] as Platform[]).map((platform) => {
+            const config = platformConfig[platform];
+            const Icon = config.icon;
+            const isActive = selectedPlatform === platform;
+            return (
+              <button
+                key={platform}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => handlePlatformChange(platform)}
+                className={cn(
+                  "relative inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  isActive && "bg-background text-foreground shadow-md border border-border/50 backdrop-blur-md",
+                  !isActive &&
+                  "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {config.asset ? (
+                  <img src={config.asset} alt={config.label} className="w-5 h-5 object-contain" />
+                ) : (
+                  <Icon className="w-4 h-4" aria-hidden="true" />
+                )}
+                <span className="hidden sm:inline">
+                  {config.label}
+                </span>
+              </button>
+            );
+          })}
+        </section>
 
-          {/* Filters */}
-          <div className="mt-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-            {/* Profile Selection */}
-            <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
-              <SelectTrigger id="profile-filter" className="w-[300px] bg-background" disabled={loading || profiles.length === 0}>
-                <SelectValue placeholder={loading ? "Loading..." : "Select Profile"} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                {profiles.map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    {profile.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Filters */}
+        <div className="mt-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+          {/* Profile Selection */}
+          <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
+            <SelectTrigger id="profile-filter" className="w-[300px] bg-background" disabled={loading || profiles.length === 0}>
+              <SelectValue placeholder={loading ? "Loading..." : "Select Profile"} />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              {profiles.map((profile) => (
+                <SelectItem key={profile.id} value={profile.id}>
+                  {profile.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            {loading && <span className="text-sm text-muted-foreground animate-pulse">Fetching profiles...</span>}
-          </div>
+          {loading && <span className="text-sm text-muted-foreground animate-pulse">Fetching profiles...</span>}
+        </div>
 
-          <TabsContent value={selectedPlatform} className="mt-6">
-            {loading ? (
-              <LoadingAnimation message="Loading enrollment profiles..." className="min-h-[400px]" />
-            ) : currentProfile ? (
-              <div className="space-y-6">
-                {/* Top Row: QR Code & Profile Info */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* QR Code Display */}
-                  <section className="panel" aria-label="QR Code">
-                    <div className="panel__header flex justify-between items-center">
-                      <h3 className="panel__title flex items-center gap-2">
-                        <QrCode className="w-5 h-5" aria-hidden="true" />
-                        {t('enrollment.qrCode')}
-                      </h3>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon" disabled={!isQrVisible}>
-                            <ZoomIn className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle>Enrollment QR Code</DialogTitle>
-                          </DialogHeader>
-                          <div className="flex items-center justify-center p-0">
-                            <div className="w-96 h-96 bg-white">
-                              {renderQrContent()}
-                            </div>
-                          </div>
-                          <div className="text-center text-sm text-muted-foreground break-all">
-                            {getEnrollmentUrl()}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    <div className="panel__content">
-                      <div className="text-center relative">
-                        <div className="relative mx-auto w-48 h-48 rounded-lg overflow-hidden group">
-                          {/* Blurred Container */}
-                          <div className={`w-full h-full transition-all duration-300 ${!isQrVisible ? 'blur-md opacity-50' : ''}`}>
+        <div className="mt-6">
+          {loading ? (
+            <LoadingAnimation message="Loading enrollment profiles..." className="min-h-[400px]" />
+          ) : currentProfile ? (
+            <div className="space-y-6">
+              {/* Top Row: QR Code & Profile Info */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* QR Code Display */}
+                <section className="panel" aria-label="QR Code">
+                  <div className="panel__header flex justify-between items-center">
+                    <h3 className="panel__title flex items-center gap-2">
+                      <QrCode className="w-5 h-5" aria-hidden="true" />
+                      {t('enrollment.qrCode')}
+                    </h3>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" disabled={!isQrVisible}>
+                          <ZoomIn className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Enrollment QR Code</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex items-center justify-center p-0">
+                          <div className="w-96 h-96 bg-white">
                             {renderQrContent()}
                           </div>
-
-                          {/* Generate Button Overlay */}
-                          {!isQrVisible && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-background/20 z-10">
-                              <Button onClick={() => setIsQrVisible(true)}>
-                                Generate QR
-                              </Button>
-                            </div>
-                          )}
                         </div>
-
-                        <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
+                        <div className="text-center text-sm text-muted-foreground break-all">
                           {getEnrollmentUrl()}
-                        </p>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                        <Button
-                          onClick={handleDownloadQR}
-                          className="flex-1"
-                          variant="outline"
-                          disabled={!isQrVisible}
-                        >
-                          <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-                          {t('enrollment.downloadQR')}
-                        </Button>
-                        <Button
-                          onClick={handleCopyEnrollmentData}
-                          className="flex-1"
-                          variant="outline"
-                          aria-live="polite"
-                        >
-                          {copied ? (
-                            <Check className="w-4 h-4 mr-2" aria-hidden="true" />
-                          ) : (
-                            <Copy className="w-4 h-4 mr-2" aria-hidden="true" />
-                          )}
-                          {copied ? t('enrollment.copied') : t('enrollment.copyData')}
-                        </Button>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Profile Configuration */}
-                  <section className="panel" aria-label="Profile configuration">
-                    <div className="panel__header">
-                      <h3 className="panel__title flex items-center gap-2">
-                        <Info className="w-5 h-5" aria-hidden="true" />
-                        {t('enrollment.profileInfo')}
-                      </h3>
-                    </div>
-                    <div className="panel__content">
-                      <p className="text-sm text-muted-foreground mb-4">{currentProfile.description}</p>
-                      <dl className="space-y-3 text-sm">
-                        <div className="flex justify-between py-2 border-b border-border">
-                          <dt className="text-muted-foreground">{t('enrollment.wifiSSID')}</dt>
-                          <dd className="font-mono">{currentProfile.config?.wifiSSID || 'N/A'}</dd>
                         </div>
-                        <div className="flex justify-between py-2 border-b border-border">
-                          <dt className="text-muted-foreground">{t('enrollment.vpnStatus')}</dt>
-                          <dd>{currentProfile.config?.vpnEnabled ? t('enrollment.enabled') : t('enrollment.disabled')}</dd>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <div className="panel__content">
+                    <div className="text-center relative">
+                      <div className="relative mx-auto w-48 h-48 rounded-lg overflow-hidden group">
+                        {/* Blurred Container */}
+                        <div className={`w-full h-full transition-all duration-300 ${!isQrVisible ? 'blur-md opacity-50' : ''}`}>
+                          {renderQrContent()}
                         </div>
-                        {currentProfile.config?.vpnServer && (
-                          <div className="flex justify-between py-2 border-b border-border">
-                            <dt className="text-muted-foreground">{t('enrollment.vpnServer')}</dt>
-                            <dd className="font-mono">{currentProfile.config.vpnServer}</dd>
+
+                        {/* Generate Button Overlay */}
+                        {!isQrVisible && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-background/20 z-10">
+                            <Button onClick={() => setIsQrVisible(true)}>
+                              Generate QR
+                            </Button>
                           </div>
                         )}
-                      </dl>
-                    </div>
-                  </section>
-                </div>
+                      </div>
 
-                {/* Middle Row: Apps & Restrictions */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Mandatory Apps */}
-                  <section className="panel" aria-label="Mandatory applications">
-                    <div className="panel__header">
-                      <h3 className="panel__title">{t('enrollment.mandatoryApps')}</h3>
+                      <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
+                        {getEnrollmentUrl()}
+                      </p>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="data-table" role="table">
-                        <thead>
-                          <tr>
-                            <th scope="col">Application</th>
-                            <th scope="col">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentProfile.config?.mandatoryApps?.map((app, i) => (
-                            <tr key={i}>
-                              <td className="font-medium text-foreground">{app}</td>
-                              <td>
-                                <span className="status-badge status-badge--compliant">
-                                  <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                                  Required
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </section>
 
-                  {/* Restrictions */}
-                  <section className="panel" aria-label="Restrictions">
-                    <div className="panel__header">
-                      <h3 className="panel__title">{t('enrollment.restrictions')}</h3>
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                      <Button
+                        onClick={handleDownloadQR}
+                        className="flex-1"
+                        variant="outline"
+                        disabled={!isQrVisible}
+                      >
+                        <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+                        {t('enrollment.downloadQR')}
+                      </Button>
+                      <Button
+                        onClick={handleCopyEnrollmentData}
+                        className="flex-1"
+                        variant="outline"
+                        aria-live="polite"
+                      >
+                        {copied ? (
+                          <Check className="w-4 h-4 mr-2" aria-hidden="true" />
+                        ) : (
+                          <Copy className="w-4 h-4 mr-2" aria-hidden="true" />
+                        )}
+                        {copied ? t('enrollment.copied') : t('enrollment.copyData')}
+                      </Button>
                     </div>
-                    <div className="panel__content">
-                      <ul className="space-y-2">
-                        {currentProfile.config?.restrictions?.map((restriction, i) => (
-                          <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true" />
-                            {restriction}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </section>
-                </div>
+                  </div>
+                </section>
 
-                {/* Bottom Row: Steps */}
-                {/* Enrollment Steps */}
-                <section className="panel" aria-label="Enrollment steps">
+                {/* Profile Configuration */}
+                <section className="panel" aria-label="Profile configuration">
                   <div className="panel__header">
-                    <h3 className="panel__title">
-                      {t('enrollment.stepsTitle')}
+                    <h3 className="panel__title flex items-center gap-2">
+                      <Info className="w-5 h-5" aria-hidden="true" />
+                      {t('enrollment.profileInfo')}
                     </h3>
                   </div>
                   <div className="panel__content">
-                    <ol className="space-y-3" role="list">
-                      {steps.map((step, index) => (
-                        <li
-                          key={index}
-                          className="flex gap-3 text-sm"
-                        >
-                          <span
-                            className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium"
-                            aria-hidden="true"
-                          >
-                            {index + 1}
-                          </span>
-                          <span className="pt-0.5 text-foreground leading-relaxed">
-                            {language === 'hi' ? step.hi : step.en}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
+                    <p className="text-sm text-muted-foreground mb-4">{currentProfile.description}</p>
+                    <dl className="space-y-3 text-sm">
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <dt className="text-muted-foreground">{t('enrollment.wifiSSID')}</dt>
+                        <dd className="font-mono">{currentProfile.config?.wifiSSID || 'N/A'}</dd>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <dt className="text-muted-foreground">{t('enrollment.vpnStatus')}</dt>
+                        <dd>{currentProfile.config?.vpnEnabled ? t('enrollment.enabled') : t('enrollment.disabled')}</dd>
+                      </div>
+                      {currentProfile.config?.vpnServer && (
+                        <div className="flex justify-between py-2 border-b border-border">
+                          <dt className="text-muted-foreground">{t('enrollment.vpnServer')}</dt>
+                          <dd className="font-mono">{currentProfile.config.vpnServer}</dd>
+                        </div>
+                      )}
+                    </dl>
                   </div>
                 </section>
               </div>
-            ) : (
-              <div className="flex items-center justify-center h-64 text-muted-foreground">
-                No profiles available for this platform.
+
+              {/* Middle Row: Apps & Restrictions */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Mandatory Apps */}
+                <section className="panel" aria-label="Mandatory applications">
+                  <div className="panel__header">
+                    <h3 className="panel__title">{t('enrollment.mandatoryApps')}</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="data-table" role="table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Application</th>
+                          <th scope="col">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentProfile.config?.mandatoryApps?.map((app, i) => (
+                          <tr key={i}>
+                            <td className="font-medium text-foreground">{app}</td>
+                            <td>
+                              <span className="status-badge status-badge--compliant">
+                                <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                                Required
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* Restrictions */}
+                <section className="panel" aria-label="Restrictions">
+                  <div className="panel__header">
+                    <h3 className="panel__title">{t('enrollment.restrictions')}</h3>
+                  </div>
+                  <div className="panel__content">
+                    <ul className="space-y-2">
+                      {currentProfile.config?.restrictions?.map((restriction, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true" />
+                          {restriction}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+
+              {/* Bottom Row: Steps */}
+              {/* Enrollment Steps */}
+              <section className="panel" aria-label="Enrollment steps">
+                <div className="panel__header">
+                  <h3 className="panel__title">
+                    {t('enrollment.stepsTitle')}
+                  </h3>
+                </div>
+                <div className="panel__content">
+                  <ol className="space-y-3" role="list">
+                    {steps.map((step, index) => (
+                      <li
+                        key={index}
+                        className="flex gap-3 text-sm"
+                      >
+                        <span
+                          className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium"
+                          aria-hidden="true"
+                        >
+                          {index + 1}
+                        </span>
+                        <span className="pt-0.5 text-foreground leading-relaxed">
+                          {language === 'hi' ? step.hi : step.en}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </section>
+            </div>
+          ) : profiles.length > 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed border-muted-foreground/10 mx-auto max-w-2xl px-6">
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <MousePointer2 className="w-12 h-12 text-primary opacity-80" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Select a Profile</h3>
+              <p className="mb-6 max-w-md mx-auto leading-relaxed">
+                Please select an enrollment profile from the dropdown menu above to view its details and configuration options.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed border-muted-foreground/10 mx-auto max-w-2xl px-6">
+              <div className="w-24 h-24 rounded-full bg-muted/20 flex items-center justify-center mb-6">
+                <FileSearch className="w-12 h-12 opacity-50" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Profiles Found</h3>
+              <p className="mb-6 max-w-md mx-auto leading-relaxed">
+                There are currently no published enrollment profiles available for <span className="font-medium text-foreground">{platformConfig[selectedPlatform].label}</span>.
+                Contact your administrator or create a new profile in the dashboard.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => fetchProfiles(selectedPlatform)}
+                className="gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh List
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-    </MainLayout>
+    </MainLayout >
   );
 }
