@@ -12,6 +12,39 @@ export type Color = string; // Pattern: ^#[0-9a-f]{6}$
 export type AppPermissionType = 'GRANT' | 'DENY' | 'PROMPT';
 export type WifiSecurity = 'WPA' | 'WEP' | 'EAP';
 
+// Android Passcode Policy Enums (from OpenAPI)
+export type PasscodeComplexity = 'LOW' | 'MEDIUM' | 'HIGH';
+export type StrongAuthRequiredTimeout = 'DEVICE_DEFAULT' | 'EVERY_DAY';
+
+// Android Device Passcode Policy
+export interface AndroidDevicePasscodePolicy {
+    id?: string; // read-only
+    complexity: PasscodeComplexity;
+    historyLength?: number; // minimum: 0
+    maxFailedAttemptsToWipe?: number; // minimum: 0
+    changeAfterSeconds?: number; // minimum: 0
+    strongAuthRequiredTimeout?: StrongAuthRequiredTimeout;
+}
+
+// Android Work Passcode Policy (extends device policy)
+export interface AndroidWorkPasscodePolicy extends AndroidDevicePasscodePolicy {
+    separateLock?: boolean; // separate lock for work profile
+}
+
+// Personal Device Enforcement
+export interface PersonalDeviceEnforcement {
+    blockAfterDays: number; // minimum: 0, must be < wipeAfterDays
+    wipeAfterDays: number; // minimum: 0, must be > blockAfterDays
+}
+
+// Android Passcode Policy (AndroidPersonalDevicesPasscodePolicy)
+export interface AndroidPasscodePolicy {
+    work: AndroidWorkPasscodePolicy; // required
+    device?: AndroidDevicePasscodePolicy;
+    enforcement?: PersonalDeviceEnforcement;
+    devicePolicyType?: 'AndroidPersonalDevicesPasscodePolicy';
+}
+
 // Volume Policy (discriminated union)
 export interface ManagedVolume {
     manageVolume: 'ManagedVolume';

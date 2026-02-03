@@ -7,6 +7,7 @@ import {
   CommonSettingsPolicy,
   DeviceThemePolicy,
   EnrollmentPolicy,
+  PasscodePolicy as AndroidPasscodePolicy,
 } from "@/components/profiles/AndroidPolicies";
 import {
   ConnectivityRestriction,
@@ -152,6 +153,10 @@ export default function EditProfilePolicies() {
   const [mdmPolicy, setMdmPolicy] = useState<IosMdmConfiguration | undefined>(
     undefined
   );
+  // Android-specific policy state
+  const [androidPasscodePolicy, setAndroidPasscodePolicy] = useState<
+    any | undefined
+  >(undefined);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -222,6 +227,10 @@ export default function EditProfilePolicies() {
             (data as any).webApplicationPolicies.length > 0
           ) {
             setWebApplicationPolicy((data as any).webApplicationPolicies);
+          }
+          // Android passcode policy
+          if ((data as any).passcodePolicy) {
+            setAndroidPasscodePolicy((data as any).passcodePolicy);
           }
         }
       }
@@ -308,6 +317,7 @@ export default function EditProfilePolicies() {
               platform={platform as Platform}
               profileId={id!}
               passcodePolicy={passcodePolicy}
+              androidPasscodePolicy={androidPasscodePolicy}
               wifiPolicy={wifiPolicy}
               mailPolicy={mailPolicy}
               restrictionsPolicy={restrictionsPolicy}
@@ -324,6 +334,7 @@ export default function EditProfilePolicies() {
             <PolicyCardGrid
               platform={platform}
               passcodePolicy={passcodePolicy}
+              androidPasscodePolicy={androidPasscodePolicy}
               wifiPolicy={wifiPolicy}
               mailPolicy={mailPolicy}
               restrictionsPolicy={restrictionsPolicy}
@@ -428,6 +439,7 @@ interface PolicyEditorProps {
   platform: Platform;
   profileId: string;
   passcodePolicy?: PasscodeRestrictionPolicy | IosPasscodeRestrictionPolicy;
+  androidPasscodePolicy?: any;
   wifiPolicy?: IosWiFiConfiguration;
   mailPolicy?: IosMailPolicy;
   restrictionsPolicy?: RestrictionsComposite;
@@ -446,6 +458,7 @@ function PolicyEditor({
   platform,
   profileId,
   passcodePolicy,
+  androidPasscodePolicy,
   wifiPolicy,
   mailPolicy,
   restrictionsPolicy,
@@ -722,6 +735,15 @@ function PolicyEditor({
               onCancel={onCancel}
             />
           )}
+          {activePolicyType === "androidPasscode" && (
+            <AndroidPasscodePolicy
+              platform={platform}
+              profileId={profileId}
+              initialData={androidPasscodePolicy}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -732,6 +754,7 @@ function PolicyEditor({
 interface PolicyCardGridProps {
   platform?: string;
   passcodePolicy?: PasscodeRestrictionPolicy | IosPasscodeRestrictionPolicy;
+  androidPasscodePolicy?: any;
   wifiPolicy?: IosWiFiConfiguration;
   mailPolicy?: IosMailPolicy;
   restrictionsPolicy?: RestrictionsComposite;
@@ -794,6 +817,7 @@ const itemVariants = {
 function PolicyCardGrid({
   platform,
   passcodePolicy,
+  androidPasscodePolicy,
   wifiPolicy,
   mailPolicy,
   restrictionsPolicy,
@@ -818,6 +842,9 @@ function PolicyCardGrid({
   const hasNotifications = notificationPolicy && notificationPolicy.length > 0;
   const hasLockScreen = !!lockScreenMessagePolicy;
   const hasApplications = applicationPolicy && applicationPolicy.length > 0;
+
+  // Android-specific: check if passcode policy is configured
+  const hasAndroidPasscode = !!androidPasscodePolicy;
 
   // Determine which policies are available based on platform
   const isIos = platform === 'ios';
@@ -859,6 +886,7 @@ function PolicyCardGrid({
     { type: 'commonSettings', title: t('policies.android.commonSettings'), description: t('policies.android.commonSettings.desc'), icon: <Settings className="w-5 h-5" />, configured: false },
     { type: 'deviceTheme', title: t('policies.android.deviceTheme'), description: t('policies.android.deviceTheme.desc'), icon: <Palette className="w-5 h-5" />, configured: false },
     { type: 'enrollment', title: t('policies.android.enrollment'), description: t('policies.android.enrollment.desc'), icon: <UserPlus className="w-5 h-5" />, configured: false },
+    { type: 'androidPasscode', title: t('policies.android.passcode'), description: t('policies.android.passcode.desc'), icon: <Key className="w-5 h-5" />, configured: hasAndroidPasscode },
     { type: 'androidWebApp', title: t('policies.android.webApps'), description: t('policies.android.webApps.desc'), icon: <Globe className="w-5 h-5" />, configured: hasWebApps },
   ].sort((a, b) => a.title.localeCompare(b.title));
 

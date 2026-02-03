@@ -3,3 +3,4 @@ export { DeviceThemePolicy } from './DeviceThemePolicy';
 export { EnrollmentPolicy } from './EnrollmentPolicy';
 export { AndroidApplicationPolicy } from './AndroidApplicationPolicy';
 export { AndroidWebApplicationPolicy } from './AndroidWebApplicationPolicy';
+export { PasscodePolicy } from './PasscodePolicy';

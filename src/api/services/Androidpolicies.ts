@@ -4,6 +4,7 @@ import {
     EnrollmentPolicy,
     ApplicationPolicy,
     WebApplicationPolicy,
+    AndroidPasscodePolicy,
 } from '@/types/policy';
 import { Platform } from '@/types/models';
 import apiClient from '../client';
@@ -73,6 +74,19 @@ export const policyAPI = {
 
     deleteWebApplicationPolicy: (platform: Platform, profileId: string, webApplicationPolicyId: string): Promise<void> => {
         return apiClient.delete(`/${platform}/profiles/${profileId}/policies/web-applications/${webApplicationPolicyId}`).then(() => { });
+    },
+
+    // Passcode Policy
+    createPasscodePolicy: (platform: Platform, profileId: string, policy: Partial<AndroidPasscodePolicy>): Promise<AndroidPasscodePolicy> => {
+        return apiClient.post<AndroidPasscodePolicy, any, Partial<AndroidPasscodePolicy>>(`/${platform}/profiles/${profileId}/policies/passcode`, policy).then(res => res.data);
+    },
+
+    updatePasscodePolicy: (platform: Platform, profileId: string, policy: Partial<AndroidPasscodePolicy>): Promise<AndroidPasscodePolicy> => {
+        return apiClient.put<AndroidPasscodePolicy, any, Partial<AndroidPasscodePolicy>>(`/${platform}/profiles/${profileId}/policies/passcode`, policy).then(res => res.data);
+    },
+
+    deletePasscodePolicy: (platform: Platform, profileId: string): Promise<void> => {
+        return apiClient.delete(`/${platform}/profiles/${profileId}/policies/passcode`).then(() => { });
     },
 
 };

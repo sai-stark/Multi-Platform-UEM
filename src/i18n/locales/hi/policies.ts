@@ -40,6 +40,8 @@ export const policies = {
     'policies.android.deviceTheme.desc': 'लाइट/डार्क मोड',
     'policies.android.enrollment': 'नामांकन',
     'policies.android.enrollment.desc': 'नामांकन सेटिंग्स',
+    'policies.android.passcode': 'पासकोड नीति',
+    'policies.android.passcode.desc': 'पासवर्ड आवश्यकताएं',
 
     // Android Restrictions
     'restrictions.android.security': 'सुरक्षा',
@@ -635,4 +637,65 @@ export const policies = {
     'policies.action.saved': 'सहेजा गया',
     'policies.action.order': 'क्रम',
     'policies.action.bottom': 'नीचे',
+
+    // Passcode Policy fields
+    'passcodePolicy.title': 'पासकोड नीति',
+    'passcodePolicy.subtitle': 'वर्क प्रोफ़ाइल के लिए पासवर्ड आवश्यकताएं कॉन्फ़िगर करें',
+    'passcodePolicy.configureTitle': 'पासकोड नीति कॉन्फ़िगर करें',
+    'passcodePolicy.editTitle': 'पासकोड नीति संपादित करें',
+    'passcodePolicy.configureSubtitle': 'Android वर्क प्रोफ़ाइल के लिए पासवर्ड आवश्यकताएं सेट करें',
+
+    // Work Profile Section
+    'passcodePolicy.workProfile': 'वर्क प्रोफ़ाइल पासकोड',
+    'passcodePolicy.workProfileComplexity': 'वर्क प्रोफ़ाइल जटिलता',
+    'passcodePolicy.passwordComplexity': 'पासवर्ड जटिलता',
+    'passcodePolicy.passwordComplexityTooltip': 'LOW: दोहराई जाने वाली अनुक्रमों के साथ पैटर्न या पिन। MEDIUM: पैटर्न के बिना पिन। HIGH: 8+ अंकों का पिन या 6+ अक्षरों का पासवर्ड।',
+    'passcodePolicy.passwordHistoryLength': 'पासवर्ड इतिहास लंबाई',
+    'passcodePolicy.passwordHistoryTooltip': 'याद रखने के लिए पिछले पासवर्ड की संख्या। 0 = कोई प्रतिबंध नहीं।',
+    'passcodePolicy.maxFailedAttempts': 'वाइप करने के लिए अधिकतम विफल प्रयास',
+    'passcodePolicy.maxFailedAttemptsTooltip': 'वर्क प्रोफ़ाइल वाइप होने से पहले गलत अनलॉक प्रयास। 0 = कोई प्रतिबंध नहीं।',
+    'passcodePolicy.passwordExpiry': 'पासवर्ड समाप्ति (सेकंड)',
+    'passcodePolicy.passwordExpiryTooltip': 'इतने सेकंड के बाद पासवर्ड बदलने के लिए मजबूर करें। 0 = कभी समाप्त नहीं होता।',
+    'passcodePolicy.strongAuthTimeout': 'मजबूत प्रमाणीकरण टाइमआउट',
+    'passcodePolicy.strongAuthTimeoutTooltip': 'बायोमेट्रिक प्रमाणीकरण के लिए टाइमआउट। टाइमआउट के बाद, मजबूत प्रमाणीकरण (पासकोड) आवश्यक है।',
+    'passcodePolicy.separateWorkLock': 'अलग वर्क प्रोफ़ाइल लॉक',
+    'passcodePolicy.separateWorkLockTooltip': 'डिवाइस लॉक से अलग वर्क प्रोफ़ाइल के लिए अलग लॉक की आवश्यकता है।',
+
+    // Enforcement Section
+    'passcodePolicy.enforcement': 'प्रवर्तन (ब्लॉक और वाइप)',
+    'passcodePolicy.enforcementTooltip': 'परिभाषित करें कि कब एक्सेस ब्लॉक होता है और कब डेटा वाइप होता है यदि डिवाइस गैर-अनुपालक रहता है।',
+    'passcodePolicy.blockAfterDays': 'दिनों के बाद ब्लॉक करें',
+    'passcodePolicy.blockAfterDaysHint': '0 = तुरंत ब्लॉक करें',
+    'passcodePolicy.wipeAfterDays': 'दिनों के बाद वाइप करें',
+    'passcodePolicy.wipeAfterDaysHint': '0 = तुरंत वाइप करें (ब्लॉक दिनों से अधिक होना चाहिए)',
+    'passcodePolicy.block': 'ब्लॉक',
+    'passcodePolicy.wipe': 'वाइप',
+    'passcodePolicy.immediately': 'तुरंत',
+    'passcodePolicy.days': 'दिन',
+
+    // Device Policy Section
+    'passcodePolicy.devicePolicy': 'डिवाइस पासकोड नीति (वैकल्पिक)',
+    'passcodePolicy.deviceComplexity': 'डिवाइस पासवर्ड जटिलता',
+    'passcodePolicy.deviceHistoryLength': 'डिवाइस पासवर्ड इतिहास लंबाई',
+    'passcodePolicy.deviceMaxFailedAttempts': 'डिवाइस अधिकतम विफल प्रयास',
+    'passcodePolicy.devicePasswordExpiry': 'डिवाइस पासवर्ड समाप्ति (सेकंड)',
+    'passcodePolicy.deviceStrongAuthTimeout': 'डिवाइस मजबूत प्रमाणीकरण टाइमआउट',
+
+    // Complexity Options
+    'passcodePolicy.complexity.low': 'कम',
+    'passcodePolicy.complexity.lowDesc': 'दोहराई/क्रमबद्ध अनुक्रमों के साथ पैटर्न या पिन',
+    'passcodePolicy.complexity.medium': 'मध्यम',
+    'passcodePolicy.complexity.mediumDesc': 'पैटर्न के बिना पिन, या 4+ अक्षरों का पासवर्ड',
+    'passcodePolicy.complexity.high': 'उच्च',
+    'passcodePolicy.complexity.highDesc': '8+ अंकों का पिन या 6+ अक्षरों का पासवर्ड',
+
+    // Strong Auth Options
+    'passcodePolicy.strongAuth.deviceDefault': 'डिवाइस डिफ़ॉल्ट',
+    'passcodePolicy.strongAuth.everyDay': 'हर दिन',
+
+    // Common
+    'passcodePolicy.noRestriction': '0 = कोई प्रतिबंध नहीं',
+    'passcodePolicy.neverExpires': '0 = कभी समाप्त नहीं होता',
+    'passcodePolicy.deleteConfirm': 'क्या आप वाकई इस पासकोड नीति को हटाना चाहते हैं?',
+    'passcodePolicy.validationError': 'ब्लॉक के दिन वाइप के दिनों से कम होने चाहिए।',
 };

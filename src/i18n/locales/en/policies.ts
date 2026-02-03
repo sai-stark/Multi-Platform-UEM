@@ -40,6 +40,8 @@ export const policies = {
     'policies.android.deviceTheme.desc': 'Light/Dark mode',
     'policies.android.enrollment': 'Enrollment',
     'policies.android.enrollment.desc': 'Enrollment settings',
+    'policies.android.passcode': 'Passcode Policy',
+    'policies.android.passcode.desc': 'Password requirements',
 
     // Android Restrictions
     'restrictions.android.security': 'Security',
@@ -634,4 +636,65 @@ export const policies = {
     'policies.action.saved': 'Saved',
     'policies.action.order': 'Order',
     'policies.action.bottom': 'Bottom',
+
+    // Passcode Policy fields
+    'passcodePolicy.title': 'Passcode Policy',
+    'passcodePolicy.subtitle': 'Configure password requirements for work profile',
+    'passcodePolicy.configureTitle': 'Configure Passcode Policy',
+    'passcodePolicy.editTitle': 'Edit Passcode Policy',
+    'passcodePolicy.configureSubtitle': 'Set password requirements for Android work profile',
+
+    // Work Profile Section
+    'passcodePolicy.workProfile': 'Work Profile Passcode',
+    'passcodePolicy.workProfileComplexity': 'Work Profile Complexity',
+    'passcodePolicy.passwordComplexity': 'Password Complexity',
+    'passcodePolicy.passwordComplexityTooltip': 'LOW: pattern or PIN with repeating sequences. MEDIUM: PIN without patterns. HIGH: 8+ digit PIN or 6+ char password.',
+    'passcodePolicy.passwordHistoryLength': 'Password History Length',
+    'passcodePolicy.passwordHistoryTooltip': 'Number of previous passwords to remember. 0 = no restriction.',
+    'passcodePolicy.maxFailedAttempts': 'Max Failed Attempts to Wipe',
+    'passcodePolicy.maxFailedAttemptsTooltip': 'Wrong unlock attempts before work profile is wiped. 0 = no restriction.',
+    'passcodePolicy.passwordExpiry': 'Password Expiry (seconds)',
+    'passcodePolicy.passwordExpiryTooltip': 'Force password change after this many seconds. 0 = never expires.',
+    'passcodePolicy.strongAuthTimeout': 'Strong Auth Timeout',
+    'passcodePolicy.strongAuthTimeoutTooltip': 'Timeout for biometric authentication. After timeout, strong auth (passcode) is required.',
+    'passcodePolicy.separateWorkLock': 'Separate Work Profile Lock',
+    'passcodePolicy.separateWorkLockTooltip': 'Require a distinct lock for the work profile, separate from device lock.',
+
+    // Enforcement Section
+    'passcodePolicy.enforcement': 'Enforcement (Block and Wipe)',
+    'passcodePolicy.enforcementTooltip': 'Define when access is blocked and when data is wiped if device stays non-compliant.',
+    'passcodePolicy.blockAfterDays': 'Block After Days',
+    'passcodePolicy.blockAfterDaysHint': '0 = block immediately',
+    'passcodePolicy.wipeAfterDays': 'Wipe After Days',
+    'passcodePolicy.wipeAfterDaysHint': '0 = wipe immediately (must be > block days)',
+    'passcodePolicy.block': 'Block',
+    'passcodePolicy.wipe': 'Wipe',
+    'passcodePolicy.immediately': 'Immediately',
+    'passcodePolicy.days': 'days',
+
+    // Device Policy Section
+    'passcodePolicy.devicePolicy': 'Device Passcode Policy (Optional)',
+    'passcodePolicy.deviceComplexity': 'Device Password Complexity',
+    'passcodePolicy.deviceHistoryLength': 'Device Password History Length',
+    'passcodePolicy.deviceMaxFailedAttempts': 'Device Max Failed Attempts',
+    'passcodePolicy.devicePasswordExpiry': 'Device Password Expiry (seconds)',
+    'passcodePolicy.deviceStrongAuthTimeout': 'Device Strong Auth Timeout',
+
+    // Complexity Options
+    'passcodePolicy.complexity.low': 'Low',
+    'passcodePolicy.complexity.lowDesc': 'Pattern or PIN with repeating/ordered sequences',
+    'passcodePolicy.complexity.medium': 'Medium',
+    'passcodePolicy.complexity.mediumDesc': 'PIN without patterns, or 4+ char password',
+    'passcodePolicy.complexity.high': 'High',
+    'passcodePolicy.complexity.highDesc': '8+ digit PIN or 6+ char password',
+
+    // Strong Auth Options
+    'passcodePolicy.strongAuth.deviceDefault': 'Device Default',
+    'passcodePolicy.strongAuth.everyDay': 'Every Day',
+
+    // Common
+    'passcodePolicy.noRestriction': '0 = no restriction',
+    'passcodePolicy.neverExpires': '0 = never expires',
+    'passcodePolicy.deleteConfirm': 'Are you sure you want to delete this passcode policy?',
+    'passcodePolicy.validationError': 'Block after days must be less than wipe after days.',
 };
