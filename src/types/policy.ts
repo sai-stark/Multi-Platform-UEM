@@ -139,8 +139,11 @@ export interface IosApplicationPolicy extends UserAuditData {
     name: string;
     bundleIdentifier: string;
     action: 'INSTALL'; // iOS only supports INSTALL currently
+    installType?: 'INSTALL';
     purchaseMethod?: number; // 0 = Free/VPP with redemption code, 1 = VPP app assignment
     removable?: boolean; // iOS 14+, tvOS 14+
+    preventBackup?: boolean;
+    removeOnUnenroll?: boolean;
     requestRequiresNetworkTether?: boolean;
     devicePolicyType: 'IosApplicationPolicy';
 }
@@ -150,6 +153,10 @@ export interface AndroidApplicationPolicy extends UserAuditData {
     applicationVersionId: string; // UUID
     action: ApplicationAction; // INSTALL | UNINSTALL | ALLOW | BLOCK
     applicationVersion?: string; // read-only
+    packageName?: string;
+    installType?: string; // mapping to action for UI if needed, or API returns it
+    autoUpdateMode?: string;
+    defaultConfiguration?: boolean;
     devicePolicyType: 'AndroidApplicationPolicy';
 }
 
@@ -177,6 +184,10 @@ export interface AndroidWebApplicationPolicy {
     webAppId: string;
     keyCode?: number;
     webAppName?: string; // read-only
+    title?: string;
+    url?: string;
+    displayMode?: string;
+    icon?: string;
     screenOrder?: number;
     screenBottom?: boolean;
     policyType: 'AndroidWebApplicationPolicy';

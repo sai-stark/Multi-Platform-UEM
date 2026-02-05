@@ -7,6 +7,10 @@ export interface IosAppNotificationSetting {
     showInNotificationCenter?: boolean;
     showInLockScreen?: boolean;
     alertStyle?: 'NONE' | 'BANNER' | 'ALERT';
+    eventsEnabled?: boolean;
+    badgesEnabled?: boolean;
+    soundsEnabled?: boolean;
+    alertType?: string; // or number, usage in ProfileDetails is just string/number display
 }
 
 // EAP Types enum values
@@ -152,6 +156,7 @@ export interface IosMdmConfiguration {
     pinningRevocationCheckRequired?: boolean;
     serverCapabilities?: string[];
     checkOutWhenRemoved?: boolean;
+    checkInInterval?: number;
     promptUserToAllowBootstrapTokenForAuthentication?: boolean;
 }
 

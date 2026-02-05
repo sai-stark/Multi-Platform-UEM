@@ -5,12 +5,36 @@ import {
     IosLockScreenMessage,
     IosMailPolicy,
     IosMdmConfiguration,
+    IosScepConfiguration,
     IosWiFiConfiguration
 } from './ios';
-import { IosApplicationPolicy, IosWebApplicationPolicy } from './policy';
+import {
+    AndroidApplicationPolicy,
+    AndroidWebApplicationPolicy,
+    CommonSettingsPolicy,
+    DeviceThemePolicy,
+    EnrollmentPolicy,
+    IosApplicationPolicy,
+    IosWebApplicationPolicy
+} from './policy';
+import {
+    ApplicationsRestriction,
+    ConnectivityRestriction,
+    DateTimeRestriction,
+    DisplayRestriction,
+    KioskRestriction,
+    LocationRestriction,
+    MiscellaneousRestriction,
+    NetworkRestriction,
+    PasscodeRestrictionPolicy,
+    PhoneRestriction,
+    SecurityRestriction, // Note: using Android one here, but check naming conflict
+    SyncStorageRestriction,
+    TetheringRestriction
+} from './restrictions';
 
 // Profile types as per OpenAPI spec
-export type ProfileType = 'AndroidProfile' | 'IosProfile' | 'IosFullProfile' | 'AndroidFullProfile';
+export type ProfileType = 'AndroidProfile' | 'IosProfile' | 'IosFullProfile' | 'Android_Full_Profile';
 
 // Profile status as per OpenAPI spec
 export type ProfileStatus = 'DRAFT' | 'PUBLISHED';
@@ -34,7 +58,7 @@ export interface Profile {
     platform?: Platform; // Used for URL path routing
 }
 
-// Policy types for full profile
+// iOS Passcode Policy specific to iOS Profile
 export interface IosPasscodeRestrictionPolicy {
     id?: string;
     name?: string;
@@ -57,46 +81,48 @@ export interface IosPasscodeRestrictionPolicy {
     lastModifiedBy?: string;
 }
 
-export interface IosScepPolicyRes {
-    id?: string;
-    policyType?: string;
-    url?: string;
-    scepName?: string;
-    subject?: string[][][];
-    challenge?: string;
-    keysize?: number;
-    keyType?: string;
-    caFingerprint?: string;
-    subjectAltName?: {
-        rfc822Name?: string;
-        dNSName?: string;
-        uniformResourceIdentifier?: string;
-        ntPrincipalName?: string;
-    };
-}
-
-// Full Profile interface matching API response (detail view with all policies)
-// Full Profile interface matching API response (detail view with all policies)
-export interface FullProfile extends Profile {
-    // iOS-specific policies
+export interface IosFullProfile extends Profile {
+    profileType?: 'IosFullProfile';
     mailPolicy?: IosMailPolicy;
     passCodePolicy?: IosPasscodeRestrictionPolicy;
-    scepPolicy?: IosScepPolicyRes;
-    webClipPolicies?: IosWebApplicationPolicy[]; // Note: Shared name, check type
+    scepPolicy?: IosScepConfiguration;
+    webClipPolicies?: IosWebApplicationPolicy[];
     mdmPolicy?: IosMdmConfiguration;
     acmePolicy?: IosAcmeConfiguration;
     notificationPolicies?: IosAppNotificationSetting[];
     wifiPolicy?: IosWiFiConfiguration;
     lockScreenPolicy?: IosLockScreenMessage;
-
-    // Shared / Android policies
-    applicationPolicies?: IosApplicationPolicy[] | any[]; // Update with Android types if available
-    commonSettingsPolicy?: any; // Define properly if needed
-    deviceThemePolicy?: any;
-    enrollmentPolicy?: any;
-    webApplicationPolicies?: any[];
-    restrictions?: any;
+    applicationPolicies?: IosApplicationPolicy[];
 }
+
+export interface AndroidProfileRestrictions {
+    security?: SecurityRestriction;
+    passcode?: PasscodeRestrictionPolicy; // This refers to the Android one in ./restrictions
+    syncStorage?: SyncStorageRestriction;
+    kiosk?: KioskRestriction;
+    tethering?: TetheringRestriction;
+    location?: LocationRestriction;
+    phone?: PhoneRestriction;
+    dateTime?: DateTimeRestriction;
+    display?: DisplayRestriction;
+    miscellaneous?: MiscellaneousRestriction;
+    applications?: ApplicationsRestriction;
+    network?: NetworkRestriction;
+    connectivity?: ConnectivityRestriction;
+}
+
+export interface AndroidFullProfile extends Profile {
+    profileType?: 'Android_Full_Profile';
+    commonSettingsPolicy?: CommonSettingsPolicy;
+    deviceThemePolicy?: DeviceThemePolicy;
+    enrollmentPolicy?: EnrollmentPolicy;
+    applicationPolicies?: AndroidApplicationPolicy[];
+    webApplicationPolicies?: AndroidWebApplicationPolicy[];
+    restrictions?: AndroidProfileRestrictions;
+}
+
+// Full Profile interface matching API response (detail view with all policies)
+export type FullProfile = IosFullProfile | AndroidFullProfile;
 
 export interface PublishProfile {
     deviceIds?: string[];
