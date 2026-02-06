@@ -7,10 +7,13 @@ import { EnrollmentGuard, EnterpriseProvider } from "@/contexts/EnterpriseContex
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import ApplicationDetails from "./pages/ApplicationDetails";
+import Applications from "./pages/Applications";
 import DeviceDetails from "./pages/DeviceDetails";
 import Devices from "./pages/Devices";
 import EditProfilePolicies from "./pages/EditProfilePolicies";
 import Enrollment from "./pages/Enrollment";
+import EnterpriseSetup from "./pages/EnterpriseSetup";
 import GeofenceEditor from "./pages/GeofenceEditor";
 import Geofences from "./pages/Geofences";
 import GroupDetails from "./pages/GroupDetails";
@@ -20,14 +23,12 @@ import Inventory from "./pages/Inventory";
 import InventoryEditor from "./pages/InventoryEditor";
 import NotFound from "./pages/NotFound";
 import Policies from "./pages/Policies";
+import PolicyConfigurationPage from "./pages/PolicyConfigurationPage";
 import ProfileDetails from "./pages/ProfileDetails";
 import Profiles from "./pages/Profiles";
 import Repositories from "./pages/Repositories";
 import RepositoryDetails from "./pages/RepositoryDetails";
 import WebApplications from "./pages/WebApplications";
-import Applications from "./pages/Applications";
-import ApplicationDetails from "./pages/ApplicationDetails";
-import EnterpriseSetup from "./pages/EnterpriseSetup";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ function AppRoutes() {
         <Route path="/inventory/:id" element={<InventoryEditor />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/profiles/:platform/:id" element={<ProfileDetails />} />
+        <Route path="/profiles/:platform/:id/policy/:policyType" element={<PolicyConfigurationPage />} />
         <Route path="/profiles/:platform/:id/policies" element={<EditProfilePolicies />} />
         <Route path="/repositories" element={<Repositories />} />
         <Route path="/repositories/:platform/:repoId" element={<RepositoryDetails />} />

@@ -1,60 +1,72 @@
-import { MainLayout } from "@/components/layout/MainLayout";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-
 import { ProfileService } from "@/api/services/profiles";
 import { LoadingAnimation } from "@/components/common/LoadingAnimation";
+import { MainLayout } from "@/components/layout/MainLayout";
+import {
+  RestrictionsComposite
+} from "@/components/profiles/IosPolicies/RestrictionsPolicy";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { getAssetUrl } from "@/config/env";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "@/hooks/use-toast";
 import { usePlatformValidation } from "@/hooks/usePlatformValidation";
+import { cn } from "@/lib/utils";
+import { IosMdmConfiguration, IosScepConfiguration } from "@/types/ios";
 import {
   AndroidFullProfile,
   AndroidProfileRestrictions,
+  ApplicationPolicy,
   FullProfile,
   IosFullProfile,
-  Platform
+  IosMailPolicy,
+  IosPasscodeRestrictionPolicy,
+  IosWiFiConfiguration,
+  LockScreenMessagePolicy as LockScreenMessagePolicyType,
+  NotificationPolicy as NotificationPolicyType,
+  PasscodeRestrictionPolicy,
+  Platform,
+  WebApplicationPolicy
 } from "@/types/models";
-
-import { getAssetUrl } from "@/config/env";
-import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import {
-  Apple,
   ArrowLeft,
+  Ban,
   Bell,
   Bluetooth,
-  Box,
   CheckCircle,
   ChevronDown,
   Clock,
-  Clock3,
   Database,
-  Disc,
   Edit,
   FileText,
   Globe,
+  Grid,
   Image as ImageIcon,
-  Lock,
   Mail,
   MapPin,
+  MessageSquare,
   Monitor,
   Phone,
+  Plus,
   Send,
   Server,
   Settings,
   Shield,
   ShieldCheck,
-  Smartphone,
   TabletSmartphone,
   Users,
   Wifi,
@@ -79,6 +91,457 @@ function isAndroidProfile(profile: FullProfile): profile is AndroidFullProfile {
   return profile.platform === 'android' || profile.profileType === 'Android_Full_Profile';
 }
 
+// ------ Add Policy Dropdown ------
+interface AddPolicyDropdownProps {
+  platform?: string;
+  passcodePolicy?: PasscodeRestrictionPolicy | IosPasscodeRestrictionPolicy;
+  wifiPolicy?: IosWiFiConfiguration;
+  mailPolicy?: IosMailPolicy;
+  restrictionsPolicy?: RestrictionsComposite | AndroidProfileRestrictions;
+  applicationPolicy: ApplicationPolicy[];
+  webApplicationPolicy: WebApplicationPolicy[];
+  notificationPolicy: NotificationPolicyType[];
+  lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
+  onSelect: (type: string) => void;
+}
+
+function AddPolicyDropdown({
+  platform,
+  passcodePolicy,
+  wifiPolicy,
+  mailPolicy,
+  restrictionsPolicy,
+  applicationPolicy,
+  webApplicationPolicy,
+  notificationPolicy,
+  lockScreenMessagePolicy,
+  onSelect,
+}: AddPolicyDropdownProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+          <Button className="rounded-full w-10 h-10 p-0 shadow-lg bg-primary hover:bg-primary/90" size="icon">
+            <Plus className="w-6 h-6 text-primary-foreground" />
+          </Button>
+        </motion.div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {!passcodePolicy && (
+          <DropdownMenuItem onClick={() => onSelect("passcode")}>
+            <Shield className="w-4 h-4 mr-2" /> Passcode Policy
+          </DropdownMenuItem>
+        )}
+        {!wifiPolicy && (
+          <DropdownMenuItem onClick={() => onSelect("wifi")}>
+            <Wifi className="w-4 h-4 mr-2" /> WiFi Configuration
+          </DropdownMenuItem>
+        )}
+        {platform === "ios" && !mailPolicy && (
+          <DropdownMenuItem onClick={() => onSelect("mail")}>
+            <Mail className="w-4 h-4 mr-2" /> Mail Configuration
+          </DropdownMenuItem>
+        )}
+        {!restrictionsPolicy && (
+          <DropdownMenuItem onClick={() => onSelect("restrictions")}>
+            <Ban className="w-4 h-4 mr-2" /> Device Restrictions
+          </DropdownMenuItem>
+        )}
+        {applicationPolicy.length === 0 && (
+          <DropdownMenuItem onClick={() => onSelect("applications")}>
+            <Grid className="w-4 h-4 mr-2" /> Application Policy
+          </DropdownMenuItem>
+        )}
+        {webApplicationPolicy.length === 0 && (
+          <DropdownMenuItem onClick={() => onSelect("webApps")}>
+            <Globe className="w-4 h-4 mr-2" /> Web Application Policy
+          </DropdownMenuItem>
+        )}
+        {notificationPolicy.length === 0 && (
+          <DropdownMenuItem onClick={() => onSelect("notifications")}>
+            <Bell className="w-4 h-4 mr-2" /> Notification Policy
+          </DropdownMenuItem>
+        )}
+        {!lockScreenMessagePolicy && (
+          <DropdownMenuItem onClick={() => onSelect("lockScreenMessage")}>
+            <MessageSquare className="w-4 h-4 mr-2" /> Lock Screen Message
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+
+
+// ------ Policy Card Grid ------
+interface PolicyCardGridProps {
+  platform?: string;
+  passcodePolicy?: PasscodeRestrictionPolicy | IosPasscodeRestrictionPolicy;
+  androidPasscodePolicy?: any;
+  wifiPolicy?: IosWiFiConfiguration;
+  mailPolicy?: IosMailPolicy;
+  restrictionsPolicy?: RestrictionsComposite | AndroidProfileRestrictions;
+  applicationPolicy?: ApplicationPolicy[];
+  webApplicationPolicy: WebApplicationPolicy[];
+  notificationPolicy: NotificationPolicyType[];
+  lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
+  scepPolicy?: IosScepConfiguration;
+  mdmPolicy?: IosMdmConfiguration;
+  onSelectPolicy: (type: string) => void;
+}
+
+// Uniform card wrapper component for consistent sizing
+// Uniform card wrapper component for consistent sizing
+function UniformPolicyCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className={`h-full ${className}`}>
+      {children}
+    </motion.div>
+  );
+}
+
+// Available policy card (grayed out, not yet configured)
+interface AvailablePolicyCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}
+
+function AvailablePolicyCard({ icon, title, description, onClick }: AvailablePolicyCardProps) {
+  return (
+    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="h-full">
+      <Card
+        className="cursor-pointer hover:shadow-md transition-all h-full bg-muted/30 border-dashed border-2 hover:bg-muted/50 hover:border-solid flex flex-col"
+        onClick={onClick}
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2 text-muted-foreground">
+            {icon}
+            {title}
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col justify-end">
+          <Button variant="ghost" size="sm" className="w-full mt-2 border border-dashed">Configure</Button>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// Configured policy card (colored, active)
+interface ConfiguredPolicyCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string; // Static description
+  statusText?: string; // Dynamic status
+  colorClass?: string;
+  borderClass?: string;
+  onClick: () => void;
+  badgeText?: string;
+}
+
+function ConfiguredPolicyCard({
+  icon,
+  title,
+  description,
+  statusText,
+  colorClass = "text-primary",
+  borderClass = "border-t-primary",
+  onClick,
+  badgeText = "Active"
+}: ConfiguredPolicyCardProps) {
+  return (
+    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="h-full">
+      <Card
+        className={cn(
+          "cursor-pointer hover:shadow-lg transition-all h-full border-t-4 flex flex-col",
+          borderClass
+        )}
+        onClick={onClick}
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className={cn("text-lg flex items-center gap-2", colorClass)}>
+            {icon}
+            {title}
+          </CardTitle>
+          <CardDescription className="line-clamp-2">{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col justify-end">
+          <Badge className="w-fit mb-2 bg-green-100 text-green-700 hover:bg-green-200 border-green-200">{badgeText}</Badge>
+          <p className="text-sm text-foreground/80 font-medium">{statusText || "Click to edit configuration"}</p>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function PolicyCardGrid({
+  platform,
+  passcodePolicy,
+  androidPasscodePolicy,
+  wifiPolicy,
+  mailPolicy,
+  restrictionsPolicy,
+  applicationPolicy = [],
+  webApplicationPolicy = [],
+  notificationPolicy = [],
+  lockScreenMessagePolicy,
+  scepPolicy,
+  mdmPolicy,
+  onSelectPolicy,
+}: PolicyCardGridProps) {
+  const isIos = platform === "ios";
+  const isAndroid = platform === "android";
+  const { t } = useLanguage();
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  type PolicyItem = {
+    id: string;
+    title: string;
+    description: string; // Static description
+    statusText?: string; // Configured details
+    icon: React.ReactNode;
+    isConfigured: boolean;
+    colorClass?: string;
+    borderClass?: string;
+    badgeText?: string;
+  };
+
+  const allPolicies: PolicyItem[] = [];
+
+  if (isIos) {
+    allPolicies.push({
+      id: "passcode",
+      title: "Passcode Policy",
+      description: "Enforce password requirements and device locking.",
+      statusText: passcodePolicy ? "Minimum length, complexity, and auto-lock settings configured." : undefined,
+      icon: <Shield className="w-5 h-5" />,
+      isConfigured: !!passcodePolicy,
+      colorClass: "text-emerald-600",
+      borderClass: "border-t-emerald-600",
+    });
+    allPolicies.push({
+      id: "wifi",
+      title: "WiFi Configuration",
+      description: "Pre-configure WiFi networks for automatic connection.",
+      statusText: wifiPolicy ? `SSID: ${wifiPolicy.ssid} • ${wifiPolicy.encryptionType}` : undefined,
+      icon: <Wifi className="w-5 h-5" />,
+      isConfigured: !!wifiPolicy,
+      colorClass: "text-blue-500",
+      borderClass: "border-t-blue-500",
+    });
+    allPolicies.push({
+      id: "mail",
+      title: "Mail Configuration",
+      description: "Configure email accounts (Exchange, POP/IMAP).",
+      statusText: mailPolicy ? `${mailPolicy.emailAccountName} • ${mailPolicy.emailAddress}` : undefined,
+      icon: <Mail className="w-5 h-5" />,
+      isConfigured: !!mailPolicy,
+      colorClass: "text-indigo-500",
+      borderClass: "border-t-indigo-500",
+    });
+    allPolicies.push({
+      id: "restrictions",
+      title: "Device Restrictions",
+      description: "Restrict device features, apps, and content.",
+      statusText: restrictionsPolicy ? "Camera, iCloud, App Store, and content restrictions configured." : undefined,
+      icon: <Ban className="w-5 h-5" />,
+      isConfigured: !!restrictionsPolicy,
+      colorClass: "text-purple-600",
+      borderClass: "border-t-purple-600",
+    });
+    allPolicies.push({
+      id: "webApps",
+      title: "Web Clips",
+      description: "Add shortcuts to websites on the Home Screen.",
+      statusText: webApplicationPolicy.length > 0 ? `${webApplicationPolicy.length} Web Clips configured.` : undefined,
+      icon: <Globe className="w-5 h-5" />,
+      isConfigured: webApplicationPolicy.length > 0,
+      colorClass: "text-teal-500",
+      borderClass: "border-t-teal-500",
+      badgeText: `${webApplicationPolicy.length} Active`
+    });
+    allPolicies.push({
+      id: "notifications",
+      title: "Notifications",
+      description: "Control notification settings per app.",
+      statusText: notificationPolicy.length > 0 ? `${notificationPolicy.length} Apps configured.` : undefined,
+      icon: <Bell className="w-5 h-5" />,
+      isConfigured: notificationPolicy.length > 0,
+      colorClass: "text-sky-500",
+      borderClass: "border-t-sky-500",
+      badgeText: `${notificationPolicy.length} Active`
+    });
+    allPolicies.push({
+      id: "lockScreenMessage",
+      title: "Lock Screen Msg",
+      description: "Display 'If Lost' information.",
+      statusText: lockScreenMessagePolicy ? "Custom text on the lock screen." : undefined,
+      icon: <MessageSquare className="w-5 h-5" />,
+      isConfigured: !!lockScreenMessagePolicy,
+      colorClass: "text-indigo-500",
+      borderClass: "border-t-indigo-500",
+    });
+    if (scepPolicy) {
+      allPolicies.push({
+        id: "scep",
+        title: "SCEP",
+        description: "Certificate enrollment.",
+        statusText: "Certificate enrollment configured",
+        icon: <FileText className="w-5 h-5" />,
+        isConfigured: true,
+        colorClass: "text-slate-500",
+        borderClass: "border-t-slate-500"
+      });
+    }
+    if (mdmPolicy) {
+      allPolicies.push({
+        id: "mdm",
+        title: "MDM Settings",
+        description: "Device management.",
+        statusText: `Server: ${mdmPolicy.serverURL?.substring(0, 20)}...`,
+        icon: <Server className="w-5 h-5" />,
+        isConfigured: true,
+        colorClass: "text-slate-500",
+        borderClass: "border-t-slate-500"
+      });
+    }
+  }
+
+  if (isAndroid) {
+    const androidRestrictions = restrictionsPolicy as AndroidProfileRestrictions | undefined;
+
+    const androidItems = [
+      { id: "androidPasscode", title: "Passcode Policy", icon: <Shield className="w-5 h-5" />, check: !!androidPasscodePolicy, desc: "Password complexity settings.", status: "Complexity settings active" },
+      { id: "securityRestriction", title: "Security", icon: <Shield className="w-5 h-5" />, check: !!androidRestrictions?.security, desc: "Device security settings.", status: "Security restrictions active" },
+      { id: "networkRestriction", title: "Network", icon: <WifiOff className="w-5 h-5" />, check: !!androidRestrictions?.network, desc: "Network restrictions.", status: "Network restrictions active" },
+      { id: "kioskRestriction", title: "Kiosk", icon: <TabletSmartphone className="w-5 h-5" />, check: !!androidRestrictions?.kiosk, desc: "Kiosk mode settings.", status: "Kiosk mode active" },
+      { id: "locationRestriction", title: "Location", icon: <MapPin className="w-5 h-5" />, check: !!androidRestrictions?.location, desc: "Location services.", status: "Location settings active" },
+      { id: "tetheringRestriction", title: "Tethering", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.tethering, desc: "Bluetooth & tethering.", status: "Tethering settings active" },
+      { id: "phoneRestriction", title: "Phone", icon: <Phone className="w-5 h-5" />, check: !!androidRestrictions?.phone, desc: "Telephony restrictions.", status: "Phone restrictions active" },
+      { id: "dateTimeRestriction", title: "Date/Time", icon: <Clock className="w-5 h-5" />, check: !!androidRestrictions?.dateTime, desc: "Date and time settings.", status: "Date/Time settings active" },
+      { id: "displayRestriction", title: "Display", icon: <Monitor className="w-5 h-5" />, check: !!androidRestrictions?.display, desc: "Display settings.", status: "Display settings active" },
+      { id: "storageRestriction", title: "Storage", icon: <Database className="w-5 h-5" />, check: !!androidRestrictions?.syncStorage, desc: "Storage & Sync.", status: "Storage settings active" },
+      { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: false, desc: "Enrollment settings.", status: "" },
+      { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: false, desc: "Device theme settings.", status: "" },
+      { id: "commonSettings", title: "Common", icon: <Settings className="w-5 h-5" />, check: false, desc: "Common global settings.", status: "" },
+      { id: "androidWebApp", title: "Web Apps", icon: <Globe className="w-5 h-5" />, check: webApplicationPolicy.length > 0, desc: "Web shortcuts.", status: `${webApplicationPolicy.length} Web Apps` },
+    ];
+
+    androidItems.forEach(item => {
+      allPolicies.push({
+        id: item.id,
+        title: item.title,
+        description: item.desc,
+        statusText: item.status,
+        icon: item.icon,
+        isConfigured: item.check,
+        colorClass: item.check ? "text-primary" : undefined,
+        borderClass: item.check ? "border-t-primary" : undefined,
+      });
+    });
+  }
+
+  // Application Policy is common
+  allPolicies.push({
+    id: "applications",
+    title: "Applications",
+    description: "Install, remove, or manage apps.",
+    statusText: applicationPolicy.length > 0 ? `${applicationPolicy.length} Apps configured.` : undefined,
+    icon: <Grid className="w-5 h-5" />,
+    isConfigured: applicationPolicy.length > 0,
+    colorClass: "text-blue-600",
+    borderClass: "border-t-blue-600",
+    badgeText: `${applicationPolicy.length} Active`
+  });
+
+
+  const configuredPolicies = allPolicies.filter(p => p.isConfigured);
+  const availablePolicies = allPolicies.filter(p => !p.isConfigured);
+
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="pb-20 space-y-8"
+    >
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-xl font-semibold tracking-tight">Configuration Policies</h2>
+      </div>
+
+      {configuredPolicies.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-primary" /> Configured Policies
+            </h3>
+            <AddPolicyDropdown
+              platform={platform}
+              passcodePolicy={passcodePolicy}
+              wifiPolicy={wifiPolicy}
+              mailPolicy={mailPolicy}
+              restrictionsPolicy={restrictionsPolicy}
+              applicationPolicy={applicationPolicy}
+              webApplicationPolicy={webApplicationPolicy}
+              notificationPolicy={notificationPolicy}
+              lockScreenMessagePolicy={lockScreenMessagePolicy}
+              onSelect={onSelectPolicy}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {configuredPolicies.map(policy => (
+              <ConfiguredPolicyCard
+                key={policy.id}
+                icon={policy.icon}
+                title={policy.title}
+                description={policy.description}
+                statusText={policy.statusText}
+                colorClass={policy.colorClass}
+                borderClass={policy.borderClass}
+                badgeText={policy.badgeText}
+                onClick={() => onSelectPolicy(policy.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {availablePolicies.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2">
+            <Plus className="w-5 h-5" /> Available Policies
+          </h3>
+          <p className="text-sm text-muted-foreground/70">Select a policy to configure settings for this profile.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {availablePolicies.map(policy => (
+              <AvailablePolicyCard
+                key={policy.id}
+                icon={policy.icon}
+                title={policy.title}
+                description={policy.description}
+                onClick={() => onSelectPolicy(policy.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 export default function ProfileDetails() {
   const { platform, id } = useParams<{ platform: string; id: string }>();
   const navigate = useNavigate();
@@ -86,9 +549,58 @@ export default function ProfileDetails() {
   const [profile, setProfile] = useState<ProfileDetailsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
-  const [selectedPolicyType, setSelectedPolicyType] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+
+  // State for specific Policy Data (Merged from EditProfilePolicies)
+  const [passcodePolicy, setPasscodePolicy] = useState<
+    PasscodeRestrictionPolicy | IosPasscodeRestrictionPolicy | undefined
+  >(undefined);
+  const [wifiPolicy, setWifiPolicy] = useState<
+    IosWiFiConfiguration | undefined
+  >(undefined);
+  const [mailPolicy, setMailPolicy] = useState<IosMailPolicy | undefined>(
+    undefined
+  );
+  const [restrictionsPolicy, setRestrictionsPolicy] = useState<
+    RestrictionsComposite | AndroidProfileRestrictions | undefined
+  >(undefined);
+  const [applicationPolicy, setApplicationPolicy] = useState<
+    ApplicationPolicy[]
+  >([]);
+  const [webApplicationPolicy, setWebApplicationPolicy] = useState<
+    WebApplicationPolicy[]
+  >([]);
+  const [notificationPolicy, setNotificationPolicy] = useState<
+    NotificationPolicyType[]
+  >([]);
+  const [lockScreenMessagePolicy, setLockScreenMessagePolicy] =
+    useState<LockScreenMessagePolicyType | null>(null);
+  const [scepPolicy, setScepPolicy] = useState<
+    IosScepConfiguration | undefined
+  >(undefined);
+  const [mdmPolicy, setMdmPolicy] = useState<IosMdmConfiguration | undefined>(
+    undefined
+  );
+  // Android-specific policy state
+  const [androidPasscodePolicy, setAndroidPasscodePolicy] = useState<
+    any | undefined
+  >(undefined);
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
 
   const fetchProfile = async () => {
     if (!platform || !id) {
@@ -106,6 +618,51 @@ export default function ProfileDetails() {
         ...data,
         platform: platform as Platform,
       } as ProfileDetailsData);
+
+      const isIos = platform === "ios";
+      const isAndroid = platform === "android";
+
+      // Handle iOS
+      if (isIos) {
+        const iosData = data as IosFullProfile;
+        setPasscodePolicy(iosData.passCodePolicy || undefined);
+        setWifiPolicy(iosData.wifiPolicy || undefined);
+        setLockScreenMessagePolicy(iosData.lockScreenPolicy || null);
+        setNotificationPolicy((iosData.notificationPolicies as any[]) || []);
+        setScepPolicy(iosData.scepPolicy || undefined);
+        setMdmPolicy(iosData.mdmPolicy || undefined);
+        setMailPolicy(iosData.mailPolicy || undefined);
+        setWebApplicationPolicy((iosData.webClipPolicies as any[]) || []);
+        setApplicationPolicy((iosData.applicationPolicies as any[]) || []);
+      }
+
+      // Handle Android
+      if (isAndroid) {
+        const anyData = data as any;
+
+        if (anyData.restrictions) {
+          const restrictions = anyData.restrictions;
+          setRestrictionsPolicy({
+            security: restrictions.security,
+            passcode: restrictions.passcode,
+            syncStorage: restrictions.syncStorage,
+            kiosk: restrictions.kiosk,
+            tethering: restrictions.tethering,
+            location: restrictions.location,
+            phone: restrictions.phone,
+            dateTime: restrictions.dateTime,
+            display: restrictions.display,
+            miscellaneous: restrictions.miscellaneous,
+            applications: restrictions.applications,
+            network: restrictions.network,
+            connectivity: restrictions.connectivity,
+          } as any);
+        } else setRestrictionsPolicy(undefined);
+
+        setWebApplicationPolicy(anyData.webApplicationPolicies || []);
+        setAndroidPasscodePolicy(anyData.passcodePolicy || undefined);
+        setApplicationPolicy(anyData.applicationPolicies || []);
+      }
     } catch (err) {
       console.error("Failed to fetch profile:", err);
       setError(t('profiles.failedToLoad'));
@@ -192,7 +749,7 @@ export default function ProfileDetails() {
 
   const AuditInfo = ({ data }: { data: any }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    
+
     return (
       <div className="mt-4 pt-4 border-t border-border/50 bg-muted/20 p-3 rounded-lg">
         <button
@@ -489,24 +1046,11 @@ export default function ProfileDetails() {
     </Card>
   );
 
+
+
   return (
     <MainLayout>
-      <Dialog open={policyDialogOpen} onOpenChange={setPolicyDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-primary" />
-              {selectedPolicyType?.replace(/_/g, ' ').toUpperCase() || "Details"}
-            </DialogTitle>
-            <DialogDescription>
-              Configuration details for this policy section.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4">
-            {renderPolicyDialogContent()}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+
 
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Navigation & Header */}
@@ -516,33 +1060,45 @@ export default function ProfileDetails() {
           </Button>
 
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="bg-background p-3 rounded-xl shadow-sm border border-border/50">
-                {getPlatformIcon(profile.platform)}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                  {profile.name}
-                  <Badge variant={profile.status === 'PUBLISHED' ? "secondary" : "outline"} className={cn("ml-2 font-normal", profile.status === 'PUBLISHED' ? "bg-green-100 text-green-700 hover:bg-green-100" : "")}>
-                    {profile.status}
-                  </Badge>
-                </h1>
-                <p className="text-muted-foreground mt-1 max-w-2xl">{profile.description}</p>
+            <div className="flex items-center gap-6">
+              {/* Publish Button (Left, Circular, Animated) */}
+              {profile.status !== "PUBLISHED" && (
+                <Button
+                  onClick={handlePublish}
+                  disabled={publishing}
+                  size="icon"
+                  className={cn(
+                    "rounded-full h-14 w-14 shadow-lg bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-2 border-white/20 dark:border-slate-800",
+                    "transition-all duration-300 hover:scale-105 active:scale-95",
+                    publishing ? "animate-pulse" : "animate-in zoom-in slide-in-from-left-4 duration-500"
+                  )}
+                  title={t('profiles.publish.publish')}
+                >
+                  <Send className={cn("w-6 h-6 ml-0.5", publishing && "animate-spin")} />
+                </Button>
+              )}
+
+              <div className="flex items-center gap-4">
+                <div className="bg-background p-3 rounded-xl shadow-sm border border-border/50">
+                  {getPlatformIcon(profile.platform)}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                      {profile.name}
+                    </h1>
+                    <Badge variant={profile.status === 'PUBLISHED' ? "secondary" : "outline"} className={cn("ml-1 font-normal", profile.status === 'PUBLISHED' ? "bg-green-100 text-green-700 border-green-200" : "")}>
+                      {profile.status}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">{profile.description}</p>
+
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => navigate(`/profiles/${platform}/${id}/policies`)} className="gap-2 shadow-sm">
-                <Edit className="w-4 h-4" />
-                {t('profiles.actions.editPolicies')}
-              </Button>
-              {profile.status !== "PUBLISHED" && (
-                <Button onClick={handlePublish} disabled={publishing} className="gap-2 shadow-sm bg-primary hover:bg-primary/90">
-                  <Send className="w-4 h-4" />
-                  {publishing ? t('profiles.publish.publishing') : t('profiles.publish.publish')}
-                </Button>
-              )}
-            </div>
+            {/* Edit Policy Button (Top Right) */}
+
           </div>
         </div>
 
@@ -560,18 +1116,15 @@ export default function ProfileDetails() {
             </CardContent>
           </Card>
 
-          {/* Conditional Stats */}
-          {!isIosProfile(profile) && (
-            <Card className="shadow-sm border-border/60">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t('profileDetails.deployedDevices')}</p>
-                  <h3 className="text-2xl font-bold mt-1">{profile.deviceCount || 0}</h3>
-                </div>
-                <Users className="w-8 h-8 text-blue-500 opacity-20" />
-              </CardContent>
-            </Card>
-          )}
+          <Card className="shadow-sm border-border/60">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{t('profileDetails.deployedDevices')}</p>
+                <h3 className="text-2xl font-bold mt-1">{profile.deployedDevices || 0}</h3>
+              </div>
+              <Users className="w-8 h-8 text-blue-500 opacity-20" />
+            </CardContent>
+          </Card>
 
           <Card className="shadow-sm border-border/60">
             <CardContent className="p-6 flex items-center justify-between">
@@ -594,216 +1147,56 @@ export default function ProfileDetails() {
           </Card>
         </div>
 
-        {/* Profile Overview */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">Profile Overview</h2>
-          <Card className="shadow-sm border-border/60 overflow-hidden bg-gradient-to-br from-card to-muted/20">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-6 md:gap-8">
 
-                {/* Main Identity Column */}
-                <div className="flex-1 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-2xl font-bold tracking-tight text-foreground">{profile.name}</h3>
-                        <Badge variant="outline" className={cn(
-                          "gap-1.5 py-1 px-2.5",
-                          isAndroidProfile(profile) ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-slate-700 bg-slate-50 border-slate-200"
-                        )}>
-                          {isAndroidProfile(profile) ? <Smartphone className="w-3.5 h-3.5" /> : <Apple className="w-3.5 h-3.5" />}
-                          {profile.profileType === 'Android_Full_Profile' ? 'Android Profile' : 'iOS Profile'}
-                        </Badge>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed text-sm max-w-2xl">
-                        {profile.description || "No description provided for this profile."}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <Badge variant="secondary" className="font-mono text-xs text-muted-foreground bg-muted/50 hover:bg-muted border-border/50 gap-1.5 py-1">
-                      <Disc className="w-3 h-3" /> {profile.id}
-                    </Badge>
-                    {profile.version && (
-                      <Badge variant="secondary" className="font-mono text-xs text-muted-foreground bg-muted/50 hover:bg-muted border-border/50 gap-1.5 py-1">
-                        <Clock className="w-3 h-3" /> v{profile.version}
-                      </Badge>
-                    )}
-                    <Badge variant="secondary" className="font-mono text-xs text-muted-foreground bg-muted/50 hover:bg-muted border-border/50 gap-1.5 py-1">
-                      <ShieldCheck className="w-3 h-3" /> Compliance: 100%
-                    </Badge>
-                  </div>
-                </div>
+        {/* Policies (New Layout with Editors) */}
+        {/* Policies */}
+        <PolicyCardGrid
+          platform={platform}
+          passcodePolicy={passcodePolicy}
+          androidPasscodePolicy={androidPasscodePolicy}
+          wifiPolicy={wifiPolicy}
+          mailPolicy={mailPolicy}
+          restrictionsPolicy={restrictionsPolicy}
+          applicationPolicy={applicationPolicy}
+          webApplicationPolicy={webApplicationPolicy}
+          notificationPolicy={notificationPolicy}
+          lockScreenMessagePolicy={lockScreenMessagePolicy}
+          scepPolicy={scepPolicy}
+          mdmPolicy={mdmPolicy}
+          onSelectPolicy={(type) => navigate(`/profiles/${platform}/${id}/policy/${type}`)}
+        />
 
-                {/* Meta Info Grid */}
-                <div className="md:w-auto md:min-w-[300px] grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 md:border-l md:border-border/50 md:pl-8">
+        <Separator />
 
-                  {/* Created Info */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="p-1.5 rounded-md bg-amber-100/50 text-amber-600">
-                        <Users className="w-4 h-4" />
-                      </div>
-                      <span className="text-xs font-semibold uppercase tracking-wider">Created</span>
-                    </div>
-                    <div className="pl-9">
-                      <p className="text-sm font-medium text-foreground">{profile.createdBy || 'System'}</p>
-                      <p className="text-xs text-muted-foreground">{profile.creationTime ? new Date(profile.creationTime).toLocaleString() : '-'}</p>
-                    </div>
-                  </div>
-
-                  {/* Modified Info */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="p-1.5 rounded-md bg-purple-100/50 text-purple-600">
-                        <Edit className="w-4 h-4" />
-                      </div>
-                      <span className="text-xs font-semibold uppercase tracking-wider">Modified</span>
-                    </div>
-                    <div className="pl-9">
-                      <p className="text-sm font-medium text-foreground">{profile.lastModifiedBy || 'System'}</p>
-                      <p className="text-xs text-muted-foreground">{profile.modificationTime ? new Date(profile.modificationTime).toLocaleString() : 'Never'}</p>
-                    </div>
-                  </div>
-
-                </div>
-
+        {/* Bottom Audit Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground bg-muted/20 p-4 rounded-lg border border-border/40">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-amber-100/50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+              <Users className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Created By</span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-foreground">{profile.createdBy || 'System'}</span>
+                <span className="w-1 h-1 rounded-full bg-border" />
+                <span>{profile.creationTime ? new Date(profile.creationTime).toLocaleString() : '-'}</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Policies Grid */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight">Configuration Policies</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-
-            {/* iOS Policies - Alphabetically sorted */}
-            {isIosProfile(profile) && (
-              <>
-                <PolicyCard
-                  title="Apps"
-                  icon={Box}
-                  type="apps"
-                  isActive={!!profile.applicationPolicies?.length}
-                  overview={profile.applicationPolicies?.length ? `${profile.applicationPolicies.length} Apps` : undefined}
-                />
-                <PolicyCard
-                  title="Email"
-                  icon={Mail}
-                  type="mail"
-                  isActive={!!profile.mailPolicy}
-                  overview={profile.mailPolicy ? `Account: ${profile.mailPolicy.emailAccountName || '-'}` : undefined}
-                />
-                <PolicyCard
-                  title="MDM Config"
-                  icon={Server}
-                  type="mdm"
-                  isActive={!!profile.mdmPolicy}
-                  overview={profile.mdmPolicy ? `Server: ${profile.mdmPolicy.serverURL?.substring(0, 20)}...` : undefined}
-                />
-                <PolicyCard
-                  title="Notifications"
-                  icon={Bell}
-                  type="notifications"
-                  isActive={!!profile.notificationPolicies?.length}
-                  overview={profile.notificationPolicies?.length ? `${profile.notificationPolicies.length} Apps` : undefined}
-                />
-                <PolicyCard
-                  title="Passcode"
-                  icon={Lock}
-                  type="passcode"
-                  isActive={!!profile.passCodePolicy}
-                  overview={profile.passCodePolicy ? `Min Length: ${profile.passCodePolicy.minLength || '-'}` : undefined}
-                />
-                <PolicyCard
-                  title="Restrictions"
-                  icon={Shield}
-                  type="restrictions"
-                  isActive={!!profile.lockScreenPolicy}
-                  overview={profile.lockScreenPolicy ? "Configured" : undefined}
-                />
-                <PolicyCard
-                  title="Web Clips"
-                  icon={Globe}
-                  type="webclips"
-                  isActive={!!profile.webClipPolicies?.length}
-                  overview={profile.webClipPolicies?.length ? `${profile.webClipPolicies.length} Clips` : undefined}
-                />
-                <PolicyCard
-                  title="Wi-Fi"
-                  icon={Wifi}
-                  type="wifi"
-                  isActive={!!profile.wifiPolicy}
-                  overview={profile.wifiPolicy ? `SSID: ${profile.wifiPolicy.ssid || '-'}` : undefined}
-                />
-              </>
-            )}
-
-            {/* Android Policies - Alphabetically sorted */}
-            {isAndroidProfile(profile) && (
-              <>
-                <PolicyCard
-                  title="Apps"
-                  icon={Box}
-                  type="apps"
-                  isActive={!!profile.applicationPolicies?.length}
-                  overview={profile.applicationPolicies?.length ? `${profile.applicationPolicies.length} Apps` : undefined}
-                />
-                <PolicyCard
-                  title="Common"
-                  icon={Settings}
-                  type="common"
-                  isActive={!!profile.commonSettingsPolicy}
-                  overview={profile.commonSettingsPolicy ? (profile.commonSettingsPolicy.disableScreenCapture ? "Screen Capture: Off" : "Screen Capture: On") : undefined}
-                />
-                {/* ============================================================
-                   WP-ONLY RESTRICTIONS - Location and Security are WP-compatible
-                   ============================================================ */}
-                <PolicyCard title="Location" icon={MapPin} type="restriction_location" isActive={!!profile.restrictions?.location} overview={profile.restrictions?.location ? "Configured" : undefined} />
-                <PolicyCard
-                  title="Passcode"
-                  icon={Lock}
-                  type="passcode"
-                  isActive={!!profile.passcodePolicy?.work}
-                  overview={profile.passcodePolicy?.work ? `Complexity: ${profile.passcodePolicy.work.complexity || '-'}` : undefined}
-                />
-                <PolicyCard title="Security" icon={Shield} type="restriction_security" isActive={!!profile.restrictions?.security} overview={profile.restrictions?.security ? "Configured" : undefined} />
-                <PolicyCard
-                  title="Web Apps"
-                  icon={Globe}
-                  type="webapps"
-                  isActive={!!profile.webApplicationPolicies?.length}
-                  overview={profile.webApplicationPolicies?.length ? `${profile.webApplicationPolicies.length} Apps` : undefined}
-                />
-                {/* ============================================================
-                   DO-ONLY POLICIES AND RESTRICTIONS
-                   TODO: Uncomment when Device Owner mode is implemented
-                   ============================================================ */}
-                {/* <PolicyCard title="Connectivity" icon={Bluetooth} type="restriction_connectivity" isActive={!!profile.restrictions?.connectivity} overview={profile.restrictions?.connectivity ? "Configured" : undefined} /> */}
-                {/* <PolicyCard title="Date/Time" icon={Clock} type="restriction_dateTime" isActive={!!profile.restrictions?.dateTime} overview={profile.restrictions?.dateTime ? "Configured" : undefined} /> */}
-                {/* <PolicyCard title="Display" icon={Monitor} type="restriction_display" isActive={!!profile.restrictions?.display} overview={profile.restrictions?.display ? "Configured" : undefined} /> */}
-                {/* <PolicyCard
-                  title="Enrollment"
-                  icon={FileText}
-                  type="enrollment"
-                  isActive={!!profile.enrollmentPolicy}
-                  overview={profile.enrollmentPolicy ? `Kiosk: ${profile.enrollmentPolicy.isKioskMode ? 'Yes' : 'No'}` : undefined}
-                /> */}
-                {/* <PolicyCard title="Kiosk" icon={TabletSmartphone} type="restriction_kiosk" isActive={!!profile.restrictions?.kiosk} overview={profile.restrictions?.kiosk ? "Configured" : undefined} /> */}
-                {/* <PolicyCard title="Network" icon={WifiOff} type="restriction_network" isActive={!!profile.restrictions?.network} overview={profile.restrictions?.network ? "Configured" : undefined} /> */}
-                {/* <PolicyCard title="Phone" icon={Phone} type="restriction_phone" isActive={!!profile.restrictions?.phone} overview={profile.restrictions?.phone ? "Configured" : undefined} /> */}
-                {/* <PolicyCard title="Storage" icon={Database} type="restriction_syncStorage" isActive={!!profile.restrictions?.syncStorage} overview={profile.restrictions?.syncStorage ? "Configured" : undefined} /> */}
-                {/* <PolicyCard
-                  title="Theme"
-                  icon={ImageIcon}
-                  type="theme"
-                  isActive={!!profile.deviceThemePolicy}
-                  overview={profile.deviceThemePolicy ? `Color: ${profile.deviceThemePolicy.backgroundColor || '-'}` : undefined}
-                /> */}
-              </>
-            )}
+          <div className="flex items-center gap-3 md:justify-end">
+            <div className="flex flex-col md:items-end">
+              <span className="text-xs font-semibold uppercase tracking-wider opacity-70">Last Modified</span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-foreground">{profile.lastModifiedBy || 'System'}</span>
+                <span className="w-1 h-1 rounded-full bg-border" />
+                <span>{profile.modificationTime ? new Date(profile.modificationTime).toLocaleString() : 'Never'}</span>
+              </div>
+            </div>
+            <div className="p-2 rounded-full bg-purple-100/50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+              <Edit className="w-4 h-4" />
+            </div>
           </div>
         </div>
 
