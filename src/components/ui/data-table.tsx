@@ -26,6 +26,11 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Search,
   Filter,
   Columns,
@@ -40,6 +45,9 @@ import {
   Download,
   FileText,
   FileSpreadsheet,
+  X,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { exportToPDF, exportToCSV } from "@/lib/exportUtils";
 
@@ -49,6 +57,7 @@ export interface Column<T> {
   accessor: (item: T) => any;
   sortable?: boolean;
   filterable?: boolean;
+  filterType?: "text" | "number" | "date"; // Type for filter operators
   searchable?: boolean;
   width?: number;
   minWidth?: number;
@@ -72,6 +81,7 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
   loading?: boolean;
   rowActions?: (item: T) => React.ReactNode;
+  quickActions?: (item: T) => React.ReactNode; // Actions displayed as icons outside the dropdown
   globalSearch?: boolean;
   globalSearchPlaceholder?: string;
   pageSizeOptions?: number[];
@@ -95,6 +105,62 @@ export interface DataTableProps<T> {
   serverSidePagination?: boolean;
 }
 
+// Filter operators by type
+type TextFilterOperator = "contains" | "equals" | "not_equals" | "starts_with" | "ends_with" | "is_empty" | "is_not_empty";
+type NumberFilterOperator = "equals" | "not_equals" | "gt" | "gte" | "lt" | "lte" | "is_empty" | "is_not_empty";
+type DateFilterOperator = "equals" | "not_equals" | "after" | "before" | "on_or_after" | "on_or_before" | "is_empty" | "is_not_empty";
+type FilterOperator = TextFilterOperator | NumberFilterOperator | DateFilterOperator;
+
+interface AdvancedFilter {
+  id: string;
+  column: string;
+  operator: FilterOperator;
+  value: string;
+}
+
+const TEXT_FILTER_OPERATORS: { value: TextFilterOperator; label: string }[] = [
+  { value: "contains", label: "contains" },
+  { value: "equals", label: "equals" },
+  { value: "not_equals", label: "does not equal" },
+  { value: "starts_with", label: "starts with" },
+  { value: "ends_with", label: "ends with" },
+  { value: "is_empty", label: "is empty" },
+  { value: "is_not_empty", label: "is not empty" },
+];
+
+const NUMBER_FILTER_OPERATORS: { value: NumberFilterOperator; label: string }[] = [
+  { value: "equals", label: "equals" },
+  { value: "not_equals", label: "does not equal" },
+  { value: "gt", label: "greater than" },
+  { value: "gte", label: "greater than or equal" },
+  { value: "lt", label: "less than" },
+  { value: "lte", label: "less than or equal" },
+  { value: "is_empty", label: "is empty" },
+  { value: "is_not_empty", label: "is not empty" },
+];
+
+const DATE_FILTER_OPERATORS: { value: DateFilterOperator; label: string }[] = [
+  { value: "equals", label: "on" },
+  { value: "not_equals", label: "not on" },
+  { value: "after", label: "after" },
+  { value: "before", label: "before" },
+  { value: "on_or_after", label: "on or after" },
+  { value: "on_or_before", label: "on or before" },
+  { value: "is_empty", label: "is empty" },
+  { value: "is_not_empty", label: "is not empty" },
+];
+
+const getOperatorsForType = (filterType: "text" | "number" | "date" = "text") => {
+  switch (filterType) {
+    case "number":
+      return NUMBER_FILTER_OPERATORS;
+    case "date":
+      return DATE_FILTER_OPERATORS;
+    default:
+      return TEXT_FILTER_OPERATORS;
+  }
+};
+
 export function DataTable<T extends Record<string, any>>({
   data,
   columns,
@@ -108,6 +174,7 @@ export function DataTable<T extends Record<string, any>>({
   emptyMessage = "No data available",
   loading = false,
   rowActions,
+  quickActions,
   globalSearch = true,
   globalSearchPlaceholder = "Search...",
   pageSizeOptions = [5, 10, 20, 50],
@@ -130,7 +197,10 @@ export function DataTable<T extends Record<string, any>>({
 }: DataTableProps<T>) {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchColumn, setSearchColumn] = useState<string>("all"); // "all" means search all columns
   const [filters, setFilters] = useState<Record<string, any>>({});
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilter[]>([]);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>(
     defaultSort || { key: "", dir: "asc" }
   );
@@ -172,16 +242,25 @@ export function DataTable<T extends Record<string, any>>({
 
     // Global search
     if (globalSearch && searchTerm) {
-      result = result.filter((item) =>
-        columns.some((col) => {
-          if (!col.searchable) return false;
+      result = result.filter((item) => {
+        if (searchColumn === "all") {
+          // Search across all searchable columns
+          return columns.some((col) => {
+            if (!col.searchable) return false;
+            const value = col.accessor(item);
+            return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+          });
+        } else {
+          // Search in specific column
+          const col = columns.find((c) => c.key === searchColumn);
+          if (!col) return true;
           const value = col.accessor(item);
           return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        })
-      );
+        }
+      });
     }
 
-    // Column filters
+    // Column filters (legacy simple filters)
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value !== "all") {
         result = result.filter((item) => {
@@ -195,8 +274,108 @@ export function DataTable<T extends Record<string, any>>({
       }
     });
 
+    // Advanced filters
+    advancedFilters.forEach((filter) => {
+      if (!filter.column) return;
+      
+      result = result.filter((item) => {
+        const col = columns.find((c) => c.key === filter.column);
+        if (!col) return true;
+        const rawValue = col.accessor(item);
+        const filterType = col.filterType || "text";
+
+        // Handle empty/not empty operators first
+        if (filter.operator === "is_empty") {
+          return rawValue === null || rawValue === undefined || rawValue === "" || String(rawValue).trim() === "";
+        }
+        if (filter.operator === "is_not_empty") {
+          return rawValue !== null && rawValue !== undefined && rawValue !== "" && String(rawValue).trim() !== "";
+        }
+
+        // Handle based on filter type
+        if (filterType === "number") {
+          const numValue = parseFloat(String(rawValue));
+          const filterNum = parseFloat(filter.value);
+          
+          if (isNaN(numValue) || isNaN(filterNum)) {
+            // Fallback to string comparison if not valid numbers
+            const itemStr = String(rawValue ?? "").toLowerCase();
+            const filterStr = filter.value.toLowerCase();
+            return filter.operator === "equals" ? itemStr === filterStr : itemStr !== filterStr;
+          }
+
+          switch (filter.operator) {
+            case "equals":
+              return numValue === filterNum;
+            case "not_equals":
+              return numValue !== filterNum;
+            case "gt":
+              return numValue > filterNum;
+            case "gte":
+              return numValue >= filterNum;
+            case "lt":
+              return numValue < filterNum;
+            case "lte":
+              return numValue <= filterNum;
+            default:
+              return true;
+          }
+        } else if (filterType === "date") {
+          const dateValue = new Date(rawValue);
+          const filterDate = new Date(filter.value);
+          
+          if (isNaN(dateValue.getTime()) || isNaN(filterDate.getTime())) {
+            // Fallback to string comparison if not valid dates
+            const itemStr = String(rawValue ?? "").toLowerCase();
+            const filterStr = filter.value.toLowerCase();
+            return filter.operator === "equals" ? itemStr === filterStr : itemStr !== filterStr;
+          }
+
+          // Normalize to start of day for date comparisons
+          const normalizedItemDate = new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate());
+          const normalizedFilterDate = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
+
+          switch (filter.operator) {
+            case "equals":
+              return normalizedItemDate.getTime() === normalizedFilterDate.getTime();
+            case "not_equals":
+              return normalizedItemDate.getTime() !== normalizedFilterDate.getTime();
+            case "after":
+              return normalizedItemDate.getTime() > normalizedFilterDate.getTime();
+            case "before":
+              return normalizedItemDate.getTime() < normalizedFilterDate.getTime();
+            case "on_or_after":
+              return normalizedItemDate.getTime() >= normalizedFilterDate.getTime();
+            case "on_or_before":
+              return normalizedItemDate.getTime() <= normalizedFilterDate.getTime();
+            default:
+              return true;
+          }
+        } else {
+          // Text filter
+          const itemValue = String(rawValue ?? "").toLowerCase();
+          const filterValue = filter.value.toLowerCase();
+
+          switch (filter.operator) {
+            case "contains":
+              return itemValue.includes(filterValue);
+            case "equals":
+              return itemValue === filterValue;
+            case "not_equals":
+              return itemValue !== filterValue;
+            case "starts_with":
+              return itemValue.startsWith(filterValue);
+            case "ends_with":
+              return itemValue.endsWith(filterValue);
+            default:
+              return true;
+          }
+        }
+      });
+    });
+
     return result;
-  }, [data, searchTerm, filters, columns, globalSearch]);
+  }, [data, searchTerm, searchColumn, filters, advancedFilters, columns, globalSearch]);
 
   const sortedData = useMemo(() => {
     if (!sort.key) return filteredData;
@@ -271,6 +450,40 @@ export function DataTable<T extends Record<string, any>>({
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
+    setPage(1);
+  };
+
+  // Advanced filter handlers
+  const addAdvancedFilter = () => {
+    const filterableColumns = columns.filter((col) => col.filterable);
+    const firstColumn = filterableColumns.length > 0 ? filterableColumns[0].key : "";
+    setAdvancedFilters((prev) => [
+      ...prev,
+      {
+        id: `filter-${Date.now()}`,
+        column: firstColumn,
+        operator: "contains",
+        value: "",
+      },
+    ]);
+  };
+
+  const updateAdvancedFilter = (id: string, updates: Partial<AdvancedFilter>) => {
+    setAdvancedFilters((prev) =>
+      prev.map((filter) =>
+        filter.id === id ? { ...filter, ...updates } : filter
+      )
+    );
+    setPage(1);
+  };
+
+  const removeAdvancedFilter = (id: string) => {
+    setAdvancedFilters((prev) => prev.filter((filter) => filter.id !== id));
+    setPage(1);
+  };
+
+  const removeAllAdvancedFilters = () => {
+    setAdvancedFilters([]);
     setPage(1);
   };
 
@@ -445,49 +658,239 @@ export function DataTable<T extends Record<string, any>>({
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Global Search */}
         {globalSearch && (
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={globalSearchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9"
-              aria-label={globalSearchPlaceholder}
-            />
+          <div className="flex flex-1 gap-2">
+            <Select
+              value={searchColumn}
+              onValueChange={(value) => setSearchColumn(value)}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Search in..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Columns</SelectItem>
+                {columns
+                  .filter((col) => col.searchable)
+                  .map((col) => (
+                    <SelectItem key={col.key} value={col.key}>
+                      {col.header}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={
+                  searchColumn === "all"
+                    ? globalSearchPlaceholder
+                    : `Search ${columns.find((c) => c.key === searchColumn)?.header || ""}...`
+                }
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9"
+                aria-label={globalSearchPlaceholder}
+              />
+            </div>
           </div>
         )}
 
-        {/* Column Filters */}
+        {/* Advanced Filter Panel */}
         {filterable && (
-          <div className="flex gap-2 flex-wrap">
-            {columns
-              .filter((col) => col.filterable && visibleColumns.has(col.key))
-              .map((col) => {
-                const options = getFilterOptions(col);
-                if (options.length === 0) return null;
+          <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={advancedFilters.length > 0 ? "default" : "outline"}
+                size="sm"
+                className={`transition-all duration-200 ${
+                  advancedFilters.length > 0 
+                    ? "bg-primary hover:bg-primary/90 shadow-md" 
+                    : "hover:border-primary/50 hover:bg-primary/5"
+                }`}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+                {advancedFilters.length > 0 && (
+                  <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-semibold">
+                    {advancedFilters.length}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-[580px] p-0 shadow-xl border-0 overflow-hidden" 
+              align="start"
+              sideOffset={8}
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-3 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                      <Filter className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Advanced Filters</h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        {advancedFilters.length === 0 
+                          ? "No filters applied" 
+                          : `${advancedFilters.length} filter${advancedFilters.length > 1 ? 's' : ''} active`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  {advancedFilters.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      onClick={removeAllAdvancedFilters}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                      Clear All
+                    </Button>
+                  )}
+                </div>
+              </div>
 
-                return (
-                  <Select
-                    key={col.key}
-                    value={filters[col.key] || "all"}
-                    onValueChange={(value) => handleFilter(col.key, value)}
-                  >
-                    <SelectTrigger className="w-[150px]">
-                      <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder={col.header} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All {col.header}</SelectItem>
-                      {options.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              })}
-          </div>
+              {/* Filter Content */}
+              <div className="p-4 space-y-3 max-h-[350px] overflow-y-auto bg-gradient-to-b from-muted/20 to-transparent">
+                {advancedFilters.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 mb-3">
+                      <Filter className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">No filters applied</p>
+                    <p className="text-xs text-muted-foreground/70">Add a filter to narrow down your results</p>
+                  </div>
+                ) : (
+                  advancedFilters.map((filter, index) => {
+                    const selectedCol = columns.find((c) => c.key === filter.column);
+                    const filterType = selectedCol?.filterType || "text";
+                    
+                    return (
+                      <div 
+                        key={filter.id} 
+                        className="group relative flex items-center gap-2 p-3 rounded-lg bg-background border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
+                      >
+                        {/* Row Number */}
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold text-muted-foreground">
+                          {index + 1}
+                        </div>
+
+                        {/* Column Select */}
+                        <Select
+                          value={filter.column}
+                          onValueChange={(value) => {
+                            const newCol = columns.find((c) => c.key === value);
+                            const newFilterType = newCol?.filterType || "text";
+                            const operators = getOperatorsForType(newFilterType);
+                            const validOperator = operators.some((op) => op.value === filter.operator)
+                              ? filter.operator
+                              : operators[0].value;
+                            updateAdvancedFilter(filter.id, { 
+                              column: value, 
+                              operator: validOperator,
+                              value: "" 
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-[140px] h-9 text-xs font-medium bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30">
+                            <SelectValue placeholder="Select column" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {columns
+                              .filter((col) => col.filterable)
+                              .map((col) => (
+                                <SelectItem key={col.key} value={col.key} className="text-xs">
+                                  {col.header}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+
+                        {/* Operator Select */}
+                        <Select
+                          value={filter.operator}
+                          onValueChange={(value) =>
+                            updateAdvancedFilter(filter.id, {
+                              operator: value as FilterOperator,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="w-[150px] h-9 text-xs font-medium bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30">
+                            <SelectValue placeholder="Select operator" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getOperatorsForType(filterType).map((op) => (
+                              <SelectItem key={op.value} value={op.value} className="text-xs">
+                                {op.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {/* Value Input */}
+                        {filter.operator !== "is_empty" && filter.operator !== "is_not_empty" && (
+                          filterType === "date" ? (
+                            <Input
+                              type="date"
+                              value={filter.value}
+                              onChange={(e) =>
+                                updateAdvancedFilter(filter.id, { value: e.target.value })
+                              }
+                              className="flex-1 h-9 text-xs bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30"
+                            />
+                          ) : filterType === "number" ? (
+                            <Input
+                              type="number"
+                              placeholder="Enter value"
+                              value={filter.value}
+                              onChange={(e) =>
+                                updateAdvancedFilter(filter.id, { value: e.target.value })
+                              }
+                              className="flex-1 h-9 text-xs bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30"
+                            />
+                          ) : (
+                            <Input
+                              placeholder="Enter value"
+                              value={filter.value}
+                              onChange={(e) =>
+                                updateAdvancedFilter(filter.id, { value: e.target.value })
+                              }
+                              className="flex-1 h-9 text-xs bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30"
+                            />
+                          )
+                        )}
+
+                        {/* Delete Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 opacity-50 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all"
+                          onClick={() => removeAdvancedFilter(filter.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-3 border-t bg-muted/30">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-9 text-sm font-medium border-dashed border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
+                  onClick={addAdvancedFilter}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Filter Condition
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
 
         {/* Actions */}
@@ -555,7 +958,7 @@ export function DataTable<T extends Record<string, any>>({
                   }}
                 />
               ))}
-              {rowActions && <col className="w-[50px]" />}
+              {(rowActions || quickActions) && <col className="w-[120px]" />}
             </colgroup>
             <TableHeader>
               <TableRow>
@@ -595,9 +998,9 @@ export function DataTable<T extends Record<string, any>>({
                     )}
                   </TableHead>
                 ))}
-                {rowActions && (
-                  <TableHead className="w-[50px]">
-                    <span className="sr-only">Actions</span>
+                {(rowActions || quickActions) && (
+                  <TableHead className="w-[120px]">
+                    <span className="text-muted-foreground">Actions</span>
                   </TableHead>
                 )}
               </TableRow>
@@ -644,23 +1047,28 @@ export function DataTable<T extends Record<string, any>>({
                         <div className="truncate">{renderCell(item, col)}</div>
                       </TableCell>
                     ))}
-                    {rowActions && (
+                    {(rowActions || quickActions) && (
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => e.stopPropagation()}
-                              aria-label="Row actions"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {rowActions(item)}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center justify-end gap-1">
+                          {quickActions && quickActions(item)}
+                          {rowActions && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label="Row actions"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {rowActions(item)}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -771,7 +1179,7 @@ export function DataTable<T extends Record<string, any>>({
                         }
                       }
                     }}
-                    className="h-8 w-16 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                    className="h-8 w-16 text-center border-2 border-sky-400 bg-background focus:border-sky-500 focus:ring-2 focus:ring-sky-300/30 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                     aria-label="Go to page"
                   />
                   <span className="text-sm text-muted-foreground">

@@ -300,6 +300,7 @@ const Profiles = () => {
         accessor: (item) => item.name,
         sortable: true,
         searchable: true,
+        filterable: true,
         render: (_, item) => (
           <p
             className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
@@ -318,6 +319,7 @@ const Profiles = () => {
         accessor: (item) => item.description,
         sortable: false,
         searchable: true,
+        filterable: true,
         render: (value) => (
           <p className="text-sm text-muted-foreground truncate max-w-[280px]">
             {value || "-"}
@@ -330,6 +332,7 @@ const Profiles = () => {
         accessor: (item) => item.platform || "",
         sortable: true,
         filterable: true,
+        searchable: true,
         render: (_, item) => {
           const config = platformConfig[item.platform?.toLowerCase() || "all"];
           return (
@@ -360,6 +363,7 @@ const Profiles = () => {
         accessor: (item) => item.status || "DRAFT",
         sortable: true,
         filterable: true,
+        searchable: true,
         render: (value) => {
           const statusConfig: Record<
             string,
@@ -397,6 +401,9 @@ const Profiles = () => {
         header: t('profiles.table.version'),
         accessor: (item) => item.version || 0,
         sortable: true,
+        searchable: true,
+        filterable: true,
+        filterType: "number",
         render: (value, item) => {
           // iOS profiles don't have version field per OpenAPI spec
           if (item.platform?.toLowerCase() === "ios") {
@@ -414,6 +421,9 @@ const Profiles = () => {
         header: t('profiles.table.devices'),
         accessor: (item) => item.deviceCount || 0,
         sortable: true,
+        searchable: true,
+        filterable: true,
+        filterType: "number",
         render: (value, item) => {
           // iOS profiles don't have deviceCount field per OpenAPI spec
           if (item.platform?.toLowerCase() === "ios") {
@@ -428,6 +438,8 @@ const Profiles = () => {
         accessor: (item) => item.modificationTime || "",
         sortable: true,
         hidden: true,
+        filterable: true,
+        filterType: "date",
         render: (value) => (
           <span className="text-muted-foreground font-mono text-sm">
             {value ? new Date(value).toLocaleDateString() : "-"}
@@ -440,6 +452,8 @@ const Profiles = () => {
         accessor: (item) => item.creationTime || "",
         sortable: true,
         hidden: true,
+        filterable: true,
+        filterType: "date",
         render: (value) => (
           <span className="text-muted-foreground font-mono text-sm">
             {value ? new Date(value).toLocaleDateString() : "-"}
@@ -452,6 +466,7 @@ const Profiles = () => {
         accessor: (item) => item.createdBy || "",
         sortable: true,
         hidden: true,
+        filterable: true,
         render: (value) => (
           <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
             {value || "-"}
@@ -464,6 +479,7 @@ const Profiles = () => {
         accessor: (item) => item.lastModifiedBy || "",
         sortable: true,
         hidden: true,
+        filterable: true,
         render: (value) => (
           <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
             {value || "-"}
@@ -508,24 +524,12 @@ const Profiles = () => {
 
     return (
       <>
-        <DropdownMenuItem onClick={() => handleEditProfile(profile)}>
-          <Pencil className="w-4 h-4 mr-2" />
-          {t('profiles.actions.edit')}
-        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => handlePublishProfile(profile)}
           disabled={!isDraft}
         >
           <Send className="w-4 h-4 mr-2" />
           {t('profiles.actions.publish')}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() =>
-            navigate(`/profiles/${profile.platform}/${profile.id}/policies`)
-          }
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          {t('profiles.actions.editPolicies')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleCloneProfile(profile)}>
           <Copy className="w-4 h-4 mr-2" />
@@ -542,6 +546,43 @@ const Profiles = () => {
       </>
     );
   };
+
+  const quickActions = (profile: Profile) => (
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditProfile(profile);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t('profiles.actions.edit')}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/profiles/${profile.platform}/${profile.id}/policies`);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t('profiles.actions.editPolicies')}</TooltipContent>
+      </Tooltip>
+    </>
+  );
 
   return (
     <MainLayout>
@@ -687,6 +728,7 @@ const Profiles = () => {
             loading={loading}
             globalSearchPlaceholder={t('profiles.searchPlaceholder')}
             emptyMessage={t('profiles.noProfilesFound')}
+            quickActions={quickActions}
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}
