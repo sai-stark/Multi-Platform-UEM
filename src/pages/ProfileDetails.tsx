@@ -35,6 +35,7 @@ import {
   Bluetooth,
   Box,
   CheckCircle,
+  ChevronDown,
   Clock,
   Clock3,
   Database,
@@ -189,23 +190,38 @@ export default function ProfileDetails() {
     </div>
   );
 
-  const AuditInfo = ({ data }: { data: any }) => (
-    <div className="mt-4 pt-4 border-t border-border/50 space-y-2 bg-muted/20 p-3 rounded-lg">
-      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-        <Clock3 className="w-3 h-3" /> {t('profileDetails.auditInfo')}
-      </h4>
-      <InfoRow label={t('profiles.table.createdBy')} value={data.createdBy} />
-      <InfoRow
-        label={t('profileDetails.createdOn')}
-        value={data.creationTime ? new Date(data.creationTime).toLocaleString() : "-"}
-      />
-      <InfoRow label={t('profiles.table.lastModifiedBy')} value={data.lastModifiedBy} />
-      <InfoRow
-        label={t('profileDetails.lastModified')}
-        value={data.modificationTime ? new Date(data.modificationTime).toLocaleString() : "-"}
-      />
-    </div>
-  );
+  const AuditInfo = ({ data }: { data: any }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    return (
+      <div className="mt-4 pt-4 border-t border-border/50 bg-muted/20 p-3 rounded-lg">
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <Clock3 className="w-3 h-3" /> {t('profileDetails.auditInfo')}
+          </span>
+          <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", isExpanded && "rotate-180")} />
+        </button>
+        {isExpanded && (
+          <div className="space-y-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <InfoRow label={t('profiles.table.createdBy')} value={data.createdBy} />
+            <InfoRow
+              label={t('profileDetails.createdOn')}
+              value={data.creationTime ? new Date(data.creationTime).toLocaleString() : "-"}
+            />
+            <InfoRow label={t('profiles.table.lastModifiedBy')} value={data.lastModifiedBy} />
+            <InfoRow
+              label={t('profileDetails.lastModified')}
+              value={data.modificationTime ? new Date(data.modificationTime).toLocaleString() : "-"}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderPolicyDialogContent = () => {
     if (!selectedPolicyType) return null;
@@ -406,6 +422,30 @@ export default function ProfileDetails() {
             ))}
           </div>
         ) : <p className="text-muted-foreground text-center py-4">No Web App Policies Configured</p>;
+
+        case "passcode": return profile.passcodePolicy?.work ? (
+          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <h4 className="font-semibold text-sm text-primary">Work Profile Passcode</h4>
+            <div className="space-y-1">
+              <InfoRow label="Complexity" value={profile.passcodePolicy.work.complexity} />
+              <InfoRow label="History Length" value={profile.passcodePolicy.work.historyLength} />
+              <InfoRow label="Max Failed Attempts to Wipe" value={profile.passcodePolicy.work.maxFailedAttemptsToWipe} />
+              <InfoRow label="Password Expiry (seconds)" value={profile.passcodePolicy.work.changeAfterSeconds} />
+              <InfoRow label="Strong Auth Timeout" value={profile.passcodePolicy.work.strongAuthRequiredTimeout} />
+              <InfoRow label="Separate Lock" value={profile.passcodePolicy.work.separateLock ? "Yes" : "No"} />
+            </div>
+            {profile.passcodePolicy.enforcement && (
+              <>
+                <h4 className="font-semibold text-sm text-primary mt-4">Enforcement</h4>
+                <div className="space-y-1">
+                  <InfoRow label="Block After Days" value={profile.passcodePolicy.enforcement.blockAfterDays} />
+                  <InfoRow label="Wipe After Days" value={profile.passcodePolicy.enforcement.wipeAfterDays} />
+                </div>
+              </>
+            )}
+            <AuditInfo data={profile.passcodePolicy.work} />
+          </div>
+        ) : <p className="text-muted-foreground text-center py-4">No Passcode Policy Configured</p>;
 
         default: return <p>Policy details not implemented</p>;
       }
@@ -639,29 +679,15 @@ export default function ProfileDetails() {
           <h2 className="text-xl font-semibold tracking-tight">Configuration Policies</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
 
-            {/* iOS Policies */}
+            {/* iOS Policies - Alphabetically sorted */}
             {isIosProfile(profile) && (
               <>
                 <PolicyCard
-                  title="Passcode"
-                  icon={Lock}
-                  type="passcode"
-                  isActive={!!profile.passCodePolicy}
-                  overview={profile.passCodePolicy ? `Min Length: ${profile.passCodePolicy.minLength || '-'}` : undefined}
-                />
-                <PolicyCard
-                  title="Wi-Fi"
-                  icon={Wifi}
-                  type="wifi"
-                  isActive={!!profile.wifiPolicy}
-                  overview={profile.wifiPolicy ? `SSID: ${profile.wifiPolicy.ssid || '-'}` : undefined}
-                />
-                <PolicyCard
-                  title="Restrictions"
-                  icon={Shield}
-                  type="restrictions"
-                  isActive={!!profile.lockScreenPolicy}
-                  overview={profile.lockScreenPolicy ? "Configured" : undefined}
+                  title="Apps"
+                  icon={Box}
+                  type="apps"
+                  isActive={!!profile.applicationPolicies?.length}
+                  overview={profile.applicationPolicies?.length ? `${profile.applicationPolicies.length} Apps` : undefined}
                 />
                 <PolicyCard
                   title="Email"
@@ -678,13 +704,6 @@ export default function ProfileDetails() {
                   overview={profile.mdmPolicy ? `Server: ${profile.mdmPolicy.serverURL?.substring(0, 20)}...` : undefined}
                 />
                 <PolicyCard
-                  title="Web Clips"
-                  icon={Globe}
-                  type="webclips"
-                  isActive={!!profile.webClipPolicies?.length}
-                  overview={profile.webClipPolicies?.length ? `${profile.webClipPolicies.length} Clips` : undefined}
-                />
-                <PolicyCard
                   title="Notifications"
                   icon={Bell}
                   type="notifications"
@@ -692,46 +711,65 @@ export default function ProfileDetails() {
                   overview={profile.notificationPolicies?.length ? `${profile.notificationPolicies.length} Apps` : undefined}
                 />
                 <PolicyCard
+                  title="Passcode"
+                  icon={Lock}
+                  type="passcode"
+                  isActive={!!profile.passCodePolicy}
+                  overview={profile.passCodePolicy ? `Min Length: ${profile.passCodePolicy.minLength || '-'}` : undefined}
+                />
+                <PolicyCard
+                  title="Restrictions"
+                  icon={Shield}
+                  type="restrictions"
+                  isActive={!!profile.lockScreenPolicy}
+                  overview={profile.lockScreenPolicy ? "Configured" : undefined}
+                />
+                <PolicyCard
+                  title="Web Clips"
+                  icon={Globe}
+                  type="webclips"
+                  isActive={!!profile.webClipPolicies?.length}
+                  overview={profile.webClipPolicies?.length ? `${profile.webClipPolicies.length} Clips` : undefined}
+                />
+                <PolicyCard
+                  title="Wi-Fi"
+                  icon={Wifi}
+                  type="wifi"
+                  isActive={!!profile.wifiPolicy}
+                  overview={profile.wifiPolicy ? `SSID: ${profile.wifiPolicy.ssid || '-'}` : undefined}
+                />
+              </>
+            )}
+
+            {/* Android Policies - Alphabetically sorted */}
+            {isAndroidProfile(profile) && (
+              <>
+                <PolicyCard
                   title="Apps"
                   icon={Box}
                   type="apps"
                   isActive={!!profile.applicationPolicies?.length}
                   overview={profile.applicationPolicies?.length ? `${profile.applicationPolicies.length} Apps` : undefined}
-                />
-              </>
-            )}
-
-            {/* Android Policies */}
-            {isAndroidProfile(profile) && (
-              <>
-                <PolicyCard
-                  title="Enrollment"
-                  icon={FileText}
-                  type="enrollment"
-                  isActive={!!profile.enrollmentPolicy}
-                  overview={profile.enrollmentPolicy ? `Kiosk: ${profile.enrollmentPolicy.isKioskMode ? 'Yes' : 'No'}` : undefined}
-                />
-                <PolicyCard
-                  title="Theme"
-                  icon={ImageIcon}
-                  type="theme"
-                  isActive={!!profile.deviceThemePolicy}
-                  overview={profile.deviceThemePolicy ? `Color: ${profile.deviceThemePolicy.backgroundColor || '-'}` : undefined}
                 />
                 <PolicyCard
                   title="Common"
                   icon={Settings}
                   type="common"
                   isActive={!!profile.commonSettingsPolicy}
-                  overview={profile.commonSettingsPolicy ? (profile.commonSettingsPolicy.locationTracking ? "Location: On" : "Location: Off") : undefined}
+                  overview={profile.commonSettingsPolicy ? (profile.commonSettingsPolicy.disableScreenCapture ? "Screen Capture: Off" : "Screen Capture: On") : undefined}
                 />
+                {/* ============================================================
+                   WP-ONLY RESTRICTIONS - Location and Security are WP-compatible
+                   ============================================================ */}
+                <PolicyCard title="Location" icon={MapPin} type="restriction_location" isActive={!!profile.restrictions?.location} overview={profile.restrictions?.location ? "Configured" : undefined} />
                 <PolicyCard
-                  title="Apps"
-                  icon={Box}
-                  type="apps"
-                  isActive={!!profile.applicationPolicies?.length}
-                  overview={profile.applicationPolicies?.length ? `${profile.applicationPolicies.length} Apps` : undefined}
+                  title="Passcode"
+                  icon={Lock}
+                  type="passcode"
+                  isActive={!!profile.passcodePolicy?.work}
+                  overview={profile.passcodePolicy?.work ? `Complexity: ${profile.passcodePolicy.work.complexity || '-'}` : undefined}
                 />
+                <PolicyCard title="Security" icon={Shield} type="restriction_security" isActive={!!profile.restrictions?.security} overview={profile.restrictions?.security ? "Configured" : undefined} />
                 <PolicyCard
                   title="Web Apps"
                   icon={Globe}
@@ -739,18 +777,31 @@ export default function ProfileDetails() {
                   isActive={!!profile.webApplicationPolicies?.length}
                   overview={profile.webApplicationPolicies?.length ? `${profile.webApplicationPolicies.length} Apps` : undefined}
                 />
-
-                {/* Breakdown Android Restrictions */}
-                <PolicyCard title="Security" icon={Shield} type="restriction_security" isActive={!!profile.restrictions?.security} overview={profile.restrictions?.security ? "Configured" : undefined} />
-                <PolicyCard title="Passcode" icon={Lock} type="restriction_passcode" isActive={!!profile.restrictions?.passcode} overview={profile.restrictions?.passcode ? "Configured" : undefined} />
-                <PolicyCard title="Kiosk" icon={TabletSmartphone} type="restriction_kiosk" isActive={!!profile.restrictions?.kiosk} overview={profile.restrictions?.kiosk ? "Configured" : undefined} />
-                <PolicyCard title="Network" icon={WifiOff} type="restriction_network" isActive={!!profile.restrictions?.network} overview={profile.restrictions?.network ? "Configured" : undefined} />
-                <PolicyCard title="Storage" icon={Database} type="restriction_syncStorage" isActive={!!profile.restrictions?.syncStorage} overview={profile.restrictions?.syncStorage ? "Configured" : undefined} />
-                <PolicyCard title="Location" icon={MapPin} type="restriction_location" isActive={!!profile.restrictions?.location} overview={profile.restrictions?.location ? "Configured" : undefined} />
-                <PolicyCard title="Phone" icon={Phone} type="restriction_phone" isActive={!!profile.restrictions?.phone} overview={profile.restrictions?.phone ? "Configured" : undefined} />
-                <PolicyCard title="Date/Time" icon={Clock} type="restriction_dateTime" isActive={!!profile.restrictions?.dateTime} overview={profile.restrictions?.dateTime ? "Configured" : undefined} />
-                <PolicyCard title="Display" icon={Monitor} type="restriction_display" isActive={!!profile.restrictions?.display} overview={profile.restrictions?.display ? "Configured" : undefined} />
-                <PolicyCard title="Connectivity" icon={Bluetooth} type="restriction_connectivity" isActive={!!profile.restrictions?.connectivity} overview={profile.restrictions?.connectivity ? "Configured" : undefined} />
+                {/* ============================================================
+                   DO-ONLY POLICIES AND RESTRICTIONS
+                   TODO: Uncomment when Device Owner mode is implemented
+                   ============================================================ */}
+                {/* <PolicyCard title="Connectivity" icon={Bluetooth} type="restriction_connectivity" isActive={!!profile.restrictions?.connectivity} overview={profile.restrictions?.connectivity ? "Configured" : undefined} /> */}
+                {/* <PolicyCard title="Date/Time" icon={Clock} type="restriction_dateTime" isActive={!!profile.restrictions?.dateTime} overview={profile.restrictions?.dateTime ? "Configured" : undefined} /> */}
+                {/* <PolicyCard title="Display" icon={Monitor} type="restriction_display" isActive={!!profile.restrictions?.display} overview={profile.restrictions?.display ? "Configured" : undefined} /> */}
+                {/* <PolicyCard
+                  title="Enrollment"
+                  icon={FileText}
+                  type="enrollment"
+                  isActive={!!profile.enrollmentPolicy}
+                  overview={profile.enrollmentPolicy ? `Kiosk: ${profile.enrollmentPolicy.isKioskMode ? 'Yes' : 'No'}` : undefined}
+                /> */}
+                {/* <PolicyCard title="Kiosk" icon={TabletSmartphone} type="restriction_kiosk" isActive={!!profile.restrictions?.kiosk} overview={profile.restrictions?.kiosk ? "Configured" : undefined} /> */}
+                {/* <PolicyCard title="Network" icon={WifiOff} type="restriction_network" isActive={!!profile.restrictions?.network} overview={profile.restrictions?.network ? "Configured" : undefined} /> */}
+                {/* <PolicyCard title="Phone" icon={Phone} type="restriction_phone" isActive={!!profile.restrictions?.phone} overview={profile.restrictions?.phone ? "Configured" : undefined} /> */}
+                {/* <PolicyCard title="Storage" icon={Database} type="restriction_syncStorage" isActive={!!profile.restrictions?.syncStorage} overview={profile.restrictions?.syncStorage ? "Configured" : undefined} /> */}
+                {/* <PolicyCard
+                  title="Theme"
+                  icon={ImageIcon}
+                  type="theme"
+                  isActive={!!profile.deviceThemePolicy}
+                  overview={profile.deviceThemePolicy ? `Color: ${profile.deviceThemePolicy.backgroundColor || '-'}` : undefined}
+                /> */}
               </>
             )}
           </div>

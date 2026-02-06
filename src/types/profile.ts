@@ -111,6 +111,46 @@ export interface AndroidProfileRestrictions {
     connectivity?: ConnectivityRestriction;
 }
 
+// Android Passcode Policy (WP-compatible) - matches API response structure
+export interface AndroidPasscodeWorkProfile {
+    id?: string;
+    complexity?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
+    historyLength?: number;
+    maxFailedAttemptsToWipe?: number;
+    changeAfterSeconds?: number;
+    strongAuthRequiredTimeout?: 'DEVICE_DEFAULT' | 'EVERY_DAY';
+    separateLock?: boolean;
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
+}
+
+export interface AndroidPasscodeDeviceProfile {
+    id?: string;
+    complexity?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
+    historyLength?: number;
+    maxFailedAttemptsToWipe?: number;
+    changeAfterSeconds?: number;
+    strongAuthRequiredTimeout?: 'DEVICE_DEFAULT' | 'EVERY_DAY';
+    creationTime?: string;
+    modificationTime?: string;
+    createdBy?: string;
+    lastModifiedBy?: string;
+}
+
+export interface AndroidPasscodeEnforcement {
+    blockAfterDays?: number;
+    wipeAfterDays?: number;
+}
+
+export interface AndroidPasscodePolicy {
+    devicePolicyType?: 'Android_Personal_Device_s_Passcode_Policy' | 'Android_Company_Owned_Device_s_Passcode_Policy';
+    work?: AndroidPasscodeWorkProfile;
+    device?: AndroidPasscodeDeviceProfile;
+    enforcement?: AndroidPasscodeEnforcement;
+}
+
 export interface AndroidFullProfile extends Profile {
     profileType?: 'Android_Full_Profile';
     commonSettingsPolicy?: CommonSettingsPolicy;
@@ -119,6 +159,7 @@ export interface AndroidFullProfile extends Profile {
     applicationPolicies?: AndroidApplicationPolicy[];
     webApplicationPolicies?: AndroidWebApplicationPolicy[];
     restrictions?: AndroidProfileRestrictions;
+    passcodePolicy?: AndroidPasscodePolicy;
 }
 
 // Full Profile interface matching API response (detail view with all policies)
