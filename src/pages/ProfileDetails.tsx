@@ -1061,22 +1061,6 @@ export default function ProfileDetails() {
 
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-6">
-              {/* Publish Button (Left, Circular, Animated) */}
-              {profile.status !== "PUBLISHED" && (
-                <Button
-                  onClick={handlePublish}
-                  disabled={publishing}
-                  size="icon"
-                  className={cn(
-                    "rounded-full h-14 w-14 shadow-lg bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-2 border-white/20 dark:border-slate-800",
-                    "transition-all duration-300 hover:scale-105 active:scale-95",
-                    publishing ? "animate-pulse" : "animate-in zoom-in slide-in-from-left-4 duration-500"
-                  )}
-                  title={t('profiles.publish.publish')}
-                >
-                  <Send className={cn("w-6 h-6 ml-0.5", publishing && "animate-spin")} />
-                </Button>
-              )}
 
               <div className="flex items-center gap-4">
                 <div className="bg-background p-3 rounded-xl shadow-sm border border-border/50">
@@ -1095,6 +1079,23 @@ export default function ProfileDetails() {
 
                 </div>
               </div>
+
+              {/* Publish Button (Left, Circular, Animated) */}
+              {profile.status !== "PUBLISHED" && (
+                <Button
+                  onClick={handlePublish}
+                  disabled={publishing}
+                  size="icon"
+                  className={cn(
+                    "rounded-full h-14 w-14 shadow-lg bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-2 border-white/20 dark:border-slate-800",
+                    "transition-all duration-300 hover:scale-105 active:scale-95",
+                    publishing ? "animate-pulse" : "animate-in zoom-in slide-in-from-left-4 duration-500"
+                  )}
+                  title={t('profiles.publish.publish')}
+                >
+                  <Send className={cn("w-6 h-6 ml-0.5", publishing && "animate-spin")} />
+                </Button>
+              )}
             </div>
 
             {/* Edit Policy Button (Top Right) */}
