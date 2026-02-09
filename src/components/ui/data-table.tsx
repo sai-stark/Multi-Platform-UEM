@@ -7,6 +7,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,6 +53,7 @@ import {
   X,
   Plus,
   Trash2,
+  Check,
 } from "lucide-react";
 import { exportToPDF, exportToCSV } from "@/lib/exportUtils";
 
@@ -197,7 +203,7 @@ export function DataTable<T extends Record<string, any>>({
 }: DataTableProps<T>) {
   // State management
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchColumn, setSearchColumn] = useState<string>("all"); // "all" means search all columns
+  const [searchColumns, setSearchColumns] = useState<Set<string>>(new Set(["all"])); // Multi-select columns
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilter[]>([]);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
@@ -243,7 +249,9 @@ export function DataTable<T extends Record<string, any>>({
     // Global search
     if (globalSearch && searchTerm) {
       result = result.filter((item) => {
-        if (searchColumn === "all") {
+        const isAllSelected = searchColumns.has("all");
+        
+        if (isAllSelected) {
           // Search across all searchable columns
           return columns.some((col) => {
             if (!col.searchable) return false;
@@ -251,11 +259,12 @@ export function DataTable<T extends Record<string, any>>({
             return String(value).toLowerCase().includes(searchTerm.toLowerCase());
           });
         } else {
-          // Search in specific column
-          const col = columns.find((c) => c.key === searchColumn);
-          if (!col) return true;
-          const value = col.accessor(item);
-          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+          // Search in selected columns only
+          return columns.some((col) => {
+            if (!searchColumns.has(col.key)) return false;
+            const value = col.accessor(item);
+            return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+          });
         }
       });
     }
@@ -375,7 +384,7 @@ export function DataTable<T extends Record<string, any>>({
     });
 
     return result;
-  }, [data, searchTerm, searchColumn, filters, advancedFilters, columns, globalSearch]);
+  }, [data, searchTerm, searchColumns, filters, advancedFilters, columns, globalSearch]);
 
   const sortedData = useMemo(() => {
     if (!sort.key) return filteredData;
@@ -484,6 +493,34 @@ export function DataTable<T extends Record<string, any>>({
 
   const removeAllAdvancedFilters = () => {
     setAdvancedFilters([]);
+    setPage(1);
+  };
+
+  // Helper function to count filters for a specific column
+  const getFiltersForColumn = (columnKey: string) => {
+    return advancedFilters.filter((f) => f.column === columnKey);
+  };
+
+  // Helper function to add filter for a specific column
+  const addFilterForColumn = (columnKey: string) => {
+    const col = columns.find((c) => c.key === columnKey);
+    const filterType = col?.filterType || "text";
+    const operators = getOperatorsForType(filterType);
+    setAdvancedFilters((prev) => [
+      ...prev,
+      {
+        id: `filter-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        column: columnKey,
+        operator: operators[0].value,
+        value: "",
+      },
+    ]);
+    setPage(1);
+  };
+
+  // Helper to remove all filters for a specific column
+  const removeFiltersForColumn = (columnKey: string) => {
+    setAdvancedFilters((prev) => prev.filter((f) => f.column !== columnKey));
     setPage(1);
   };
 
@@ -656,241 +693,171 @@ export function DataTable<T extends Record<string, any>>({
     <div className={`space-y-4 w-full ${className}`}>
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-4">
-        {/* Global Search */}
+        {/* Global Search with Multi-Select Columns */}
         {globalSearch && (
           <div className="flex flex-1 gap-2">
-            <Select
-              value={searchColumn}
-              onValueChange={(value) => setSearchColumn(value)}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Search in..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Columns</SelectItem>
-                {columns
-                  .filter((col) => col.searchable)
-                  .map((col) => (
-                    <SelectItem key={col.key} value={col.key}>
-                      {col.header}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`w-[180px] justify-between transition-all ${
+                    !searchColumns.has("all") && searchColumns.size > 0
+                      ? "border-primary/50 text-primary"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    <span className="truncate">
+                      {searchColumns.has("all")
+                        ? "All Columns"
+                        : searchColumns.size === 0
+                        ? "Select columns"
+                        : searchColumns.size === 1
+                        ? columns.find((c) => searchColumns.has(c.key))?.header || "1 column"
+                        : `${searchColumns.size} columns`}
+                    </span>
+                  </div>
+                  {!searchColumns.has("all") && searchColumns.size > 0 && (
+                    <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">
+                      {searchColumns.size}
+                    </span>
+                  )}
+                  <ChevronDown className="h-4 w-4 opacity-50 ml-1" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-0" align="start">
+                <div className="p-2 border-b bg-muted/30 flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted-foreground">Search in columns</p>
+                  {!searchColumns.has("all") && (
+                    <button
+                      onClick={() => setSearchColumns(new Set(["all"]))}
+                      className="text-xs text-destructive hover:text-destructive/80 font-medium transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="p-2 space-y-1 max-h-[250px] overflow-y-auto">
+                  {/* All Columns Option */}
+                  <button
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
+                      searchColumns.has("all")
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "hover:bg-muted"
+                    }`}
+                    onClick={() => {
+                      setSearchColumns(new Set(["all"]));
+                    }}
+                  >
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                      searchColumns.has("all")
+                        ? "bg-primary border-primary"
+                        : "border-muted-foreground/30"
+                    }`}>
+                      {searchColumns.has("all") && <Check className="h-3 w-3 text-primary-foreground" />}
+                    </div>
+                    All Columns
+                  </button>
+                  
+                  <div className="border-t my-2" />
+                  
+                  {/* Individual Columns */}
+                  {columns
+                    .filter((col) => col.searchable)
+                    .map((col) => (
+                      <button
+                        key={col.key}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
+                          searchColumns.has(col.key)
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-muted"
+                        }`}
+                        onClick={() => {
+                          setSearchColumns((prev) => {
+                            const newSet = new Set(prev);
+                            // Remove "all" if selecting individual columns
+                            newSet.delete("all");
+                            
+                            if (newSet.has(col.key)) {
+                              newSet.delete(col.key);
+                              // If no columns selected, default back to "all"
+                              if (newSet.size === 0) {
+                                newSet.add("all");
+                              }
+                            } else {
+                              newSet.add(col.key);
+                            }
+                            return newSet;
+                          });
+                        }}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          searchColumns.has(col.key)
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground/30"
+                        }`}>
+                          {searchColumns.has(col.key) && <Check className="h-3 w-3 text-primary-foreground" />}
+                        </div>
+                        {col.header}
+                      </button>
+                    ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={
-                  searchColumn === "all"
+                  searchColumns.has("all")
                     ? globalSearchPlaceholder
-                    : `Search ${columns.find((c) => c.key === searchColumn)?.header || ""}...`
+                    : searchColumns.size === 1
+                    ? `Search ${columns.find((c) => searchColumns.has(c.key))?.header || ""}...`
+                    : `Search in ${searchColumns.size} columns...`
                 }
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 pr-9"
                 aria-label={globalSearchPlaceholder}
               />
+              {(searchTerm || !searchColumns.has("all")) && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSearchColumns(new Set(["all"]));
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* Advanced Filter Panel */}
+        {/* Clear Filters Button */}
         {filterable && (
-          <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant={advancedFilters.length > 0 ? "default" : "outline"}
-                size="sm"
-                className={`transition-all duration-200 ${
-                  advancedFilters.length > 0 
-                    ? "bg-primary hover:bg-primary/90 shadow-md" 
-                    : "hover:border-primary/50 hover:bg-primary/5"
-                }`}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-                {advancedFilters.length > 0 && (
-                  <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-semibold">
-                    {advancedFilters.length}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent 
-              className="w-[580px] p-0 shadow-xl border-0 overflow-hidden" 
-              align="start"
-              sideOffset={8}
-            >
-              {/* Header */}
-              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-3 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                      <Filter className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-sm">Advanced Filters</h4>
-                      <p className="text-[11px] text-muted-foreground">
-                        {advancedFilters.length === 0 
-                          ? "No filters applied" 
-                          : `${advancedFilters.length} filter${advancedFilters.length > 1 ? 's' : ''} active`
-                        }
-                      </p>
-                    </div>
-                  </div>
-                  {advancedFilters.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      onClick={removeAllAdvancedFilters}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                      Clear All
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Filter Content */}
-              <div className="p-4 space-y-3 max-h-[350px] overflow-y-auto bg-gradient-to-b from-muted/20 to-transparent">
-                {advancedFilters.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 mb-3">
-                      <Filter className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">No filters applied</p>
-                    <p className="text-xs text-muted-foreground/70">Add a filter to narrow down your results</p>
-                  </div>
-                ) : (
-                  advancedFilters.map((filter, index) => {
-                    const selectedCol = columns.find((c) => c.key === filter.column);
-                    const filterType = selectedCol?.filterType || "text";
-                    
-                    return (
-                      <div 
-                        key={filter.id} 
-                        className="group relative flex items-center gap-2 p-3 rounded-lg bg-background border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
-                      >
-                        {/* Row Number */}
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold text-muted-foreground">
-                          {index + 1}
-                        </div>
-
-                        {/* Column Select */}
-                        <Select
-                          value={filter.column}
-                          onValueChange={(value) => {
-                            const newCol = columns.find((c) => c.key === value);
-                            const newFilterType = newCol?.filterType || "text";
-                            const operators = getOperatorsForType(newFilterType);
-                            const validOperator = operators.some((op) => op.value === filter.operator)
-                              ? filter.operator
-                              : operators[0].value;
-                            updateAdvancedFilter(filter.id, { 
-                              column: value, 
-                              operator: validOperator,
-                              value: "" 
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="w-[140px] h-9 text-xs font-medium bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30">
-                            <SelectValue placeholder="Select column" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {columns
-                              .filter((col) => col.filterable)
-                              .map((col) => (
-                                <SelectItem key={col.key} value={col.key} className="text-xs">
-                                  {col.header}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-
-                        {/* Operator Select */}
-                        <Select
-                          value={filter.operator}
-                          onValueChange={(value) =>
-                            updateAdvancedFilter(filter.id, {
-                              operator: value as FilterOperator,
-                            })
-                          }
-                        >
-                          <SelectTrigger className="w-[150px] h-9 text-xs font-medium bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30">
-                            <SelectValue placeholder="Select operator" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getOperatorsForType(filterType).map((op) => (
-                              <SelectItem key={op.value} value={op.value} className="text-xs">
-                                {op.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        {/* Value Input */}
-                        {filter.operator !== "is_empty" && filter.operator !== "is_not_empty" && (
-                          filterType === "date" ? (
-                            <Input
-                              type="date"
-                              value={filter.value}
-                              onChange={(e) =>
-                                updateAdvancedFilter(filter.id, { value: e.target.value })
-                              }
-                              className="flex-1 h-9 text-xs bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30"
-                            />
-                          ) : filterType === "number" ? (
-                            <Input
-                              type="number"
-                              placeholder="Enter value"
-                              value={filter.value}
-                              onChange={(e) =>
-                                updateAdvancedFilter(filter.id, { value: e.target.value })
-                              }
-                              className="flex-1 h-9 text-xs bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30"
-                            />
-                          ) : (
-                            <Input
-                              placeholder="Enter value"
-                              value={filter.value}
-                              onChange={(e) =>
-                                updateAdvancedFilter(filter.id, { value: e.target.value })
-                              }
-                              className="flex-1 h-9 text-xs bg-muted/50 border-0 focus:ring-1 focus:ring-primary/30"
-                            />
-                          )
-                        )}
-
-                        {/* Delete Button */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 opacity-50 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all"
-                          onClick={() => removeAdvancedFilter(filter.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="p-3 border-t bg-muted/30">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full h-9 text-sm font-medium border-dashed border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
-                  onClick={addAdvancedFilter}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Filter Condition
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={advancedFilters.length === 0}
+            onClick={removeAllAdvancedFilters}
+            className={`transition-all duration-200 ${
+              advancedFilters.length > 0 
+                ? "border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive" 
+                : "opacity-50 cursor-not-allowed"
+            }`}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Clear
+            {advancedFilters.length > 0 && (
+              <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold">
+                {advancedFilters.length}
+              </span>
+            )}
+          </Button>
         )}
 
         {/* Actions */}
@@ -962,42 +929,198 @@ export function DataTable<T extends Record<string, any>>({
             </colgroup>
             <TableHeader>
               <TableRow>
-                {visibleColumnsList.map((col) => (
-                  <TableHead
-                    key={col.key}
-                    className={`relative group min-w-0 ${
-                      col.align === "center"
-                        ? "text-center"
-                        : col.align === "right"
-                        ? "text-right"
-                        : "text-left"
-                    }`}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`-ml-3 gap-1 w-full ${
+                {visibleColumnsList.map((col) => {
+                  const columnFilters = getFiltersForColumn(col.key);
+                  const filterType = col.filterType || "text";
+                  const operators = getOperatorsForType(filterType);
+                  
+                  return (
+                    <TableHead
+                      key={col.key}
+                      className={`relative group min-w-0 ${
                         col.align === "center"
-                          ? "justify-center"
+                          ? "text-center"
                           : col.align === "right"
-                          ? "justify-end"
-                          : "justify-start"
+                          ? "text-right"
+                          : "text-left"
                       }`}
-                      onClick={() => col.sortable !== false && handleSort(col.key)}
-                      disabled={!sortable || col.sortable === false}
-                      title={col.header}
                     >
-                      <span className="truncate">{col.header}</span>
-                      {col.sortable !== false && renderSortIcon(col.key)}
-                    </Button>
-                    {resizable && (
-                      <span
-                        onMouseDown={startResize(col.key)}
-                        className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent group-hover:bg-border"
-                      />
-                    )}
-                  </TableHead>
-                ))}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`-ml-3 gap-1 flex-1 ${
+                            col.align === "center"
+                              ? "justify-center"
+                              : col.align === "right"
+                              ? "justify-end"
+                              : "justify-start"
+                          }`}
+                          onClick={() => col.sortable !== false && handleSort(col.key)}
+                          disabled={!sortable || col.sortable === false}
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="truncate">{col.header}</span>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                              <p>{col.header}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          {col.sortable !== false && renderSortIcon(col.key)}
+
+                          {/* Column Filter Icon - Inside Button, after sort icon */}
+                          {col.filterable && filterable && (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <span
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`ml-1 p-0.5 rounded hover:bg-muted transition-all relative cursor-pointer ${
+                                    columnFilters.length > 0
+                                      ? "text-primary"
+                                      : "text-muted-foreground hover:text-foreground"
+                                  }`}
+                                  title={`Filter ${col.header}`}
+                                >
+                                  <Filter className="h-3 w-3" />
+                                  {columnFilters.length > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[8px] font-bold shadow-sm">
+                                      {columnFilters.length}
+                                    </span>
+                                  )}
+                                </span>
+                              </PopoverTrigger>
+                              <PopoverContent 
+                                className="w-[320px] p-0 shadow-xl border-0 overflow-hidden" 
+                                align="start"
+                                sideOffset={8}
+                              >
+                                {/* Gradient Header */}
+                                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-3 border-b">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                                        <Filter className="h-3.5 w-3.5 text-primary" />
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold text-sm">{col.header}</h4>
+                                        <p className="text-[10px] text-muted-foreground">
+                                          {columnFilters.length === 0 
+                                            ? "No filters" 
+                                            : `${columnFilters.length} filter${columnFilters.length > 1 ? 's' : ''} active`}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {columnFilters.length > 0 && (
+                                      <button
+                                        onClick={() => removeFiltersForColumn(col.key)}
+                                        className="text-xs text-destructive hover:text-destructive/80 font-medium px-2 py-1 rounded hover:bg-destructive/10 transition-colors"
+                                      >
+                                        Clear All
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Filters Content */}
+                                <div className="p-3 space-y-2 max-h-[280px] overflow-y-auto bg-gradient-to-b from-muted/10 to-transparent">
+                                  {columnFilters.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 mb-2">
+                                        <Filter className="h-4 w-4 text-muted-foreground" />
+                                      </div>
+                                      <p className="text-xs text-muted-foreground">No filters applied</p>
+                                      <p className="text-[10px] text-muted-foreground/70">Click below to add one</p>
+                                    </div>
+                                  ) : (
+                                    columnFilters.map((filter, idx) => (
+                                      <div 
+                                        key={filter.id} 
+                                        className="group flex items-center gap-2 p-2.5 rounded-lg bg-background border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all"
+                                      >
+                                        <span className="flex h-5 w-5 items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
+                                          {idx + 1}
+                                        </span>
+                                        <Select
+                                          value={filter.operator}
+                                          onValueChange={(value) =>
+                                            updateAdvancedFilter(filter.id, { operator: value as FilterOperator })
+                                          }
+                                        >
+                                          <SelectTrigger className="h-8 text-xs flex-1 bg-muted/30 border-0 focus:ring-1 focus:ring-primary/30">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {operators.map((op) => (
+                                              <SelectItem key={op.value} value={op.value} className="text-xs">
+                                                {op.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        {filter.operator !== "is_empty" && filter.operator !== "is_not_empty" && (
+                                          filterType === "date" ? (
+                                            <Input
+                                              type="date"
+                                              value={filter.value}
+                                              onChange={(e) => updateAdvancedFilter(filter.id, { value: e.target.value })}
+                                              className="h-8 text-xs flex-1 bg-muted/30 border-0 focus:ring-1 focus:ring-primary/30"
+                                            />
+                                          ) : filterType === "number" ? (
+                                            <Input
+                                              type="number"
+                                              placeholder="Value"
+                                              value={filter.value}
+                                              onChange={(e) => updateAdvancedFilter(filter.id, { value: e.target.value })}
+                                              className="h-8 text-xs flex-1 bg-muted/30 border-0 focus:ring-1 focus:ring-primary/30"
+                                            />
+                                          ) : (
+                                            <Input
+                                              placeholder="Value"
+                                              value={filter.value}
+                                              onChange={(e) => updateAdvancedFilter(filter.id, { value: e.target.value })}
+                                              className="h-8 text-xs flex-1 bg-muted/30 border-0 focus:ring-1 focus:ring-primary/30"
+                                            />
+                                          )
+                                        )}
+                                        <button
+                                          onClick={() => removeAdvancedFilter(filter.id)}
+                                          className="p-1.5 rounded text-muted-foreground opacity-50 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
+                                        >
+                                          <X className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+
+                                {/* Add Filter Button */}
+                                <div className="p-3 border-t bg-muted/20">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full h-8 text-xs font-medium border-dashed border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
+                                    onClick={() => addFilterForColumn(col.key)}
+                                  >
+                                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                                    Add Filter
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </Button>
+                      </div>
+
+                      {resizable && (
+                        <span
+                          onMouseDown={startResize(col.key)}
+                          className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent group-hover:bg-border"
+                        />
+                      )}
+                    </TableHead>
+                  );
+                })}
                 {(rowActions || quickActions) && (
                   <TableHead className="w-[120px]">
                     <span className="text-muted-foreground">Actions</span>
@@ -1033,20 +1156,39 @@ export function DataTable<T extends Record<string, any>>({
                       }
                     }}
                   >
-                    {visibleColumnsList.map((col) => (
-                      <TableCell
-                        key={col.key}
-                        className={`min-w-0 ${
-                          col.align === "center"
-                            ? "text-center"
-                            : col.align === "right"
-                            ? "text-right"
-                            : "text-left"
-                        }`}
-                      >
-                        <div className="truncate">{renderCell(item, col)}</div>
-                      </TableCell>
-                    ))}
+                    {visibleColumnsList.map((col) => {
+                      const cellValue = col.accessor(item);
+                      const displayValue = col.render ? col.render(cellValue, item) : cellValue;
+                      const tooltipText = typeof cellValue === 'string' || typeof cellValue === 'number' 
+                        ? String(cellValue) 
+                        : '';
+                      
+                      return (
+                        <TableCell
+                          key={col.key}
+                          className={`min-w-0 ${
+                            col.align === "center"
+                              ? "text-center"
+                              : col.align === "right"
+                              ? "text-right"
+                              : "text-left"
+                          }`}
+                        >
+                          {tooltipText ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="truncate cursor-default">{displayValue}</div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[300px]">
+                                <p className="break-words">{tooltipText}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <div className="truncate">{displayValue}</div>
+                          )}
+                        </TableCell>
+                      );
+                    })}
                     {(rowActions || quickActions) && (
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
