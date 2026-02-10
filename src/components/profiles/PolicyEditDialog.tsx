@@ -5,7 +5,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { IosMdmConfiguration, IosScepConfiguration } from "@/types/ios";
+import { IosMdmConfiguration, IosScepConfiguration, IosWebContentFilterPolicy, IosGlobalHttpProxyPolicy, IosVpnPolicy, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosHomeScreenLayoutPolicy } from "@/types/ios";
 import {
     AndroidProfileRestrictions,
     ApplicationPolicy,
@@ -20,10 +20,14 @@ import {
 import {
     Ban,
     Bell,
+    Filter,
     Globe,
     Grid,
+    Lock,
     Mail,
     MessageSquare,
+    Radio,
+    Smartphone,
     Wifi,
 } from "lucide-react";
 
@@ -59,6 +63,13 @@ import { PasscodePolicy } from "@/components/profiles/IosPolicies/PasscodePolicy
 import { RestrictionsPolicy } from "@/components/profiles/IosPolicies/RestrictionsPolicy";
 import { WebApplicationPolicyEditor } from "@/components/profiles/IosPolicies/WebApplicationPolicy";
 import { WifiPolicy } from "@/components/profiles/IosPolicies/WifiPolicy";
+import { WebContentFilterPolicy as WebContentFilterPolicyEditor } from "@/components/profiles/IosPolicies/WebContentFilterPolicy";
+import { GlobalHttpProxyPolicy as GlobalHttpProxyPolicyEditor } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
+import { VpnPolicy as VpnPolicyEditor } from "@/components/profiles/IosPolicies/VpnPolicy";
+import { PerAppVpnPolicy as PerAppVpnPolicyEditor } from "@/components/profiles/IosPolicies/PerAppVpnPolicy";
+import { PerDomainVpnPolicy as PerDomainVpnPolicyEditor } from "@/components/profiles/IosPolicies/PerDomainVpnPolicy";
+import { RelayPolicy as RelayPolicyEditor } from "@/components/profiles/IosPolicies/RelayPolicy";
+import { HomeScreenLayoutPolicy as HomeScreenLayoutPolicyEditor } from "@/components/profiles/IosPolicies/HomeScreenLayoutPolicy";
 import { MdmPolicyView, ScepPolicyView } from "@/components/profiles/IosPolicyCards";
 
 interface PolicyEditDialogProps {
@@ -79,6 +90,13 @@ interface PolicyEditDialogProps {
     lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
     scepPolicy?: IosScepConfiguration;
     mdmPolicy?: IosMdmConfiguration;
+    webContentFilterPolicy?: IosWebContentFilterPolicy;
+    globalHttpProxyPolicy?: IosGlobalHttpProxyPolicy;
+    vpnPolicy?: IosVpnPolicy;
+    perAppVpnPolicy?: IosPerAppVpnPolicy;
+    perDomainVpnPolicy?: IosPerDomainVpnPolicy;
+    relayPolicy?: IosRelayPolicy;
+    homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
     onSave: () => void;
 }
 
@@ -99,6 +117,13 @@ export function PolicyEditDialog({
     lockScreenMessagePolicy,
     scepPolicy,
     mdmPolicy,
+    webContentFilterPolicy,
+    globalHttpProxyPolicy,
+    vpnPolicy,
+    perAppVpnPolicy,
+    perDomainVpnPolicy,
+    relayPolicy,
+    homeScreenLayoutPolicy,
     onSave,
 }: PolicyEditDialogProps) {
     if (!activePolicyType) return null;
@@ -127,6 +152,20 @@ export function PolicyEditDialog({
                 return { title: "Notification Policy", icon: <Bell className="w-5 h-5" /> };
             case "lockScreenMessage":
                 return { title: "Lock Screen Message", icon: <MessageSquare className="w-5 h-5" /> };
+            case "webContentFilter":
+                return { title: "Web Content Filter", icon: <Filter className="w-5 h-5 text-orange-500" /> };
+            case "globalHttpProxy":
+                return { title: "Global HTTP Proxy", icon: <Globe className="w-5 h-5 text-cyan-600" /> };
+            case "vpn":
+                return { title: "VPN", icon: <Lock className="w-5 h-5 text-violet-600" /> };
+            case "perAppVpn":
+                return { title: "Per-App VPN", icon: <Lock className="w-5 h-5 text-fuchsia-600" /> };
+            case "perDomainVpn":
+                return { title: "Per-Domain VPN", icon: <Lock className="w-5 h-5 text-rose-600" /> };
+            case "relay":
+                return { title: "Relay", icon: <Radio className="w-5 h-5 text-amber-600" /> };
+            case "homeScreenLayout":
+                return { title: "Home Screen Layout", icon: <Smartphone className="w-5 h-5 text-teal-600" /> };
             // Add other cases as needed
             default:
                 return { title: "Edit Policy", icon: null };
@@ -235,6 +274,65 @@ export function PolicyEditDialog({
                     )}
                     {activePolicyType === "mdm" && mdmPolicy && (
                         <MdmPolicyView policy={mdmPolicy} onClose={handleCancel} />
+                    )}
+
+                    {/* Phase 2 iOS policy editors */}
+                    {activePolicyType === "webContentFilter" && (
+                        <WebContentFilterPolicyEditor
+                            profileId={profileId}
+                            initialData={webContentFilterPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+                    {activePolicyType === "globalHttpProxy" && (
+                        <GlobalHttpProxyPolicyEditor
+                            profileId={profileId}
+                            initialData={globalHttpProxyPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+                    {activePolicyType === "vpn" && (
+                        <VpnPolicyEditor
+                            profileId={profileId}
+                            initialData={vpnPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+                    {activePolicyType === "perAppVpn" && (
+                        <PerAppVpnPolicyEditor
+                            profileId={profileId}
+                            initialData={perAppVpnPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+                    {activePolicyType === "perDomainVpn" && (
+                        <PerDomainVpnPolicyEditor
+                            profileId={profileId}
+                            initialData={perDomainVpnPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+                    {activePolicyType === "relay" && (
+                        <RelayPolicyEditor
+                            profileId={profileId}
+                            initialData={relayPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+
+                    {activePolicyType === "homeScreenLayout" && (
+                        <HomeScreenLayoutPolicyEditor
+                            profileId={profileId}
+                            initialData={homeScreenLayoutPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
                     )}
 
                     {/* Android-specific policy editors */}

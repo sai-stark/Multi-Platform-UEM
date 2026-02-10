@@ -123,12 +123,12 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
 
             <div className="space-y-4">
                 <div>
-                    <label className="text-sm font-medium">Name *</label>
+                    <label className="text-sm font-medium">Name <span className="text-red-500">*</span></label>
                     <Input value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} placeholder="Policy name" />
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium">Proxy Type *</label>
+                    <label className="text-sm font-medium">Proxy Type <span className="text-red-500">*</span></label>
                     <Select value={formData.proxyType} onValueChange={v => handleChange('proxyType', v)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -141,7 +141,7 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
                 {formData.proxyType === 'Manual' && (
                     <>
                         <div>
-                            <label className="text-sm font-medium">Proxy Server *</label>
+                            <label className="text-sm font-medium">Proxy Server <span className="text-red-500">*</span></label>
                             <Input value={formData.proxyServer || ''} onChange={e => handleChange('proxyServer', e.target.value)} placeholder="proxy.example.com" />
                         </div>
                         <div>

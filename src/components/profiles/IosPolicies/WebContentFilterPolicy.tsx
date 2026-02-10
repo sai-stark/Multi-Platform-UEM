@@ -133,7 +133,7 @@ export function WebContentFilterPolicy({ profileId, initialData, onSave, onCance
 
             <div className="space-y-4">
                 <div>
-                    <label className="text-sm font-medium">Name *</label>
+                    <label className="text-sm font-medium">Name <span className="text-red-500">*</span></label>
                     <Input value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} placeholder="Policy name" />
                 </div>
 

@@ -78,7 +78,7 @@ const isIosApplicationPolicy = (
 ): policy is IosApplicationPolicy => {
   return (
     policy.devicePolicyType === "IosApplicationPolicy" ||
-    ("bundleIdentifier" in policy && !("applicationVersionId" in policy))
+    ("applicationId" in policy && !("applicationVersionId" in policy))
   );
 };
 
@@ -87,7 +87,7 @@ const isAndroidApplicationPolicy = (
 ): policy is AndroidApplicationPolicy => {
   return (
     policy.devicePolicyType === "AndroidApplicationPolicy" ||
-    ("applicationVersionId" in policy && !("bundleIdentifier" in policy))
+    ("applicationVersionId" in policy && !("applicationId" in policy))
   );
 };
 
@@ -166,7 +166,7 @@ export const ApplicationPolicyEditor = ({
   // DATA LOADING
   // ============================================================================
   useEffect(() => {
-    loadApplications();
+    if (platform === "android") loadApplications();
     if (initialData && initialData.length > 0) {
       const normalized = initialData.map((p) => ({
         ...p,
@@ -282,7 +282,7 @@ export const ApplicationPolicyEditor = ({
   const handleSelectItunesApp = (app: ITunesSearchResult) => {
     // Check if already exists
     const exists = existingPolicies.some(
-      (p) => isIosApplicationPolicy(p) && p.bundleIdentifier === app.bundleId
+      (p) => isIosApplicationPolicy(p) && p.name === app.trackName
     );
     if (exists) {
       toast({
@@ -295,19 +295,17 @@ export const ApplicationPolicyEditor = ({
 
     // Stage the new app with default values
     const now = new Date().toISOString();
-    const newPolicy: IosApplicationPolicy = {
+    const newPolicy = {
       creationTime: now,
       modificationTime: now,
       createdBy: "",
       lastModifiedBy: "",
       name: app.trackName,
-      bundleIdentifier: app.bundleId,
-      action: "INSTALL",
+      action: "INSTALL" as const,
       purchaseMethod: 1,
-      removable: true,
-      requestRequiresNetworkTether: true,
-      devicePolicyType: "IosApplicationPolicy",
-    };
+      enableAppAnalytics: false,
+      devicePolicyType: "IosApplicationPolicy" as const,
+    } as IosApplicationPolicy;
 
     setStagedNewApp(newPolicy);
     clearItunesSearch();
@@ -371,7 +369,7 @@ export const ApplicationPolicyEditor = ({
   // ============================================================================
   const getPolicyKey = (policy: ApplicationPolicy): string => {
     if (isIosApplicationPolicy(policy)) {
-      return policy.id || policy.bundleIdentifier;
+      return policy.id || policy.applicationId || policy.name;
     }
     return policy.id || policy.applicationVersionId;
   };
@@ -661,7 +659,7 @@ export const ApplicationPolicyEditor = ({
                         const isAdded = existingPolicies.some(
                           (p) =>
                             isIosApplicationPolicy(p) &&
-                            p.bundleIdentifier === app.bundleId
+                            p.name === app.trackName
                         );
                         return (
                           <li
@@ -735,7 +733,7 @@ export const ApplicationPolicyEditor = ({
                 <div>
                   <h4 className="font-semibold">{stagedNewApp.name}</h4>
                   <p className="text-sm text-muted-foreground">
-                    {stagedNewApp.bundleIdentifier}
+                    {stagedNewApp.applicationId || 'New application'}
                   </p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={cancelStagedApp}>
@@ -785,29 +783,14 @@ export const ApplicationPolicyEditor = ({
 
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id="staged-removable"
-                    checked={stagedNewApp.removable ?? true}
+                    id="staged-analytics"
+                    checked={stagedNewApp.enableAppAnalytics ?? false}
                     onCheckedChange={(checked) =>
-                      updateStagedApp({ removable: checked as boolean })
+                      updateStagedApp({ enableAppAnalytics: checked as boolean })
                     }
                   />
-                  <Label htmlFor="staged-removable" className="cursor-pointer">
-                    Removable
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="staged-network"
-                    checked={stagedNewApp.requestRequiresNetworkTether ?? true}
-                    onCheckedChange={(checked) =>
-                      updateStagedApp({
-                        requestRequiresNetworkTether: checked as boolean,
-                      })
-                    }
-                  />
-                  <Label htmlFor="staged-network" className="cursor-pointer">
-                    Requires Network Tether
+                  <Label htmlFor="staged-analytics" className="cursor-pointer">
+                    Enable App Analytics
                   </Label>
                 </div>
               </div>
@@ -927,7 +910,7 @@ export const ApplicationPolicyEditor = ({
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {isIosApplicationPolicy(policy)
-                                  ? policy.bundleIdentifier
+                                  ? (policy.applicationId || 'No application ID')
                                   : `Version: ${policy.applicationVersion}`}
                               </div>
                             </div>
@@ -965,11 +948,11 @@ export const ApplicationPolicyEditor = ({
                               </div>
 
                               <div className="space-y-2">
-                                <Label>Bundle Identifier</Label>
+                                <Label>Application ID</Label>
                                 <Input
                                   value={
                                     (editedPolicy as IosApplicationPolicy)
-                                      .bundleIdentifier || ""
+                                      .applicationId || ""
                                   }
                                   disabled
                                   className="bg-muted"
@@ -1030,46 +1013,23 @@ export const ApplicationPolicyEditor = ({
 
                               <div className="flex items-center space-x-2">
                                 <Checkbox
-                                  id={`removable-${key}`}
+                                  id={`analytics-${key}`}
                                   checked={
                                     (editedPolicy as IosApplicationPolicy)
-                                      .removable ?? true
+                                      .enableAppAnalytics ?? false
                                   }
                                   onCheckedChange={(checked) => {
                                     if (!isEditing) startEditing(policy);
                                     updateEditingPolicy(key, {
-                                      removable: checked as boolean,
+                                      enableAppAnalytics: checked as boolean,
                                     });
                                   }}
                                 />
                                 <Label
-                                  htmlFor={`removable-${key}`}
+                                  htmlFor={`analytics-${key}`}
                                   className="cursor-pointer"
                                 >
-                                  Removable
-                                </Label>
-                              </div>
-
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`network-${key}`}
-                                  checked={
-                                    (editedPolicy as IosApplicationPolicy)
-                                      .requestRequiresNetworkTether ?? false
-                                  }
-                                  onCheckedChange={(checked) => {
-                                    if (!isEditing) startEditing(policy);
-                                    updateEditingPolicy(key, {
-                                      requestRequiresNetworkTether:
-                                        checked as boolean,
-                                    });
-                                  }}
-                                />
-                                <Label
-                                  htmlFor={`network-${key}`}
-                                  className="cursor-pointer"
-                                >
-                                  Requires Network Tether
+                                  Enable App Analytics
                                 </Label>
                               </div>
                             </div>

@@ -136,12 +136,12 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
             <div className="space-y-4">
                 {/* Basic Settings */}
                 <div>
-                    <label className="text-sm font-medium">Name *</label>
+                    <label className="text-sm font-medium">Name <span className="text-red-500">*</span></label>
                     <Input value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} placeholder="Policy name" />
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium">VPN Type *</label>
+                    <label className="text-sm font-medium">VPN Type <span className="text-red-500">*</span></label>
                     <Select value={formData.vpnType} onValueChange={v => handleChange('vpnType', v)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -151,7 +151,7 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium">Remote Address *</label>
+                    <label className="text-sm font-medium">Remote Address <span className="text-red-500">*</span></label>
                     <Input value={formData.remoteAddress || ''} onChange={e => handleChange('remoteAddress', e.target.value)} placeholder="vpn.example.com" />
                 </div>
 

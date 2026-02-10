@@ -133,19 +133,31 @@ export interface EnrollmentPolicy {
     devicePolicyType?: 'AndroidEnrollmentPolicy';
 }
 
+// Application Attribute (iOS app attributes from OpenAPI)
+export interface ApplicationAttribute {
+    associatedDomains?: string[];
+    associatedDomainsEnableDirectDownloads?: boolean;
+    cellularSliceUuid?: string; // read-only
+    contentFilterUuid?: string;
+    dnsProxyUuid?: string; // read-only
+    lockable?: string;
+    relayUuid?: string; // read-only
+    removable?: string;
+    tapToPayScreenLock?: boolean;
+    vpnUuid?: string; // read-only
+}
+
 // 4. Application Policy
 export interface IosApplicationPolicy extends UserAuditData {
     id?: string; // UUID, read-only
     name: string;
-    bundleIdentifier: string;
-    action: 'INSTALL'; // iOS only supports INSTALL currently
-    installType?: 'INSTALL';
+    applicationId?: string; // UUID, deprecated - internal application id
+    action: 'INSTALL';
+    configurationValues?: Record<string, object>;
     purchaseMethod?: number; // 0 = Free/VPP with redemption code, 1 = VPP app assignment
-    removable?: boolean; // iOS 14+, tvOS 14+
-    preventBackup?: boolean;
-    removeOnUnenroll?: boolean;
-    requestRequiresNetworkTether?: boolean;
     devicePolicyType: 'IosApplicationPolicy';
+    attribute?: ApplicationAttribute;
+    enableAppAnalytics?: boolean;
 }
 
 export interface AndroidApplicationPolicy extends UserAuditData {

@@ -11,7 +11,7 @@ import ApplicationDetails from "./pages/ApplicationDetails";
 import Applications from "./pages/Applications";
 import DeviceDetails from "./pages/DeviceDetails";
 import Devices from "./pages/Devices";
-import EditProfilePolicies from "./pages/EditProfilePolicies";
+
 import Enrollment from "./pages/Enrollment";
 import EnterpriseSetup from "./pages/EnterpriseSetup";
 import GeofenceEditor from "./pages/GeofenceEditor";
@@ -60,7 +60,6 @@ function AppRoutes() {
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/profiles/:platform/:id" element={<ProfileDetails />} />
         <Route path="/profiles/:platform/:id/policy/:policyType" element={<PolicyConfigurationPage />} />
-        <Route path="/profiles/:platform/:id/policies" element={<EditProfilePolicies />} />
         <Route path="/repositories" element={<Repositories />} />
         <Route path="/repositories/:platform/:repoId" element={<RepositoryDetails />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

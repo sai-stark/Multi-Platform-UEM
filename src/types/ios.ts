@@ -382,3 +382,31 @@ export interface IosRelayPolicy extends UserAuditData {
     rawPublicKeys?: string[];
 }
 
+
+// iOS Home Screen Layout Policy
+export interface FolderIconItem {
+    Type: 'Application' | 'WebClip';
+    BundleID?: string;
+    DisplayName?: string;
+    URL?: string;
+}
+
+export interface IconItem {
+    Type: 'Application' | 'Folder' | 'WebClip';
+    BundleID?: string;
+    DisplayName?: string;
+    URL?: string;
+    Pages?: FolderIconItem[][];
+}
+
+export interface HomeScreenLayoutConfiguration {
+    Dock?: IconItem[];
+    Pages: IconItem[][];
+}
+
+export interface IosHomeScreenLayoutPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType?: 'HomeScreenlayout';
+    configuration: HomeScreenLayoutConfiguration;
+}
