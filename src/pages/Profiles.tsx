@@ -557,13 +557,13 @@ const Profiles = () => {
             className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
-              handleEditProfile(profile);
+              handleCloneProfile(profile);
             }}
           >
-            <Pencil className="h-4 w-4" />
+            <Copy className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{t('profiles.actions.edit')}</TooltipContent>
+        <TooltipContent>{t('profiles.actions.clone')}</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -573,7 +573,7 @@ const Profiles = () => {
             className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/profiles/${profile.platform}/${profile.id}/policies`);
+              navigate(`/profiles/${profile.platform}/${profile.id}`);
             }}
           >
             <Edit className="h-4 w-4" />

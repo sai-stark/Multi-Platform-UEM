@@ -1191,7 +1191,7 @@ export function DataTable<T extends Record<string, any>>({
                     })}
                     {(rowActions || quickActions) && (
                       <TableCell>
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-start gap-1">
                           {quickActions && quickActions(item)}
                           {rowActions && (
                             <DropdownMenu>
