@@ -163,3 +163,34 @@ export interface NetworkRestriction {
     disableWifiConfig?: boolean;
     devicePolicyType?: 'AndroidNetworkRestriction';
 }
+
+// iOS / Generic Restriction interfaces used by the UI editor
+export interface IosSecurityRestriction {
+    allowCamera: boolean;
+    allowScreenCapture: boolean;
+}
+
+export interface IosConnectivityRestriction {
+    allowBluetooth: boolean;
+}
+
+export interface IosSyncStorageRestriction {
+    allowUsbMassStorage: boolean;
+}
+
+export interface IosLocationRestriction {
+    forceGps: boolean;
+}
+
+export interface IosMiscellaneousRestriction {
+    allowFactoryReset: boolean;
+}
+
+// Composite interface for the editor (wraps iOS restrictions)
+export interface RestrictionsComposite {
+    security?: IosSecurityRestriction;
+    connectivity?: IosConnectivityRestriction;
+    storage?: IosSyncStorageRestriction;
+    location?: IosLocationRestriction;
+    misc?: IosMiscellaneousRestriction;
+}

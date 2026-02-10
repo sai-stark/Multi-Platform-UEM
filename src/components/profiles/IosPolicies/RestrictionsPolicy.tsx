@@ -3,25 +3,15 @@ import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
-    ConnectivityRestriction,
-    LocationRestriction,
-    MiscellaneousRestriction,
-    SecurityRestriction,
-    SyncStorageRestriction
+    IosSecurityRestriction,
+    RestrictionsComposite
 } from '@/types/models';
 import { Ban, Edit } from 'lucide-react';
 import { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
-// Composite interface for the editor
-export interface RestrictionsComposite {
-    security?: SecurityRestriction;
-    connectivity?: ConnectivityRestriction;
-    storage?: SyncStorageRestriction;
-    location?: LocationRestriction;
-    misc?: MiscellaneousRestriction;
-}
+
 
 interface RestrictionsPolicyProps {
     profileId: string;
@@ -46,10 +36,10 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
         }
     );
 
-    const updateSecurity = (field: keyof SecurityRestriction, value: boolean) => {
+    const updateSecurity = (field: keyof IosSecurityRestriction, value: boolean) => {
         setData(prev => ({
             ...prev,
-            security: { ...prev.security, [field]: value }
+            security: { ...prev.security, [field]: value } as IosSecurityRestriction
         }));
     };
 

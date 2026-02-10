@@ -1,9 +1,9 @@
 import { ProfileService } from "@/api/services/profiles";
 import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { MainLayout } from "@/components/layout/MainLayout";
-import {
-  RestrictionsComposite
-} from "@/components/profiles/IosPolicies/RestrictionsPolicy";
+
+import { PolicyEditDialog } from "@/components/profiles/PolicyEditDialog";
+import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,15 +14,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { getAssetUrl } from "@/config/env";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { toast } from "@/hooks/use-toast";
 import { usePlatformValidation } from "@/hooks/usePlatformValidation";
 import { cn } from "@/lib/utils";
 import { IosMdmConfiguration, IosScepConfiguration } from "@/types/ios";
@@ -39,6 +48,9 @@ import {
   NotificationPolicy as NotificationPolicyType,
   PasscodeRestrictionPolicy,
   Platform,
+  Profile,
+  ProfileType,
+  RestrictionsComposite,
   WebApplicationPolicy
 } from "@/types/models";
 import { motion } from "framer-motion";
@@ -48,7 +60,6 @@ import {
   Bell,
   Bluetooth,
   CheckCircle,
-  ChevronDown,
   Clock,
   Database,
   Edit,
@@ -60,6 +71,7 @@ import {
   MapPin,
   MessageSquare,
   Monitor,
+  Pencil,
   Phone,
   Plus,
   Send,
@@ -549,7 +561,13 @@ export default function ProfileDetails() {
   const [profile, setProfile] = useState<ProfileDetailsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [publishing, setPublishing] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [activePolicyType, setActivePolicyType] = useState<string | null>(null);
+
+  // Single field edit state
+  const [editingField, setEditingField] = useState<'name' | 'description' | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [savingField, setSavingField] = useState(false);
 
   // State for specific Policy Data (Merged from EditProfilePolicies)
   const [passcodePolicy, setPasscodePolicy] = useState<
@@ -700,27 +718,9 @@ export default function ProfileDetails() {
     );
   }
 
-  const handlePublish = async () => {
+  const handlePublish = () => {
     if (!platform || !id) return;
-    setPublishing(true);
-    try {
-      const profileType = platform.toLowerCase() === "ios" ? "IosPublishProfile" : "AndroidPublishProfile";
-      await ProfileService.publishProfile(platform as Platform, id, { profileType });
-      toast({
-        title: "Profile Published",
-        description: `Profile "${profile?.name}" has been published successfully.`,
-      });
-      await fetchProfile();
-    } catch (err) {
-      console.error("Failed to publish profile:", err);
-      toast({
-        title: "Error",
-        description: "Failed to publish profile",
-        variant: "destructive",
-      });
-    } finally {
-      setPublishing(false);
-    }
+    setPublishDialogOpen(true);
   };
 
   const getPlatformIcon = (plat?: string) => {
@@ -734,318 +734,48 @@ export default function ProfileDetails() {
     }
   };
 
-  const handlePolicyClick = (policyType: string) => {
-    setSelectedPolicyType(policyType);
-    setPolicyDialogOpen(true);
+  const openEditDialog = (field: 'name' | 'description', value: string) => {
+    setEditingField(field);
+    setEditValue(value || "");
   };
 
-  // Helper to render label-value rows
-  const InfoRow = ({ label, value }: { label: string; value: any }) => (
-    <div className="flex justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/30 px-2 rounded-sm transition-colors">
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <span className="text-sm font-semibold text-foreground break-words text-right max-w-[60%]">{value?.toString() ?? "-"}</span>
-    </div>
-  );
+  const handleSaveField = async () => {
+    if (!profile || !platform || !id || !editingField) return;
 
-  const AuditInfo = ({ data }: { data: any }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    setSavingField(true);
+    try {
+      // Map platform to profileType for API payload
+      const profileTypeMap: Record<string, ProfileType> = {
+        android: "AndroidProfile",
+        ios: "IosProfile",
+      };
 
-    return (
-      <div className="mt-4 pt-4 border-t border-border/50 bg-muted/20 p-3 rounded-lg">
-        <button
-          type="button"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <Clock3 className="w-3 h-3" /> {t('profileDetails.auditInfo')}
-          </span>
-          <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", isExpanded && "rotate-180")} />
-        </button>
-        {isExpanded && (
-          <div className="space-y-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-            <InfoRow label={t('profiles.table.createdBy')} value={data.createdBy} />
-            <InfoRow
-              label={t('profileDetails.createdOn')}
-              value={data.creationTime ? new Date(data.creationTime).toLocaleString() : "-"}
-            />
-            <InfoRow label={t('profiles.table.lastModifiedBy')} value={data.lastModifiedBy} />
-            <InfoRow
-              label={t('profileDetails.lastModified')}
-              value={data.modificationTime ? new Date(data.modificationTime).toLocaleString() : "-"}
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
+      const updatedProfile: Profile = {
+        id: profile.id,
+        name: editingField === 'name' ? editValue : profile.name,
+        description: editingField === 'description' ? editValue : (profile.description || ""),
+        profileType: profileTypeMap[profile.platform] || profile.profileType,
+        status: profile.status,
+        creationTime: profile.creationTime,
+        modificationTime: profile.modificationTime,
+        createdBy: profile.createdBy,
+        lastModifiedBy: profile.lastModifiedBy,
+        // Include platform as it's part of the Profile interface (UI field)
+        platform: profile.platform
+      };
 
-  const renderPolicyDialogContent = () => {
-    if (!selectedPolicyType) return null;
+      // Map platform to profileType for API payload if needed, generic update
+      await ProfileService.updateProfile(platform as Platform, id, updatedProfile);
 
-    if (isIosProfile(profile)) {
-      switch (selectedPolicyType) {
-        case "passcode": return profile.passCodePolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="space-y-1">
-              <InfoRow label="Min Length" value={profile.passCodePolicy.minLength} />
-              <InfoRow label="Allow Simple" value={profile.passCodePolicy.allowSimple ? "Yes" : "No"} />
-              <InfoRow label="Require Passcode" value={profile.passCodePolicy.requirePassCode ? "Yes" : "No"} />
-              <InfoRow label="Alphanumeric" value={profile.passCodePolicy.requireAlphanumericPasscode ? "Yes" : "No"} />
-              <InfoRow label="Complex Passcode" value={profile.passCodePolicy.requireComplexPasscode ? "Yes" : "No"} />
-              <InfoRow label="Max Failed Attempts" value={profile.passCodePolicy.maximumFailedAttempts} />
-              <InfoRow label="Grace Period (min)" value={profile.passCodePolicy.maximumGracePeriodInMinutes} />
-              <InfoRow label="Max Inactivity (min)" value={profile.passCodePolicy.maximumInactivityInMinutes} />
-              <InfoRow label="Passcode Age (days)" value={profile.passCodePolicy.maximumPasscodeAgeInDays} />
-            </div>
-            <AuditInfo data={profile.passCodePolicy} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Passcode Policy Configured</p>;
-
-        case "wifi": return profile.wifiPolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="space-y-1">
-              <InfoRow label="SSID" value={profile.wifiPolicy.ssid} />
-              <InfoRow label="Visibility" value={profile.wifiPolicy.hiddenNetwork ? "Hidden" : "Visible"} />
-              <InfoRow label="Auto Join" value={profile.wifiPolicy.autoJoin ? "Yes" : "No"} />
-              <InfoRow label="Encryption" value={profile.wifiPolicy.encryptionType} />
-              <InfoRow label="Proxy Type" value={profile.wifiPolicy.proxyType} />
-              {profile.wifiPolicy.proxyServer && (
-                <>
-                  <InfoRow label="Proxy Server" value={`${profile.wifiPolicy.proxyServer}:${profile.wifiPolicy.proxyServerPort}`} />
-                </>
-              )}
-            </div>
-            <AuditInfo data={profile.wifiPolicy} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No WiFi Policy Configured</p>;
-
-        case "mdm": return profile.mdmPolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="space-y-1">
-              <InfoRow label="Server URL" value={profile.mdmPolicy.serverURL} />
-              <InfoRow label="Access Rights" value={profile.mdmPolicy.accessRights} />
-              <InfoRow label="Check-In Interval" value={profile.mdmPolicy.checkInInterval} />
-              <InfoRow label="Sign Message" value={profile.mdmPolicy.signMessage ? "Yes" : "No"} />
-              <InfoRow label="Server Capabilities" value={profile.mdmPolicy.serverCapabilities?.join(", ")} />
-              <InfoRow label="Topic" value={profile.mdmPolicy.topic} />
-              <InfoRow label="Identity Cert UUID" value={profile.mdmPolicy.identityCertificateUUID} />
-            </div>
-            <AuditInfo data={profile.mdmPolicy} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No MDM Policy Configured</p>;
-
-        case "mail": return profile.mailPolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="space-y-1">
-              <InfoRow label="Account Type" value={profile.mailPolicy.emailAccountType} />
-              <InfoRow label="Account Name" value={profile.mailPolicy.emailAccountName} />
-              <InfoRow label="Email Address" value={profile.mailPolicy.emailAddress} />
-              <InfoRow label="Incoming Server" value={`${profile.mailPolicy.incomingMailServerHostName}:${profile.mailPolicy.incomingMailServerPortNumber}`} />
-              <InfoRow label="Outgoing Server" value={`${profile.mailPolicy.outgoingMailServerHostName}:${profile.mailPolicy.outgoingMailServerPortNumber}`} />
-              <InfoRow label="Prevent Move" value={profile.mailPolicy.preventMove ? "Yes" : "No"} />
-              <InfoRow label="Recent Sync Days" value={profile.mailPolicy.disableMailRecentsSyncing ? "Disabled" : "Enabled"} />
-            </div>
-            <AuditInfo data={profile.mailPolicy} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Email Policy Configured</p>;
-
-        case "webclips": return (profile.webClipPolicies && profile.webClipPolicies.length > 0) ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            {profile.webClipPolicies.map((clip, index) => (
-              <div key={index} className="bg-muted/30 p-3 rounded-lg border border-border/50 space-y-1">
-                <h4 className="font-semibold text-sm mb-2 text-primary">{clip.label || `Web Clip #${index + 1}`}</h4>
-                <InfoRow label="URL" value={clip.url} />
-                <InfoRow label="Removable" value={clip.isRemovable ? "Yes" : "No"} />
-                <InfoRow label="Fullscreen" value={clip.fullScreen ? "Yes" : "No"} />
-                <InfoRow label="Precomposed" value={clip.precomposed ? "Yes" : "No"} />
-              </div>
-            ))}
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Web Clips Configured</p>;
-
-        case "notifications": return (profile.notificationPolicies && profile.notificationPolicies.length > 0) ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            {profile.notificationPolicies.map((notif, index) => (
-              <div key={index} className="bg-muted/30 p-3 rounded-lg border border-border/50 space-y-1">
-                <h4 className="font-semibold text-sm mb-2 text-primary">{notif.bundleIdentifier}</h4>
-                <InfoRow label="Enabled" value={notif.eventsEnabled ? "Yes" : "No"} />
-                <InfoRow label="Show in Lock Screen" value={notif.showInLockScreen ? "Yes" : "No"} />
-                <InfoRow label="Show in Notification Center" value={notif.showInNotificationCenter ? "Yes" : "No"} />
-                <InfoRow label="Badges" value={notif.badgesEnabled ? "Yes" : "No"} />
-                <InfoRow label="Sounds" value={notif.soundsEnabled ? "Yes" : "No"} />
-                <InfoRow label="Alert Type" value={notif.alertType} />
-              </div>
-            ))}
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Notification Policies Configured</p>;
-
-        case "apps": return (profile.applicationPolicies && profile.applicationPolicies.length > 0) ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            {profile.applicationPolicies.map((app, index) => (
-              <div key={index} className="bg-muted/30 p-3 rounded-lg border border-border/50 space-y-1">
-                <h4 className="font-semibold text-sm mb-2 text-primary">{app.bundleIdentifier || `App #${index + 1}`}</h4>
-                <InfoRow label="Install Type" value={app.installType} />
-                <InfoRow label="Prevent Backup" value={app.preventBackup ? "Yes" : "No"} />
-                <InfoRow label="Remove on Unenroll" value={app.removeOnUnenroll ? "Yes" : "No"} />
-              </div>
-            ))}
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Application Policies Configured</p>;
-
-        case "restrictions": return profile.lockScreenPolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="space-y-1">
-              <InfoRow label="Allow Camera" value={"Yes"} /> {/* Placeholder as iOS restrictions are scattered */}
-              <InfoRow label="Allow Screenshot" value={"Yes"} />
-            </div>
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Restrictions Configured</p>;
-
-        default: return <p>Policy details not implemented for {selectedPolicyType}</p>;
-      }
+      await fetchProfile();
+      setEditingField(null);
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      // You might want to show a toast here
+    } finally {
+      setSavingField(false);
     }
-
-    if (isAndroidProfile(profile)) {
-      const restrictions = profile.restrictions;
-
-      // Handle Android Restrictions sub-categories
-      if (selectedPolicyType.startsWith("restriction_")) {
-        const restrictionType = selectedPolicyType.replace("restriction_", "") as keyof AndroidProfileRestrictions;
-        const restrictionData = restrictions?.[restrictionType];
-
-        if (!restrictionData) return <p className="text-muted-foreground text-center py-4">No {restrictionType} configuration</p>;
-
-        return (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="space-y-1">
-              {Object.entries(restrictionData).map(([key, val]) => {
-                if (key === 'id' || key === 'devicePolicyType') return null;
-                return <InfoRow key={key} label={key.replace(/([A-Z])/g, ' $1').trim()} value={typeof val === 'boolean' ? (val ? 'Yes' : 'No') : val} />;
-              })}
-            </div>
-            {/* Audit info not always available on nested restrictions objects directly in schema, check API */}
-          </div>
-        );
-      }
-
-      switch (selectedPolicyType) {
-        case "enrollment": return profile.enrollmentPolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <InfoRow label="Kiosk Mode" value={profile.enrollmentPolicy.isKioskMode ? "Enabled" : "Disabled"} />
-            <InfoRow label="Initial WiFi SSID" value={profile.enrollmentPolicy.wifiHotspot?.ssid} />
-            <InfoRow label="Use Mobile Data" value={profile.enrollmentPolicy.useMobileData ? "Yes" : "No"} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Enrollment Policy</p>;
-
-        case "theme": return profile.deviceThemePolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <InfoRow label="Background Color" value={profile.deviceThemePolicy.backgroundColor} />
-            <InfoRow label="Icon Size" value={profile.deviceThemePolicy.iconSize} />
-            <InfoRow label="Orientation" value={profile.deviceThemePolicy.screenOrientation} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Theme Policy</p>;
-
-        case "common": return profile.commonSettingsPolicy ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <InfoRow label="Location Tracking" value={profile.commonSettingsPolicy.locationTracking ? "Enabled" : "Disabled"} />
-            <InfoRow label="Screen Capture" value={profile.commonSettingsPolicy.disableScreenCapture ? "Disabled" : "Enabled"} />
-            <InfoRow label="App Auto-Updates" value={JSON.stringify(profile.commonSettingsPolicy.appUpdateSchedule)} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Common Settings</p>;
-
-        case "apps": return (profile.applicationPolicies && profile.applicationPolicies.length > 0) ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            {profile.applicationPolicies.map((app, index) => (
-              <div key={index} className="bg-muted/30 p-3 rounded-lg border border-border/50 space-y-1">
-                <h4 className="font-semibold text-sm mb-2 text-primary">{app.packageName || `App #${index + 1}`}</h4>
-                <InfoRow label="Install Type" value={app.installType} />
-                <InfoRow label="Auto Update" value={app.autoUpdateMode} />
-                <InfoRow label="Default Config" value={app.defaultConfiguration ? "Yes" : "No"} />
-              </div>
-            ))}
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Application Policies Configured</p>;
-
-        case "webapps": return (profile.webApplicationPolicies && profile.webApplicationPolicies.length > 0) ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            {profile.webApplicationPolicies.map((app, index) => (
-              <div key={index} className="bg-muted/30 p-3 rounded-lg border border-border/50 space-y-1">
-                <h4 className="font-semibold text-sm mb-2 text-primary">{app.title || `Web App #${index + 1}`}</h4>
-                <InfoRow label="URL" value={app.url} />
-                <InfoRow label="Display Mode" value={app.displayMode} />
-                <InfoRow label="Icon" value={app.icon ? "Yes" : "No"} />
-              </div>
-            ))}
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Web App Policies Configured</p>;
-
-        case "passcode": return profile.passcodePolicy?.work ? (
-          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <h4 className="font-semibold text-sm text-primary">Work Profile Passcode</h4>
-            <div className="space-y-1">
-              <InfoRow label="Complexity" value={profile.passcodePolicy.work.complexity} />
-              <InfoRow label="History Length" value={profile.passcodePolicy.work.historyLength} />
-              <InfoRow label="Max Failed Attempts to Wipe" value={profile.passcodePolicy.work.maxFailedAttemptsToWipe} />
-              <InfoRow label="Password Expiry (seconds)" value={profile.passcodePolicy.work.changeAfterSeconds} />
-              <InfoRow label="Strong Auth Timeout" value={profile.passcodePolicy.work.strongAuthRequiredTimeout} />
-              <InfoRow label="Separate Lock" value={profile.passcodePolicy.work.separateLock ? "Yes" : "No"} />
-            </div>
-            {profile.passcodePolicy.enforcement && (
-              <>
-                <h4 className="font-semibold text-sm text-primary mt-4">Enforcement</h4>
-                <div className="space-y-1">
-                  <InfoRow label="Block After Days" value={profile.passcodePolicy.enforcement.blockAfterDays} />
-                  <InfoRow label="Wipe After Days" value={profile.passcodePolicy.enforcement.wipeAfterDays} />
-                </div>
-              </>
-            )}
-            <AuditInfo data={profile.passcodePolicy.work} />
-          </div>
-        ) : <p className="text-muted-foreground text-center py-4">No Passcode Policy Configured</p>;
-
-        default: return <p>Policy details not implemented</p>;
-      }
-    }
-
-    return null;
   };
-
-  // Policy Card Component
-  const PolicyCard = ({ title, icon: Icon, type, isActive, overview }: { title: string; icon: any; type: string; isActive: boolean; overview?: string }) => (
-    <Card
-      className={cn(
-        "cursor-pointer transition-all duration-200 hover:shadow-md group overflow-hidden relative h-full flex flex-col",
-        isActive
-          ? "bg-primary/5 border-primary shadow-sm"
-          : "bg-background border-dashed border-border/60 hover:border-primary/40 hover:bg-muted/30 opacity-70 hover:opacity-100"
-      )}
-      onClick={() => handlePolicyClick(type)}
-    >
-      <CardContent className="p-4 flex flex-col items-center text-center gap-3 flex-grow justify-center">
-        <div className={cn(
-          "p-3 rounded-full transition-colors duration-200",
-          isActive
-            ? "bg-primary/20 text-primary"
-            : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
-        )}>
-          <Icon className="w-6 h-6" />
-        </div>
-        <div className="flex flex-col gap-1 w-full">
-          <h3 className={cn("font-semibold text-sm", !isActive && "text-muted-foreground group-hover:text-foreground")}>{title}</h3>
-          <p className={cn("text-xs transition-colors", isActive ? "text-primary/80 font-medium" : "text-muted-foreground/60")}>
-            {isActive ? "Configured" : "Not Configured"}
-          </p>
-          {overview && (
-            <p className="text-xs text-muted-foreground mt-1 px-2 py-1 bg-background/50 rounded-md truncate w-full border border-border/20">
-              {overview}
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
 
 
   return (
@@ -1071,11 +801,31 @@ export default function ProfileDetails() {
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">
                       {profile.name}
                     </h1>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                      onClick={() => openEditDialog('name', profile.name)}
+                      title={t('profiles.edit.title')}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
                     <Badge variant={profile.status === 'PUBLISHED' ? "secondary" : "outline"} className={cn("ml-1 font-normal", profile.status === 'PUBLISHED' ? "bg-green-100 text-green-700 border-green-200" : "")}>
                       {profile.status}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">{profile.description}</p>
+                  <div className="flex items-start gap-2 group">
+                    <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">{profile.description}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full w-6 h-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground hover:bg-muted -mt-1"
+                      onClick={() => openEditDialog('description', profile.description || "")}
+                      title="Edit Description"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </div>
 
                 </div>
               </div>
@@ -1084,16 +834,15 @@ export default function ProfileDetails() {
               {profile.status !== "PUBLISHED" && (
                 <Button
                   onClick={handlePublish}
-                  disabled={publishing}
                   size="icon"
                   className={cn(
                     "rounded-full h-14 w-14 shadow-lg bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-2 border-white/20 dark:border-slate-800",
                     "transition-all duration-300 hover:scale-105 active:scale-95",
-                    publishing ? "animate-pulse" : "animate-in zoom-in slide-in-from-left-4 duration-500"
+                    "animate-in zoom-in slide-in-from-left-4 duration-500"
                   )}
                   title={t('profiles.publish.publish')}
                 >
-                  <Send className={cn("w-6 h-6 ml-0.5", publishing && "animate-spin")} />
+                  <Send className={cn("w-6 h-6 ml-0.5")} />
                 </Button>
               )}
             </div>
@@ -1165,8 +914,75 @@ export default function ProfileDetails() {
           lockScreenMessagePolicy={lockScreenMessagePolicy}
           scepPolicy={scepPolicy}
           mdmPolicy={mdmPolicy}
-          onSelectPolicy={(type) => navigate(`/profiles/${platform}/${id}/policy/${type}`)}
+          onSelectPolicy={setActivePolicyType}
         />
+
+        <PolicyEditDialog
+          open={!!activePolicyType}
+          onOpenChange={(open) => !open && setActivePolicyType(null)}
+          activePolicyType={activePolicyType}
+          platform={platform as Platform}
+          profileId={id!}
+          passcodePolicy={passcodePolicy}
+          androidPasscodePolicy={androidPasscodePolicy}
+          wifiPolicy={wifiPolicy}
+          mailPolicy={mailPolicy}
+          restrictionsPolicy={restrictionsPolicy}
+          applicationPolicy={applicationPolicy}
+          webApplicationPolicy={webApplicationPolicy}
+          notificationPolicy={notificationPolicy}
+          lockScreenMessagePolicy={lockScreenMessagePolicy}
+          scepPolicy={scepPolicy}
+          mdmPolicy={mdmPolicy}
+          onSave={() => {
+            setActivePolicyType(null);
+            fetchProfile();
+          }}
+        />
+
+        <PublishProfileDialog
+          open={publishDialogOpen}
+          onOpenChange={setPublishDialogOpen}
+          profile={profile}
+          onProfilePublished={fetchProfile}
+        />
+
+        <Dialog open={!!editingField} onOpenChange={(open) => !open && setEditingField(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit {editingField === 'name' ? 'Name' : 'Description'}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="edit-field" className="mb-2 block">
+                {editingField === 'name' ? 'Profile Name' : 'Profile Description'}
+              </Label>
+              {editingField === 'name' ? (
+                <Input
+                  id="edit-field"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder="Enter profile name"
+                />
+              ) : (
+                <Textarea
+                  id="edit-field"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder="Enter profile description"
+                  rows={4}
+                />
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingField(null)} disabled={savingField}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveField} disabled={savingField || !editValue.trim()}>
+                {savingField ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Separator />
 
