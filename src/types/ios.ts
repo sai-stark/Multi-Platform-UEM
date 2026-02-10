@@ -195,3 +195,190 @@ export interface IosLockScreenMessage {
     lockScreenFootnote?: string;
 }
 
+// ========================================
+// UEM PHASE 2 - iOS Policies
+// ========================================
+
+// iOS Web Content Filter Policy
+export interface IosWebContentFilterPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType?: 'IosWebContentFilterPolicy';
+    filterType?: 'BuiltIn';
+    autoFilterEnabled?: boolean;
+    permittedUrls?: string[];
+    denyListUrls?: string[];
+    filterSockets?: boolean;
+    whitelistedBookmarks?: { url?: string; title?: string }[];
+    hideDenyListURLs?: boolean;
+    safariHistoryRetentionEnabled?: boolean;
+}
+
+// iOS Global HTTP Proxy Policy
+export interface IosGlobalHttpProxyPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType?: 'IosGlobalHttpProxyPolicy';
+    proxyType: 'Manual' | 'Automatic';
+    proxyServer?: string;
+    proxyServerPort?: number;
+    proxyUsername?: string;
+    proxyPassword?: string;
+    proxyPacUrl?: string;
+    proxyPacFallbackAllowed?: boolean;
+    proxyCaptiveLoginAllowed?: boolean;
+}
+
+// VPN Sub-types
+export interface IosVpnIKEv2SA {
+    encryptionAlgorithm?: string;
+    integrityAlgorithm?: string;
+    diffieHellmanGroup?: number;
+    lifeTimeInMinutes?: number;
+}
+
+export interface IosVpnIKEv2 {
+    remoteIdentifier?: string;
+    localIdentifier?: string;
+    authenticationMethod?: 'None' | 'SharedSecret' | 'Certificate';
+    payloadCertificateUUID?: string;
+    sharedSecret?: string;
+    authName?: string;
+    authPassword?: string;
+    password?: string;
+    certificateType?: 'RSA' | 'ECDSA256' | 'ECDSA384' | 'ECDSA521' | 'RSA-PSS';
+    serverCertificateCommonName?: string;
+    serverCertificateIssuerCommonName?: string;
+    enablePFS?: boolean;
+    enableCertificateRevocationCheck?: boolean;
+    disableMOBIKE?: boolean;
+    disableRedirect?: boolean;
+    enableFallback?: boolean;
+    extendedAuthEnabled?: boolean;
+    useConfigurationAttributeInternalIPSubnet?: boolean;
+    deadPeerDetectionRate?: 'None' | 'Low' | 'Medium' | 'High';
+    disconnectOnIdle?: boolean;
+    disconnectOnIdleTimer?: number;
+    mTU?: number;
+    nATKeepAliveInterval?: number;
+    nATKeepAliveOffloadEnable?: boolean;
+    includeAllNetworks?: boolean;
+    enforceRoutes?: boolean;
+    excludeLocalNetworks?: boolean;
+    excludeCellularServices?: boolean;
+    excludeAPNs?: boolean;
+    excludeDeviceCommunication?: boolean;
+    pPK?: string;
+    pPKIdentifier?: string;
+    pPKMandatory?: boolean;
+    allowPostQuantumKeyExchangeFallback?: boolean;
+    enforceStrictAlgorithmSelection?: boolean;
+    tLSMaximumVersion?: string;
+    tLSMinimumVersion?: string;
+    iKESecurityAssociationParameters?: IosVpnIKEv2SA;
+    childSecurityAssociationParameters?: IosVpnIKEv2SA;
+}
+
+export interface IosVpnIPSec {
+    authenticationMethod?: 'SharedSecret' | 'Certificate';
+    localIdentifier?: string;
+    localIdentifierType?: 'KeyID';
+    sharedSecret?: string;
+    payloadCertificateUUID?: string;
+    xAuthEnabled?: boolean;
+    xAuthName?: string;
+    xAuthPassword?: string;
+    xAuthPasswordEncryption?: 'Prompt';
+    promptForVPNPIN?: boolean;
+    onDemandEnabled?: boolean;
+    disconnectOnIdle?: boolean;
+    disconnectOnIdleTimer?: number;
+}
+
+export interface IosVpnPPP {
+    authName?: string;
+    authPassword?: string;
+    commRemoteAddress?: string;
+    tokenCard?: boolean;
+    disconnectOnIdle?: boolean;
+    disconnectOnIdleTimer?: number;
+    authEAPPlugins?: string[];
+    authProtocol?: string[];
+    cCPEnabled?: boolean;
+    cCPMPPE40Enabled?: boolean;
+    cCPMPPE128Enabled?: boolean;
+}
+
+export interface IosVpnIPv4 {
+    overridePrimary?: boolean;
+    configMethod?: string;
+}
+
+export interface IosVpnDNS {
+    serverAddresses?: string[];
+    searchDomains?: string[];
+    supplementalMatchDomains?: string[];
+}
+
+export interface IosVpnProxies {
+    hTTPEnable?: boolean;
+    hTTPProxy?: string;
+    hTTPPort?: number;
+    proxyAutoConfigEnable?: boolean;
+    proxyAutoConfigURLString?: string;
+}
+
+// iOS VPN Policy
+export interface IosVpnPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType?: 'IosVpnPolicy';
+    vpnType: 'L2TP' | 'PPTP' | 'IPSec' | 'IKEv2' | 'AlwaysOn' | 'VPN' | 'TransparentProxy';
+    vpnSubType?: string;
+    providerBundleIdentifier?: string;
+    providerDesignatedRequirement?: string;
+    providerType?: 'packet-tunnel' | 'app-proxy';
+    remoteAddress: string;
+    authName?: string;
+    authPassword?: string;
+    payloadCertificateUUID?: string;
+    ikev2?: IosVpnIKEv2;
+    ipsec?: IosVpnIPSec;
+    ppp?: IosVpnPPP;
+    ipv4?: IosVpnIPv4;
+    dns?: IosVpnDNS;
+    proxies?: IosVpnProxies;
+}
+
+// iOS Per-App VPN Policy
+export interface IosPerAppVpnPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    applicationIds: string[];
+}
+
+// iOS Per-Domain VPN Policy
+export interface IosPerDomainVpnPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType?: 'IosPerDomainVpnPolicy';
+    safariDomains?: string[];
+    associatedDomains?: string[];
+    excludedDomains?: string[];
+    onDemandMatchAppEnabled?: boolean;
+}
+
+// iOS Relay Policy
+export interface IosRelayPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType?: 'IosRelayPolicy';
+    http3RelayUrl?: string;
+    http2RelayUrl?: string;
+    additionalHttpHeaders?: Record<string, string>;
+    matchDomains?: string[];
+    excludedDomains?: string[];
+    payloadCertificateUUID?: string;
+    rawPublicKeys?: string[];
+}
+

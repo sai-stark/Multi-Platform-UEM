@@ -28,11 +28,16 @@ import { MailPolicy } from "@/components/profiles/IosPolicies/MailPolicy";
 import { NotificationPolicy } from "@/components/profiles/IosPolicies/NotificationPolicy";
 import { PasscodePolicy } from "@/components/profiles/IosPolicies/PasscodePolicy";
 import {
-  RestrictionsComposite,
   RestrictionsPolicy,
 } from "@/components/profiles/IosPolicies/RestrictionsPolicy";
 import { WebApplicationPolicyEditor } from "@/components/profiles/IosPolicies/WebApplicationPolicy";
 import { WifiPolicy } from "@/components/profiles/IosPolicies/WifiPolicy";
+import { WebContentFilterPolicy } from "@/components/profiles/IosPolicies/WebContentFilterPolicy";
+import { GlobalHttpProxyPolicy } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
+import { VpnPolicy } from "@/components/profiles/IosPolicies/VpnPolicy";
+import { PerAppVpnPolicy } from "@/components/profiles/IosPolicies/PerAppVpnPolicy";
+import { PerDomainVpnPolicy } from "@/components/profiles/IosPolicies/PerDomainVpnPolicy";
+import { RelayPolicy } from "@/components/profiles/IosPolicies/RelayPolicy";
 import {
   ApplicationsPolicyCard,
   LockScreenMessagePolicyCard,
@@ -62,7 +67,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IosMdmConfiguration, IosScepConfiguration } from "@/types/ios";
+import { IosMdmConfiguration, IosScepConfiguration, IosWebContentFilterPolicy, IosGlobalHttpProxyPolicy, IosVpnPolicy, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy } from "@/types/ios";
 import {
   ApplicationPolicy,
   CommonSettingsPolicy as CommonSettingsPolicyType,
@@ -76,6 +81,7 @@ import {
   NotificationPolicy as NotificationPolicyType,
   PasscodeRestrictionPolicy,
   Platform,
+  RestrictionsComposite,
   WebApplicationPolicy,
 } from "@/types/models";
 import { AnimatePresence, motion } from "framer-motion";
@@ -84,15 +90,18 @@ import {
   ArrowLeft,
   Ban,
   Bell,
+  Filter,
   Globe,
   Grid,
   Key,
   Layout,
+  Lock,
   Mail,
   MessageSquare,
   Monitor,
   Palette,
   Plus,
+  Radio,
   Server,
   Settings,
   Shield,
@@ -153,6 +162,13 @@ export default function EditProfilePolicies() {
   const [mdmPolicy, setMdmPolicy] = useState<IosMdmConfiguration | undefined>(
     undefined
   );
+  // Phase 2 iOS policies
+  const [webContentFilterPolicy, setWebContentFilterPolicy] = useState<IosWebContentFilterPolicy | undefined>(undefined);
+  const [globalHttpProxyPolicy, setGlobalHttpProxyPolicy] = useState<IosGlobalHttpProxyPolicy | undefined>(undefined);
+  const [vpnPolicy, setVpnPolicy] = useState<IosVpnPolicy | undefined>(undefined);
+  const [perAppVpnPolicy, setPerAppVpnPolicy] = useState<IosPerAppVpnPolicy | undefined>(undefined);
+  const [perDomainVpnPolicy, setPerDomainVpnPolicy] = useState<IosPerDomainVpnPolicy | undefined>(undefined);
+  const [relayPolicy, setRelayPolicy] = useState<IosRelayPolicy | undefined>(undefined);
   // Android-specific policy state
   const [androidPasscodePolicy, setAndroidPasscodePolicy] = useState<
     any | undefined
@@ -200,6 +216,25 @@ export default function EditProfilePolicies() {
           }
           if (data.webClipPolicies && data.webClipPolicies.length > 0) {
             setWebApplicationPolicy(data.webClipPolicies as any);
+          }
+          // Phase 2 policies
+          if ((data as any).webContentFilterPolicy) {
+            setWebContentFilterPolicy((data as any).webContentFilterPolicy);
+          }
+          if ((data as any).globalHttpProxyPolicy) {
+            setGlobalHttpProxyPolicy((data as any).globalHttpProxyPolicy);
+          }
+          if ((data as any).vpnPolicy) {
+            setVpnPolicy((data as any).vpnPolicy);
+          }
+          if ((data as any).perAppVpnPolicy) {
+            setPerAppVpnPolicy((data as any).perAppVpnPolicy);
+          }
+          if ((data as any).perDomainVpnPolicy) {
+            setPerDomainVpnPolicy((data as any).perDomainVpnPolicy);
+          }
+          if ((data as any).relayPolicy) {
+            setRelayPolicy((data as any).relayPolicy);
           }
         }
 
@@ -327,6 +362,12 @@ export default function EditProfilePolicies() {
               lockScreenMessagePolicy={lockScreenMessagePolicy}
               scepPolicy={scepPolicy}
               mdmPolicy={mdmPolicy}
+              webContentFilterPolicy={webContentFilterPolicy}
+              globalHttpProxyPolicy={globalHttpProxyPolicy}
+              vpnPolicy={vpnPolicy}
+              perAppVpnPolicy={perAppVpnPolicy}
+              perDomainVpnPolicy={perDomainVpnPolicy}
+              relayPolicy={relayPolicy}
               onSave={handlePolicySave}
               onCancel={handleCloseEditor}
             />
@@ -344,6 +385,12 @@ export default function EditProfilePolicies() {
               lockScreenMessagePolicy={lockScreenMessagePolicy}
               scepPolicy={scepPolicy}
               mdmPolicy={mdmPolicy}
+              webContentFilterPolicy={webContentFilterPolicy}
+              globalHttpProxyPolicy={globalHttpProxyPolicy}
+              vpnPolicy={vpnPolicy}
+              perAppVpnPolicy={perAppVpnPolicy}
+              perDomainVpnPolicy={perDomainVpnPolicy}
+              relayPolicy={relayPolicy}
               onSelectPolicy={setActivePolicyType}
             />
           )}
@@ -449,6 +496,12 @@ interface PolicyEditorProps {
   lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
   scepPolicy?: IosScepConfiguration;
   mdmPolicy?: IosMdmConfiguration;
+  webContentFilterPolicy?: IosWebContentFilterPolicy;
+  globalHttpProxyPolicy?: IosGlobalHttpProxyPolicy;
+  vpnPolicy?: IosVpnPolicy;
+  perAppVpnPolicy?: IosPerAppVpnPolicy;
+  perDomainVpnPolicy?: IosPerDomainVpnPolicy;
+  relayPolicy?: IosRelayPolicy;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -468,6 +521,12 @@ function PolicyEditor({
   lockScreenMessagePolicy,
   scepPolicy,
   mdmPolicy,
+  webContentFilterPolicy,
+  globalHttpProxyPolicy,
+  vpnPolicy: vpnPolicyData,
+  perAppVpnPolicy,
+  perDomainVpnPolicy,
+  relayPolicy: relayPolicyData,
   onSave,
   onCancel,
 }: PolicyEditorProps) {
@@ -589,6 +648,55 @@ function PolicyEditor({
           )}
           {activePolicyType === "mdm" && mdmPolicy && (
             <MdmPolicyView policy={mdmPolicy} onClose={onCancel} />
+          )}
+          {/* Phase 2 iOS policy editors */}
+          {activePolicyType === "webContentFilter" && (
+            <WebContentFilterPolicy
+              profileId={profileId}
+              initialData={webContentFilterPolicy}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "globalHttpProxy" && (
+            <GlobalHttpProxyPolicy
+              profileId={profileId}
+              initialData={globalHttpProxyPolicy}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "vpn" && (
+            <VpnPolicy
+              profileId={profileId}
+              initialData={vpnPolicyData}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "perAppVpn" && (
+            <PerAppVpnPolicy
+              profileId={profileId}
+              initialData={perAppVpnPolicy}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "perDomainVpn" && (
+            <PerDomainVpnPolicy
+              profileId={profileId}
+              initialData={perDomainVpnPolicy}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
+          )}
+          {activePolicyType === "relay" && (
+            <RelayPolicy
+              profileId={profileId}
+              initialData={relayPolicyData}
+              onSave={onSave}
+              onCancel={onCancel}
+            />
           )}
           {/* Android-specific policy editors */}
           {activePolicyType === "securityRestriction" && (
@@ -764,6 +872,12 @@ interface PolicyCardGridProps {
   lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
   scepPolicy?: IosScepConfiguration;
   mdmPolicy?: IosMdmConfiguration;
+  webContentFilterPolicy?: IosWebContentFilterPolicy;
+  globalHttpProxyPolicy?: IosGlobalHttpProxyPolicy;
+  vpnPolicy?: IosVpnPolicy;
+  perAppVpnPolicy?: IosPerAppVpnPolicy;
+  perDomainVpnPolicy?: IosPerDomainVpnPolicy;
+  relayPolicy?: IosRelayPolicy;
   onSelectPolicy: (type: string) => void;
 }
 
@@ -827,6 +941,12 @@ function PolicyCardGrid({
   lockScreenMessagePolicy,
   scepPolicy,
   mdmPolicy,
+  webContentFilterPolicy,
+  globalHttpProxyPolicy,
+  vpnPolicy: vpnPolicyGridData,
+  perAppVpnPolicy: perAppVpnGridData,
+  perDomainVpnPolicy: perDomainVpnGridData,
+  relayPolicy: relayGridData,
   onSelectPolicy,
 }: PolicyCardGridProps) {
   const { t } = useLanguage();
@@ -842,6 +962,12 @@ function PolicyCardGrid({
   const hasNotifications = notificationPolicy && notificationPolicy.length > 0;
   const hasLockScreen = !!lockScreenMessagePolicy;
   const hasApplications = applicationPolicy && applicationPolicy.length > 0;
+  const hasWebContentFilter = !!webContentFilterPolicy;
+  const hasGlobalHttpProxy = !!globalHttpProxyPolicy;
+  const hasVpn = !!vpnPolicyGridData;
+  const hasPerAppVpn = !!perAppVpnGridData;
+  const hasPerDomainVpn = !!perDomainVpnGridData;
+  const hasRelay = !!relayGridData;
 
   // Android-specific: check if passcode policy is configured
   const hasAndroidPasscode = !!androidPasscodePolicy;
@@ -866,7 +992,8 @@ function PolicyCardGrid({
   // Count active policies
   const activePolicies = [
     hasPasscode, hasWifi, hasMail, hasRestrictions, hasScep, hasMdm,
-    hasWebApps, hasNotifications, hasLockScreen
+    hasWebApps, hasNotifications, hasLockScreen,
+    hasWebContentFilter, hasGlobalHttpProxy, hasVpn, hasPerAppVpn, hasPerDomainVpn, hasRelay
   ].filter(Boolean).length;
 
   // iOS available policies (not configured)
@@ -878,6 +1005,12 @@ function PolicyCardGrid({
     { type: 'webApps', title: t('policies.ios.webApps'), description: t('policies.ios.webApps.desc'), icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWebApps },
     { type: 'notifications', title: t('policies.ios.notifications'), description: t('policies.ios.notifications.desc'), icon: <Bell className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasNotifications },
     { type: 'lockScreenMessage', title: t('policies.ios.lockScreen'), description: t('policies.ios.lockScreen.desc'), icon: <MessageSquare className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasLockScreen },
+    { type: 'webContentFilter', title: 'Web Content Filter', description: 'URL filtering and content restrictions', icon: <Filter className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasWebContentFilter },
+    { type: 'globalHttpProxy', title: 'Global HTTP Proxy', description: 'Network proxy configuration', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasGlobalHttpProxy },
+    { type: 'vpn', title: 'VPN', description: 'Virtual private network', icon: <Lock className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasVpn },
+    { type: 'perAppVpn', title: 'Per-App VPN', description: 'App-specific VPN routing', icon: <Smartphone className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasPerAppVpn },
+    { type: 'perDomainVpn', title: 'Per-Domain VPN', description: 'Domain-based VPN routing', icon: <Globe className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasPerDomainVpn },
+    { type: 'relay', title: 'Relay', description: 'HTTP relay tunneling', icon: <Radio className="w-5 h-5 text-muted-foreground" />, show: isIos && !hasRelay },
   ].filter(p => p.show).sort((a, b) => a.title.localeCompare(b.title));
 
   // Android Policies (not restrictions) - sorted alphabetically
@@ -1095,6 +1228,109 @@ function PolicyCardGrid({
                   <CardContent className="flex-1 flex flex-col justify-end">
                     <Badge>Active</Badge>
                     <p className="text-sm mt-2 text-muted-foreground">Message configured</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {/* Phase 2 active policy cards */}
+            {hasWebContentFilter && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-orange-500 h-full flex flex-col" onClick={() => onSelectPolicy('webContentFilter')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Filter className="w-5 h-5 text-orange-500" /> Web Content Filter
+                    </CardTitle>
+                    <CardDescription>URL filtering and content restrictions</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{webContentFilterPolicy?.name || 'Configured'}</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasGlobalHttpProxy && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 h-full flex flex-col" onClick={() => onSelectPolicy('globalHttpProxy')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-blue-500" /> Global HTTP Proxy
+                    </CardTitle>
+                    <CardDescription>Network proxy configuration</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{globalHttpProxyPolicy?.proxyType || 'Configured'}</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasVpn && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500 h-full flex flex-col" onClick={() => onSelectPolicy('vpn')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Lock className="w-5 h-5 text-emerald-500" /> VPN
+                    </CardTitle>
+                    <CardDescription>Virtual private network</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{vpnPolicyGridData?.vpnType || 'Configured'}</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasPerAppVpn && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-violet-500 h-full flex flex-col" onClick={() => onSelectPolicy('perAppVpn')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Smartphone className="w-5 h-5 text-violet-500" /> Per-App VPN
+                    </CardTitle>
+                    <CardDescription>App-specific VPN routing</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{perAppVpnGridData?.applicationIds?.length || 0} app(s)</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasPerDomainVpn && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-teal-500 h-full flex flex-col" onClick={() => onSelectPolicy('perDomainVpn')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-teal-500" /> Per-Domain VPN
+                    </CardTitle>
+                    <CardDescription>Domain-based VPN routing</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{perDomainVpnGridData?.safariDomains?.length || 0} domain(s)</p>
+                  </CardContent>
+                </Card>
+              </UniformPolicyCard>
+            )}
+
+            {hasRelay && (
+              <UniformPolicyCard>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-t-4 border-t-cyan-500 h-full flex flex-col" onClick={() => onSelectPolicy('relay')}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Radio className="w-5 h-5 text-cyan-500" /> Relay
+                    </CardTitle>
+                    <CardDescription>HTTP relay tunneling</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-end">
+                    <Badge>Active</Badge>
+                    <p className="text-sm mt-2 text-muted-foreground">{relayGridData?.name || 'Configured'}</p>
                   </CardContent>
                 </Card>
               </UniformPolicyCard>

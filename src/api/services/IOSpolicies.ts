@@ -8,6 +8,14 @@ import {
     Platform,
     WebApplicationPolicy
 } from '@/types/models';
+import {
+    IosGlobalHttpProxyPolicy,
+    IosPerAppVpnPolicy,
+    IosPerDomainVpnPolicy,
+    IosRelayPolicy,
+    IosVpnPolicy,
+    IosWebContentFilterPolicy,
+} from '@/types/ios';
 import apiClient from '../client';
 
 const CORE_PATH = '/profiles';
@@ -132,5 +140,107 @@ export const PolicyService = {
     },
     deleteWebApplicationPolicy: async (platform: Platform, profileId: string, policyId: string) => {
         await apiClient.delete(`/${platform}${CORE_PATH}/${profileId}/policies/web-applications/${policyId}`);
+    },
+
+    // --- iOS Web Content Filter (UEM Phase 2) ---
+    getWebContentFilterPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosWebContentFilterPolicy>(`/ios${CORE_PATH}/${profileId}/policies/web-content-filter`);
+        return response.data;
+    },
+    createWebContentFilterPolicy: async (profileId: string, policy: IosWebContentFilterPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/web-content-filter`, policy);
+        return response.data;
+    },
+    updateWebContentFilterPolicy: async (profileId: string, policy: IosWebContentFilterPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/web-content-filter`, policy);
+        return response.data;
+    },
+    deleteWebContentFilterPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/web-content-filter`);
+    },
+
+    // --- iOS Global HTTP Proxy (UEM Phase 2) ---
+    getGlobalHttpProxyPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosGlobalHttpProxyPolicy>(`/ios${CORE_PATH}/${profileId}/policies/http-proxy`);
+        return response.data;
+    },
+    createGlobalHttpProxyPolicy: async (profileId: string, policy: IosGlobalHttpProxyPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/http-proxy`, policy);
+        return response.data;
+    },
+    updateGlobalHttpProxyPolicy: async (profileId: string, policy: IosGlobalHttpProxyPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/http-proxy`, policy);
+        return response.data;
+    },
+    deleteGlobalHttpProxyPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/http-proxy`);
+    },
+
+    // --- iOS VPN (UEM Phase 2) ---
+    getVpnPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosVpnPolicy>(`/ios${CORE_PATH}/${profileId}/policies/vpn`);
+        return response.data;
+    },
+    createVpnPolicy: async (profileId: string, policy: IosVpnPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/vpn`, policy);
+        return response.data;
+    },
+    updateVpnPolicy: async (profileId: string, policy: IosVpnPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/vpn`, policy);
+        return response.data;
+    },
+    deleteVpnPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/vpn`);
+    },
+
+    // --- iOS Per-App VPN (UEM Phase 2) ---
+    getPerAppVpnPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosPerAppVpnPolicy>(`/ios${CORE_PATH}/${profileId}/policies/per-app-vpn`);
+        return response.data;
+    },
+    createPerAppVpnPolicy: async (profileId: string, policy: IosPerAppVpnPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/per-app-vpn`, policy);
+        return response.data;
+    },
+    updatePerAppVpnPolicy: async (profileId: string, policy: IosPerAppVpnPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/per-app-vpn`, policy);
+        return response.data;
+    },
+    deletePerAppVpnPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/per-app-vpn`);
+    },
+
+    // --- iOS Per-Domain VPN (UEM Phase 2) ---
+    getPerDomainVpnPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosPerDomainVpnPolicy>(`/ios${CORE_PATH}/${profileId}/policies/per-domain-vpn`);
+        return response.data;
+    },
+    createPerDomainVpnPolicy: async (profileId: string, policy: IosPerDomainVpnPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/per-domain-vpn`, policy);
+        return response.data;
+    },
+    updatePerDomainVpnPolicy: async (profileId: string, policy: IosPerDomainVpnPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/per-domain-vpn`, policy);
+        return response.data;
+    },
+    deletePerDomainVpnPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/per-domain-vpn`);
+    },
+
+    // --- iOS Relay (UEM Phase 2) ---
+    getRelayPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosRelayPolicy>(`/ios${CORE_PATH}/${profileId}/policies/relay`);
+        return response.data;
+    },
+    createRelayPolicy: async (profileId: string, policy: IosRelayPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/relay`, policy);
+        return response.data;
+    },
+    updateRelayPolicy: async (profileId: string, policy: IosRelayPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/relay`, policy);
+        return response.data;
+    },
+    deleteRelayPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/relay`);
     },
 };

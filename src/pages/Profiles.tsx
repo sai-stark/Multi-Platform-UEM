@@ -336,24 +336,17 @@ const Profiles = () => {
         render: (_, item) => {
           const config = platformConfig[item.platform?.toLowerCase() || "all"];
           return (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center justify-center cursor-default">
-                  {config.image ? (
-                    <img
-                      src={config.image}
-                      alt={config.label}
-                      className="w-6 h-6 object-contain"
-                    />
-                  ) : (
-                    getPlatformIcon(item.platform, true)
-                  )}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{config.label}</p>
-              </TooltipContent>
-            </Tooltip>
+            <span className="inline-flex items-center justify-center cursor-default">
+              {config.image ? (
+                <img
+                  src={config.image}
+                  alt={config.label}
+                  className="w-6 h-6 object-contain"
+                />
+              ) : (
+                getPlatformIcon(item.platform, true)
+              )}
+            </span>
           );
         },
       },
@@ -383,16 +376,9 @@ const Profiles = () => {
           const config = statusConfig[value] || statusConfig.DRAFT;
           const Icon = config.icon;
           return (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex items-center justify-center cursor-default">
-                  <Icon className={cn("w-5 h-5", config.color)} />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{config.label}</p>
-              </TooltipContent>
-            </Tooltip>
+            <span className="inline-flex items-center justify-center cursor-default">
+              <Icon className={cn("w-5 h-5", config.color)} />
+            </span>
           );
         },
       },
@@ -531,10 +517,10 @@ const Profiles = () => {
           <Send className="w-4 h-4 mr-2" />
           {t('profiles.actions.publish')}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleCloneProfile(profile)}>
+        {/* <DropdownMenuItem onClick={() => handleCloneProfile(profile)}>
           <Copy className="w-4 h-4 mr-2" />
           {t('profiles.actions.clone')}
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
         <DropdownMenuItem
           onClick={() => handleDeleteProfile(profile)}
           disabled={!canDelete}
