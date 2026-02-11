@@ -36,7 +36,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { getAssetUrl } from '@/config/env';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 import { cn } from '@/lib/utils';
-import { DeviceApplicationList, DeviceInfo, FullProfile, Platform } from '@/types/models';
+import { DeviceApplicationList, DeviceCertificateItem, DeviceInfo, DeviceSecurityInfo, FullProfile, Platform } from '@/types/models';
 import {
     Activity,
     AppWindow,
@@ -70,6 +70,7 @@ import {
     Trash2,
     Unlock,
     User,
+    Volume2,
     Wifi
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -92,8 +93,18 @@ export default function DeviceDetails() {
 
     const [applications, setApplications] = useState<DeviceApplicationList>([]);
     const [effectiveProfile, setEffectiveProfile] = useState<FullProfile | null>(null);
+    const [securityInfo, setSecurityInfo] = useState<DeviceSecurityInfo | null>(null);
+    const [certificates, setCertificates] = useState<DeviceCertificateItem[]>([]);
     const [showProfileDialog, setShowProfileDialog] = useState(false);
     const [loadingApps, setLoadingApps] = useState(false);
+
+    // Lost Mode State
+    const [lostModeDialog, setLostModeDialog] = useState(false);
+    const [lostModeData, setLostModeData] = useState({
+        message: '',
+        phoneNumber: '',
+        footnote: ''
+    });
 
     const fetchDevice = async () => {
         setLoading(true);
@@ -133,6 +144,20 @@ export default function DeviceDetails() {
                     setEffectiveProfile(profile);
                 } catch (e) {
                     console.error("Failed to load profile", e);
+                }
+
+                try {
+                    const sec = await DeviceService.getDeviceSecurityInfo(platform as Platform, id);
+                    setSecurityInfo(sec);
+                } catch (e) {
+                    console.error("Failed to load security info", e);
+                }
+
+                try {
+                    const certs = await DeviceService.getDeviceCertificates(platform as Platform, id);
+                    setCertificates(certs?.CertificateList || []);
+                } catch (e) {
+                    console.error("Failed to load certificates", e);
                 }
             };
             loadExtras();
@@ -178,6 +203,11 @@ export default function DeviceDetails() {
             return;
         }
 
+        if (action === 'enable_lost_mode' && (device.platform === 'ios' || device.deviceType === 'IosDeviceInfo')) {
+            setLostModeDialog(true);
+            return;
+        }
+
         executeAction(action, label);
     };
 
@@ -197,7 +227,7 @@ export default function DeviceDetails() {
                     await DeviceService.rebootDevice(devicePlatform, device.id);
                     break;
                 case 'sync':
-                    await DeviceService.syncDevice(devicePlatform, device.id);
+                    await DeviceService.syncDevices(devicePlatform, [device.id]);
                     break;
                 case 'lock':
                     await DeviceService.lockDevice(devicePlatform, device.id);
@@ -213,6 +243,24 @@ export default function DeviceDetails() {
                     break;
                 case 'remove_restriction_password':
                     await DeviceService.removeRestrictionPassword(device.id);
+                    break;
+                case 'enable_lost_mode':
+                    await DeviceService.enableLostMode(devicePlatform, device.id, devicePlatform === 'ios' ? {
+                        deviceActionType: 'ActionIosEnableLostMode',
+                        Message: lostModeData.message,
+                        PhoneNumber: lostModeData.phoneNumber,
+                        Footnote: lostModeData.footnote
+                    } : { deviceActionType: 'ActionAndroidEnableLostMode' });
+                    break;
+                case 'disable_lost_mode':
+                    await DeviceService.disableLostMode(devicePlatform, device.id, devicePlatform === 'ios' ? {
+                        deviceActionType: 'ActionIosDisableLostMode'
+                    } : { deviceActionType: 'ActionAndroidDisableLostMode' });
+                    break;
+                case 'play_lost_mode_sound':
+                    await DeviceService.playLostModeSound(devicePlatform, device.id, devicePlatform === 'ios' ? {
+                        deviceActionType: 'ActionIosPlayLostModeSound'
+                    } : { deviceActionType: 'ActionAndroidPlayLostModeSound' });
                     break;
             }
             toast({
@@ -463,6 +511,15 @@ export default function DeviceDetails() {
                                             <DropdownMenuSeparator />
                                         </>
                                     )}
+                                    <DropdownMenuItem onClick={() => handleAction('enable_lost_mode', 'Enable Lost Mode')}>
+                                        <Lock className="w-4 h-4 mr-2" /> Enable Lost Mode
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleAction('disable_lost_mode', 'Disable Lost Mode')}>
+                                        <Unlock className="w-4 h-4 mr-2" /> Disable Lost Mode
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleAction('play_lost_mode_sound', 'Play Lost Mode Sound')}>
+                                        <Volume2 className="w-4 h-4 mr-2" /> Play Lost Mode Sound
+                                    </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -486,6 +543,14 @@ export default function DeviceDetails() {
 
                         <TabsTrigger value="applications" className="gap-2 px-4 py-2 w-full">
                             <AppWindow className="w-4 h-4" /> Applications
+                        </TabsTrigger>
+
+                        <TabsTrigger value="security" className="gap-2 px-4 py-2 w-full">
+                            <Shield className="w-4 h-4" /> Security
+                        </TabsTrigger>
+
+                        <TabsTrigger value="certificates" className="gap-2 px-4 py-2 w-full">
+                            <FileText className="w-4 h-4" /> Certificates
                         </TabsTrigger>
 
                         <TabsTrigger value="system" disabled={isIos} className="gap-2 px-4 py-2 w-full">
@@ -805,6 +870,77 @@ export default function DeviceDetails() {
                         </Card>
                     </TabsContent>
 
+                    {/* SECURITY TAB */}
+                    <TabsContent value="security" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <SectionHeader title="Security Information" icon={Shield} />
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <h4 className="font-semibold mb-2">Encryption & Recovery</h4>
+                                    <BooleanStatus label="FileVault Enabled" value={securityInfo?.FDE_Enabled} />
+                                    <BooleanStatus label="Institutional Recovery Key" value={securityInfo?.FDE_HasInstitutionalRecoveryKey} />
+                                    <BooleanStatus label="Personal Recovery Key" value={securityInfo?.FDE_HasPersonalRecoveryKey} />
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="font-semibold mb-2">Secure Boot</h4>
+                                    <InfoRow label="Secure Boot Level" value={securityInfo?.SecureBoot?.SecureBootLevel} />
+                                    <InfoRow label="External Boot Level" value={securityInfo?.SecureBoot?.ExternalBootLevel} />
+                                    <div className="pt-2">
+                                        <h5 className="text-sm font-medium mb-2 text-muted-foreground">Reduced Security</h5>
+                                        <div className="space-y-2 pl-2 border-l-2">
+                                            <InfoRow label="Allows Any Apple Signed OS" value={securityInfo?.SecureBoot?.ReducedSecurity?.AllowsAnyAppleSignedOS} />
+                                            <InfoRow label="Allows MDM" value={securityInfo?.SecureBoot?.ReducedSecurity?.AllowsMDM} />
+                                            <InfoRow label="Allows User Kext Approval" value={securityInfo?.SecureBoot?.ReducedSecurity?.AllowsUserKextApproval} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* CERTIFICATES TAB */}
+                    <TabsContent value="certificates" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileText className="w-5 h-5" /> Installed Certificates
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Common Name</TableHead>
+                                            <TableHead>Is Identity</TableHead>
+                                            <TableHead>Data (Preview)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {certificates.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                                    No certificates found.
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            certificates.map((cert, idx) => (
+                                                <TableRow key={idx}>
+                                                    <TableCell className="font-medium">{cert.CommonName}</TableCell>
+                                                    <TableCell>{cert.IsIdentity ? <Badge variant="outline" className="bg-green-50 text-green-700">Yes</Badge> : 'No'}</TableCell>
+                                                    <TableCell className="max-w-[200px] truncate text-muted-foreground font-mono text-xs" title={cert.Data}>
+                                                        {cert.Data}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
                     {/* SYSTEM TAB - Hide for iOS */}
                     {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
                         <TabsContent value="system" className="space-y-6">
@@ -1103,6 +1239,51 @@ export default function DeviceDetails() {
                         >
                             Confirm {confirmDialog.label}
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Lost Mode Dialog */}
+            <Dialog open={lostModeDialog} onOpenChange={setLostModeDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Enable Lost Mode</DialogTitle>
+                        <DialogDescription>
+                            Enter the details to be displayed on the device lock screen.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Message</Label>
+                            <Input
+                                value={lostModeData.message}
+                                onChange={(e) => setLostModeData({ ...lostModeData, message: e.target.value })}
+                                placeholder="This device is lost. Please return..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Phone Number</Label>
+                            <Input
+                                value={lostModeData.phoneNumber}
+                                onChange={(e) => setLostModeData({ ...lostModeData, phoneNumber: e.target.value })}
+                                placeholder="+1 555-0199"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Footnote</Label>
+                            <Input
+                                value={lostModeData.footnote}
+                                onChange={(e) => setLostModeData({ ...lostModeData, footnote: e.target.value })}
+                                placeholder="Property of ACME Corp"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setLostModeDialog(false)}>Cancel</Button>
+                        <Button onClick={() => {
+                            setLostModeDialog(false);
+                            executeAction('enable_lost_mode', 'Enable Lost Mode');
+                        }}>Content Enable Lost Mode</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

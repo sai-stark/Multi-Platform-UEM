@@ -216,14 +216,47 @@ export interface DeviceApplication {
 
 export type DeviceApplicationList = DeviceApplication[];
 
+// New Types for Security and Certificates
+export interface DeviceSecurityInfo {
+    FDE_Enabled?: boolean;
+    FDE_HasInstitutionalRecoveryKey?: boolean;
+    FDE_HasPersonalRecoveryKey?: boolean;
+    FDE_PersonalRecoveryKeyCMS?: string;
+    FDE_PersonalRecoveryKeyDeviceKey?: string;
+    HardwareEncryptionCaps?: number;
+    SecureBoot?: {
+        SecureBootLevel?: 'full' | 'medium' | 'off' | 'not supported';
+        ExternalBootLevel?: 'allowed' | 'disallowed' | 'not supported';
+        ReducedSecurity?: {
+            AllowsAnyAppleSignedOS?: 'true' | 'false';
+            AllowsMDM?: 'true' | 'false';
+            AllowsUserKextApproval?: 'true' | 'false';
+        };
+    };
+}
+
+export interface DeviceCertificateItem {
+    CommonName?: string;
+    Data?: string;
+    IsIdentity?: boolean;
+}
+
+export interface DeviceCertificateList {
+    CertificateList: DeviceCertificateItem[];
+}
+
+export interface SyncDevice {
+    deviceIds: string[];
+}
+
 // Command Payloads
 export interface ClearRestrictionsPassword {
-    commandreferenceId: string;
+    commandreferenceId?: string;
     requestRequiresNetworkTether?: boolean;
 }
 
 export interface ClearPasscodeAction {
-    commandreferenceId: string;
+    commandreferenceId?: string;
     requestRequiresNetworkTether?: boolean;
 }
 
@@ -233,7 +266,7 @@ export interface ActionAndroidDeviceFactoryReset {
 }
 
 export interface ActionIosDeviceFactoryReset {
-    commandReferenceId: string;
+    commandReferenceId?: string;
     preserveDataPlan?: boolean;
     disallowProximitySetup?: boolean;
     returnToServiceEnabled?: boolean;
@@ -248,7 +281,7 @@ export interface ActionAndroidDeviceLock {
 }
 
 export interface ActionIosDeviceLock {
-    commandReferenceId: string;
+    commandReferenceId?: string;
     message?: string;
     phoneNumber?: string;
     requestRequiresNetworkTether?: boolean;
@@ -264,9 +297,48 @@ export interface ActionAndroidDeviceReboot {
 }
 
 export interface ActionIosDeviceReboot {
-    commandReferenceId: string;
+    commandReferenceId?: string;
     deviceType: 'ActionIosDeviceReboot';
     notifyUser?: boolean;
 }
 
 export type ActionDeviceReboot = ActionAndroidDeviceReboot | ActionIosDeviceReboot;
+
+// Lost Mode Actions
+export interface ActionAndroidEnableLostMode {
+    deviceActionType: 'ActionAndroidEnableLostMode';
+}
+
+export interface ActionIosEnableLostMode {
+    commandReferenceId?: string;
+    deviceActionType: 'ActionIosEnableLostMode';
+    Message?: string;
+    PhoneNumber?: string;
+    Footnote?: string;
+    RequestRequiresNetworkTether?: boolean;
+}
+
+export type ActionEnableLostMode = ActionAndroidEnableLostMode | ActionIosEnableLostMode;
+
+export interface ActionAndroidDisableLostMode {
+    deviceActionType: 'ActionAndroidDisableLostMode';
+}
+
+export interface ActionIosDisableLostMode {
+    commandReferenceId?: string;
+    deviceActionType: 'ActionIosDisableLostMode';
+}
+
+export type ActionDisableLostMode = ActionAndroidDisableLostMode | ActionIosDisableLostMode;
+
+export interface ActionAndroidPlayLostModeSound {
+    deviceActionType: 'ActionAndroidPlayLostModeSound';
+}
+
+export interface ActionIosPlayLostModeSound {
+    commandReferenceId?: string;
+    deviceActionType: 'ActionIosPlayLostModeSound';
+    RequestRequiresNetworkTether?: boolean;
+}
+
+export type ActionPlayLostModeSound = ActionAndroidPlayLostModeSound | ActionIosPlayLostModeSound;

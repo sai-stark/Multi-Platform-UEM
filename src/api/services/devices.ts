@@ -1,19 +1,31 @@
-import { generateUUID } from '@/lib/utils';
+
 import {
     ActionAndroidDeviceFactoryReset,
     ActionAndroidDeviceLock,
     ActionAndroidDeviceReboot,
+    ActionAndroidDisableLostMode,
+    ActionAndroidEnableLostMode,
+    ActionAndroidPlayLostModeSound,
     ActionDeviceFactoryReset,
     ActionDeviceLock,
     ActionDeviceReboot,
+    ActionDisableLostMode,
+    ActionEnableLostMode,
     ActionIosDeviceFactoryReset,
     ActionIosDeviceLock,
     ActionIosDeviceReboot,
+    ActionIosDisableLostMode,
+    ActionIosEnableLostMode,
+    ActionIosPlayLostModeSound,
+    ActionPlayLostModeSound,
     DeviceApplicationList,
+    DeviceCertificateList,
     DeviceInfo,
+    DeviceSecurityInfo,
     FullProfile,
     Pageable,
-    Platform
+    Platform,
+    SyncDevice
 } from '@/types/models';
 import apiClient from '../client';
 
@@ -56,12 +68,29 @@ export const DeviceService = {
         return response.data;
     },
 
+    // New API Methods
+    syncDevices: async (platform: Platform, deviceIds: string[]) => {
+        const payload: SyncDevice = { deviceIds };
+        await apiClient.post(`/${platform}/devices:sync`, payload);
+    },
+
+    getDeviceSecurityInfo: async (platform: Platform, deviceId: string) => {
+        const response = await apiClient.get<DeviceSecurityInfo>(`/${platform}/devices/${deviceId}/security`);
+        return response.data;
+    },
+
+    getDeviceCertificates: async (platform: Platform, deviceId: string, pageable?: Pageable) => {
+        const params = { ...pageable };
+        const response = await apiClient.get<DeviceCertificateList>(`/${platform}/devices/${deviceId}/certificates`, { params });
+        return response.data;
+    },
+
     // Commands
     rebootDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceReboot) => {
         let body: any = {};
         if (platform === 'ios') {
             body = {
-                commandReferenceId: (payload as any)?.commandReferenceId || generateUUID(),
+                commandReferenceId: (payload as any)?.commandReferenceId,
                 deviceType: 'ActionIosDeviceReboot',
                 notifyUser: (payload as any)?.notifyUser
             } as ActionIosDeviceReboot;
@@ -79,7 +108,7 @@ export const DeviceService = {
         let body: any = {};
         if (platform === 'ios') {
             body = {
-                commandReferenceId: (payload as any)?.commandReferenceId || generateUUID(),
+                commandReferenceId: (payload as any)?.commandReferenceId,
                 deviceActionType: 'ActionIosDeviceFactoryReset',
                 preserveDataPlan: (payload as any)?.preserveDataPlan,
                 disallowProximitySetup: (payload as any)?.disallowProximitySetup,
@@ -98,7 +127,7 @@ export const DeviceService = {
         let body: any = {};
         if (platform === 'ios') {
             body = {
-                commandReferenceId: (payload as any)?.commandReferenceId || generateUUID(),
+                commandReferenceId: (payload as any)?.commandReferenceId,
                 deviceActionType: 'ActionIosDeviceLock',
                 message: (payload as any)?.message,
                 phoneNumber: (payload as any)?.phoneNumber,
@@ -113,6 +142,60 @@ export const DeviceService = {
         await apiClient.post(`/${platform}/devices/${deviceId}/commands/lock`, body);
     },
 
+    enableLostMode: async (platform: Platform, deviceId: string, payload?: ActionEnableLostMode) => {
+        let body: any = {};
+        if (platform === 'ios') {
+            const iosPayload = payload as ActionIosEnableLostMode;
+            body = {
+                commandReferenceId: iosPayload?.commandReferenceId,
+                deviceActionType: 'ActionIosEnableLostMode',
+                Message: iosPayload?.Message,
+                PhoneNumber: iosPayload?.PhoneNumber,
+                Footnote: iosPayload?.Footnote,
+                RequestRequiresNetworkTether: iosPayload?.RequestRequiresNetworkTether
+            } as ActionIosEnableLostMode;
+        } else if (platform === 'android') {
+            body = {
+                deviceActionType: 'ActionAndroidEnableLostMode'
+            } as ActionAndroidEnableLostMode;
+        }
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/enableLostMode`, body);
+    },
+
+    disableLostMode: async (platform: Platform, deviceId: string, payload?: ActionDisableLostMode) => {
+        let body: any = {};
+        if (platform === 'ios') {
+            const iosPayload = payload as ActionIosDisableLostMode;
+            body = {
+                commandReferenceId: iosPayload?.commandReferenceId,
+                deviceActionType: 'ActionIosDisableLostMode'
+            } as ActionIosDisableLostMode;
+        } else if (platform === 'android') {
+            body = {
+                deviceActionType: 'ActionAndroidDisableLostMode'
+            } as ActionAndroidDisableLostMode;
+        }
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/disableLostMode`, body);
+    },
+
+    playLostModeSound: async (platform: Platform, deviceId: string, payload?: ActionPlayLostModeSound) => {
+        let body: any = {};
+        if (platform === 'ios') {
+            const iosPayload = payload as ActionIosPlayLostModeSound;
+            body = {
+                commandReferenceId: iosPayload?.commandReferenceId,
+                deviceActionType: 'ActionIosPlayLostModeSound',
+                RequestRequiresNetworkTether: iosPayload?.RequestRequiresNetworkTether
+            } as ActionIosPlayLostModeSound;
+        } else if (platform === 'android') {
+            body = {
+                deviceActionType: 'ActionAndroidPlayLostModeSound'
+            } as ActionAndroidPlayLostModeSound;
+        }
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/playLostModeSound`, body);
+    },
+
+
     // default actions
     syncDevice: async (platform: Platform, deviceId: string) => {
         await apiClient.post(`/${platform}/devices/${deviceId}/actions/sync`);
@@ -124,17 +207,17 @@ export const DeviceService = {
 
     // iOS Specific Commands
     removePassCode: async (deviceId: string) => {
-        // Spec requires a body with commandreferenceId usually, but let's check if it's optional in strict mode or if we need to gen UUID
+        // Spec required a body with commandreferenceId usually, but let's check if it's optional in strict mode or if we need to gen UUID
         // For now, assuming empty object or simple call if backend handles it, but definitions say required.
         // Let's pass a dummy for now as many implementations do this automatically or we'll add uuid lib.
         // Actually for this call, let's just do empty object as per previous code unless strictly required by client validation.
         // Spec said required `commandreferenceId`.
-        const payload = { commandreferenceId: generateUUID() };
+        const payload = {};
         await apiClient.post(`/ios/devices/${deviceId}/commands/removePassCode`, payload);
     },
 
     removeRestrictionPassword: async (deviceId: string) => {
-        const payload = { commandreferenceId: generateUUID() };
+        const payload = {};
         await apiClient.post(`/ios/devices/${deviceId}/commands/removeRestrictionPassword`, payload);
     },
 
