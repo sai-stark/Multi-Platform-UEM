@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Application, ApplicationService, AppActionType } from '@/api/services/applications';
+import { IosApplication, AppRequest } from '@/types/application';
+import { ITunesSearchService, ITunesSearchResult } from '@/api/services/itunesSearch';
 // Commented out: Original AddApplicationDialog import
 // import { AddApplicationDialog } from '@/components/applications/AddApplicationDialog';
 import { Platform } from '@/types/models';
@@ -21,9 +23,15 @@ import {
   Monitor,
   Loader2,
   AlertCircle,
-  Eye
+  Eye,
+  Search,
+  Star,
+  ExternalLink,
+  Link2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator
@@ -189,6 +197,15 @@ const Applications = () => {
     open: false,
     app: null
   });
+
+  // iOS-specific state
+  const [iosApplications, setIosApplications] = useState<IosApplication[]>([]);
+  const [iosAppUrl, setIosAppUrl] = useState('');
+  const [iosRegistering, setIosRegistering] = useState(false);
+  const [itunesSearchTerm, setItunesSearchTerm] = useState('');
+  const [itunesSearchResults, setItunesSearchResults] = useState<ITunesSearchResult[]>([]);
+  const [itunesSearching, setItunesSearching] = useState(false);
+  const [iosAddMode, setIosAddMode] = useState<'url' | 'search'>('search');
 
   // Iframe-related state
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
@@ -528,7 +545,14 @@ const Applications = () => {
     setLoading(true);
     try {
       const response = await ApplicationService.getApplications(platform);
-      setApplications(response.content || []);
+      if (platform === 'ios') {
+        // Cast to IosApplication[] for iOS platform
+        setIosApplications((response.content || []) as unknown as IosApplication[]);
+        setApplications([]);
+      } else {
+        setApplications(response.content || []);
+        setIosApplications([]);
+      }
     } catch (error) {
       console.error('Failed to fetch applications:', error);
       toast({
@@ -544,6 +568,70 @@ const Applications = () => {
   useEffect(() => {
     fetchApplications();
   }, [platform]);
+
+  // iOS: Register app via App Store URL
+  const handleRegisterIosApp = async () => {
+    if (!iosAppUrl.trim()) {
+      toast({ title: 'Error', description: 'Please enter an App Store URL', variant: 'destructive' });
+      return;
+    }
+    setIosRegistering(true);
+    try {
+      await ApplicationService.registerApplication('ios', { identifier: iosAppUrl.trim() });
+      toast({ title: 'Success', description: 'iOS application registered successfully' });
+      setIosAppUrl('');
+      setAddDialogOpen(false);
+      fetchApplications();
+    } catch (error) {
+      console.error('Failed to register iOS app:', error);
+      toast({ title: 'Error', description: 'Failed to register iOS application', variant: 'destructive' });
+    } finally {
+      setIosRegistering(false);
+    }
+  };
+
+  // iOS: Register app from iTunes search result
+  const handleRegisterFromSearch = async (result: ITunesSearchResult) => {
+    const url = `https://apps.apple.com/app/id${result.trackId}`;
+    setIosRegistering(true);
+    try {
+      await ApplicationService.registerApplication('ios', { identifier: url });
+      toast({ title: 'Success', description: `${result.trackName} registered successfully` });
+      setItunesSearchTerm('');
+      setItunesSearchResults([]);
+      setAddDialogOpen(false);
+      fetchApplications();
+    } catch (error) {
+      console.error('Failed to register iOS app:', error);
+      toast({ title: 'Error', description: `Failed to register ${result.trackName}`, variant: 'destructive' });
+    } finally {
+      setIosRegistering(false);
+    }
+  };
+
+  // iOS: iTunes search with debounce
+  const itunesSearchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const handleItunesSearch = (term: string) => {
+    setItunesSearchTerm(term);
+    if (itunesSearchTimerRef.current) {
+      clearTimeout(itunesSearchTimerRef.current);
+    }
+    if (term.trim().length < 2) {
+      setItunesSearchResults([]);
+      return;
+    }
+    itunesSearchTimerRef.current = setTimeout(async () => {
+      setItunesSearching(true);
+      try {
+        const results = await ITunesSearchService.searchApps(term.trim());
+        setItunesSearchResults(results);
+      } catch (error) {
+        console.error('iTunes search error:', error);
+      } finally {
+        setItunesSearching(false);
+      }
+    }, 400);
+  };
 
   // Handle delete
   const handleDelete = async () => {
@@ -631,14 +719,15 @@ const Applications = () => {
   };
 
   // Stats
+  const currentApps = platform === 'ios' ? iosApplications : applications;
   const stats = {
-    total: applications.length,
+    total: currentApps.length,
     mandatory: applications.filter(a => a.action === 'MANDATORY').length,
     optional: applications.filter(a => a.action === 'OPTIONAL').length,
     blocked: applications.filter(a => a.action === 'BLOCKED').length,
   };
 
-  // Table columns
+  // Android/generic table columns
   const columns: Column<Application>[] = [
     {
       key: 'name',
@@ -706,7 +795,83 @@ const Applications = () => {
     },
   ];
 
-  // Row actions
+  // iOS table columns
+  const iosColumns: Column<IosApplication>[] = [
+    {
+      key: 'name',
+      header: 'Application',
+      accessor: (item) => item.trackName || item.name,
+      sortable: true,
+      searchable: true,
+      render: (_, item) => (
+        <div className="flex items-center gap-3">
+          {item.artworkUrl60 || item.artworkUrl100 ? (
+            <img 
+              src={item.artworkUrl60 || item.artworkUrl100} 
+              alt="" 
+              className="w-10 h-10 rounded-lg"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+              <Apple className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+            </div>
+          )}
+          <div>
+            <p className="font-medium text-foreground">{item.trackName || item.name}</p>
+            <p className="text-xs text-muted-foreground font-mono">{item.bundleId}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'version',
+      header: 'Version',
+      accessor: (item) => item.version || '-',
+      sortable: true,
+      render: (value) => <span className="font-mono text-sm">{value}</span>,
+    },
+    {
+      key: 'sellerName',
+      header: 'Seller',
+      accessor: (item) => item.sellerName || '-',
+      sortable: true,
+    },
+    {
+      key: 'primaryGenreName',
+      header: 'Category',
+      accessor: (item) => item.primaryGenreName || '-',
+      sortable: true,
+      render: (value) => value !== '-' ? (
+        <Badge variant="outline" className="text-xs">{value}</Badge>
+      ) : <span className="text-muted-foreground">-</span>,
+    },
+    {
+      key: 'averageUserRating',
+      header: 'Rating',
+      accessor: (item) => item.averageUserRating ?? '-',
+      sortable: true,
+      render: (value) => value !== '-' ? (
+        <div className="flex items-center gap-1">
+          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+          <span className="text-sm font-medium">{Number(value).toFixed(1)}</span>
+        </div>
+      ) : <span className="text-muted-foreground">-</span>,
+    },
+    {
+      key: 'enrollmentStatus',
+      header: 'Status',
+      accessor: (item) => item.enrollmentStatus || 'REGISTERED',
+      sortable: true,
+      render: (value) => (
+        <Badge variant={value === 'REGISTERED' ? 'default' : 'secondary'} className="text-xs">
+          {value}
+        </Badge>
+      ),
+    },
+  ];
+
+  // Row actions (Android/generic)
   const rowActions = (app: Application) => (
     <>
       <DropdownMenuItem onClick={() => handleSetAction(app, 'MANDATORY')}>
@@ -735,6 +900,22 @@ const Applications = () => {
         <Trash2 className="w-4 h-4 mr-2" />
         Delete
       </DropdownMenuItem>
+    </>
+  );
+
+  // iOS row actions
+  const iosRowActions = (app: IosApplication) => (
+    <>
+      <DropdownMenuItem onClick={() => navigate(`/applications/ios/${app.id}`)}>
+        <Eye className="w-4 h-4 mr-2" />
+        View Details
+      </DropdownMenuItem>
+      {app.trackViewUrl && (
+        <DropdownMenuItem onClick={() => window.open(app.trackViewUrl, '_blank')}>
+          <ExternalLink className="w-4 h-4 mr-2" />
+          View on App Store
+        </DropdownMenuItem>
+      )}
     </>
   );
 
@@ -857,18 +1038,33 @@ const Applications = () => {
 
         {/* Applications Table */}
         <div className="rounded-md border bg-card shadow-sm p-4">
-          <DataTable
-            data={applications}
-            columns={columns}
-            loading={loading}
-            globalSearchPlaceholder="Search applications..."
-            emptyMessage={loading ? "Loading applications..." : "No applications found."}
-            rowActions={rowActions}
-            defaultPageSize={10}
-            showExport={true}
-            exportTitle="Applications Report"
-            exportFilename="applications"
-          />
+          {platform === 'ios' ? (
+            <DataTable
+              data={iosApplications}
+              columns={iosColumns}
+              loading={loading}
+              globalSearchPlaceholder="Search iOS applications..."
+              emptyMessage={loading ? "Loading applications..." : "No iOS applications found. Click 'Add Application' to register apps."}
+              rowActions={iosRowActions}
+              defaultPageSize={10}
+              showExport={true}
+              exportTitle="iOS Applications Report"
+              exportFilename="ios-applications"
+            />
+          ) : (
+            <DataTable
+              data={applications}
+              columns={columns}
+              loading={loading}
+              globalSearchPlaceholder="Search applications..."
+              emptyMessage={loading ? "Loading applications..." : "No applications found."}
+              rowActions={rowActions}
+              defaultPageSize={10}
+              showExport={true}
+              exportTitle="Applications Report"
+              exportFilename="applications"
+            />
+          )}
         </div>
 
         {/* Delete Confirmation Dialog */}
@@ -892,10 +1088,12 @@ const Applications = () => {
         {/* Add Application Dialog - Platform Aware */}
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogContent className={cn(
-            "overflow-y-auto",
+            "overflow-y-auto flex flex-col",
             platform === 'android' 
-              ? "w-[80vw] max-w-[80vw] h-[90vh] max-h-[90vh]" 
-              : "sm:max-w-[500px]"
+              ? "w-[80vw] max-w-[80vw] max-h-[90vh]" 
+              : platform === 'ios'
+                ? "w-[70vw] max-w-[70vw] max-h-[85vh]"
+                : "sm:max-w-[500px]"
           )}>
             <DialogHeader>
               <DialogTitle>
@@ -917,7 +1115,7 @@ const Applications = () => {
             {/* Platform-specific content */}
             {platform === 'android' ? (
               /* Android: Google Play for Work Container */
-              <div className="space-y-4">
+              <div className="flex-1 flex flex-col space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Google Play for Work</Label>
@@ -1038,37 +1236,146 @@ const Applications = () => {
               </div>
             </div>
             ) : platform === 'ios' ? (
-              /* iOS: App Store / IPA Upload Interface */
-              <div className="space-y-4">
-                <div className="border border-border rounded-lg bg-muted/30 p-6">
-                  <div className="flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                      <Apple className="w-8 h-8 text-muted-foreground" />
-                    </div>
+              /* iOS: App Store URL + iTunes Search */
+              <div className="flex-1 flex flex-col space-y-4">
+                {/* Mode Toggle */}
+                <div className="flex gap-2 border-b pb-3">
+                  <Button
+                    variant={iosAddMode === 'search' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setIosAddMode('search')}
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Search iTunes
+                  </Button>
+                  <Button
+                    variant={iosAddMode === 'url' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setIosAddMode('url')}
+                  >
+                    <Link2 className="w-4 h-4 mr-2" />
+                    App Store URL
+                  </Button>
+                </div>
+
+                {iosAddMode === 'url' ? (
+                  /* URL Input Mode */
+                  <div className="space-y-3">
                     <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        iOS App Management
-                      </h3>
-                      <p className="text-sm text-muted-foreground max-w-sm">
-                        iOS applications can be managed through Apple Business Manager 
-                        or by uploading enterprise IPA files directly.
+                      <Label>App Store URL</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="https://apps.apple.com/us/app/example/id123456789"
+                          value={iosAppUrl}
+                          onChange={(e) => setIosAppUrl(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          onClick={handleRegisterIosApp}
+                          disabled={!iosAppUrl.trim() || iosRegistering}
+                        >
+                          {iosRegistering ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Register'
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Paste the full App Store URL for the iOS application you want to register.
                       </p>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-                      <Button variant="outline" className="flex-1" disabled>
-                        <Package className="w-4 h-4 mr-2" />
-                        Upload IPA
-                      </Button>
-                      <Button variant="outline" className="flex-1" disabled>
-                        <Apple className="w-4 h-4 mr-2" />
-                        App Store
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      iOS application management coming soon
-                    </p>
                   </div>
-                </div>
+                ) : (
+                  /* iTunes Search Mode */
+                  <div className="flex-1 flex flex-col space-y-3">
+                    <div className="space-y-2">
+                      <Label>Search iTunes Store</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search for iOS apps..."
+                          value={itunesSearchTerm}
+                          onChange={(e) => handleItunesSearch(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Search Results */}
+                    {itunesSearching && (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                        <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
+                      </div>
+                    )}
+
+                    {!itunesSearching && itunesSearchResults.length > 0 && (
+                      <div className="border rounded-lg">
+                        {itunesSearchResults.map((result) => (
+                          <div
+                            key={result.trackId}
+                            className="flex items-center gap-3 p-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors"
+                          >
+                            {result.artworkUrl60 ? (
+                              <img
+                                src={result.artworkUrl60}
+                                alt=""
+                                className="w-10 h-10 rounded-lg flex-shrink-0"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                                <Apple className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{result.trackName}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {result.sellerName} · {result.primaryGenreName}
+                                {result.formattedPrice && ` · ${result.formattedPrice}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground font-mono truncate">{result.bundleId}</p>
+                            </div>
+                            {result.averageUserRating != null && (
+                              <div className="flex items-center gap-1 flex-shrink-0 mr-2">
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                <span className="text-xs font-medium">{result.averageUserRating.toFixed(1)}</span>
+                              </div>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRegisterFromSearch(result)}
+                              disabled={iosRegistering}
+                              className="flex-shrink-0"
+                            >
+                              {iosRegistering ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Plus className="w-3 h-3 mr-1" />
+                              )}
+                              Add
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {!itunesSearching && itunesSearchTerm.length >= 2 && itunesSearchResults.length === 0 && (
+                      <div className="text-center py-6">
+                        <p className="text-sm text-muted-foreground">No apps found for "{itunesSearchTerm}"</p>
+                      </div>
+                    )}
+
+                    {!itunesSearching && itunesSearchTerm.length < 2 && (
+                      <div className="text-center py-6">
+                        <Apple className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground">Type at least 2 characters to search</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               /* Other platforms placeholder */
@@ -1095,6 +1402,9 @@ const Applications = () => {
                 onClick={() => {
                   setAddDialogOpen(false);
                   setSelectedApps([]);
+                  setIosAppUrl('');
+                  setItunesSearchTerm('');
+                  setItunesSearchResults([]);
                   iframeCreatedRef.current = false;
                 }}
               >

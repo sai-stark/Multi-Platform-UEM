@@ -4,13 +4,18 @@ import {
     PagedResponse,
     Platform
 } from '@/types/models';
+import {
+    IosApplication,
+    ApplicationConfiguration,
+    AppRequest
+} from '@/types/application';
 import apiClient from '../client';
 
 /**
  * ApplicationService - Application tag APIs
  * 
  * Service for Mobile Application Management
- * Contains all APIs tagged with "Application" in OpenAPI spec
+ * Contains all APIs tagged with "Application" and "UEM Apps" in OpenAPI spec
  */
 
 // App Action types
@@ -56,7 +61,7 @@ export interface ApplicationDevice {
     installedAt?: string;
 }
 
-// Extended Application type with versions
+// Extended Application type with versions (Android/generic)
 export interface Application extends MobileApplication {
     versions?: ApplicationVersion[];
     action?: AppActionType;
@@ -107,12 +112,35 @@ export const ApplicationService = {
         return response.data;
     },
 
+    // POST /{platform}/applications - Register Application via identifier (App Store URL)
+    registerApplication: async (
+        platform: Platform,
+        appRequest: AppRequest
+    ): Promise<IosApplication | Application> => {
+        const response = await apiClient.post(
+            `/${platform}/applications`,
+            appRequest
+        );
+        return response.data;
+    },
+
     // GET /{platform}/applications/{applicationId} - Get Mobile Application
     getApplication: async (
         platform: Platform,
         applicationId: string
     ): Promise<Application> => {
         const response = await apiClient.get<Application>(
+            `/${platform}/applications/${applicationId}`
+        );
+        return response.data;
+    },
+
+    // GET /{platform}/applications/{applicationId} - Get iOS Application
+    getIosApplication: async (
+        platform: Platform,
+        applicationId: string
+    ): Promise<IosApplication> => {
+        const response = await apiClient.get<IosApplication>(
             `/${platform}/applications/${applicationId}`
         );
         return response.data;
@@ -170,5 +198,43 @@ export const ApplicationService = {
             action
         );
         return response.data;
+    },
+
+    // ============================================
+    // Application Configuration APIs
+    // ============================================
+
+    // GET /{platform}/applications/{applicationId}/configurations
+    getConfigurations: async (
+        platform: Platform,
+        applicationId: string
+    ): Promise<ApplicationConfiguration[]> => {
+        const response = await apiClient.get<ApplicationConfiguration[]>(
+            `/${platform}/applications/${applicationId}/configurations`
+        );
+        return response.data;
+    },
+
+    // PUT /{platform}/applications/{applicationId}/configurations
+    updateConfigurations: async (
+        platform: Platform,
+        applicationId: string,
+        configurations: ApplicationConfiguration[]
+    ): Promise<IosApplication | Application> => {
+        const response = await apiClient.put(
+            `/${platform}/applications/${applicationId}/configurations`,
+            configurations
+        );
+        return response.data;
+    },
+
+    // DELETE /{platform}/applications/{applicationId}/configurations
+    deleteConfigurations: async (
+        platform: Platform,
+        applicationId: string
+    ): Promise<void> => {
+        await apiClient.delete(
+            `/${platform}/applications/${applicationId}/configurations`
+        );
     },
 };
