@@ -793,35 +793,34 @@ const Applications = () => {
       },
       render: (_, item) => {
         const flagDefs = [
-          { key: 'isEmmApp', label: 'EMM App', value: item.isEmmApp, icon: Bot, activeColor: 'text-blue-500 bg-blue-500/15', inactiveColor: 'text-muted-foreground/30' },
-          { key: 'isEmmAgent', label: 'EMM Agent', value: item.isEmmAgent, icon: Shield, activeColor: 'text-purple-500 bg-purple-500/15', inactiveColor: 'text-muted-foreground/30' },
-          { key: 'isLauncher', label: 'Launcher', value: item.isLauncher, icon: Layout, activeColor: 'text-green-500 bg-green-500/15', inactiveColor: 'text-muted-foreground/30' },
-          { key: 'isMandatory', label: 'Mandatory', value: item.isMandatory, icon: CheckCircle, activeColor: 'text-amber-500 bg-amber-500/15', inactiveColor: 'text-muted-foreground/30' },
-          { key: 'isBlocked', label: 'Blocked', value: item.isBlocked, icon: Ban, activeColor: 'text-red-500 bg-red-500/15', inactiveColor: 'text-muted-foreground/30' },
+          { key: 'isEmmApp', label: 'EMM App', value: item.isEmmApp, activeImg: getAssetUrl('/Assets/App_True.png'), inactiveImg: getAssetUrl('/Assets/App.png') },
+          { key: 'isEmmAgent', label: 'EMM Agent', value: item.isEmmAgent, activeImg: getAssetUrl('/Assets/Agent_True.png'), inactiveImg: getAssetUrl('/Assets/Agent.png') },
+          { key: 'isLauncher', label: 'Launcher', value: item.isLauncher, activeImg: getAssetUrl('/Assets/Launcher_True.png'), inactiveImg: getAssetUrl('/Assets/Launcher.png') },
+          { key: 'isMandatory', label: 'Mandatory', value: item.isMandatory, activeImg: getAssetUrl('/Assets/Mandatory_True.png'), inactiveImg: getAssetUrl('/Assets/Mandatory.png') },
+          { key: 'isBlocked', label: 'Blocked', value: item.isBlocked, activeImg: getAssetUrl('/Assets/Block_True.png'), inactiveImg: getAssetUrl('/Assets/Block.png') },
         ];
         return (
           <TooltipProvider delayDuration={200}>
             <div className="flex items-center gap-1">
-              {flagDefs.map((flag) => {
-                const FlagIcon = flag.icon;
-                return (
-                  <Tooltip key={flag.key}>
-                    <TooltipTrigger asChild>
-                      <div
+              {flagDefs.map((flag) => (
+                <Tooltip key={flag.key}>
+                  <TooltipTrigger asChild>
+                    <div className="inline-flex items-center justify-center w-7 h-7 rounded-md transition-opacity">
+                      <img
+                        src={flag.value ? flag.activeImg : flag.inactiveImg}
+                        alt={flag.label}
                         className={cn(
-                          'inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors',
-                          flag.value ? flag.activeColor : flag.inactiveColor
+                          'w-5 h-5 object-contain',
+                          !flag.value && 'opacity-30'
                         )}
-                      >
-                        <FlagIcon className="w-3.5 h-3.5" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p className="text-xs">{flag.label}: {flag.value ? 'Yes' : 'No'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs">{flag.label}: {flag.value ? 'Yes' : 'No'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
             </div>
           </TooltipProvider>
         );
