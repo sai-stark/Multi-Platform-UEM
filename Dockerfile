@@ -4,6 +4,10 @@ FROM nginx:alpine
 # Copy the build output to replace the default nginx contents.
 COPY dist/ /usr/share/nginx/html
 
+# Fix permissions so nginx can read the files
+RUN chmod -R 755 /usr/share/nginx/html && \
+    find /usr/share/nginx/html -type f -exec chmod 644 {} \;
+
 # Copy the nginx config
 COPY docker/default.conf.template /etc/nginx/templates/default.conf.template
 

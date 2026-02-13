@@ -162,11 +162,11 @@ export const ApplicationService = {
     setApplicationAction: async (
         platform: Platform,
         applicationId: string,
-        action: AppAction
+        body: Record<string, any>
     ): Promise<Application> => {
         const response = await apiClient.post<Application>(
             `/${platform}/applications/${applicationId}/:action`,
-            action
+            body
         );
         return response.data;
     },

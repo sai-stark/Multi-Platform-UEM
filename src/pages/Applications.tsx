@@ -27,7 +27,10 @@ import {
   Search,
   Star,
   ExternalLink,
-  Link2
+  Link2,
+  Ban,
+  Layout,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +49,12 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -660,8 +669,23 @@ const Applications = () => {
   const handleSetAction = async (app: Application, action: AppActionType) => {
     if (!app.id) return;
     
+    // Build the correct request body based on action type
+    let body: Record<string, any>;
+    switch (action) {
+      case 'MANDATORY':
+        body = { isMandatory: true };
+        break;
+      case 'BLOCKED':
+        body = { isBlocked: true };
+        break;
+      case 'OPTIONAL':
+      default:
+        body = { isMandatory: false, isBlocked: false };
+        break;
+    }
+
     try {
-      await ApplicationService.setApplicationAction(platform, app.id, { action });
+      await ApplicationService.setApplicationAction(platform, app.id, body);
       toast({
         title: 'Success',
         description: `${app.name} is now ${action.toLowerCase()}`
@@ -731,37 +755,88 @@ const Applications = () => {
   const columns: Column<Application>[] = [
     {
       key: 'name',
-      header: 'Application',
+      header: 'Name',
       accessor: (item) => item.name,
       sortable: true,
       searchable: true,
       render: (_, item) => (
-        <div className="flex items-center gap-3">
-          {item.iconUrl ? (
-            <img 
-              src={item.iconUrl} 
-              alt="" 
-              className="w-10 h-10 rounded-lg"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-              <Package className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
-            </div>
-          )}
-          <div>
-            <p className="font-medium text-foreground">{item.name}</p>
-            <p className="text-xs text-muted-foreground">{item.packageName}</p>
-          </div>
-        </div>
+        <span
+          className="font-medium text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors"
+          onClick={() => navigate(`/applications/${platform}/${item.id}`)}
+        >
+          {item.name}
+        </span>
       ),
     },
     {
-      key: 'version',
-      header: 'Version',
-      accessor: (item) => item.version || '-',
+      key: 'packageName',
+      header: 'Package Name',
+      accessor: (item) => item.packageName || '-',
       sortable: true,
-      render: (value) => <span className="font-mono text-sm">{value}</span>,
+      searchable: true,
+      render: (value) => (
+        <span className="font-mono text-xs text-muted-foreground">{value}</span>
+      ),
+    },
+    {
+      key: 'flags',
+      header: 'Flags',
+      accessor: (item) => {
+        const flags = [
+          item.isEmmApp && 'EMM App',
+          item.isEmmAgent && 'EMM Agent',
+          item.isLauncher && 'Launcher',
+          item.isMandatory && 'Mandatory',
+          item.isBlocked && 'Blocked',
+        ].filter(Boolean);
+        return flags.length > 0 ? flags.join(', ') : 'None';
+      },
+      render: (_, item) => {
+        const flagDefs = [
+          { key: 'isEmmApp', label: 'EMM App', value: item.isEmmApp, icon: Bot, activeColor: 'text-blue-500 bg-blue-500/15', inactiveColor: 'text-muted-foreground/30' },
+          { key: 'isEmmAgent', label: 'EMM Agent', value: item.isEmmAgent, icon: Shield, activeColor: 'text-purple-500 bg-purple-500/15', inactiveColor: 'text-muted-foreground/30' },
+          { key: 'isLauncher', label: 'Launcher', value: item.isLauncher, icon: Layout, activeColor: 'text-green-500 bg-green-500/15', inactiveColor: 'text-muted-foreground/30' },
+          { key: 'isMandatory', label: 'Mandatory', value: item.isMandatory, icon: CheckCircle, activeColor: 'text-amber-500 bg-amber-500/15', inactiveColor: 'text-muted-foreground/30' },
+          { key: 'isBlocked', label: 'Blocked', value: item.isBlocked, icon: Ban, activeColor: 'text-red-500 bg-red-500/15', inactiveColor: 'text-muted-foreground/30' },
+        ];
+        return (
+          <TooltipProvider delayDuration={200}>
+            <div className="flex items-center gap-1">
+              {flagDefs.map((flag) => {
+                const FlagIcon = flag.icon;
+                return (
+                  <Tooltip key={flag.key}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          'inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors',
+                          flag.value ? flag.activeColor : flag.inactiveColor
+                        )}
+                      >
+                        <FlagIcon className="w-3.5 h-3.5" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-xs">{flag.label}: {flag.value ? 'Yes' : 'No'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
+        );
+      },
+    },
+    {
+      key: 'description',
+      header: 'Description',
+      accessor: (item) => item.description || '-',
+      sortable: true,
+      render: (value) => (
+        <p className="text-sm text-muted-foreground max-w-[250px] truncate" title={String(value)}>
+          {value}
+        </p>
+      ),
     },
     {
       key: 'versions',
@@ -770,29 +845,31 @@ const Applications = () => {
       sortable: true,
       align: 'center',
       render: (value) => (
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-sm font-medium">
+        <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium">
           {value}
         </span>
       ),
     },
     {
-      key: 'action',
-      header: 'Action',
-      accessor: (item) => item.action || 'OPTIONAL',
+      key: 'author',
+      header: 'Author',
+      accessor: (item) => item.author || '-',
       sortable: true,
-      filterable: true,
-      render: (_, item) => {
-        const action = item.action || 'OPTIONAL';
-        const config = actionConfig[action];
-        const ActionIcon = config.icon;
-        return (
-          <span className={cn('status-badge', config.className)}>
-            <ActionIcon className="w-3.5 h-3.5" aria-hidden="true" />
-            {config.label}
-          </span>
-        );
-      },
+      render: (value) => (
+        <span className="text-sm">{value}</span>
+      ),
     },
+    // {
+    //   key: 'contentRating',
+    //   header: 'Content Rating',
+    //   accessor: (item) => item.contentRating || '-',
+    //   sortable: true,
+    //   render: (value) => (
+    //     value !== '-' ? (
+    //       <Badge variant="outline" className="text-xs">{String(value).replace(/_/g, ' ')}</Badge>
+    //     ) : <span className="text-muted-foreground">-</span>
+    //   ),
+    // },
   ];
 
   // iOS table columns
@@ -886,11 +963,7 @@ const Applications = () => {
         <AlertTriangle className="w-4 h-4 mr-2 text-destructive" />
         Block App
       </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem onClick={() => navigate(`/applications/${platform}/${app.id}`)}>
-        <Eye className="w-4 h-4 mr-2" />
-        View Details
-      </DropdownMenuItem>
+
       <DropdownMenuItem>Manage Versions</DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem 
