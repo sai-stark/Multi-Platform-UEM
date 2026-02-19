@@ -412,18 +412,21 @@ export default function Enrollment() {
         {/* Filters */}
         <div className="mt-6 flex flex-col md:flex-row gap-4 justify-between items-center">
           {/* Profile Selection */}
-          <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
-            <SelectTrigger id="profile-filter" className="w-[300px] bg-background" disabled={loading || profiles.length === 0}>
-              <SelectValue placeholder={loading ? "Loading..." : "Select Profile"} />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              {profiles.map((profile) => (
-                <SelectItem key={profile.id} value={profile.id}>
-                  {profile.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">Select Profile:</span>
+            <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
+              <SelectTrigger id="profile-filter" className="w-full md:w-[300px] bg-background" disabled={loading || profiles.length === 0}>
+                <SelectValue placeholder={loading ? "Loading..." : "Select Profile"} />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {profiles.map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {loading && <span className="text-sm text-muted-foreground animate-pulse">Fetching profiles...</span>}
         </div>
