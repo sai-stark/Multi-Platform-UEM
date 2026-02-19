@@ -194,14 +194,7 @@ export default function Enrollment() {
 
   const handleCopyEnrollmentData = async () => {
     try {
-      const data = {
-        platform: selectedPlatform,
-        profile: currentProfile?.name,
-        enrollmentUrl: getEnrollmentUrl(),
-        timestamp: new Date().toISOString(),
-      };
-
-      const textToCopy = JSON.stringify(data, null, 2);
+      const textToCopy = getEnrollmentUrl();
 
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(textToCopy);
