@@ -5,10 +5,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { IosMdmConfiguration, IosScepConfiguration, IosWebContentFilterPolicy, IosGlobalHttpProxyPolicy, IosVpnPolicy, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosHomeScreenLayoutPolicy } from "@/types/ios";
+import { IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
 import {
     AndroidProfileRestrictions,
     ApplicationPolicy,
+    CommonSettingsPolicy,
+    DeviceThemePolicy,
+    EnrollmentPolicy,
     IosMailPolicy,
     IosPasscodeRestrictionPolicy,
     IosWiFiConfiguration,
@@ -36,9 +39,9 @@ import {
     AndroidApplicationPolicy,
     PasscodePolicy as AndroidPasscodePolicy,
     AndroidWebApplicationPolicy,
-    CommonSettingsPolicy,
-    DeviceThemePolicy,
-    EnrollmentPolicy,
+    CommonSettingsPolicy as CommonSettingsPolicyEditor,
+    DeviceThemePolicy as DeviceThemePolicyEditor,
+    EnrollmentPolicy as EnrollmentPolicyEditor,
 } from "@/components/profiles/AndroidPolicies";
 import {
     ConnectivityRestriction,
@@ -56,20 +59,20 @@ import {
 
 // iOS Policy Imports
 import { ApplicationPolicyEditor } from "@/components/profiles/IosPolicies/ApplicationPolicy";
+import { GlobalHttpProxyPolicy as GlobalHttpProxyPolicyEditor } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
+import { HomeScreenLayoutPolicy as HomeScreenLayoutPolicyEditor } from "@/components/profiles/IosPolicies/HomeScreenLayoutPolicy";
 import { LockScreenMessagePolicy } from "@/components/profiles/IosPolicies/LockScreenMessagePolicy";
 import { MailPolicy } from "@/components/profiles/IosPolicies/MailPolicy";
 import { NotificationPolicy } from "@/components/profiles/IosPolicies/NotificationPolicy";
 import { PasscodePolicy } from "@/components/profiles/IosPolicies/PasscodePolicy";
-import { RestrictionsPolicy } from "@/components/profiles/IosPolicies/RestrictionsPolicy";
-import { WebApplicationPolicyEditor } from "@/components/profiles/IosPolicies/WebApplicationPolicy";
-import { WifiPolicy } from "@/components/profiles/IosPolicies/WifiPolicy";
-import { WebContentFilterPolicy as WebContentFilterPolicyEditor } from "@/components/profiles/IosPolicies/WebContentFilterPolicy";
-import { GlobalHttpProxyPolicy as GlobalHttpProxyPolicyEditor } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
-import { VpnPolicy as VpnPolicyEditor } from "@/components/profiles/IosPolicies/VpnPolicy";
 import { PerAppVpnPolicy as PerAppVpnPolicyEditor } from "@/components/profiles/IosPolicies/PerAppVpnPolicy";
 import { PerDomainVpnPolicy as PerDomainVpnPolicyEditor } from "@/components/profiles/IosPolicies/PerDomainVpnPolicy";
 import { RelayPolicy as RelayPolicyEditor } from "@/components/profiles/IosPolicies/RelayPolicy";
-import { HomeScreenLayoutPolicy as HomeScreenLayoutPolicyEditor } from "@/components/profiles/IosPolicies/HomeScreenLayoutPolicy";
+import { RestrictionsPolicy } from "@/components/profiles/IosPolicies/RestrictionsPolicy";
+import { VpnPolicy as VpnPolicyEditor } from "@/components/profiles/IosPolicies/VpnPolicy";
+import { WebApplicationPolicyEditor } from "@/components/profiles/IosPolicies/WebApplicationPolicy";
+import { WebContentFilterPolicy as WebContentFilterPolicyEditor } from "@/components/profiles/IosPolicies/WebContentFilterPolicy";
+import { WifiPolicy } from "@/components/profiles/IosPolicies/WifiPolicy";
 import { MdmPolicyView, ScepPolicyView } from "@/components/profiles/IosPolicyCards";
 
 interface PolicyEditDialogProps {
@@ -97,6 +100,9 @@ interface PolicyEditDialogProps {
     perDomainVpnPolicy?: IosPerDomainVpnPolicy;
     relayPolicy?: IosRelayPolicy;
     homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
+    commonSettingsPolicy?: CommonSettingsPolicy;
+    deviceThemePolicy?: DeviceThemePolicy;
+    enrollmentPolicy?: EnrollmentPolicy;
     onSave: () => void;
 }
 
@@ -436,28 +442,28 @@ export function PolicyEditDialog({
                         />
                     )}
                     {activePolicyType === "commonSettings" && (
-                        <CommonSettingsPolicy
+                        <CommonSettingsPolicyEditor
                             platform={platform}
                             profileId={profileId}
-                            initialData={undefined}
+                            initialData={commonSettingsPolicy}
                             onSave={onSave}
                             onCancel={handleCancel}
                         />
                     )}
                     {activePolicyType === "deviceTheme" && (
-                        <DeviceThemePolicy
+                        <DeviceThemePolicyEditor
                             platform={platform}
                             profileId={profileId}
-                            initialData={undefined}
+                            initialData={deviceThemePolicy}
                             onSave={onSave}
                             onCancel={handleCancel}
                         />
                     )}
                     {activePolicyType === "enrollment" && (
-                        <EnrollmentPolicy
+                        <EnrollmentPolicyEditor
                             platform={platform}
                             profileId={profileId}
-                            initialData={undefined}
+                            initialData={enrollmentPolicy}
                             onSave={onSave}
                             onCancel={handleCancel}
                         />

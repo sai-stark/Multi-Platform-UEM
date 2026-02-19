@@ -114,7 +114,6 @@ export default function Enrollment() {
         fetchQrCode(selectedPlatform, currentProfile.id);
         fetchProfileDetails(selectedPlatform, currentProfile.id);
       }
-      setIsQrVisible(false); // Reset QR visibility on profile change
     }
   }, [selectedProfileId, selectedPlatform]); // Depend on IDs, not the object itself to avoid loops if object references change
 
@@ -172,6 +171,8 @@ export default function Enrollment() {
       const data = await EnrollmentService.getQrCode(platform, profileId);
       if (platform === 'ios' && data && typeof data === 'object' && 'apple.enrollment.url' in data) {
         setQrCodeData(data['apple.enrollment.url']);
+      } else if (platform === 'android' && data && typeof data === 'object' && 'enrollmentUrl' in data) {
+        setQrCodeData(data['enrollmentUrl']);
       } else {
         setQrCodeData(data);
       }
@@ -185,7 +186,7 @@ export default function Enrollment() {
   };
 
   const getEnrollmentUrl = () => {
-    if (selectedPlatform === 'ios' && typeof qrCodeData === 'string') {
+    if ((selectedPlatform === 'ios' || selectedPlatform === 'android') && typeof qrCodeData === 'string') {
       return qrCodeData;
     }
     return `https://enroll.cdot.in/${selectedPlatform}/${currentProfile?.id}`;
@@ -441,46 +442,37 @@ export default function Enrollment() {
                       <QrCode className="w-5 h-5" aria-hidden="true" />
                       {t('enrollment.qrCode')}
                     </h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={!isQrVisible}>
-                          <ZoomIn className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-lg">
-                        <DialogHeader>
-                          <DialogTitle>Enrollment QR Code</DialogTitle>
-                        </DialogHeader>
-                        <div className="flex items-center justify-center p-0">
-                          <div className="w-96 h-96 bg-white">
-                            {renderQrContent()}
-                          </div>
-                        </div>
-                        <div className="text-center text-sm text-muted-foreground break-all">
-                          {getEnrollmentUrl()}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
                   </div>
                   <div className="panel__content">
                     <div className="text-center relative">
-                      <div className="relative mx-auto w-48 h-48 rounded-lg overflow-hidden group">
-                        {/* Blurred Container */}
-                        <div className={`w-full h-full transition-all duration-300 ${!isQrVisible ? 'blur-md opacity-50' : ''}`}>
-                          {renderQrContent()}
-                        </div>
-
-                        {/* Generate Button Overlay */}
-                        {!isQrVisible && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-background/20 z-10">
-                            <Button onClick={() => setIsQrVisible(true)}>
-                              Generate QR
-                            </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="relative mx-auto w-48 h-48 rounded-lg overflow-hidden group cursor-pointer transition-transform duration-300 hover:scale-110 shadow-sm hover:shadow-md bg-white p-2">
+                            <div className="w-full h-full">
+                              {renderQrContent()}
+                            </div>
+                            {/* Hover overlay hint */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
+                              <ZoomIn className="w-8 h-8 text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-lg">
+                          <DialogHeader>
+                            <DialogTitle>Enrollment QR Code</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex items-center justify-center p-4">
+                            <div className="w-96 h-96 bg-white">
+                              {renderQrContent()}
+                            </div>
+                          </div>
+                          <div className="text-center text-sm text-muted-foreground break-all px-4">
+                            {getEnrollmentUrl()}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
 
-                      <p className="text-xs text-muted-foreground mt-3 font-mono break-all">
+                      <p className="text-xs text-muted-foreground mt-3 font-mono break-all px-2">
                         {getEnrollmentUrl()}
                       </p>
                     </div>
@@ -491,7 +483,6 @@ export default function Enrollment() {
                         onClick={handleDownloadQR}
                         className="flex-1"
                         variant="outline"
-                        disabled={!isQrVisible}
                       >
                         <Download className="w-4 h-4 mr-2" aria-hidden="true" />
                         {t('enrollment.downloadQR')}

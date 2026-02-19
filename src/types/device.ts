@@ -342,3 +342,71 @@ export interface ActionIosPlayLostModeSound {
 }
 
 export type ActionPlayLostModeSound = ActionAndroidPlayLostModeSound | ActionIosPlayLostModeSound;
+
+// Logout
+export interface ActionAndroidDeviceLogout {
+    deviceType: 'ActionAndroidDeviceLogout';
+}
+
+export interface ActionIosDeviceLogout {
+    deviceType: 'ActionIosDeviceLogout';
+}
+
+export type ActionDeviceLogout = ActionAndroidDeviceLogout | ActionIosDeviceLogout;
+
+// Shutdown
+export interface ActionAndroidDeviceShutdown {
+    deviceType: 'ActionAndroidDeviceShutdown';
+}
+
+export interface ActionIosDeviceShutdown {
+    deviceType: 'ActionIosDeviceShutdown';
+}
+
+export type ActionDeviceShutdown = ActionAndroidDeviceShutdown | ActionIosDeviceShutdown;
+
+// Delete User
+export interface ActionAndroidDeviceDeleteUser {
+    deviceType: 'ActionAndroidDeviceDeleteUser';
+}
+
+export interface ActionIosDeviceDeleteUser {
+    deviceType: 'ActionIosDeviceDeleteUser';
+    userName: string;
+    forceDeletion?: boolean;
+}
+
+export type ActionDeviceDeleteUser = ActionAndroidDeviceDeleteUser | ActionIosDeviceDeleteUser;
+
+// Location Action (for lost mode mostly, but seems reused or similar pattern)
+export interface ActionAndroidDeviceLocation {
+    deviceActionType: 'ActionAndroidDeviceLocation';
+}
+
+export interface ActionIosDeviceLocation {
+    deviceActionType: 'ActionIosDeviceLocation';
+    RequestRequiresNetworkTether?: boolean;
+}
+
+export type ActionDeviceLocation = ActionAndroidDeviceLocation | ActionIosDeviceLocation;
+
+// Location Response
+export interface AndroidDeviceLocation {
+    deviceType: 'AndroidDeviceLocation';
+    Latitude?: number;
+    Longitude?: number;
+}
+
+export interface IosDeviceLocation {
+    deviceType: 'IosDeviceLocation';
+    Latitude?: number;
+    Longitude?: number;
+    Altitude?: number;
+    HorizontalAccuracy?: number;
+    VerticalAccuracy?: number;
+    Course?: number;
+    Speed?: number;
+    Timestamp?: string;
+}
+
+export type DeviceLocationResponse = AndroidDeviceLocation | IosDeviceLocation;

@@ -2,10 +2,17 @@ import { Platform } from './common';
 import {
     IosAcmeConfiguration,
     IosAppNotificationSetting,
+    IosGlobalHttpProxyPolicy,
+    IosHomeScreenLayoutPolicy,
     IosLockScreenMessage,
     IosMailPolicy,
     IosMdmConfiguration,
+    IosPerAppVpnPolicy,
+    IosPerDomainVpnPolicy,
+    IosRelayPolicy,
     IosScepConfiguration,
+    IosVpnPolicy,
+    IosWebContentFilterPolicy,
     IosWiFiConfiguration
 } from './ios';
 import {
@@ -93,6 +100,15 @@ export interface IosFullProfile extends Profile {
     wifiPolicy?: IosWiFiConfiguration;
     lockScreenPolicy?: IosLockScreenMessage;
     applicationPolicies?: IosApplicationPolicy[];
+
+    // Phase 2 Policies
+    webContentFilterPolicy?: IosWebContentFilterPolicy;
+    globalHttpProxyPolicy?: IosGlobalHttpProxyPolicy;
+    vpnPolicy?: IosVpnPolicy;
+    perAppVpnPolicy?: IosPerAppVpnPolicy;
+    perDomainVpnPolicy?: IosPerDomainVpnPolicy;
+    relayPolicy?: IosRelayPolicy;
+    homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
 }
 
 export interface AndroidProfileRestrictions {

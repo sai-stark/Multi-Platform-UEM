@@ -1,19 +1,26 @@
 
 import {
+    ActionAndroidDeviceDeleteUser,
     ActionAndroidDeviceFactoryReset,
     ActionAndroidDeviceLock,
+    ActionAndroidDeviceLogout,
     ActionAndroidDeviceReboot,
+    ActionAndroidDeviceShutdown,
     ActionAndroidDisableLostMode,
     ActionAndroidEnableLostMode,
     ActionAndroidPlayLostModeSound,
+    ActionDeviceDeleteUser,
     ActionDeviceFactoryReset,
     ActionDeviceLock,
     ActionDeviceReboot,
     ActionDisableLostMode,
     ActionEnableLostMode,
+    ActionIosDeviceDeleteUser,
     ActionIosDeviceFactoryReset,
     ActionIosDeviceLock,
+    ActionIosDeviceLogout,
     ActionIosDeviceReboot,
+    ActionIosDeviceShutdown,
     ActionIosDisableLostMode,
     ActionIosEnableLostMode,
     ActionIosPlayLostModeSound,
@@ -21,6 +28,7 @@ import {
     DeviceApplicationList,
     DeviceCertificateList,
     DeviceInfo,
+    DeviceLocationResponse,
     DeviceSecurityInfo,
     FullProfile,
     Pageable,
@@ -219,6 +227,56 @@ export const DeviceService = {
     removeRestrictionPassword: async (deviceId: string) => {
         const payload = {};
         await apiClient.post(`/ios/devices/${deviceId}/commands/removeRestrictionPassword`, payload);
+    },
+
+    // New Commands
+    logoutDevice: async (platform: Platform, deviceId: string) => {
+        let body: any = {};
+        if (platform === 'ios') {
+            body = {
+                deviceType: 'ActionIosDeviceLogout'
+            } as ActionIosDeviceLogout;
+        } else if (platform === 'android') {
+            body = {
+                deviceType: 'ActionAndroidDeviceLogout'
+            } as ActionAndroidDeviceLogout;
+        }
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/logout`, body);
+    },
+
+    shutdownDevice: async (platform: Platform, deviceId: string) => {
+        let body: any = {};
+        if (platform === 'ios') {
+            body = {
+                deviceType: 'ActionIosDeviceShutdown'
+            } as ActionIosDeviceShutdown;
+        } else if (platform === 'android') {
+            body = {
+                deviceType: 'ActionAndroidDeviceShutdown'
+            } as ActionAndroidDeviceShutdown;
+        }
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/shutdown`, body);
+    },
+
+    deleteUser: async (platform: Platform, deviceId: string, payload?: ActionDeviceDeleteUser) => {
+        let body: any = {};
+        if (platform === 'ios') {
+            body = {
+                deviceType: 'ActionIosDeviceDeleteUser',
+                userName: (payload as ActionIosDeviceDeleteUser)?.userName,
+                forceDeletion: (payload as ActionIosDeviceDeleteUser)?.forceDeletion
+            } as ActionIosDeviceDeleteUser;
+        } else if (platform === 'android') {
+            body = {
+                deviceType: 'ActionAndroidDeviceDeleteUser'
+            } as ActionAndroidDeviceDeleteUser;
+        }
+        await apiClient.post(`/${platform}/devices/${deviceId}/commands/delete-user`, body);
+    },
+
+    getDeviceLocation: async (platform: Platform, deviceId: string) => {
+        const response = await apiClient.get<DeviceLocationResponse>(`/${platform}/devices/${deviceId}/commands/deviceLocation`);
+        return response.data;
     },
 
     // APNS

@@ -36,7 +36,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { getAssetUrl } from '@/config/env';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 import { cn } from '@/lib/utils';
-import { DeviceApplicationList, DeviceCertificateItem, DeviceInfo, DeviceSecurityInfo, FullProfile, Platform } from '@/types/models';
+import { DeviceApplicationList, DeviceCertificateItem, DeviceInfo, DeviceLocationResponse, DeviceSecurityInfo, FullProfile, Platform } from '@/types/models';
 import {
     Activity,
     AppWindow,
@@ -52,13 +52,11 @@ import {
     Gauge,
     Globe,
     Layers,
-    Lock,
-    MapPin,
+    Lock, LogOut, MapPin,
     MessagesSquare,
     MoreVertical,
     Network,
-    Power,
-    RefreshCw,
+    Power, PowerOff, RefreshCw,
     ScanBarcode,
     Settings,
     Shield,
@@ -69,8 +67,7 @@ import {
     Tablet,
     Trash2,
     Unlock,
-    User,
-    Volume2,
+    User, UserMinus, Volume2,
     Wifi
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -105,6 +102,14 @@ export default function DeviceDetails() {
         phoneNumber: '',
         footnote: ''
     });
+
+    // Device Location State
+    const [locationData, setLocationData] = useState<DeviceLocationResponse | null>(null);
+    const [showLocationDialog, setShowLocationDialog] = useState(false);
+
+    // Delete User State
+    const [deleteUserDialog, setDeleteUserDialog] = useState(false);
+    const [deleteUserName, setDeleteUserName] = useState('');
 
     const fetchDevice = async () => {
         setLoading(true);
@@ -208,7 +213,56 @@ export default function DeviceDetails() {
             return;
         }
 
+        if (action === 'delete_user') {
+            setDeleteUserDialog(true);
+            setDeleteUserName('');
+            return;
+        }
+
+        if (action === 'get_location') {
+            handleLocationClick();
+            return;
+        }
+
         executeAction(action, label);
+    };
+
+    const handleLocationClick = async () => {
+        if (!device || !device.id) return;
+        toast({ title: "Getting Location", description: "Requesting device location..." });
+        try {
+            const devicePlatform = (device.platform || platform || 'android') as Platform;
+            const data = await DeviceService.getDeviceLocation(devicePlatform, device.id);
+            setLocationData(data);
+            setShowLocationDialog(true);
+            toast({ title: "Location Received", description: "Device location updated." });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to get device location.", variant: "destructive" });
+        }
+    };
+
+    // Helper to execute delete user
+    const executeDeleteUser = async () => {
+        if (!device || !device.id) return;
+
+        toast({ title: "Action Initiated", description: "Sending Delete User command..." });
+
+        try {
+            const devicePlatform = (device.platform || platform || 'android') as Platform;
+            const isIos = devicePlatform === 'ios' || device.deviceType === 'IosDeviceInfo';
+
+            await DeviceService.deleteUser(devicePlatform, device.id, isIos ? {
+                deviceType: 'ActionIosDeviceDeleteUser',
+                userName: deleteUserName
+            } : { deviceType: 'ActionAndroidDeviceDeleteUser' });
+
+            toast({ title: "Success", description: "Delete User command sent successfully." });
+            setDeleteUserDialog(false);
+        } catch (error) {
+            console.error("Failed to delete user", error);
+            toast({ title: "Action Failed", description: "Could not send delete user command.", variant: "destructive" });
+        }
     };
 
     const executeAction = async (action: string, label: string) => {
@@ -225,6 +279,12 @@ export default function DeviceDetails() {
             switch (action) {
                 case 'reboot':
                     await DeviceService.rebootDevice(devicePlatform, device.id);
+                    break;
+                case 'shutdown':
+                    await DeviceService.shutdownDevice(devicePlatform, device.id);
+                    break;
+                case 'logout':
+                    await DeviceService.logoutDevice(devicePlatform, device.id);
                     break;
                 case 'sync':
                     await DeviceService.syncDevices(devicePlatform, [device.id]);
@@ -490,6 +550,23 @@ export default function DeviceDetails() {
                                     <DropdownMenuItem onClick={() => handleAction('lock', 'Lock')}>
                                         <Lock className="w-4 h-4 mr-2" /> Lock Device
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleAction('sync', 'Sync')}>
+                                        <RefreshCw className="w-4 h-4 mr-2" /> Sync
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleAction('logout', 'Logout')}>
+                                        <LogOut className="w-4 h-4 mr-2" /> Logout
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-red-600" onClick={() => handleAction('shutdown', 'Shutdown')}>
+                                        <PowerOff className="w-4 h-4 mr-2" /> Shutdown
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-red-600" onClick={() => handleAction('delete_user', 'Delete User')}>
+                                        <UserMinus className="w-4 h-4 mr-2" /> Delete User
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleAction('get_location', 'Get Location')}>
+                                        <MapPin className="w-4 h-4 mr-2" /> Get Location
+                                    </DropdownMenuItem>
+                                    {/* Dangerous Actions */}
+                                    <DropdownMenuSeparator />
                                     {device.platform === 'ios' && (
                                         <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
                                             <Unlock className="w-4 h-4 mr-2" /> Clear Passcode
@@ -1083,61 +1160,61 @@ export default function DeviceDetails() {
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     {/* Passcode Policy */}
-                                    {effectiveProfile.passCodePolicy && (
+                                    {(effectiveProfile as any).passCodePolicy && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Passcode Policy" icon={Lock} />
                                             </CardHeader>
                                             <CardContent className="space-y-2">
-                                                <BooleanStatus label="Require Passcode" value={effectiveProfile.passCodePolicy.requirePassCode} />
-                                                <BooleanStatus label="Simple Passcode Allowed" value={effectiveProfile.passCodePolicy.allowSimple} />
-                                                <BooleanStatus label="Alphanumeric Required" value={effectiveProfile.passCodePolicy.requireAlphanumericPasscode} />
-                                                <InfoRow label="Min Length" value={effectiveProfile.passCodePolicy.minLength} />
-                                                <InfoRow label="Max Failed Attempts" value={effectiveProfile.passCodePolicy.maximumFailedAttempts} />
-                                                <InfoRow label="Max Passcode Age" value={effectiveProfile.passCodePolicy.maximumPasscodeAgeInDays} subValue="Days" />
-                                                <InfoRow label="Auto-Lock" value={effectiveProfile.passCodePolicy.maximumInactivityInMinutes} subValue="Minutes" />
-                                                <InfoRow label="Grace Period" value={effectiveProfile.passCodePolicy.maximumGracePeriodInMinutes} subValue="Minutes" />
+                                                <BooleanStatus label="Require Passcode" value={(effectiveProfile as any).passCodePolicy.requirePassCode} />
+                                                <BooleanStatus label="Simple Passcode Allowed" value={(effectiveProfile as any).passCodePolicy.allowSimple} />
+                                                <BooleanStatus label="Alphanumeric Required" value={(effectiveProfile as any).passCodePolicy.requireAlphanumericPasscode} />
+                                                <InfoRow label="Min Length" value={(effectiveProfile as any).passCodePolicy.minLength} />
+                                                <InfoRow label="Max Failed Attempts" value={(effectiveProfile as any).passCodePolicy.maximumFailedAttempts} />
+                                                <InfoRow label="Max Passcode Age" value={(effectiveProfile as any).passCodePolicy.maximumPasscodeAgeInDays} subValue="Days" />
+                                                <InfoRow label="Auto-Lock" value={(effectiveProfile as any).passCodePolicy.maximumInactivityInMinutes} subValue="Minutes" />
+                                                <InfoRow label="Grace Period" value={(effectiveProfile as any).passCodePolicy.maximumGracePeriodInMinutes} subValue="Minutes" />
                                             </CardContent>
                                         </Card>
                                     )}
 
                                     {/* Wi-Fi Policy */}
-                                    {effectiveProfile.wifiPolicy && (
+                                    {(effectiveProfile as any).wifiPolicy && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Wi-Fi Configuration" icon={Wifi} />
                                             </CardHeader>
                                             <CardContent className="space-y-2">
-                                                <InfoRow label="SSID" value={effectiveProfile.wifiPolicy.ssid} />
-                                                <InfoRow label="Encryption" value={effectiveProfile.wifiPolicy.encryptionType} />
-                                                <BooleanStatus label="Auto Join" value={effectiveProfile.wifiPolicy.autoJoin} />
-                                                <BooleanStatus label="Hidden Network" value={effectiveProfile.wifiPolicy.hiddenNetwork} />
-                                                <BooleanStatus label="Is Hotspot" value={effectiveProfile.wifiPolicy.isHotspot} />
+                                                <InfoRow label="SSID" value={(effectiveProfile as any).wifiPolicy.ssid} />
+                                                <InfoRow label="Encryption" value={(effectiveProfile as any).wifiPolicy.encryptionType} />
+                                                <BooleanStatus label="Auto Join" value={(effectiveProfile as any).wifiPolicy.autoJoin} />
+                                                <BooleanStatus label="Hidden Network" value={(effectiveProfile as any).wifiPolicy.hiddenNetwork} />
+                                                <BooleanStatus label="Is Hotspot" value={(effectiveProfile as any).wifiPolicy.isHotspot} />
                                             </CardContent>
                                         </Card>
                                     )}
 
                                     {/* Lock Screen Message */}
-                                    {effectiveProfile.lockScreenPolicy && (
+                                    {(effectiveProfile as any).lockScreenPolicy && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Lock Screen Message" icon={Smartphone} />
                                             </CardHeader>
                                             <CardContent className="space-y-2">
-                                                <InfoRow label="If Lost" value={effectiveProfile.lockScreenPolicy.lockScreenFootnote} />
-                                                <InfoRow label="Asset Tag" value={effectiveProfile.lockScreenPolicy.assetTagInformation} />
+                                                <InfoRow label="If Lost" value={(effectiveProfile as any).lockScreenPolicy.lockScreenFootnote} />
+                                                <InfoRow label="Asset Tag" value={(effectiveProfile as any).lockScreenPolicy.assetTagInformation} />
                                             </CardContent>
                                         </Card>
                                     )}
 
                                     {/* Web Clips */}
-                                    {effectiveProfile.webClipPolicies && effectiveProfile.webClipPolicies.length > 0 && (
+                                    {(effectiveProfile as any).webClipPolicies && (effectiveProfile as any).webClipPolicies.length > 0 && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Web Clips" icon={Globe} />
                                             </CardHeader>
                                             <CardContent className="space-y-4">
-                                                {effectiveProfile.webClipPolicies.map((clip, idx) => (
+                                                {(effectiveProfile as any).webClipPolicies.map((clip: any, idx: number) => (
                                                     <div key={idx} className="p-3 border rounded-lg">
                                                         <InfoRow label="Label" value={clip.label} />
                                                         <InfoRow label="URL" value={clip.url} />
@@ -1149,14 +1226,14 @@ export default function DeviceDetails() {
                                         </Card>
                                     )}
 
-                                    {/* Applications Policy */}
-                                    {effectiveProfile.applicationPolicies && effectiveProfile.applicationPolicies.length > 0 && (
+                                    {/* Application Rules */}
+                                    {(effectiveProfile as any).applicationPolicies && (effectiveProfile as any).applicationPolicies.length > 0 && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Application Rules" icon={AppWindow} />
                                             </CardHeader>
                                             <CardContent className="space-y-4">
-                                                {effectiveProfile.applicationPolicies.map((app, idx) => (
+                                                {(effectiveProfile as any).applicationPolicies.map((app: any, idx: number) => (
                                                     <div key={idx} className="p-3 border rounded-lg">
                                                         <InfoRow label="Bundle ID" value={app.bundleIdentifier} />
                                                         <InfoRow label="Install Action" value={app.action} />
@@ -1168,13 +1245,13 @@ export default function DeviceDetails() {
                                     )}
 
                                     {/* Notifications Policy */}
-                                    {effectiveProfile.notificationPolicies && effectiveProfile.notificationPolicies.length > 0 && (
+                                    {(effectiveProfile as any).notificationPolicies && (effectiveProfile as any).notificationPolicies.length > 0 && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Notification Settings" icon={MessagesSquare} />
                                             </CardHeader>
                                             <CardContent className="space-y-4">
-                                                {effectiveProfile.notificationPolicies.map((notif, idx) => (
+                                                {(effectiveProfile as any).notificationPolicies.map((notif: any, idx: number) => (
                                                     <div key={idx} className="p-3 border rounded-lg">
                                                         <InfoRow label="Bundle ID" value={notif.bundleIdentifier} />
                                                         <BooleanStatus label="Enabled" value={notif.enabled} />
@@ -1285,6 +1362,68 @@ export default function DeviceDetails() {
                             executeAction('enable_lost_mode', 'Enable Lost Mode');
                         }}>Content Enable Lost Mode</Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete User Dialog */}
+            <Dialog open={deleteUserDialog} onOpenChange={setDeleteUserDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete User</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete the user? This action cannot be undone.
+                            {(device?.platform === 'ios' || device?.deviceType === 'IosDeviceInfo') && " Please enter the username to delete."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {(device?.platform === 'ios' || device?.deviceType === 'IosDeviceInfo') && (
+                        <div className="py-4">
+                            <Label htmlFor="username" className="mb-2 block">Username</Label>
+                            <Input
+                                id="username"
+                                value={deleteUserName}
+                                onChange={(e) => setDeleteUserName(e.target.value)}
+                                placeholder="Enter username"
+                            />
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteUserDialog(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={executeDeleteUser}
+                            disabled={(device?.platform === 'ios' || device?.deviceType === 'IosDeviceInfo') && !deleteUserName}
+                        >
+                            Delete User
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Location Dialog */}
+            <Dialog open={showLocationDialog} onOpenChange={setShowLocationDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Device Location</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        {locationData ? (
+                            <div className="grid grid-cols-2 gap-4">
+                                <InfoRow label="Latitude" value={locationData.Latitude} />
+                                <InfoRow label="Longitude" value={locationData.Longitude} />
+                                {(locationData as any).Altitude !== undefined && (
+                                    <InfoRow label="Altitude" value={(locationData as any).Altitude} />
+                                )}
+                                {(locationData as any).Speed !== undefined && (
+                                    <InfoRow label="Speed" value={(locationData as any).Speed} />
+                                )}
+                                {(locationData as any).Timestamp !== undefined && (
+                                    <InfoRow label="Timestamp" value={(locationData as any).Timestamp} />
+                                )}
+                            </div>
+                        ) : (
+                            <p>No location data available.</p>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
         </MainLayout>
