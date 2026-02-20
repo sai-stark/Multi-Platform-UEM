@@ -139,7 +139,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         <Settings className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">{t('restrictions.android.commonSettings')}</h3>
+                        <h3 className="text-xl font-semibold">{t('policies.android.commonSettings')}</h3>
                         <p className="text-sm text-muted-foreground">{t('policies.commonSettings.subtitle')}</p>
                     </div>
                 </div>
@@ -244,7 +244,7 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                         <Edit className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium">{t('common.edit')} {t('restrictions.android.commonSettings')}</h3>
+                        <h3 className="text-lg font-medium">{t('common.edit')} {t('policies.android.commonSettings')}</h3>
                         <p className="text-sm text-muted-foreground">{t('policies.commonSettings.editDesc')}</p>
                     </div>
                 </div>

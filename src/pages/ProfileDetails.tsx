@@ -39,6 +39,9 @@ import {
   AndroidFullProfile,
   AndroidProfileRestrictions,
   ApplicationPolicy,
+  CommonSettingsPolicy,
+  DeviceThemePolicy,
+  EnrollmentPolicy,
   FullProfile,
   IosFullProfile,
   IosMailPolicy,
@@ -77,6 +80,7 @@ import {
   Phone,
   Plus,
   Radio,
+  Search,
   Send,
   Server,
   Settings,
@@ -210,6 +214,9 @@ interface PolicyCardGridProps {
   perDomainVpnPolicy?: IosPerDomainVpnPolicy;
   relayPolicy?: IosRelayPolicy;
   homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
+  commonSettingsPolicy?: CommonSettingsPolicy;
+  deviceThemePolicy?: DeviceThemePolicy;
+  enrollmentPolicy?: EnrollmentPolicy;
   onSelectPolicy: (type: string) => void;
 }
 
@@ -320,11 +327,15 @@ function PolicyCardGrid({
   perDomainVpnPolicy,
   relayPolicy,
   homeScreenLayoutPolicy,
+  commonSettingsPolicy,
+  deviceThemePolicy,
+  enrollmentPolicy,
   onSelectPolicy,
 }: PolicyCardGridProps) {
   const isIos = platform === "ios";
   const isAndroid = platform === "android";
   const { t } = useLanguage();
+  const [policySearchQuery, setPolicySearchQuery] = useState("");
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -533,9 +544,9 @@ function PolicyCardGrid({
       { id: "dateTimeRestriction", title: "Date/Time", icon: <Clock className="w-5 h-5" />, check: !!androidRestrictions?.dateTime, desc: "Date and time settings.", status: "Date/Time settings active" },
       { id: "displayRestriction", title: "Display", icon: <Monitor className="w-5 h-5" />, check: !!androidRestrictions?.display, desc: "Display settings.", status: "Display settings active" },
       { id: "storageRestriction", title: "Storage", icon: <Database className="w-5 h-5" />, check: !!androidRestrictions?.syncStorage, desc: "Storage & Sync.", status: "Storage settings active" },
-      { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: false, desc: "Enrollment settings.", status: "" },
-      { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: false, desc: "Device theme settings.", status: "" },
-      { id: "commonSettings", title: "Common", icon: <Settings className="w-5 h-5" />, check: false, desc: "Common global settings.", status: "" },
+      { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: !!enrollmentPolicy, desc: "Enrollment settings.", status: enrollmentPolicy ? "Enrollment settings active" : "" },
+      { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: !!deviceThemePolicy, desc: "Device theme settings.", status: deviceThemePolicy ? "Theme settings active" : "" },
+      { id: "commonSettings", title: "Common", icon: <Settings className="w-5 h-5" />, check: !!commonSettingsPolicy, desc: "Common global settings.", status: commonSettingsPolicy ? "Common settings active" : "" },
       { id: "androidWebApp", title: "Web Apps", icon: <Globe className="w-5 h-5" />, check: webApplicationPolicy.length > 0, desc: "Web shortcuts.", status: `${webApplicationPolicy.length} Web Apps` },
     ];
 
@@ -555,7 +566,7 @@ function PolicyCardGrid({
 
   // Application Policy is common
   allPolicies.push({
-    id: "applications",
+    id: isAndroid ? "androidApplication" : "applications",
     title: "Applications",
     description: "Install, remove, or manage apps.",
     statusText: applicationPolicy.length > 0 ? `${applicationPolicy.length} Apps configured.` : undefined,
@@ -570,8 +581,15 @@ function PolicyCardGrid({
 
   allPolicies.sort((a, b) => a.title.localeCompare(b.title));
 
-  const configuredPolicies = allPolicies.filter(p => p.isConfigured);
-  const availablePolicies = allPolicies.filter(p => !p.isConfigured);
+  const filteredPolicies = policySearchQuery.trim()
+    ? allPolicies.filter(p =>
+        p.title.toLowerCase().includes(policySearchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(policySearchQuery.toLowerCase())
+      )
+    : allPolicies;
+
+  const configuredPolicies = filteredPolicies.filter(p => p.isConfigured);
+  const availablePolicies = filteredPolicies.filter(p => !p.isConfigured);
 
   return (
     <motion.div
@@ -580,8 +598,17 @@ function PolicyCardGrid({
       animate="visible"
       className="pb-20 space-y-8"
     >
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
         <h2 className="text-xl font-semibold tracking-tight">Configuration Policies</h2>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search policies..."
+            value={policySearchQuery}
+            onChange={(e) => setPolicySearchQuery(e.target.value)}
+            className="pl-9 h-9 border-2 border-border/80"
+          />
+        </div>
       </div>
 
       {configuredPolicies.length > 0 && (
@@ -647,6 +674,14 @@ function PolicyCardGrid({
           </div>
         </div>
       )}
+
+      {policySearchQuery.trim() && configuredPolicies.length === 0 && availablePolicies.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
+          <p className="text-lg font-medium">No policies found</p>
+          <p className="text-sm">No policies match "{policySearchQuery}"</p>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -700,6 +735,9 @@ export default function ProfileDetails() {
   const [androidPasscodePolicy, setAndroidPasscodePolicy] = useState<
     any | undefined
   >(undefined);
+  const [commonSettingsPolicy, setCommonSettingsPolicy] = useState<CommonSettingsPolicy | undefined>(undefined);
+  const [deviceThemePolicy, setDeviceThemePolicy] = useState<DeviceThemePolicy | undefined>(undefined);
+  const [enrollmentPolicy, setEnrollmentPolicy] = useState<EnrollmentPolicy | undefined>(undefined);
 
   // Phase 2 iOS policy state
   const [webContentFilterPolicy, setWebContentFilterPolicy] = useState<IosWebContentFilterPolicy | undefined>(undefined);
@@ -795,6 +833,9 @@ export default function ProfileDetails() {
         setWebApplicationPolicy(anyData.webApplicationPolicies || []);
         setAndroidPasscodePolicy(anyData.passcodePolicy || undefined);
         setApplicationPolicy(anyData.applicationPolicies || []);
+        setCommonSettingsPolicy(anyData.commonSettingsPolicy || undefined);
+        setDeviceThemePolicy(anyData.deviceThemePolicy || undefined);
+        setEnrollmentPolicy(anyData.enrollmentPolicy || undefined);
       }
     } catch (err) {
       console.error("Failed to fetch profile:", err);
@@ -1036,6 +1077,9 @@ export default function ProfileDetails() {
           perDomainVpnPolicy={perDomainVpnPolicy}
           relayPolicy={relayPolicy}
           homeScreenLayoutPolicy={homeScreenLayoutPolicy}
+          commonSettingsPolicy={commonSettingsPolicy}
+          deviceThemePolicy={deviceThemePolicy}
+          enrollmentPolicy={enrollmentPolicy}
           onSelectPolicy={setActivePolicyType}
         />
 
@@ -1063,6 +1107,9 @@ export default function ProfileDetails() {
           perDomainVpnPolicy={perDomainVpnPolicy}
           relayPolicy={relayPolicy}
           homeScreenLayoutPolicy={homeScreenLayoutPolicy}
+          commonSettingsPolicy={commonSettingsPolicy}
+          deviceThemePolicy={deviceThemePolicy}
+          enrollmentPolicy={enrollmentPolicy}
           onSave={() => {
             setActivePolicyType(null);
             fetchProfile();

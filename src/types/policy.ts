@@ -161,14 +161,22 @@ export interface IosApplicationPolicy extends UserAuditData {
 }
 
 export interface AndroidApplicationPolicy extends UserAuditData {
-    id?: string; // UUID, read-only
+    id: string; // UUID, read-only
     applicationVersionId: string; // UUID
-    action: ApplicationAction; // INSTALL | UNINSTALL | ALLOW | BLOCK
+    installType: 'INSTALL_REMOVABLE' | 'INSTALL_NONREMOVABLE' | 'UNINSTALL' | 'AVAILABLE';
+    applicationName?: string; // read-only
     applicationVersion?: string; // read-only
-    packageName?: string;
-    installType?: string; // mapping to action for UI if needed, or API returns it
-    autoUpdateMode?: string;
-    defaultConfiguration?: boolean;
+    minimumVersionCode?: number;
+    packageName?: string; // read-only
+    configuration?: Record<string, object>;
+    accessibleTrackIds?: string[];
+    autoUpdateMode?: 'HIGH_PRIORITY' | 'POSTPONE';
+    disabled?: boolean;
+    defaultPermission?: 'PROMPT' | 'GRANT' | 'DENY';
+    permissionGrants?: Array<{ permission: string; permissionGrant: 'PROMPT' | 'GRANT' | 'DENY' }>;
+    communicateWithPersonalApp?: 'DENY' | 'ALLOW_WITH_USER_CONSENT';
+    isCredentialProvider?: boolean;
+    canInstallCertificate?: boolean;
     devicePolicyType: 'AndroidApplicationPolicy';
 }
 

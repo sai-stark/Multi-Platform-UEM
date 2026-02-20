@@ -130,6 +130,9 @@ export function PolicyEditDialog({
     perDomainVpnPolicy,
     relayPolicy,
     homeScreenLayoutPolicy,
+    commonSettingsPolicy,
+    deviceThemePolicy,
+    enrollmentPolicy,
     onSave,
 }: PolicyEditDialogProps) {
     if (!activePolicyType) return null;
@@ -180,35 +183,14 @@ export function PolicyEditDialog({
 
     const { title, icon } = getPolicyHeader();
 
-    // Some policies render their own cards/headers, so we might want to hide the standard dialog header for them
-    // or wrap them in a clean way. 
-    // Based on EditProfilePolicies, some keys hid the header.
-    const hideDefaultHeader = [
-        "passcode",
-        "notifications",
-        "lockScreenMessage",
-        "scep",
-        "mdm",
-        "androidPasscode" // Assuming android passcode also handles its own UI
-    ].includes(activePolicyType);
+    // All policy components render their own headers, so always hide the generic dialog header
+    const hideDefaultHeader = true;
 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                {!hideDefaultHeader && (
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            {icon}
-                            {title}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Configure the settings for this policy module.
-                        </DialogDescription>
-                    </DialogHeader>
-                )}
-
-                <div className="py-2">
+                <div className="pt-0">
                     {/* Render appropriate policy component based on activePolicyType */}
                     {activePolicyType === "passcode" && (
                         <PasscodePolicy

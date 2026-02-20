@@ -199,7 +199,9 @@ export const ApplicationPolicyEditor = ({
 
   const loadApplications = async () => {
     try {
-      const apps = await MobileApplicationService.getApplications(platform);
+      const response = await MobileApplicationService.getApplications(platform);
+      // API may return a paged response { content: [...] } or a direct array
+      const apps = Array.isArray(response) ? response : (response as any).content || [];
       setAvailableApps(apps);
     } catch (error) {
       console.error("Failed to load apps", error);
