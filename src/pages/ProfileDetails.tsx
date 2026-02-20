@@ -533,24 +533,41 @@ function PolicyCardGrid({
   if (isAndroid) {
     const androidRestrictions = restrictionsPolicy as AndroidProfileRestrictions | undefined;
 
+    // TODO: When DO (Device Owner) support is added, toggle this based on profile type
+    const isWorkProfile = true; // Currently only WP is supported
+
     const androidItems = [
-      { id: "androidPasscode", title: "Passcode Policy", icon: <Shield className="w-5 h-5" />, check: !!androidPasscodePolicy, desc: "Password complexity settings.", status: "Complexity settings active" },
-      { id: "securityRestriction", title: "Security", icon: <Shield className="w-5 h-5" />, check: !!androidRestrictions?.security, desc: "Device security settings.", status: "Security restrictions active" },
-      { id: "networkRestriction", title: "Network", icon: <WifiOff className="w-5 h-5" />, check: !!androidRestrictions?.network, desc: "Network restrictions.", status: "Network restrictions active" },
-      { id: "kioskRestriction", title: "Kiosk", icon: <TabletSmartphone className="w-5 h-5" />, check: !!androidRestrictions?.kiosk, desc: "Kiosk mode settings.", status: "Kiosk mode active" },
-      { id: "locationRestriction", title: "Location", icon: <MapPin className="w-5 h-5" />, check: !!androidRestrictions?.location, desc: "Location services.", status: "Location settings active" },
-      { id: "tetheringRestriction", title: "Tethering", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.tethering, desc: "Bluetooth & tethering.", status: "Tethering settings active" },
-      { id: "phoneRestriction", title: "Phone", icon: <Phone className="w-5 h-5" />, check: !!androidRestrictions?.phone, desc: "Telephony restrictions.", status: "Phone restrictions active" },
-      { id: "dateTimeRestriction", title: "Date/Time", icon: <Clock className="w-5 h-5" />, check: !!androidRestrictions?.dateTime, desc: "Date and time settings.", status: "Date/Time settings active" },
-      { id: "displayRestriction", title: "Display", icon: <Monitor className="w-5 h-5" />, check: !!androidRestrictions?.display, desc: "Display settings.", status: "Display settings active" },
-      { id: "storageRestriction", title: "Storage", icon: <Database className="w-5 h-5" />, check: !!androidRestrictions?.syncStorage, desc: "Storage & Sync.", status: "Storage settings active" },
-      { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: !!enrollmentPolicy, desc: "Enrollment settings.", status: enrollmentPolicy ? "Enrollment settings active" : "" },
-      { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: !!deviceThemePolicy, desc: "Device theme settings.", status: deviceThemePolicy ? "Theme settings active" : "" },
-      { id: "commonSettings", title: "Common", icon: <Settings className="w-5 h-5" />, check: !!commonSettingsPolicy, desc: "Common global settings.", status: commonSettingsPolicy ? "Common settings active" : "" },
-      { id: "androidWebApp", title: "Web Apps", icon: <Globe className="w-5 h-5" />, check: webApplicationPolicy.length > 0, desc: "Web shortcuts.", status: `${webApplicationPolicy.length} Web Apps` },
+      // -- WP-supported Policies --
+      { id: "androidPasscode", title: "Passcode Policy", icon: <Shield className="w-5 h-5" />, check: !!androidPasscodePolicy, desc: "Password complexity settings.", status: "Complexity settings active", wpSupported: true },
+      { id: "commonSettings", title: "Common", icon: <Settings className="w-5 h-5" />, check: !!commonSettingsPolicy, desc: "Common global settings.", status: commonSettingsPolicy ? "Common settings active" : "", wpSupported: true },
+      { id: "androidWebApp", title: "Web Apps", icon: <Globe className="w-5 h-5" />, check: webApplicationPolicy.length > 0, desc: "Web shortcuts.", status: `${webApplicationPolicy.length} Web Apps`, wpSupported: true },
+
+      // -- WP-supported Restrictions --
+      { id: "securityRestriction", title: "Security", icon: <Shield className="w-5 h-5" />, check: !!androidRestrictions?.security, desc: "Device security settings.", status: "Security restrictions active", wpSupported: true },
+      { id: "networkRestriction", title: "Network", icon: <WifiOff className="w-5 h-5" />, check: !!androidRestrictions?.network, desc: "Network restrictions.", status: "Network restrictions active", wpSupported: true },
+      { id: "locationRestriction", title: "Location", icon: <MapPin className="w-5 h-5" />, check: !!androidRestrictions?.location, desc: "Location services.", status: "Location settings active", wpSupported: true },
+      // { id: "miscRestriction", title: "Miscellaneous", icon: <Settings className="w-5 h-5" />, check: !!androidRestrictions?.miscellaneous, desc: "System-level controls.", status: "Miscellaneous settings active", wpSupported: true },
+
+      // -- DO-only Policies (hidden for WP) --
+      { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: !!enrollmentPolicy, desc: "Enrollment settings.", status: enrollmentPolicy ? "Enrollment settings active" : "", wpSupported: false },
+      { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: !!deviceThemePolicy, desc: "Device theme settings.", status: deviceThemePolicy ? "Theme settings active" : "", wpSupported: false },
+
+      // -- DO-only Restrictions (hidden for WP) --
+      { id: "kioskRestriction", title: "Kiosk", icon: <TabletSmartphone className="w-5 h-5" />, check: !!androidRestrictions?.kiosk, desc: "Kiosk mode settings.", status: "Kiosk mode active", wpSupported: false },
+      { id: "tetheringRestriction", title: "Tethering", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.tethering, desc: "Bluetooth & tethering.", status: "Tethering settings active", wpSupported: false },
+      { id: "phoneRestriction", title: "Phone", icon: <Phone className="w-5 h-5" />, check: !!androidRestrictions?.phone, desc: "Telephony restrictions.", status: "Phone restrictions active", wpSupported: false },
+      { id: "dateTimeRestriction", title: "Date/Time", icon: <Clock className="w-5 h-5" />, check: !!androidRestrictions?.dateTime, desc: "Date and time settings.", status: "Date/Time settings active", wpSupported: false },
+      { id: "displayRestriction", title: "Display", icon: <Monitor className="w-5 h-5" />, check: !!androidRestrictions?.display, desc: "Display settings.", status: "Display settings active", wpSupported: false },
+      { id: "storageRestriction", title: "Storage", icon: <Database className="w-5 h-5" />, check: !!androidRestrictions?.syncStorage, desc: "Storage & Sync.", status: "Storage settings active", wpSupported: false },
+      // { id: "connectivityRestriction", title: "Connectivity", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.connectivity, desc: "Bluetooth & NFC.", status: "Connectivity settings active", wpSupported: false },
     ];
 
-    androidItems.forEach(item => {
+    // Filter based on current profile mode
+    const visibleItems = isWorkProfile
+      ? androidItems.filter(item => item.wpSupported)
+      : androidItems;
+
+    visibleItems.forEach(item => {
       allPolicies.push({
         id: item.id,
         title: item.title,

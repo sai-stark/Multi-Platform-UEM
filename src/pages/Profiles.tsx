@@ -36,6 +36,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileService } from "@/api/services/profiles";
 import { Platform } from "@/types/models";
+import { useAndroidFeaturesEnabled } from "@/contexts/EnterpriseContext";
+import { toast } from "@/hooks/use-toast";
 
 const platformConfig: Record<
   string,
@@ -91,6 +93,7 @@ const platformConfig: Record<
 const Profiles = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { shouldBlock: shouldBlockAndroid, isDebugMode } = useAndroidFeaturesEnabled();
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -118,7 +121,10 @@ const Profiles = () => {
   const fetchProfiles = async () => {
     setLoading(true);
     try {
-      const platforms: Platform[] = ["android", "ios", "windows"];
+      // In production, skip Android API call if enterprise is not set up
+      const platforms: Platform[] = shouldBlockAndroid
+        ? ["ios", "windows"]
+        : ["android", "ios", "windows"];
 
       // Always fetch from all platforms for stats
       // Handle errors per platform to allow partial success
@@ -605,7 +611,20 @@ const Profiles = () => {
                 aria-selected={isActive}
                 aria-disabled={isDisabled}
                 disabled={isDisabled}
-                onClick={() => !isDisabled && setPlatformFilter(platform)}
+                onClick={() => {
+                  if (isDisabled) return;
+                  // If Android is selected and enterprise is not set up (production), redirect to setup
+                  if (platform === 'android' && shouldBlockAndroid) {
+                    toast({
+                      title: 'Enterprise Setup Required',
+                      description: 'Android Enterprise must be configured before using Android features.',
+                      variant: 'destructive',
+                    });
+                    navigate('/android/enterprise/setup?returnTo=/profiles');
+                    return;
+                  }
+                  setPlatformFilter(platform);
+                }}
                 className={cn(
                   "relative inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

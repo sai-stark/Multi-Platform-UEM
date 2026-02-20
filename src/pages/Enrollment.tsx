@@ -22,6 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
+import { useAndroidFeaturesEnabled } from '@/contexts/EnterpriseContext';
 import {
   Check,
   Copy,
@@ -40,6 +41,7 @@ import {
   ZoomIn
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 
 const enrollmentSteps: Record<Platform, { en: string; hi: string }[]> = {
@@ -92,7 +94,9 @@ const platformConfig = {
 
 export default function Enrollment() {
   const { t, language } = useLanguage();
-  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('android');
+  const navigate = useNavigate();
+  const { shouldBlock: shouldBlockAndroid } = useAndroidFeaturesEnabled();
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>(shouldBlockAndroid ? 'ios' : 'android');
   const [profiles, setProfiles] = useState<EnrollmentProfile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
   const [qrCodeData, setQrCodeData] = useState<any>(null);
@@ -143,20 +147,36 @@ export default function Enrollment() {
       // Simplest is to update the profiles state to include the config derived from details
       setProfiles(prev => prev.map(p => {
         if (p.id === profileId) {
+          const isIos = details.profileType === 'IosFullProfile';
+
+          // Build config based on platform-specific profile type
+          const config = isIos
+            ? {
+                wifiSSID: details.wifiPolicy?.ssid || p.config?.wifiSSID || 'Not Configured',
+                vpnEnabled: !!details.mailPolicy?.vpnUUID || !!details.wifiPolicy?.ssid || false,
+                vpnServer: details.mailPolicy?.incomingMailServerHostName || 'N/A',
+                mandatoryApps: details.applicationPolicies?.filter(app => app.action === 'INSTALL').map(app => app.name || 'Unknown App') || [],
+                restrictions: [
+                  details.passCodePolicy?.requirePassCode ? 'Passcode Required' : '',
+                  details.lockScreenPolicy?.lockScreenFootnote ? `Lock Screen: ${details.lockScreenPolicy.lockScreenFootnote}` : '',
+                  details.webClipPolicies?.length ? `${details.webClipPolicies.length} Web Clips` : ''
+                ].filter(Boolean)
+              }
+            : {
+                // Android profile config
+                wifiSSID: p.config?.wifiSSID || 'Not Configured',
+                vpnEnabled: false,
+                vpnServer: 'N/A',
+                mandatoryApps: details.applicationPolicies?.filter(app => app.installType === 'INSTALL_NONREMOVABLE').map(app => app.applicationName || app.packageName || 'Unknown App') || [],
+                restrictions: [
+                  details.passcodePolicy?.work?.complexity && details.passcodePolicy.work.complexity !== 'NONE' ? 'Passcode Required' : '',
+                ].filter(Boolean)
+              };
+
           return {
             ...p,
-            ...details, // Merge details
-            config: { // Map details to config for UI compatibility
-              wifiSSID: details.wifiPolicy?.ssid || p.config?.wifiSSID || 'Not Configured',
-              vpnEnabled: !!details.mailPolicy?.vpnUUID || !!details.wifiPolicy?.ssid || false, // Heuristic based on provided JSON
-              vpnServer: details.mailPolicy?.incomingMailServerHostName || 'N/A', // Just a guess from sample
-              mandatoryApps: details.applicationPolicies?.filter(app => app.action === 'INSTALL').map(app => app.bundleIdentifier || app.name || 'Unknown App') || [],
-              restrictions: [
-                details.passCodePolicy?.requirePassCode ? 'Passcode Required' : '',
-                details.lockScreenPolicy?.lockScreenFootnote ? `Lock Screen: ${details.lockScreenPolicy.lockScreenFootnote}` : '',
-                details.webClipPolicies?.length ? `${details.webClipPolicies.length} Web Clips` : ''
-              ].filter(Boolean)
-            }
+            ...details,
+            config
           };
         }
         return p;
@@ -182,6 +202,15 @@ export default function Enrollment() {
   };
 
   const handlePlatformChange = (platform: string) => {
+    if (platform === 'android' && shouldBlockAndroid) {
+      toast({
+        title: 'Enterprise Setup Required',
+        description: 'Android Enterprise must be configured before using Android features.',
+        variant: 'destructive',
+      });
+      navigate('/android/enterprise/setup?returnTo=/enrollment');
+      return;
+    }
     setSelectedPlatform(platform as Platform);
   };
 

@@ -266,9 +266,10 @@ export default function EnterpriseSetup() {
         }
     };
 
-    // Go to dashboard after success
+    // Go to dashboard (or back to originating page) after success
     const handleGoToDashboard = () => {
-        navigate('/');
+        const returnTo = searchParams.get('returnTo') || '/';
+        navigate(returnTo);
     };
 
     // Retry setup
@@ -286,7 +287,9 @@ export default function EnterpriseSetup() {
             title: "Setup Skipped",
             description: "Android features will be limited until Enterprise is configured.",
         });
-        navigate('/');
+        // Navigate back to where the user came from
+        const returnTo = searchParams.get('returnTo') || '/';
+        navigate(returnTo);
     };
 
     // Step indicator component

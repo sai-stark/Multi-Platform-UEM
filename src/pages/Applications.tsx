@@ -9,6 +9,7 @@ import { ITunesSearchService, ITunesSearchResult } from '@/api/services/itunesSe
 import { Platform } from '@/types/models';
 import { getAssetUrl } from '@/config/env';
 import { EnterpriseService } from '@/api/services/enterprise';
+import { useAndroidFeaturesEnabled } from '@/contexts/EnterpriseContext';
 import { 
   Package, 
   Plus, 
@@ -198,7 +199,8 @@ const getIframeToken = async (
 const Applications = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [platform, setPlatform] = useState<Platform>('android');
+  const { shouldBlock: shouldBlockAndroid } = useAndroidFeaturesEnabled();
+  const [platform, setPlatform] = useState<Platform>(shouldBlockAndroid ? 'ios' : 'android');
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -1028,7 +1030,19 @@ const Applications = () => {
                 aria-selected={isActive}
                 aria-disabled={isDisabled}
                 disabled={isDisabled}
-                onClick={() => !isDisabled && setPlatform(platformKey as Platform)}
+                onClick={() => {
+                  if (isDisabled) return;
+                  if (platformKey === 'android' && shouldBlockAndroid) {
+                    toast({
+                      title: 'Enterprise Setup Required',
+                      description: 'Android Enterprise must be configured before using Android features.',
+                      variant: 'destructive',
+                    });
+                    navigate('/android/enterprise/setup?returnTo=/applications');
+                    return;
+                  }
+                  setPlatform(platformKey as Platform);
+                }}
                 className={cn(
                   "relative inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

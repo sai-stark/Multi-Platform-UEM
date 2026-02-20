@@ -1,13 +1,16 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { EnterpriseService } from '@/api/services/enterprise';
 import { AndroidEnterprise } from '@/types/models';
+
+// Debug mode: true in development, false in production
+const isDebugMode = import.meta.env.MODE !== 'production';
 
 interface EnterpriseContextType {
     enterprise: AndroidEnterprise | null;
     isEnrolled: boolean;
     isLoading: boolean;
     isSkipped: boolean;
+    isDebugMode: boolean;
     checkEnrollmentStatus: () => Promise<void>;
     skipEnrollment: () => void;
     markEnrolled: () => void;
@@ -83,6 +86,7 @@ export function EnterpriseProvider({ children }: { children: ReactNode }) {
                 isEnrolled,
                 isLoading,
                 isSkipped,
+                isDebugMode,
                 checkEnrollmentStatus,
                 skipEnrollment,
                 markEnrolled,
@@ -103,46 +107,28 @@ export function useEnterprise() {
 }
 
 /**
- * Hook to check if Android features should be enabled
+ * Hook to check if Android features should be enabled.
+ * In debug mode, Android features are always enabled.
+ * In production, they require enterprise enrollment.
  */
 export function useAndroidFeaturesEnabled() {
     const { isEnrolled, isSkipped, isLoading } = useEnterprise();
     return {
-        isEnabled: isEnrolled,
+        isEnabled: isDebugMode || isEnrolled,
         isSkipped,
         isLoading,
-        needsSetup: !isEnrolled && !isSkipped,
+        isDebugMode,
+        needsSetup: !isDebugMode && !isEnrolled && !isSkipped,
+        /** True when Android platform tab/features should be blocked */
+        shouldBlock: !isDebugMode && !isEnrolled,
     };
 }
 
 /**
- * Component that wraps the app and redirects to enrollment if needed
- * Used to guard routes that require enrollment
+ * Passthrough wrapper — no longer redirects to enterprise setup on load.
+ * Enterprise setup is now prompted when Android platform is selected.
  */
 export function EnrollmentGuard({ children }: { children: ReactNode }) {
-    const { isEnrolled, isSkipped, isLoading } = useEnterprise();
-    const navigate = useNavigate();
-    const location = useLocation();
-
-    useEffect(() => {
-        // Don't redirect while loading
-        if (isLoading) return;
-
-        // Don't redirect if already on the enrollment pages
-        const isEnrollmentPage = location.pathname.includes('/android/enterprise/');
-        if (isEnrollmentPage) return;
-
-        // If not enrolled and not skipped, redirect to setup
-        if (!isEnrolled && !isSkipped) {
-            navigate('/android/enterprise/setup', { replace: true });
-        }
-    }, [isEnrolled, isSkipped, isLoading, location.pathname, navigate]);
-
-    // Show nothing while loading (or a loader)
-    if (isLoading) {
-        return null;
-    }
-
     return <>{children}</>;
 }
 

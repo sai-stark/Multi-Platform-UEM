@@ -17,9 +17,14 @@ interface AndroidFeatureGateProps {
  * </AndroidFeatureGate>
  */
 export function AndroidFeatureGate({ children, featureName = 'Android features' }: AndroidFeatureGateProps) {
-    const { isEnrolled, isSkipped, isLoading } = useEnterprise();
+    const { isEnrolled, isSkipped, isLoading, isDebugMode } = useEnterprise();
 
     if (isLoading) {
+        return <>{children}</>;
+    }
+
+    // In debug mode, never block Android features
+    if (isDebugMode) {
         return <>{children}</>;
     }
 
