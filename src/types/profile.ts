@@ -46,6 +46,9 @@ export type ProfileType = 'AndroidProfile' | 'IosProfile' | 'IosFullProfile' | '
 // Profile status as per OpenAPI spec
 export type ProfileStatus = 'DRAFT' | 'PUBLISHED';
 
+// Management Mode for Android profiles
+export type ManagementMode = 'BYOD' | 'COPE' | 'COBO' | 'COSU';
+
 // Base Profile interface matching API response (summary/list view)
 export interface Profile {
     // API response fields
@@ -169,6 +172,9 @@ export interface AndroidPasscodePolicy {
 
 export interface AndroidFullProfile extends Profile {
     profileType?: 'Android_Full_Profile';
+    managementMode: ManagementMode; // Required — BYOD, COPE, COBO, COSU
+    shortSupportMessage?: string; // 10-100 chars, alphanumeric + . - @ and space
+    longSupportMessage?: string; // 15-250 chars, same pattern
     commonSettingsPolicy?: CommonSettingsPolicy;
     deviceThemePolicy?: DeviceThemePolicy;
     enrollmentPolicy?: EnrollmentPolicy;

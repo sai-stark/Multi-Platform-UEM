@@ -23,6 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
 import {
     AndroidPasscodePolicy as AndroidPasscodePolicyType,
+    AndroidPersonalDevicesPasscodePolicy,
+    AndroidDedicatedDevicePasscodePolicy,
     PasscodeComplexity,
     Platform,
     StrongAuthRequiredTimeout,
@@ -96,6 +98,14 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
     const [wipeAfterDays, setWipeAfterDays] = useState<number>(
         initialData?.enforcement?.wipeAfterDays ?? 0
     );
+    const [preserveFrp, setPreserveFrp] = useState<boolean>(
+        (initialData?.devicePolicyType === 'AndroidDedicatedDevicePasscodePolicy'
+            ? (initialData as AndroidDedicatedDevicePasscodePolicy).enforcement?.preserveFrp
+            : false) ?? false
+    );
+    const [policyVariant, setPolicyVariant] = useState<'personal' | 'dedicated'>(
+        initialData?.devicePolicyType === 'AndroidDedicatedDevicePasscodePolicy' ? 'dedicated' : 'personal'
+    );
 
     // Device Policy State (optional)
     const [enableDevicePolicy, setEnableDevicePolicy] = useState<boolean>(
@@ -118,7 +128,39 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
     );
 
     const buildPolicy = (): AndroidPasscodePolicyType => {
-        const policy: AndroidPasscodePolicyType = {
+        if (policyVariant === 'dedicated') {
+            const policy: AndroidDedicatedDevicePasscodePolicy = {
+                work: {
+                    complexity: workComplexity,
+                    historyLength: workHistoryLength,
+                    maxFailedAttemptsToWipe: workMaxFailedAttempts,
+                    changeAfterSeconds: workChangeAfterSeconds,
+                    strongAuthRequiredTimeout: workStrongAuthTimeout,
+                    separateLock: workSeparateLock,
+                },
+                devicePolicyType: 'AndroidDedicatedDevicePasscodePolicy',
+            };
+            if (enforcementEnabled) {
+                policy.enforcement = {
+                    blockAfterDays,
+                    wipeAfterDays,
+                    preserveFrp,
+                };
+            }
+            if (enableDevicePolicy) {
+                policy.device = {
+                    complexity: deviceComplexity,
+                    historyLength: deviceHistoryLength,
+                    maxFailedAttemptsToWipe: deviceMaxFailedAttempts,
+                    changeAfterSeconds: deviceChangeAfterSeconds,
+                    strongAuthRequiredTimeout: deviceStrongAuthTimeout,
+                };
+            }
+            return policy;
+        }
+
+        // Personal device variant (default)
+        const policy: AndroidPersonalDevicesPasscodePolicy = {
             work: {
                 complexity: workComplexity,
                 historyLength: workHistoryLength,
@@ -342,6 +384,25 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     </div>
                 </div>
 
+                {/* Policy Variant Selector */}
+                <div className="p-4 rounded-xl border bg-card mb-4">
+                    <Label className="font-medium mb-2 block">{t('passcodePolicy.policyType')}</Label>
+                    <Select value={policyVariant} onValueChange={(v) => setPolicyVariant(v as 'personal' | 'dedicated')}>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="personal">{t('passcodePolicy.personalDevice')}</SelectItem>
+                            <SelectItem value="dedicated">{t('passcodePolicy.dedicatedDevice')}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {policyVariant === 'dedicated'
+                            ? t('passcodePolicy.dedicatedDeviceDesc')
+                            : t('passcodePolicy.personalDeviceDesc')}
+                    </p>
+                </div>
+
                 {/* Work Profile Section */}
                 <div className="space-y-4">
                     <h4 className="text-md font-semibold flex items-center gap-2 border-b pb-2">
@@ -547,6 +608,31 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                                 />
                                 <p className="text-xs text-muted-foreground">{t('passcodePolicy.wipeAfterDaysHint')}</p>
                             </div>
+                            {policyVariant === 'dedicated' && (
+                                <div className="col-span-2 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="flex items-center gap-2">
+                                            <Shield className="h-4 w-4" />
+                                            {t('passcodePolicy.preserveFrp')}
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                </TooltipTrigger>
+                                                <TooltipContent side="right" className="max-w-xs">
+                                                    <p>{t('passcodePolicy.preserveFrpTooltip')}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </Label>
+                                        <div className="flex items-center space-x-2">
+                                            <Switch checked={preserveFrp} onCheckedChange={setPreserveFrp} />
+                                            <span className="text-sm text-muted-foreground">
+                                                {preserveFrp ? t('form.enabled') : t('form.disabled')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{t('passcodePolicy.preserveFrpDesc')}</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

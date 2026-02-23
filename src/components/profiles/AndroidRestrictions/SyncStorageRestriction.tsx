@@ -3,8 +3,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Platform, SyncStorageRestriction as SyncStorageRestrictionType } from '@/types/models';
+import { Platform, SyncStorageRestriction as SyncStorageRestrictionType, UsbDataAccess } from '@/types/models';
 import { Edit, HardDrive, Loader2, Save, Usb } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,6 +26,12 @@ interface SyncStorageRestrictionProps {
     onCancel: () => void;
 }
 
+const USB_DATA_ACCESS_OPTIONS: { value: UsbDataAccess; label: string; desc: string }[] = [
+    { value: 'ALLOW_USB_DATA_TRANSFER', label: 'Allow USB Data Transfer', desc: 'Full USB data transfer allowed' },
+    { value: 'DISALLOW_USB_FILE_TRANSFER', label: 'Disallow File Transfer', desc: 'USB file transfer blocked, other USB functions allowed' },
+    { value: 'DISALLOW_USB_DATA_TRANSFER', label: 'Disallow All USB Data', desc: 'All USB data transfer blocked' },
+];
+
 export function SyncStorageRestriction({ platform, profileId, initialData, onSave, onCancel }: SyncStorageRestrictionProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
@@ -27,7 +40,7 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
 
     const [formData, setFormData] = useState<Partial<SyncStorageRestrictionType>>({
         disableExternalMediaMount: initialData?.disableExternalMediaMount ?? true,
-        disableUsbTransfer: initialData?.disableUsbTransfer ?? true,
+        usbDataAccess: initialData?.usbDataAccess,
         devicePolicyType: 'AndroidSyncStorageRestriction',
         ...initialData
     });
@@ -58,6 +71,8 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
             onCancel();
         }
     };
+
+    const getUsbLabel = (v?: UsbDataAccess) => USB_DATA_ACCESS_OPTIONS.find(o => o.value === v)?.label ?? 'Not set';
 
     const renderView = () => (
         <div className="space-y-6 max-w-4xl mt-6">
@@ -95,20 +110,15 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                     </CardContent>
                 </Card>
 
-                <Card className={`border-l-4 ${formData.disableUsbTransfer ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                <Card className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Usb className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">{t('restrictions.storage.usbTransfer')}</span>
+                            <span className="font-medium">{t('restrictions.storage.usbDataAccess')}</span>
                         </div>
-                        <Badge variant={formData.disableUsbTransfer ? 'default' : 'destructive'}>
-                            {formData.disableUsbTransfer ? t('common.disabled') : t('restrictions.allowed')}
+                        <Badge variant="secondary">
+                            {getUsbLabel(formData.usbDataAccess)}
                         </Badge>
-                        <p className="text-xs text-muted-foreground mt-2">
-                            {formData.disableUsbTransfer 
-                                ? t('restrictions.storage.usbBlockedDesc') 
-                                : t('restrictions.storage.usbAllowedDesc')}
-                        </p>
                     </CardContent>
                 </Card>
             </div>
@@ -138,6 +148,7 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
             </div>
 
             <div className="space-y-4 p-4 border rounded-xl bg-card">
+                {/* External Media Mount */}
                 <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
                         <HardDrive className="w-5 h-5 mt-0.5 text-orange-500" />
@@ -154,20 +165,32 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
                     />
                 </div>
 
-                <div className="flex items-center justify-between py-3">
+                {/* USB Data Access */}
+                <div className="space-y-2 py-3">
                     <Label className="flex items-start gap-3">
                         <Usb className="w-5 h-5 mt-0.5 text-blue-500" />
                         <div>
-                            <span className="font-medium">{t('restrictions.storage.disableUsbTransfer')}</span>
+                            <span className="font-medium">{t('restrictions.storage.usbDataAccess')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                {t('restrictions.storage.disableUsbTransferDesc')}
+                                {t('restrictions.storage.usbDataAccessDesc')}
                             </p>
                         </div>
                     </Label>
-                    <Switch
-                        checked={formData.disableUsbTransfer}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableUsbTransfer: c }))}
-                    />
+                    <Select
+                        value={formData.usbDataAccess}
+                        onValueChange={(v: UsbDataAccess) => setFormData(prev => ({ ...prev, usbDataAccess: v }))}
+                    >
+                        <SelectTrigger className="ml-8">
+                            <SelectValue placeholder={t('restrictions.storage.selectUsbAccess')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {USB_DATA_ACCESS_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label} — {opt.desc}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 

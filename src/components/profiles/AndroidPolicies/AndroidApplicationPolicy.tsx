@@ -581,6 +581,14 @@ export function AndroidApplicationPolicy({
                                                                         />
                                                                         <span>Install Certificates</span>
                                                                     </label>
+                                                                    <label className="flex items-center gap-2 text-xs">
+                                                                        <Switch
+                                                                            checked={policy.canAccessSecurityLogs ?? false}
+                                                                            onCheckedChange={(v) => handleFieldChange(policy.id, 'canAccessSecurityLogs', v)}
+                                                                            className="scale-90"
+                                                                        />
+                                                                        <span>Access Security Logs</span>
+                                                                    </label>
                                                                 </div>
                                                             </div>
                                                         </div>

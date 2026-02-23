@@ -5,6 +5,14 @@
 // Shared Types
 export type ControlType = 'ENABLE' | 'DISABLE' | 'USER_CONTROLLED';
 
+// Kiosk Restriction Enums (from new API)
+export type SystemNavigationRestriction = 'NAVIGATION_ENABLED' | 'NAVIGATION_DISABLED' | 'HOME_BUTTON_ONLY';
+export type StatusBarRestrictionEnum = 'NOTIFICATIONS_AND_SYSTEM_INFO_ENABLED' | 'NOTIFICATIONS_AND_SYSTEM_INFO_DISABLED' | 'SYSTEM_INFO_ONLY';
+export type BatteryPluggedMode = 'AC' | 'USB' | 'WIRELESS';
+
+// Storage Restriction Enums (from new API)
+export type UsbDataAccess = 'ALLOW_USB_DATA_TRANSFER' | 'DISALLOW_USB_FILE_TRANSFER' | 'DISALLOW_USB_DATA_TRANSFER';
+
 // DateTimePolicy discriminated union
 export interface NetworkProvidedDateTime {
     dateTimeSetting: 'NetworkProvidedDateTime';
@@ -65,20 +73,22 @@ export interface PasscodeRestrictionPolicy {
 export interface SyncStorageRestriction {
     id?: string;
     disableExternalMediaMount?: boolean;
-    disableUsbTransfer?: boolean;
+    usbDataAccess?: UsbDataAccess;
     devicePolicyType?: 'AndroidSyncStorageRestriction';
 }
 
 // 4. Kiosk Restriction (AndroidKioskRestriction)
 export interface KioskRestriction {
     id?: string;
-    enableHomeButton?: boolean;
-    enableRecentsButton?: boolean;
-    enableNotifications?: boolean;
-    enableStatusBar?: boolean;
-    enableScreenLock?: boolean;
+    navigation?: SystemNavigationRestriction;
+    statusBar?: StatusBarRestrictionEnum;
+    denyDeviceSettingsAccess?: boolean;
+    enableSystemWarnings?: boolean;
+    disableLockScreen?: boolean;
+    createWindowsDisabled?: boolean;
+    skipFirstUseHintsEnabled?: boolean;
+    stayOnPlugged?: BatteryPluggedMode[];
     lockPowerButton?: boolean;
-    exitKioskButton?: boolean;
     devicePolicyType?: 'AndroidKioskRestriction';
 }
 

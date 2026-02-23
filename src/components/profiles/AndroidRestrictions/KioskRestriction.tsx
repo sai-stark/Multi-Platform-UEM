@@ -2,10 +2,24 @@ import { restrictionAPI } from '@/api/services/Androidrestrictions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { KioskRestriction as KioskRestrictionType, Platform } from '@/types/models';
-import { Bell, Edit, Home, Lock, Loader2, Power, Rows, Save, Square } from 'lucide-react';
+import {
+    BatteryPluggedMode,
+    KioskRestriction as KioskRestrictionType,
+    Platform,
+    StatusBarRestrictionEnum,
+    SystemNavigationRestriction,
+} from '@/types/models';
+import { Battery, Edit, Loader2, Monitor, Navigation, Power, Save, Settings, Shield, Square } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +33,24 @@ interface KioskRestrictionProps {
     onCancel: () => void;
 }
 
+const NAVIGATION_OPTIONS: { value: SystemNavigationRestriction; label: string; desc: string }[] = [
+    { value: 'NAVIGATION_ENABLED', label: 'Navigation Enabled', desc: 'All navigation buttons visible' },
+    { value: 'NAVIGATION_DISABLED', label: 'Navigation Disabled', desc: 'All navigation buttons hidden' },
+    { value: 'HOME_BUTTON_ONLY', label: 'Home Button Only', desc: 'Only home button is visible' },
+];
+
+const STATUS_BAR_OPTIONS: { value: StatusBarRestrictionEnum; label: string; desc: string }[] = [
+    { value: 'NOTIFICATIONS_AND_SYSTEM_INFO_ENABLED', label: 'Notifications & System Info', desc: 'Full status bar access' },
+    { value: 'NOTIFICATIONS_AND_SYSTEM_INFO_DISABLED', label: 'Disabled', desc: 'Status bar fully hidden' },
+    { value: 'SYSTEM_INFO_ONLY', label: 'System Info Only', desc: 'Notifications hidden, info visible' },
+];
+
+const PLUGGED_MODES: { value: BatteryPluggedMode; label: string }[] = [
+    { value: 'AC', label: 'AC Power' },
+    { value: 'USB', label: 'USB' },
+    { value: 'WIRELESS', label: 'Wireless' },
+];
+
 export function KioskRestriction({ platform, profileId, initialData, onSave, onCancel }: KioskRestrictionProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
@@ -26,13 +58,15 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     const [formData, setFormData] = useState<Partial<KioskRestrictionType>>({
-        enableHomeButton: initialData?.enableHomeButton ?? false,
-        enableRecentsButton: initialData?.enableRecentsButton ?? false,
-        enableNotifications: initialData?.enableNotifications ?? false,
-        enableStatusBar: initialData?.enableStatusBar ?? false,
-        enableScreenLock: initialData?.enableScreenLock ?? false,
+        navigation: initialData?.navigation,
+        statusBar: initialData?.statusBar,
+        denyDeviceSettingsAccess: initialData?.denyDeviceSettingsAccess ?? false,
+        enableSystemWarnings: initialData?.enableSystemWarnings ?? true,
+        disableLockScreen: initialData?.disableLockScreen ?? true,
+        createWindowsDisabled: initialData?.createWindowsDisabled ?? true,
+        skipFirstUseHintsEnabled: initialData?.skipFirstUseHintsEnabled ?? true,
+        stayOnPlugged: initialData?.stayOnPlugged ?? [],
         lockPowerButton: initialData?.lockPowerButton ?? true,
-        exitKioskButton: initialData?.exitKioskButton ?? false,
         devicePolicyType: 'AndroidKioskRestriction',
         ...initialData
     });
@@ -64,6 +98,19 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
         }
     };
 
+    const togglePluggedMode = (mode: BatteryPluggedMode) => {
+        setFormData(prev => {
+            const current = prev.stayOnPlugged ?? [];
+            const updated = current.includes(mode)
+                ? current.filter(m => m !== mode)
+                : [...current, mode];
+            return { ...prev, stayOnPlugged: updated };
+        });
+    };
+
+    const getNavLabel = (v?: SystemNavigationRestriction) => NAVIGATION_OPTIONS.find(o => o.value === v)?.label ?? 'Not set';
+    const getStatusBarLabel = (v?: StatusBarRestrictionEnum) => STATUS_BAR_OPTIONS.find(o => o.value === v)?.label ?? 'Not set';
+
     const renderView = () => (
         <div className="space-y-6 max-w-4xl mt-6">
             <div className="flex items-center justify-between pb-4 border-b">
@@ -83,66 +130,68 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card className={`border-l-4 ${formData.enableHomeButton ? 'border-l-green-500' : 'border-l-gray-300'}`}>
+                {/* Navigation */}
+                <Card className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <Home className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">{t('restrictions.kiosk.homeButton')}</span>
+                            <Navigation className="w-5 h-5 text-blue-500" />
+                            <span className="font-medium">{t('restrictions.kiosk.navigation')}</span>
                         </div>
-                        <Badge variant={formData.enableHomeButton ? 'default' : 'secondary'}>
-                            {formData.enableHomeButton ? t('common.enabled') : t('restrictions.kiosk.hidden')}
+                        <Badge variant="secondary">{getNavLabel(formData.navigation)}</Badge>
+                    </CardContent>
+                </Card>
+
+                {/* Status Bar */}
+                <Card className="border-l-4 border-l-cyan-500">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Monitor className="w-5 h-5 text-cyan-500" />
+                            <span className="font-medium">{t('restrictions.kiosk.statusBarControl')}</span>
+                        </div>
+                        <Badge variant="secondary">{getStatusBarLabel(formData.statusBar)}</Badge>
+                    </CardContent>
+                </Card>
+
+                {/* Deny Device Settings */}
+                <Card className={`border-l-4 ${formData.denyDeviceSettingsAccess ? 'border-l-red-500' : 'border-l-green-500'}`}>
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Settings className="w-5 h-5 text-orange-500" />
+                            <span className="font-medium">{t('restrictions.kiosk.deviceSettings')}</span>
+                        </div>
+                        <Badge variant={formData.denyDeviceSettingsAccess ? 'destructive' : 'default'}>
+                            {formData.denyDeviceSettingsAccess ? t('restrictions.blocked') : t('restrictions.allowed')}
                         </Badge>
                     </CardContent>
                 </Card>
 
-                <Card className={`border-l-4 ${formData.enableRecentsButton ? 'border-l-green-500' : 'border-l-gray-300'}`}>
+                {/* System Warnings */}
+                <Card className={`border-l-4 ${formData.enableSystemWarnings ? 'border-l-green-500' : 'border-l-gray-300'}`}>
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <Rows className="w-5 h-5 text-purple-500" />
-                            <span className="font-medium">{t('restrictions.kiosk.recentsButton')}</span>
+                            <Shield className="w-5 h-5 text-yellow-500" />
+                            <span className="font-medium">{t('restrictions.kiosk.systemWarnings')}</span>
                         </div>
-                        <Badge variant={formData.enableRecentsButton ? 'default' : 'secondary'}>
-                            {formData.enableRecentsButton ? t('common.enabled') : t('restrictions.kiosk.hidden')}
+                        <Badge variant={formData.enableSystemWarnings ? 'default' : 'secondary'}>
+                            {formData.enableSystemWarnings ? t('common.enabled') : t('common.disabled')}
                         </Badge>
                     </CardContent>
                 </Card>
 
-                <Card className={`border-l-4 ${formData.enableNotifications ? 'border-l-green-500' : 'border-l-gray-300'}`}>
+                {/* Lock Screen */}
+                <Card className={`border-l-4 ${formData.disableLockScreen ? 'border-l-red-500' : 'border-l-green-500'}`}>
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <Bell className="w-5 h-5 text-yellow-500" />
-                            <span className="font-medium">{t('restrictions.kiosk.notifications')}</span>
+                            <Shield className="w-5 h-5 text-green-500" />
+                            <span className="font-medium">{t('restrictions.kiosk.lockScreen')}</span>
                         </div>
-                        <Badge variant={formData.enableNotifications ? 'default' : 'secondary'}>
-                            {formData.enableNotifications ? t('restrictions.kiosk.shown') : t('restrictions.kiosk.hidden')}
+                        <Badge variant={formData.disableLockScreen ? 'destructive' : 'default'}>
+                            {formData.disableLockScreen ? t('common.disabled') : t('common.enabled')}
                         </Badge>
                     </CardContent>
                 </Card>
 
-                <Card className={`border-l-4 ${formData.enableStatusBar ? 'border-l-green-500' : 'border-l-gray-300'}`}>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Rows className="w-5 h-5 text-cyan-500" />
-                            <span className="font-medium">{t('restrictions.kiosk.statusBar')}</span>
-                        </div>
-                        <Badge variant={formData.enableStatusBar ? 'default' : 'secondary'}>
-                            {formData.enableStatusBar ? t('restrictions.kiosk.visible') : t('restrictions.kiosk.hidden')}
-                        </Badge>
-                    </CardContent>
-                </Card>
-
-                <Card className={`border-l-4 ${formData.enableScreenLock ? 'border-l-green-500' : 'border-l-gray-300'}`}>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Lock className="w-5 h-5 text-green-500" />
-                            <span className="font-medium">{t('restrictions.kiosk.screenLock')}</span>
-                        </div>
-                        <Badge variant={formData.enableScreenLock ? 'default' : 'secondary'}>
-                            {formData.enableScreenLock ? t('common.enabled') : t('common.disabled')}
-                        </Badge>
-                    </CardContent>
-                </Card>
-
+                {/* Power Button */}
                 <Card className={`border-l-4 ${formData.lockPowerButton ? 'border-l-orange-500' : 'border-l-gray-300'}`}>
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
@@ -152,6 +201,24 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                         <Badge variant={formData.lockPowerButton ? 'secondary' : 'default'}>
                             {formData.lockPowerButton ? t('restrictions.locked') : t('restrictions.unlocked')}
                         </Badge>
+                    </CardContent>
+                </Card>
+
+                {/* Stay On Plugged */}
+                <Card className="border-l-4 border-l-purple-500">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Battery className="w-5 h-5 text-purple-500" />
+                            <span className="font-medium">{t('restrictions.kiosk.stayOnPlugged')}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                            {(formData.stayOnPlugged ?? []).length > 0
+                                ? (formData.stayOnPlugged ?? []).map(m => (
+                                    <Badge key={m} variant="secondary">{m}</Badge>
+                                ))
+                                : <Badge variant="outline">{t('restrictions.kiosk.none')}</Badge>
+                            }
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -181,86 +248,138 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
             </div>
 
             <div className="space-y-4 p-4 border rounded-xl bg-card">
+                {/* Navigation */}
+                <div className="space-y-2 pb-3 border-b">
+                    <Label className="flex items-center gap-2">
+                        <Navigation className="w-5 h-5 text-blue-500" />
+                        <span className="font-medium">{t('restrictions.kiosk.navigation')}</span>
+                    </Label>
+                    <Select
+                        value={formData.navigation}
+                        onValueChange={(v: SystemNavigationRestriction) => setFormData(prev => ({ ...prev, navigation: v }))}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={t('restrictions.kiosk.selectNavigation')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {NAVIGATION_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label} — {opt.desc}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Status Bar */}
+                <div className="space-y-2 pb-3 border-b">
+                    <Label className="flex items-center gap-2">
+                        <Monitor className="w-5 h-5 text-cyan-500" />
+                        <span className="font-medium">{t('restrictions.kiosk.statusBarControl')}</span>
+                    </Label>
+                    <Select
+                        value={formData.statusBar}
+                        onValueChange={(v: StatusBarRestrictionEnum) => setFormData(prev => ({ ...prev, statusBar: v }))}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={t('restrictions.kiosk.selectStatusBar')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {STATUS_BAR_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label} — {opt.desc}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Deny Device Settings Access */}
                 <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <Home className="w-5 h-5 mt-0.5 text-blue-500" />
+                        <Settings className="w-5 h-5 mt-0.5 text-orange-500" />
                         <div>
-                            <span className="font-medium">{t('restrictions.kiosk.enableHomeButton')}</span>
+                            <span className="font-medium">{t('restrictions.kiosk.denyDeviceSettings')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                {t('restrictions.kiosk.enableHomeButtonDesc')}
+                                {t('restrictions.kiosk.denyDeviceSettingsDesc')}
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.enableHomeButton}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, enableHomeButton: c }))}
+                        checked={formData.denyDeviceSettingsAccess}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, denyDeviceSettingsAccess: c }))}
                     />
                 </div>
 
+                {/* Enable System Warnings */}
                 <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <Rows className="w-5 h-5 mt-0.5 text-purple-500" />
+                        <Shield className="w-5 h-5 mt-0.5 text-yellow-500" />
                         <div>
-                            <span className="font-medium">{t('restrictions.kiosk.enableRecentsButton')}</span>
+                            <span className="font-medium">{t('restrictions.kiosk.enableSystemWarnings')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                {t('restrictions.kiosk.enableRecentsButtonDesc')}
+                                {t('restrictions.kiosk.enableSystemWarningsDesc')}
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.enableRecentsButton}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, enableRecentsButton: c }))}
+                        checked={formData.enableSystemWarnings}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, enableSystemWarnings: c }))}
                     />
                 </div>
 
+                {/* Disable Lock Screen */}
                 <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <Bell className="w-5 h-5 mt-0.5 text-yellow-500" />
+                        <Shield className="w-5 h-5 mt-0.5 text-green-500" />
                         <div>
-                            <span className="font-medium">{t('restrictions.kiosk.enableNotifications')}</span>
+                            <span className="font-medium">{t('restrictions.kiosk.disableLockScreen')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                {t('restrictions.kiosk.enableNotificationsDesc')}
+                                {t('restrictions.kiosk.disableLockScreenDesc')}
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.enableNotifications}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, enableNotifications: c }))}
+                        checked={formData.disableLockScreen}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, disableLockScreen: c }))}
                     />
                 </div>
 
+                {/* Create Windows Disabled */}
                 <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <Rows className="w-5 h-5 mt-0.5 text-cyan-500" />
+                        <Monitor className="w-5 h-5 mt-0.5 text-indigo-500" />
                         <div>
-                            <span className="font-medium">{t('restrictions.kiosk.enableStatusBar')}</span>
+                            <span className="font-medium">{t('restrictions.kiosk.createWindowsDisabled')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                {t('restrictions.kiosk.enableStatusBarDesc')}
+                                {t('restrictions.kiosk.createWindowsDisabledDesc')}
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.enableStatusBar}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, enableStatusBar: c }))}
+                        checked={formData.createWindowsDisabled}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, createWindowsDisabled: c }))}
                     />
                 </div>
 
+                {/* Skip First Use Hints */}
                 <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
-                        <Lock className="w-5 h-5 mt-0.5 text-green-500" />
+                        <Shield className="w-5 h-5 mt-0.5 text-purple-500" />
                         <div>
-                            <span className="font-medium">{t('restrictions.kiosk.enableScreenLock')}</span>
+                            <span className="font-medium">{t('restrictions.kiosk.skipFirstUseHints')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                {t('restrictions.kiosk.enableScreenLockDesc')}
+                                {t('restrictions.kiosk.skipFirstUseHintsDesc')}
                             </p>
                         </div>
                     </Label>
                     <Switch
-                        checked={formData.enableScreenLock}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, enableScreenLock: c }))}
+                        checked={formData.skipFirstUseHintsEnabled}
+                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, skipFirstUseHintsEnabled: c }))}
                     />
                 </div>
 
+                {/* Lock Power Button */}
                 <div className="flex items-center justify-between py-3 border-b">
                     <Label className="flex items-start gap-3">
                         <Power className="w-5 h-5 mt-0.5 text-red-500" />
@@ -277,20 +396,28 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                     />
                 </div>
 
-                <div className="flex items-center justify-between py-3">
-                    <Label className="flex items-start gap-3">
-                        <Square className="w-5 h-5 mt-0.5 text-orange-500" />
+                {/* Stay On Plugged */}
+                <div className="py-3">
+                    <Label className="flex items-start gap-3 mb-3">
+                        <Battery className="w-5 h-5 mt-0.5 text-purple-500" />
                         <div>
-                            <span className="font-medium">{t('restrictions.kiosk.exitKioskButton')}</span>
+                            <span className="font-medium">{t('restrictions.kiosk.stayOnPlugged')}</span>
                             <p className="font-normal text-xs text-muted-foreground">
-                                {t('restrictions.kiosk.exitKioskButtonDesc')}
+                                {t('restrictions.kiosk.stayOnPluggedDesc')}
                             </p>
                         </div>
                     </Label>
-                    <Switch
-                        checked={formData.exitKioskButton}
-                        onCheckedChange={(c) => setFormData(prev => ({ ...prev, exitKioskButton: c }))}
-                    />
+                    <div className="flex flex-wrap gap-4 pl-8">
+                        {PLUGGED_MODES.map(mode => (
+                            <label key={mode.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                                <Checkbox
+                                    checked={(formData.stayOnPlugged ?? []).includes(mode.value)}
+                                    onCheckedChange={() => togglePluggedMode(mode.value)}
+                                />
+                                {mode.label}
+                            </label>
+                        ))}
+                    </div>
                 </div>
             </div>
 

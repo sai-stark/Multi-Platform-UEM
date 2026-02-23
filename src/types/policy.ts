@@ -37,13 +37,29 @@ export interface PersonalDeviceEnforcement {
     wipeAfterDays: number; // minimum: 0, must be > blockAfterDays
 }
 
+// Dedicated Device Enforcement (extends PersonalDeviceEnforcement)
+export interface DedicatedDeviceEnforcement extends PersonalDeviceEnforcement {
+    preserveFrp?: boolean; // Preserve factory-reset protection data
+}
+
 // Android Passcode Policy (AndroidPersonalDevicesPasscodePolicy)
-export interface AndroidPasscodePolicy {
+export interface AndroidPersonalDevicesPasscodePolicy {
     work: AndroidWorkPasscodePolicy; // required
     device?: AndroidDevicePasscodePolicy;
     enforcement?: PersonalDeviceEnforcement;
     devicePolicyType?: 'AndroidPersonalDevicesPasscodePolicy';
 }
+
+// Android Dedicated Device Passcode Policy
+export interface AndroidDedicatedDevicePasscodePolicy {
+    work: AndroidWorkPasscodePolicy; // required
+    device?: AndroidDevicePasscodePolicy;
+    enforcement?: DedicatedDeviceEnforcement;
+    devicePolicyType?: 'AndroidDedicatedDevicePasscodePolicy';
+}
+
+// AndroidPasscodePolicy — discriminated union covering both personal and dedicated
+export type AndroidPasscodePolicy = AndroidPersonalDevicesPasscodePolicy | AndroidDedicatedDevicePasscodePolicy;
 
 // Volume Policy (discriminated union)
 export interface ManagedVolume {
@@ -58,14 +74,30 @@ export interface UnmanagedVolume {
 export type VolumePolicy = ManagedVolume | UnmanagedVolume;
 
 // System Update Policy (discriminated union)
+// DayMonth object for freeze period dates
+export interface DayMonth {
+    day: number; // 1-31, Feb 29 treated as Feb 28
+    month: number; // 1-12
+}
+
+// DatePeriod for freeze windows
+export interface DatePeriod {
+    startDate: DayMonth;
+    endDate: DayMonth;
+}
+
 export interface ScheduledSystemUpdate {
     systemUpdate: 'SCHEDULED';
     systemUpdateScheduleFrom: string; // time format
     systemUpdateScheduleTo: string; // time format
+    allowedDaysWithoutUpdate?: number; // integer >= 1
+    freezePeriods?: DatePeriod[]; // annually recurring freeze windows
 }
 
 export interface NonScheduledSystemUpdate {
     systemUpdate: 'DEFAULT' | 'IMMEDIATELY' | 'POSTPONE';
+    allowedDaysWithoutUpdate?: number; // integer >= 1
+    freezePeriods?: DatePeriod[]; // annually recurring freeze windows
 }
 
 export type SystemUpdatePolicy = ScheduledSystemUpdate | NonScheduledSystemUpdate;
@@ -177,6 +209,7 @@ export interface AndroidApplicationPolicy extends UserAuditData {
     communicateWithPersonalApp?: 'DENY' | 'ALLOW_WITH_USER_CONSENT';
     isCredentialProvider?: boolean;
     canInstallCertificate?: boolean;
+    canAccessSecurityLogs?: boolean; // Company-owned devices only; one app at a time
     devicePolicyType: 'AndroidApplicationPolicy';
 }
 

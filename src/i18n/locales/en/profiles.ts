@@ -59,6 +59,14 @@ export const profiles = {
     'profiles.add.cancel': 'Cancel',
     'profiles.add.preparing': 'Preparing profile...',
 
+    // Android-specific Add Profile fields
+    'profiles.add.managementMode': 'Management Mode',
+    'profiles.add.selectManagementMode': 'Select management mode',
+    'profiles.add.managementModeHint': 'How the device is managed — determines available policies and restrictions',
+    'profiles.add.shortSupportMessage': 'Short Support Message (optional)',
+    'profiles.add.longSupportMessage': 'Long Support Message (optional)',
+    'profiles.add.optionalFields': 'Optional Settings',
+
     // Edit Profile Dialog
     'profiles.edit.title': 'Edit Profile',
     'profiles.edit.description': 'Modify the profile details',

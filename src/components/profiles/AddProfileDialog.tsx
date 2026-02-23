@@ -19,10 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { getAssetUrl } from "@/config/env";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
-import { Platform, Profile, ProfileType } from "@/types/models";
+import { Platform, Profile, ProfileType, ManagementMode } from "@/types/models";
 import { getErrorMessage } from "@/utils/errorUtils";
 import { Layout } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
@@ -77,6 +78,9 @@ interface FormData {
   name: string;
   description: string;
   platform: "android" | "ios";
+  managementMode: ManagementMode;
+  shortSupportMessage: string;
+  longSupportMessage: string;
 }
 
 // Constants for profile readiness polling
@@ -97,9 +101,13 @@ export function AddProfileDialog({
     name: "",
     description: "",
     platform: defaultPlatform,
+    managementMode: 'BYOD',
+    shortSupportMessage: "",
+    longSupportMessage: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
 
   // Poll the profile API until it returns valid data
   const waitForProfileReady = useCallback(
@@ -228,6 +236,17 @@ export function AddProfileDialog({
         profileType: profileType,
       };
 
+      // Add Android-specific fields
+      if (formData.platform === 'android') {
+        (profilePayload as any).managementMode = formData.managementMode;
+        if (formData.shortSupportMessage.trim()) {
+          (profilePayload as any).shortSupportMessage = formData.shortSupportMessage;
+        }
+        if (formData.longSupportMessage.trim()) {
+          (profilePayload as any).longSupportMessage = formData.longSupportMessage;
+        }
+      }
+
       const createdProfile = await ProfileService.createProfile(
         formData.platform,
         profilePayload
@@ -273,9 +292,10 @@ export function AddProfileDialog({
   };
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", platform: defaultPlatform });
+    setFormData({ name: "", description: "", platform: defaultPlatform, managementMode: 'BYOD', shortSupportMessage: "", longSupportMessage: "" });
     setErrors({});
     setTouched({});
+    setShowOptionalFields(false);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -462,6 +482,79 @@ export function AddProfileDialog({
               </span>
             </div>
           </div>
+
+          {/* Management Mode (Android only) */}
+          {formData.platform === 'android' && (
+            <div className="space-y-2">
+              <Label htmlFor="managementMode" className="flex items-center gap-1">
+                {t('profiles.add.managementMode')}
+                <span className="text-destructive" aria-hidden="true">*</span>
+              </Label>
+              <Select
+                value={formData.managementMode}
+                onValueChange={(v) => setFormData({ ...formData, managementMode: v as ManagementMode })}
+              >
+                <SelectTrigger id="managementMode">
+                  <SelectValue placeholder={t('profiles.add.selectManagementMode')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="BYOD">BYOD — Bring Your Own Device</SelectItem>
+                  <SelectItem value="COPE">COPE — Corporate Owned, Personally Enabled</SelectItem>
+                  <SelectItem value="COBO">COBO — Corporate Owned, Business Only</SelectItem>
+                  <SelectItem value="COSU">COSU — Corporate Owned, Single Use (Kiosk)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t('profiles.add.managementModeHint')}
+              </p>
+            </div>
+          )}
+
+          {/* Support Messages (Android only, collapsible) */}
+          {formData.platform === 'android' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  {t('profiles.add.optionalFields')}
+                </h4>
+                <div className="flex items-center space-x-2">
+                  <Switch checked={showOptionalFields} onCheckedChange={setShowOptionalFields} />
+                  <span className="text-sm text-muted-foreground">
+                    {showOptionalFields ? t('form.enabled') : t('form.disabled')}
+                  </span>
+                </div>
+              </div>
+              {showOptionalFields && (
+                <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="space-y-2">
+                    <Label htmlFor="shortSupportMessage">
+                      {t('profiles.add.shortSupportMessage')}
+                    </Label>
+                    <Input
+                      id="shortSupportMessage"
+                      placeholder="Short support message (10-100 chars)"
+                      value={formData.shortSupportMessage}
+                      onChange={(e) => setFormData({ ...formData, shortSupportMessage: e.target.value })}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="longSupportMessage">
+                      {t('profiles.add.longSupportMessage')}
+                    </Label>
+                    <Textarea
+                      id="longSupportMessage"
+                      placeholder="Long support message (15-250 chars)"
+                      value={formData.longSupportMessage}
+                      onChange={(e) => setFormData({ ...formData, longSupportMessage: e.target.value })}
+                      rows={2}
+                      maxLength={250}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
             <DialogFooter>
               <Button
