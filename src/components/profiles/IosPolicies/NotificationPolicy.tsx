@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { NotificationPolicy as NotificationPolicyType, Platform } from '@/types/models';
 import { AlertTriangle, Bell, Car, CheckCircle2, Circle, Edit, Eye, Layout, Loader2, Lock, MessageSquare, Plus, Speaker, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -42,7 +43,7 @@ export function NotificationPolicy({ platform, profileId, initialData }: Notific
             console.error('Failed to fetch notification policies:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to load notification policies',
+                description: getErrorMessage(error, 'Failed to load notification policies'),
                 variant: 'destructive',
             });
         } finally {
@@ -97,7 +98,7 @@ export function NotificationPolicy({ platform, profileId, initialData }: Notific
             console.error('Failed to save policy:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to save policy',
+                description: getErrorMessage(error, 'Failed to save policy'),
                 variant: 'destructive',
             });
         }
@@ -113,7 +114,7 @@ export function NotificationPolicy({ platform, profileId, initialData }: Notific
             console.error('Failed to delete policy:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to delete policy',
+                description: getErrorMessage(error, 'Failed to delete policy'),
                 variant: 'destructive',
             });
         }

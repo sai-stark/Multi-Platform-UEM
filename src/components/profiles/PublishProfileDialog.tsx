@@ -1,4 +1,5 @@
 import { ProfileService } from "@/api/services/profiles";
+import { getErrorMessage } from "@/utils/errorUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,7 +64,7 @@ export function PublishProfileDialog({
       console.error("Failed to publish profile:", error);
       toast({
         title: "Error",
-        description: "Failed to publish profile. Please try again.",
+        description: getErrorMessage(error, "Failed to publish profile. Please try again."),
         variant: "destructive",
       });
     } finally {

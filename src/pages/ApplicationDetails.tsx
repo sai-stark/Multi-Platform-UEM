@@ -63,6 +63,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 
 // Action configuration for badges
@@ -144,7 +145,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
       setShowAddConfig(false);
       toast({ title: 'Success', description: 'Configuration added' });
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to add configuration', variant: 'destructive' });
+      toast({ title: 'Error', description: getErrorMessage(err, 'Failed to add configuration'), variant: 'destructive' });
     } finally {
       setConfigSaving(false);
     }
@@ -158,7 +159,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
       setConfigs([]);
       toast({ title: 'Success', description: 'Configurations deleted' });
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to delete configurations', variant: 'destructive' });
+      toast({ title: 'Error', description: getErrorMessage(err, 'Failed to delete configurations'), variant: 'destructive' });
     } finally {
       setConfigSaving(false);
     }
@@ -659,7 +660,7 @@ const ApplicationDetails = () => {
         setError('Failed to load application details');
         toast({
           title: 'Error',
-          description: 'Failed to load application details',
+          description: getErrorMessage(err, 'Failed to load application details'),
           variant: 'destructive'
         });
       } finally {

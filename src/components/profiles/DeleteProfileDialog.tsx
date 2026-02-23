@@ -12,6 +12,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile } from "@/types/models";
+import { getErrorMessage } from "@/utils/errorUtils";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -56,7 +57,7 @@ export function DeleteProfileDialog({
       console.error("Failed to delete profile:", error);
       toast({
         title: "Error",
-        description: "Failed to delete profile. Please try again.",
+        description: getErrorMessage(error, "Failed to delete profile. Please try again."),
         variant: "destructive",
       });
     } finally {

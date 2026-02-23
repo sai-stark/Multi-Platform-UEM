@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { LockScreenMessagePolicy as LockScreenMessagePolicyType, Platform } from '@/types/models';
 import { Edit, Loader2, MessageSquare, Plus, Tag, Text, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -40,7 +41,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData }: Lo
                 if (error.response?.status !== 404) {
                     toast({
                         title: 'Error',
-                        description: 'Failed to load lock screen message policy',
+                        description: getErrorMessage(error, 'Failed to load lock screen message policy'),
                         variant: 'destructive',
                     });
                 }
@@ -87,7 +88,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData }: Lo
             console.error('Failed to save policy:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to save lock screen message',
+                description: getErrorMessage(error, 'Failed to save lock screen message'),
                 variant: 'destructive',
             });
         }
@@ -103,7 +104,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData }: Lo
             console.error('Failed to delete policy:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to delete lock screen message',
+                description: getErrorMessage(error, 'Failed to delete lock screen message'),
                 variant: 'destructive',
             });
         }

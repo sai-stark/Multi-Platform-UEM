@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PolicyService } from '@/api/services/IOSpolicies';
 import { IosGlobalHttpProxyPolicy } from '@/types/ios';
@@ -61,7 +62,7 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
             }
             onSave();
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to save policy', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -74,7 +75,7 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
             toast({ title: 'Success', description: 'HTTP Proxy policy deleted' });
             onSave();
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to delete policy', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

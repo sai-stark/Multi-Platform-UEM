@@ -37,6 +37,7 @@ import { getAssetUrl } from '@/config/env';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 import { cn } from '@/lib/utils';
 import { DeviceApplicationList, DeviceCertificateItem, DeviceInfo, DeviceLocationResponse, DeviceSecurityInfo, FullProfile, Platform } from '@/types/models';
+import { getErrorMessage } from '@/utils/errorUtils';
 import {
     Activity,
     AppWindow,
@@ -122,7 +123,7 @@ export default function DeviceDetails() {
             console.error("Failed to fetch device", error);
             toast({
                 title: "Error",
-                description: "Failed to fetch device details.",
+                description: getErrorMessage(error, "Failed to fetch device details."),
                 variant: "destructive"
             });
         } finally {
@@ -238,7 +239,7 @@ export default function DeviceDetails() {
             toast({ title: "Location Received", description: "Device location updated." });
         } catch (error) {
             console.error(error);
-            toast({ title: "Error", description: "Failed to get device location.", variant: "destructive" });
+            toast({ title: "Error", description: getErrorMessage(error, "Failed to get device location."), variant: "destructive" });
         }
     };
 
@@ -261,7 +262,7 @@ export default function DeviceDetails() {
             setDeleteUserDialog(false);
         } catch (error) {
             console.error("Failed to delete user", error);
-            toast({ title: "Action Failed", description: "Could not send delete user command.", variant: "destructive" });
+            toast({ title: "Action Failed", description: getErrorMessage(error, "Could not send delete user command."), variant: "destructive" });
         }
     };
 
@@ -331,7 +332,7 @@ export default function DeviceDetails() {
             console.error(`Failed to execute ${action} `, error);
             toast({
                 title: "Action Failed",
-                description: "Could not send command to device. Check console/network.",
+                description: getErrorMessage(error, "Could not send command to device."),
                 variant: "destructive"
             });
         }

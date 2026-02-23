@@ -16,6 +16,8 @@ import { DateTimeRestriction as DateTimeRestrictionType, Platform } from '@/type
 import { Clock, Edit, Globe, Loader2, Save, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface DateTimeRestrictionProps {
     platform: Platform;
@@ -27,6 +29,7 @@ interface DateTimeRestrictionProps {
 
 export function DateTimeRestriction({ platform, profileId, initialData, onSave, onCancel }: DateTimeRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -49,6 +52,7 @@ export function DateTimeRestriction({ platform, profileId, initialData, onSave, 
             onSave();
         } catch (error) {
             console.error('Failed to save datetime restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save date/time restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

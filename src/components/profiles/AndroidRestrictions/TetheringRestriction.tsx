@@ -8,6 +8,8 @@ import { Platform, TetheringRestriction as TetheringRestrictionType } from '@/ty
 import { Edit, Loader2, Save, Share2, Wifi } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface TetheringRestrictionProps {
     platform: Platform;
@@ -19,6 +21,7 @@ interface TetheringRestrictionProps {
 
 export function TetheringRestriction({ platform, profileId, initialData, onSave, onCancel }: TetheringRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -41,6 +44,7 @@ export function TetheringRestriction({ platform, profileId, initialData, onSave,
             onSave();
         } catch (error) {
             console.error('Failed to save tethering restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save tethering restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

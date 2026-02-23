@@ -7,6 +7,7 @@ import { ITunesSearchService, ITunesSearchResult } from '@/api/services/itunesSe
 // Commented out: Original AddApplicationDialog import
 // import { AddApplicationDialog } from '@/components/applications/AddApplicationDialog';
 import { Platform } from '@/types/models';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { getAssetUrl } from '@/config/env';
 import { EnterpriseService } from '@/api/services/enterprise';
 import { useAndroidFeaturesEnabled } from '@/contexts/EnterpriseContext';
@@ -568,7 +569,7 @@ const Applications = () => {
       console.error('Failed to fetch applications:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load applications',
+        description: getErrorMessage(error, 'Failed to load applications'),
         variant: 'destructive'
       });
     } finally {
@@ -595,7 +596,7 @@ const Applications = () => {
       fetchApplications();
     } catch (error) {
       console.error('Failed to register iOS app:', error);
-      toast({ title: 'Error', description: 'Failed to register iOS application', variant: 'destructive' });
+      toast({ title: 'Error', description: getErrorMessage(error, 'Failed to register iOS application'), variant: 'destructive' });
     } finally {
       setIosRegistering(false);
     }
@@ -614,7 +615,7 @@ const Applications = () => {
       fetchApplications();
     } catch (error) {
       console.error('Failed to register iOS app:', error);
-      toast({ title: 'Error', description: `Failed to register ${result.trackName}`, variant: 'destructive' });
+      toast({ title: 'Error', description: getErrorMessage(error, `Failed to register ${result.trackName}`), variant: 'destructive' });
     } finally {
       setIosRegistering(false);
     }
@@ -659,7 +660,7 @@ const Applications = () => {
       console.error('Failed to delete application:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete application',
+        description: getErrorMessage(error, 'Failed to delete application'),
         variant: 'destructive'
       });
     } finally {
@@ -697,7 +698,7 @@ const Applications = () => {
       console.error('Failed to set action:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update application action',
+        description: getErrorMessage(error, 'Failed to update application action'),
         variant: 'destructive'
       });
     }

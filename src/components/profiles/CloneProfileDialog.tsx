@@ -16,6 +16,7 @@ import { getAssetUrl } from "@/config/env";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile } from "@/types/models";
+import { getErrorMessage } from "@/utils/errorUtils";
 import { Copy } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -246,7 +247,7 @@ export function CloneProfileDialog({
       console.error("Failed to clone profile:", error);
       toast({
         title: "Error",
-        description: "Failed to clone profile. Please try again.",
+        description: getErrorMessage(error, "Failed to clone profile. Please try again."),
         variant: "destructive",
       });
       setLoading(false);

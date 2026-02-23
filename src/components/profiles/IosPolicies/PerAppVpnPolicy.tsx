@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PolicyService } from '@/api/services/IOSpolicies';
 import { IosPerAppVpnPolicy } from '@/types/ios';
@@ -61,7 +62,7 @@ export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: Pe
             }
             onSave();
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to save policy', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -74,7 +75,7 @@ export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: Pe
             toast({ title: 'Success', description: 'Per-App VPN policy deleted' });
             onSave();
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to delete policy', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

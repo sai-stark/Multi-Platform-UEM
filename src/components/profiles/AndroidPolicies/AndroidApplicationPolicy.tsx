@@ -41,6 +41,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
 import { AndroidApplicationPolicy as AndroidApplicationPolicyType } from '@/types/policy';
@@ -295,7 +296,7 @@ export function AndroidApplicationPolicy({
             setChangedPolicies((prev) => prev.filter((p) => p.id !== appToDelete.id));
             toast({ title: 'Success', description: 'Application policy deleted.' });
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to delete application policy', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete application policy'), variant: 'destructive' });
         }
         setOpenDeleteModal(false);
         setAppToDelete(null);
@@ -328,7 +329,7 @@ export function AndroidApplicationPolicy({
             if (onSave) onSave();
         } catch (error) {
             console.error('Error saving application policies:', error);
-            toast({ title: 'Error', description: 'Failed to save application policies', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save application policies'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

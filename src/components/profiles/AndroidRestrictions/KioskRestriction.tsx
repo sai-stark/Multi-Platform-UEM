@@ -8,6 +8,8 @@ import { KioskRestriction as KioskRestrictionType, Platform } from '@/types/mode
 import { Bell, Edit, Home, Lock, Loader2, Power, Rows, Save, Square } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface KioskRestrictionProps {
     platform: Platform;
@@ -19,6 +21,7 @@ interface KioskRestrictionProps {
 
 export function KioskRestriction({ platform, profileId, initialData, onSave, onCancel }: KioskRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -46,6 +49,7 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
             onSave();
         } catch (error) {
             console.error('Failed to save kiosk restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save kiosk restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

@@ -8,6 +8,8 @@ import { MiscellaneousRestriction as MiscellaneousRestrictionType, Platform } fr
 import { Edit, Loader2, RefreshCw, Save, Settings, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface MiscellaneousRestrictionProps {
     platform: Platform;
@@ -19,6 +21,7 @@ interface MiscellaneousRestrictionProps {
 
 export function MiscellaneousRestriction({ platform, profileId, initialData, onSave, onCancel }: MiscellaneousRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -41,6 +44,7 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
             onSave();
         } catch (error) {
             console.error('Failed to save misc restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save miscellaneous restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

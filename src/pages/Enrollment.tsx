@@ -22,6 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { useAndroidFeaturesEnabled } from '@/contexts/EnterpriseContext';
 import {
   Check,
@@ -132,7 +133,7 @@ export default function Enrollment() {
       console.error('Failed to fetch profiles', error);
       toast({
         title: "Error",
-        description: "Failed to fetch enrollment profiles",
+        description: getErrorMessage(error, "Failed to fetch enrollment profiles"),
         variant: "destructive"
       });
     } finally {
@@ -263,7 +264,7 @@ export default function Enrollment() {
       console.error('Failed to copy', err);
       toast({
         title: "Error",
-        description: "Failed to copy to clipboard",
+        description: getErrorMessage(err, "Failed to copy to clipboard"),
         variant: "destructive"
       });
     }
@@ -311,7 +312,7 @@ export default function Enrollment() {
       console.error("Download failed", error);
       toast({
         title: "Error",
-        description: "Failed to download QR code",
+        description: getErrorMessage(error, "Failed to download QR code"),
         variant: "destructive"
       });
     }

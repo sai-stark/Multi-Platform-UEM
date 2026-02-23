@@ -15,6 +15,8 @@ import { DeviceThemePolicy as DeviceThemePolicyType, IconSize, Platform, ScreenO
 import { Edit, Image, Loader2, Maximize, Palette, Save, Type } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface DeviceThemePolicyProps {
     platform: Platform;
@@ -26,6 +28,7 @@ interface DeviceThemePolicyProps {
 
 export function DeviceThemePolicy({ platform, profileId, initialData, onSave, onCancel }: DeviceThemePolicyProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [useBackgroundImage, setUseBackgroundImage] = useState(!!initialData?.backgroundImage);
@@ -61,6 +64,7 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
             onSave();
         } catch (error) {
             console.error('Failed to save device theme policy:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save device theme policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

@@ -8,6 +8,8 @@ import { Platform, SyncStorageRestriction as SyncStorageRestrictionType } from '
 import { Edit, HardDrive, Loader2, Save, Usb } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface SyncStorageRestrictionProps {
     platform: Platform;
@@ -19,6 +21,7 @@ interface SyncStorageRestrictionProps {
 
 export function SyncStorageRestriction({ platform, profileId, initialData, onSave, onCancel }: SyncStorageRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -41,6 +44,7 @@ export function SyncStorageRestriction({ platform, profileId, initialData, onSav
             onSave();
         } catch (error) {
             console.error('Failed to save storage restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save storage restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

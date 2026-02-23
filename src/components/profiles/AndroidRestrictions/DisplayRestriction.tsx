@@ -10,6 +10,8 @@ import { DisplayRestriction as DisplayRestrictionType, Platform } from '@/types/
 import { Edit, Loader2, Monitor, Moon, Save, Sun, Timer } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface DisplayRestrictionProps {
     platform: Platform;
@@ -21,6 +23,7 @@ interface DisplayRestrictionProps {
 
 export function DisplayRestriction({ platform, profileId, initialData, onSave, onCancel }: DisplayRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -46,6 +49,7 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
             onSave();
         } catch (error) {
             console.error('Failed to save display restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save display restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

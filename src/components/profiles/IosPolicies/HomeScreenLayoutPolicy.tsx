@@ -6,6 +6,7 @@ import { IosHomeScreenLayoutPolicy, IconItem, FolderIconItem } from "@/types/ios
 import { PolicyService } from "@/api/services/IOSpolicies";
 import { Plus, Trash2, GripVertical, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 interface HomeScreenLayoutPolicyProps {
     profileId: string;
@@ -43,7 +44,7 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
             toast({ title: "Success", description: "Home Screen Layout policy saved successfully." });
             onSave();
         } catch (error) {
-            toast({ title: "Error", description: "Failed to save Home Screen Layout policy.", variant: "destructive" });
+            toast({ title: "Error", description: getErrorMessage(error, "Failed to save Home Screen Layout policy."), variant: "destructive" });
         } finally {
             setSaving(false);
         }
@@ -57,7 +58,7 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
             toast({ title: "Success", description: "Home Screen Layout policy deleted." });
             onSave();
         } catch (error) {
-            toast({ title: "Error", description: "Failed to delete policy.", variant: "destructive" });
+            toast({ title: "Error", description: getErrorMessage(error, "Failed to delete policy."), variant: "destructive" });
         } finally {
             setSaving(false);
         }

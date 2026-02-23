@@ -23,6 +23,7 @@ import { getAssetUrl } from "@/config/env";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType } from "@/types/models";
+import { getErrorMessage } from "@/utils/errorUtils";
 import { Layout } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -263,7 +264,7 @@ export function AddProfileDialog({
       console.error("Failed to create profile:", error);
       toast({
         title: "Error",
-        description: "Failed to create profile. Please try again.",
+        description: getErrorMessage(error, "Failed to create profile. Please try again."),
         variant: "destructive",
       });
       setLoading(false);

@@ -16,6 +16,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { EnrollmentPolicy as EnrollmentPolicyType, Platform, WifiSecurity } from '@/types/models';
 import { Edit, Key, Loader2, Monitor, Save, Signal, Smartphone, UserPlus, Wifi } from 'lucide-react';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface EnrollmentPolicyProps {
     platform: Platform;
@@ -27,6 +29,7 @@ interface EnrollmentPolicyProps {
 
 export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onCancel }: EnrollmentPolicyProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [configureWifi, setConfigureWifi] = useState(!!initialData?.wifiHotspot);
@@ -56,6 +59,7 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
             onSave();
         } catch (error) {
             console.error('Failed to save enrollment policy:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save enrollment policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

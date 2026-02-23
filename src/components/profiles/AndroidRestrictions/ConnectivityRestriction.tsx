@@ -15,6 +15,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ConnectivityRestriction as ConnectivityRestrictionType, ControlType, Platform } from '@/types/models';
 import { Bluetooth, Edit, Loader2, Nfc, Printer, Radio, Save, Send } from 'lucide-react';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface ConnectivityRestrictionProps {
     platform: Platform;
@@ -26,6 +28,7 @@ interface ConnectivityRestrictionProps {
 
 export function ConnectivityRestriction({ platform, profileId, initialData, onSave, onCancel }: ConnectivityRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -50,6 +53,7 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
             onSave();
         } catch (error) {
             console.error('Failed to save connectivity restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save connectivity restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

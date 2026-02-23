@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/utils/errorUtils";
 import {
   AndroidApplicationPolicy,
   ApplicationAction,
@@ -251,7 +252,7 @@ export const ApplicationPolicyEditor = ({
         console.error("iTunes search failed:", error);
         toast({
           title: "Search Error",
-          description: "Failed to search iTunes Store",
+          description: getErrorMessage(error, "Failed to search iTunes Store"),
           variant: "destructive",
         });
         setItunesResults([]);
@@ -358,7 +359,7 @@ export const ApplicationPolicyEditor = ({
       console.error("Create error:", error);
       toast({
         title: "Error",
-        description: "Failed to create application policy",
+        description: getErrorMessage(error, "Failed to create application policy"),
         variant: "destructive",
       });
     } finally {
@@ -462,7 +463,7 @@ export const ApplicationPolicyEditor = ({
       console.error("Update error:", error);
       toast({
         title: "Error",
-        description: "Failed to update application policy",
+        description: getErrorMessage(error, "Failed to update application policy"),
         variant: "destructive",
       });
     } finally {
@@ -509,7 +510,7 @@ export const ApplicationPolicyEditor = ({
       console.error("Delete error:", error);
       toast({
         title: "Error",
-        description: "Failed to delete application policy",
+        description: getErrorMessage(error, "Failed to delete application policy"),
         variant: "destructive",
       });
     } finally {
@@ -572,7 +573,7 @@ export const ApplicationPolicyEditor = ({
           console.error("Create error:", error);
           toast({
             title: "Error",
-            description: "Failed to create application policy",
+            description: getErrorMessage(error, "Failed to create application policy"),
             variant: "destructive",
           });
         } finally {

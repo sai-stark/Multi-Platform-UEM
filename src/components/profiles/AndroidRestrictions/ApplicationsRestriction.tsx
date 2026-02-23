@@ -8,6 +8,8 @@ import { ApplicationsRestriction as ApplicationsRestrictionType, Platform } from
 import { AppWindow, Download, Edit, Loader2, Save, Settings, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface ApplicationsRestrictionProps {
     platform: Platform;
@@ -19,6 +21,7 @@ interface ApplicationsRestrictionProps {
 
 export function ApplicationsRestriction({ platform, profileId, initialData, onSave, onCancel }: ApplicationsRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -42,6 +45,7 @@ export function ApplicationsRestriction({ platform, profileId, initialData, onSa
             onSave();
         } catch (error) {
             console.error('Failed to save applications restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save applications restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

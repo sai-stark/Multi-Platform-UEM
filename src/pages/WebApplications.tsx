@@ -3,6 +3,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { WebApplicationService } from '@/api/services/webApps';
 import { WebApplication } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { 
   Globe, 
   Plus, 
@@ -69,7 +70,7 @@ const WebApplications = () => {
       console.error('Failed to fetch web applications:', error);
       toast({
         title: 'Error',
-        description: 'Failed to fetch web applications',
+        description: getErrorMessage(error, 'Failed to fetch web applications'),
         variant: 'destructive',
       });
     } finally {
@@ -186,7 +187,7 @@ const WebApplications = () => {
       console.error('Failed to save web application:', error);
       toast({
         title: 'Error',
-        description: editingApp ? 'Failed to update web application' : 'Failed to create web application',
+        description: getErrorMessage(error, editingApp ? 'Failed to update web application' : 'Failed to create web application'),
         variant: 'destructive',
       });
     } finally {
@@ -216,7 +217,7 @@ const WebApplications = () => {
       console.error('Failed to delete web application:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete web application',
+        description: getErrorMessage(error, 'Failed to delete web application'),
         variant: 'destructive',
       });
     } finally {

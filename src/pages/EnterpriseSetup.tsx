@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { getAssetUrl } from '@/config/env';
 import { useEnterprise } from '@/contexts/EnterpriseContext';
 import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { AndroidEnterprise, AndroidEnterpriseSignup } from '@/types/models';
 import {
     AlertCircle,
@@ -190,7 +191,7 @@ export default function EnterpriseSetup() {
             console.error('Failed to create signup', error);
             toast({
                 title: "Error",
-                description: "Failed to initiate enterprise signup. Please try again.",
+                description: getErrorMessage(error, "Failed to initiate enterprise signup. Please try again."),
                 variant: "destructive"
             });
         } finally {
@@ -227,7 +228,7 @@ export default function EnterpriseSetup() {
             setFinalizationStatus('error');
             toast({
                 title: "Error",
-                description: "Failed to complete enterprise binding. Please try again.",
+                description: getErrorMessage(error, "Failed to complete enterprise binding. Please try again."),
                 variant: "destructive"
             });
         } finally {

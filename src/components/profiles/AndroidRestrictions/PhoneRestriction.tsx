@@ -8,6 +8,8 @@ import { PhoneRestriction as PhoneRestrictionType, Platform } from '@/types/mode
 import { Edit, Loader2, MessageSquare, Phone, PhoneOff, Save } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface PhoneRestrictionProps {
     platform: Platform;
@@ -19,6 +21,7 @@ interface PhoneRestrictionProps {
 
 export function PhoneRestriction({ platform, profileId, initialData, onSave, onCancel }: PhoneRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -41,6 +44,7 @@ export function PhoneRestriction({ platform, profileId, initialData, onSave, onC
             onSave();
         } catch (error) {
             console.error('Failed to save phone restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save phone restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

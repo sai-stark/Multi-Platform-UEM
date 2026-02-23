@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PolicyService } from '@/api/services/IOSpolicies';
 import { IosRelayPolicy } from '@/types/ios';
@@ -88,7 +89,7 @@ export function RelayPolicy({ profileId, initialData, onSave, onCancel }: RelayP
             }
             onSave();
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to save policy', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -101,7 +102,7 @@ export function RelayPolicy({ profileId, initialData, onSave, onCancel }: RelayP
             toast({ title: 'Success', description: 'Relay policy deleted' });
             onSave();
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to delete policy', variant: 'destructive' });
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete policy'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

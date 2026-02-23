@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { EAPClientConfiguration, EAPType, IosWiFiConfiguration, TLSVersion, TTLSInnerAuth } from '@/types/models';
 import { Edit, Eye, EyeOff, Globe, Lock, Shield, Trash2, Wifi } from 'lucide-react';
 import { useState } from 'react';
@@ -105,7 +106,7 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
             onSave();
         } catch (error) {
             console.error("Failed to save WiFi policy", error);
-            toast({ title: "Error", description: "Failed to save WiFi configuration", variant: "destructive" });
+            toast({ title: "Error", description: getErrorMessage(error, "Failed to save WiFi configuration"), variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -121,7 +122,7 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
             onSave(); // Refresh the parent
         } catch (error) {
             console.error("Failed to delete WiFi policy", error);
-            toast({ title: "Error", description: "Failed to delete WiFi configuration", variant: "destructive" });
+            toast({ title: "Error", description: getErrorMessage(error, "Failed to delete WiFi configuration"), variant: "destructive" });
         } finally {
             setLoading(false);
         }

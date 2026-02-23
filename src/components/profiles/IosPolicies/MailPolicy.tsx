@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { IosMailPolicy } from '@/types/models';
 import { Edit, Mail, Server, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -82,7 +83,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
             onSave();
         } catch (error) {
             console.error("Failed to save mail policy", error);
-            toast({ title: "Error", description: "Failed to save mail policy", variant: "destructive" });
+            toast({ title: "Error", description: getErrorMessage(error, "Failed to save mail policy"), variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -98,7 +99,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
             onSave(); // Refresh the parent
         } catch (error) {
             console.error("Failed to delete mail policy", error);
-            toast({ title: "Error", description: "Failed to delete mail policy", variant: "destructive" });
+            toast({ title: "Error", description: getErrorMessage(error, "Failed to delete mail policy"), variant: "destructive" });
         } finally {
             setLoading(false);
         }

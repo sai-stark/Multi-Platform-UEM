@@ -15,6 +15,8 @@ import { ControlType, NetworkRestriction as NetworkRestrictionType, Platform } f
 import { Edit, Globe, Loader2, Plane, Save, Settings, Shield, Wifi, WifiOff } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 interface NetworkRestrictionProps {
     platform: Platform;
@@ -26,6 +28,7 @@ interface NetworkRestrictionProps {
 
 export function NetworkRestriction({ platform, profileId, initialData, onSave, onCancel }: NetworkRestrictionProps) {
     const { t } = useLanguage();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
@@ -52,6 +55,7 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
             onSave();
         } catch (error) {
             console.error('Failed to save network restriction:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save network restriction'), variant: 'destructive' });
         } finally {
             setLoading(false);
         }

@@ -16,6 +16,7 @@ import { getAssetUrl } from '@/config/env';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
+import { getErrorMessage } from '@/utils/errorUtils';
 import {
   Battery,
   CheckCircle,
@@ -235,7 +236,7 @@ const Devices = () => {
       console.error("Failed to lock device", error);
       toast({
         title: "Error",
-        description: "Failed to send lock command.",
+        description: getErrorMessage(error, "Failed to send lock command."),
         variant: "destructive",
       });
     }
@@ -257,7 +258,7 @@ const Devices = () => {
       console.error("Failed to unenroll device", error);
       toast({
         title: "Error",
-        description: "Failed to unenroll device.",
+        description: getErrorMessage(error, "Failed to unenroll device."),
         variant: "destructive",
       });
     }

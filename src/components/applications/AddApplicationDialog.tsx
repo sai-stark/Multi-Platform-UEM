@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Platform } from "@/types/models";
+import { getErrorMessage } from "@/utils/errorUtils";
 import { Package, Upload, X, FileArchive, Link, Store, Clock } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -193,7 +194,7 @@ export function AddApplicationDialog({
       console.error("Failed to add application:", error);
       toast({
         title: "Error",
-        description: "Failed to add application. Please try again.",
+        description: getErrorMessage(error, "Failed to add application. Please try again."),
         variant: "destructive",
       });
     } finally {
