@@ -1,5 +1,6 @@
 
 import { DeviceService } from '@/api/services/devices';
+import { RemoteControlTab } from '@/components/devices/RemoteControlTab';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ import {
     Layers,
     Lock, LogOut, MapPin,
     MessagesSquare,
+    MonitorPlay,
     MoreVertical,
     Network,
     Power, PowerOff, RefreshCw,
@@ -138,9 +140,15 @@ export default function DeviceDetails() {
                 try {
                     setLoadingApps(true);
                     const apps = await DeviceService.getDeviceApplications(platform as Platform, id);
-                    setApplications(apps || []);
+                    setApplications(Array.isArray(apps) ? apps : []);
                 } catch (e) {
                     console.error("Failed to load apps", e);
+                    setApplications([]);
+                    toast({
+                        title: "Warning",
+                        description: "Failed to load device applications.",
+                        variant: "destructive"
+                    });
                 } finally {
                     setLoadingApps(false);
                 }
@@ -150,6 +158,11 @@ export default function DeviceDetails() {
                     setEffectiveProfile(profile);
                 } catch (e) {
                     console.error("Failed to load profile", e);
+                    toast({
+                        title: "Warning",
+                        description: "Failed to load effective profile.",
+                        variant: "destructive"
+                    });
                 }
 
                 try {
@@ -157,13 +170,24 @@ export default function DeviceDetails() {
                     setSecurityInfo(sec);
                 } catch (e) {
                     console.error("Failed to load security info", e);
+                    toast({
+                        title: "Warning",
+                        description: "Failed to load security information.",
+                        variant: "destructive"
+                    });
                 }
 
                 try {
                     const certs = await DeviceService.getDeviceCertificates(platform as Platform, id);
-                    setCertificates(certs?.CertificateList || []);
+                    setCertificates(Array.isArray(certs?.CertificateList) ? certs.CertificateList : (Array.isArray(certs) ? certs : []));
                 } catch (e) {
                     console.error("Failed to load certificates", e);
+                    setCertificates([]);
+                    toast({
+                        title: "Warning",
+                        description: "Failed to load certificates.",
+                        variant: "destructive"
+                    });
                 }
             };
             loadExtras();
@@ -643,6 +667,11 @@ export default function DeviceDetails() {
                             <User className="w-4 h-4" /> User
                         </TabsTrigger>
 
+                        <TabsTrigger value="remote-control" //disabled={isIos} 
+                            className="gap-2 px-4 py-2 w-full">
+                            <MonitorPlay className="w-4 h-4" /> Remote Control
+                        </TabsTrigger>
+
                         <TabsTrigger value="effective-profile" className="gap-2 px-4 py-2 w-full">
                             <FileText className="w-4 h-4" /> Effective Profile
                         </TabsTrigger>
@@ -792,7 +821,7 @@ export default function DeviceDetails() {
                                         </CardHeader>
                                         <CardContent className="grid gap-2">
                                             <InfoRow label="Serial Number" value={device.serialNo} icon={Barcode} copyable />
-                                            <InfoRow label="IMEI" value={device.imei || (device.imeis?.map(i => i.imei).join(', '))} icon={ScanBarcode} copyable />
+                                            <InfoRow label="IMEI" value={device.imei || (Array.isArray(device.imeis) ? device.imeis.map(i => i.imei).join(', ') : '')} icon={ScanBarcode} copyable />
                                             <InfoRow label="UDID / ID" value={device.udid || device.id} icon={Chip} copyable />
                                             <InfoRow label="Model Identifier" value={device.model} icon={Smartphone} />
                                             <InfoRow label="Manufacturer" value={device.manufacturer || device.modelInfo?.manufacturer} icon={Layers} />
@@ -880,7 +909,7 @@ export default function DeviceDetails() {
                                     <CardContent className="space-y-4">
                                         <BooleanStatus label="Mobile Data" value={device.mobileData} />
                                         {/* Android SIMs */}
-                                        {device.simInfos?.map((sim, idx) => (
+                                        {Array.isArray(device.simInfos) && device.simInfos.map((sim, idx) => (
                                             <div key={idx} className="p-4 rounded-lg bg-muted/20 border">
                                                 <p className="font-semibold text-sm mb-2">SIM Slot {idx + 1}</p>
                                                 <div className="grid grid-cols-1 gap-2">
@@ -920,7 +949,7 @@ export default function DeviceDetails() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {applications.length === 0 ? (
+                                        {!Array.isArray(applications) || applications.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={5} className="text-center h-24">
                                                     {loadingApps ? "Loading applications..." : "No applications found."}
@@ -996,7 +1025,7 @@ export default function DeviceDetails() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {certificates.length === 0 ? (
+                                        {!Array.isArray(certificates) || certificates.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
                                                     No certificates found.
@@ -1133,6 +1162,21 @@ export default function DeviceDetails() {
                         </Card>
                     </TabsContent>
 
+                    {/* REMOTE CONTROL TAB */}
+                    <TabsContent value="remote-control" className="space-y-6">
+                        <Card className="min-h-[500px] border-t-4 border-t-purple-500 overflow-hidden">
+                            <CardHeader className="pb-2">
+                                <SectionHeader title="Remote Access Session" icon={MonitorPlay} />
+                            </CardHeader>
+                            <CardContent className="p-0 sm:p-2 sm:px-6 h-[800px]">
+                                <RemoteControlTab
+                                    roomToken={(device as any).remoteSessionToken || ""}
+                                    serverUrl={(device as any).remoteSessionUrl || ""}
+                                />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
                     {/* EFFECTIVE PROFILE TAB */}
                     <TabsContent value="effective-profile" className="space-y-6">
                         {!effectiveProfile ? (
@@ -1209,7 +1253,7 @@ export default function DeviceDetails() {
                                     )}
 
                                     {/* Web Clips */}
-                                    {(effectiveProfile as any).webClipPolicies && (effectiveProfile as any).webClipPolicies.length > 0 && (
+                                    {Array.isArray((effectiveProfile as any).webClipPolicies) && (effectiveProfile as any).webClipPolicies.length > 0 && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Web Clips" icon={Globe} />
@@ -1228,7 +1272,7 @@ export default function DeviceDetails() {
                                     )}
 
                                     {/* Application Rules */}
-                                    {(effectiveProfile as any).applicationPolicies && (effectiveProfile as any).applicationPolicies.length > 0 && (
+                                    {Array.isArray((effectiveProfile as any).applicationPolicies) && (effectiveProfile as any).applicationPolicies.length > 0 && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Application Rules" icon={AppWindow} />
@@ -1246,7 +1290,7 @@ export default function DeviceDetails() {
                                     )}
 
                                     {/* Notifications Policy */}
-                                    {(effectiveProfile as any).notificationPolicies && (effectiveProfile as any).notificationPolicies.length > 0 && (
+                                    {Array.isArray((effectiveProfile as any).notificationPolicies) && (effectiveProfile as any).notificationPolicies.length > 0 && (
                                         <Card>
                                             <CardHeader>
                                                 <SectionHeader title="Notification Settings" icon={MessagesSquare} />
