@@ -2,8 +2,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { EnterpriseService } from '@/api/services/enterprise';
 import { AndroidEnterprise } from '@/types/models';
 
-// Debug mode: true in development, false in production
-const isDebugMode = import.meta.env.MODE !== 'production';
+// Debug mode: true in development, false in production --> temporaily i changes to true later this will be removed for Actual deployment to the Client.
+// const isDebugMode = import.meta.env.MODE !== 'production';
+const isDebugMode = true;
 
 interface EnterpriseContextType {
     enterprise: AndroidEnterprise | null;

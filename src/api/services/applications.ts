@@ -237,4 +237,19 @@ export const ApplicationService = {
             `/${platform}/applications/${applicationId}/configurations`
         );
     },
+
+    // ============================================
+    // Application Permission APIs
+    // ============================================
+
+    // GET /{platform}/applications/{applicationId}/permissions - Get Mobile Application Permissions
+    getPermissions: async (
+        platform: Platform,
+        applicationId: string
+    ): Promise<ApplicationPermission[]> => {
+        const response = await apiClient.get<ApplicationPermission[]>(
+            `/${platform}/applications/${applicationId}/permissions`
+        );
+        return response.data;
+    },
 };

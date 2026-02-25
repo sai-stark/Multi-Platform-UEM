@@ -633,16 +633,8 @@ const ApplicationDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<ApplicationPermission[]>([]);
 
-  // Mock permissions data (would come from API in real implementation)
-  const [permissions] = useState<ApplicationPermission[]>([
-    { permissionId: 'android.permission.INTERNET', name: 'Internet Access', description: 'Allows the app to access the internet' },
-    { permissionId: 'android.permission.CAMERA', name: 'Camera', description: 'Allows the app to use the camera' },
-    { permissionId: 'android.permission.READ_CONTACTS', name: 'Read Contacts', description: 'Allows the app to read your contacts' },
-    { permissionId: 'android.permission.WRITE_EXTERNAL_STORAGE', name: 'Storage Write', description: 'Allows the app to write to external storage' },
-    { permissionId: 'android.permission.ACCESS_FINE_LOCATION', name: 'Fine Location', description: 'Allows the app to access precise location' },
-    { permissionId: 'android.permission.RECEIVE_BOOT_COMPLETED', name: 'Boot Completed', description: 'Allows the app to receive boot completed broadcast' },
-  ]);
 
   // Fetch application details
   useEffect(() => {
@@ -670,6 +662,22 @@ const ApplicationDetails = () => {
 
     fetchApplication();
   }, [platform, id, toast]);
+
+  // Fetch permissions
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      if (!platform || !id) return;
+      try {
+        const perms = await ApplicationService.getPermissions(platform as Platform, id);
+        setPermissions(perms);
+      } catch (err) {
+        console.error('Failed to fetch permissions:', err);
+        // Permissions are optional, don't show error toast
+      }
+    };
+
+    fetchPermissions();
+  }, [platform, id]);
 
   // Validate URL platform matches fetched application's actual platform
   const { shouldRender } = usePlatformValidation(
@@ -1048,7 +1056,7 @@ const ApplicationDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Permissions Card - Fixed height, scrollable */}
+            {/* Permissions Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

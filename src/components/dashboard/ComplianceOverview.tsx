@@ -51,7 +51,7 @@ export function ComplianceOverview() {
         </div>
 
         {/* Summary */}
-        <div className="mt-6 pt-4 border-t border-border">
+        <div className="mt-4 pt-3 border-t border-border">
           <p className="text-sm text-muted-foreground">
             Total devices: <span className="font-semibold text-foreground">6,560</span>
           </p>

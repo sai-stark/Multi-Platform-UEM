@@ -18,7 +18,7 @@ import GeofenceEditor from "./pages/GeofenceEditor";
 import Geofences from "./pages/Geofences";
 import GroupDetails from "./pages/GroupDetails";
 import Groups from "./pages/Groups";
-import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import InventoryEditor from "./pages/InventoryEditor";
 import NotFound from "./pages/NotFound";
@@ -37,7 +37,7 @@ function AppRoutes() {
   return (
     <EnrollmentGuard>
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/applications/:platform/:id" element={<ApplicationDetails />} />
         <Route path="/web-applications" element={<WebApplications />} />
