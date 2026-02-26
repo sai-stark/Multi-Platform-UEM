@@ -781,14 +781,14 @@ export default function ProfileDetails() {
     visible: { opacity: 1, y: 0 },
   };
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (silent = false) => {
     if (!platform || !id) {
       setError(t('profiles.invalidParameters'));
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const data = await ProfileService.getProfile(platform as Platform, id);
@@ -856,9 +856,9 @@ export default function ProfileDetails() {
       }
     } catch (err) {
       console.error("Failed to fetch profile:", err);
-      setError(t('profiles.failedToLoad'));
+      if (!silent) setError(t('profiles.failedToLoad'));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -1129,7 +1129,9 @@ export default function ProfileDetails() {
           enrollmentPolicy={enrollmentPolicy}
           onSave={() => {
             setActivePolicyType(null);
-            fetchProfile();
+            setLoading(true);
+            // Wait for server to propagate changes, then refetch
+            setTimeout(() => fetchProfile(), 1500);
           }}
         />
 

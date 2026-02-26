@@ -16,9 +16,10 @@ interface NotificationPolicyProps {
     platform: Platform;
     profileId: string;
     initialData?: NotificationPolicyType[];
+    onSave?: () => void | Promise<void>;
 }
 
-export function NotificationPolicy({ platform, profileId, initialData }: NotificationPolicyProps) {
+export function NotificationPolicy({ platform, profileId, initialData, onSave }: NotificationPolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
     const [policies, setPolicies] = useState<NotificationPolicyType[]>(initialData || []);
@@ -94,6 +95,7 @@ export function NotificationPolicy({ platform, profileId, initialData }: Notific
             }
             setIsDialogOpen(false);
             fetchPolicies();
+            if (onSave) onSave();
         } catch (error) {
             console.error('Failed to save policy:', error);
             toast({
@@ -110,6 +112,7 @@ export function NotificationPolicy({ platform, profileId, initialData }: Notific
             await PolicyService.deleteNotificationPolicy(platform, profileId, policyId);
             toast({ title: 'Success', description: 'Policy deleted successfully' });
             fetchPolicies();
+            if (onSave) onSave();
         } catch (error) {
             console.error('Failed to delete policy:', error);
             toast({

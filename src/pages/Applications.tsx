@@ -896,11 +896,23 @@ const Applications = () => {
               <Apple className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
             </div>
           )}
-          <div>
-            <p className="font-medium text-foreground">{item.trackName || item.name}</p>
-            <p className="text-xs text-muted-foreground font-mono">{item.bundleId}</p>
-          </div>
+          <span
+            className="font-medium text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors"
+            onClick={() => navigate(`/applications/ios/${item.id}`)}
+          >
+            {item.trackName || item.name}
+          </span>
         </div>
+      ),
+    },
+    {
+      key: 'bundleId',
+      header: 'Package Name',
+      accessor: (item) => item.bundleId || '-',
+      sortable: true,
+      searchable: true,
+      render: (value) => (
+        <span className="font-mono text-xs text-muted-foreground">{value}</span>
       ),
     },
     {
@@ -921,6 +933,7 @@ const Applications = () => {
       header: 'Category',
       accessor: (item) => item.primaryGenreName || '-',
       sortable: true,
+      hidden: true,
       render: (value) => value !== '-' ? (
         <Badge variant="outline" className="text-xs">{value}</Badge>
       ) : <span className="text-muted-foreground">-</span>,
@@ -942,6 +955,7 @@ const Applications = () => {
       header: 'Status',
       accessor: (item) => item.enrollmentStatus || 'REGISTERED',
       sortable: true,
+      hidden: true,
       render: (value) => (
         <Badge variant={value === 'REGISTERED' ? 'default' : 'secondary'} className="text-xs">
           {value}
@@ -981,16 +995,20 @@ const Applications = () => {
   // iOS row actions
   const iosRowActions = (app: IosApplication) => (
     <>
-      <DropdownMenuItem onClick={() => navigate(`/applications/ios/${app.id}`)}>
-        <Eye className="w-4 h-4 mr-2" />
-        View Details
-      </DropdownMenuItem>
       {app.trackViewUrl && (
         <DropdownMenuItem onClick={() => window.open(app.trackViewUrl, '_blank')}>
           <ExternalLink className="w-4 h-4 mr-2" />
           View on App Store
         </DropdownMenuItem>
       )}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        className="text-destructive"
+        onClick={() => setDeleteDialog({ open: true, app: app as any })}
+      >
+        <Trash2 className="w-4 h-4 mr-2" />
+        Delete
+      </DropdownMenuItem>
     </>
   );
 
@@ -1127,6 +1145,7 @@ const Applications = () => {
         <div className="rounded-md border bg-card shadow-sm p-4">
           {platform === 'ios' ? (
             <DataTable
+              key="ios-table"
               data={iosApplications}
               columns={iosColumns}
               loading={loading}
@@ -1140,6 +1159,7 @@ const Applications = () => {
             />
           ) : (
             <DataTable
+              key="android-table"
               data={applications}
               columns={columns}
               loading={loading}

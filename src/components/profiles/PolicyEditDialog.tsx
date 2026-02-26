@@ -103,7 +103,7 @@ interface PolicyEditDialogProps {
     commonSettingsPolicy?: CommonSettingsPolicy;
     deviceThemePolicy?: DeviceThemePolicy;
     enrollmentPolicy?: EnrollmentPolicy;
-    onSave: () => void;
+    onSave: () => void | Promise<void>;
 }
 
 export function PolicyEditDialog({
@@ -248,6 +248,7 @@ export function PolicyEditDialog({
                             platform={platform}
                             profileId={profileId}
                             initialData={notificationPolicy}
+                            onSave={onSave}
                         />
                     )}
                     {activePolicyType === "lockScreenMessage" && (
@@ -255,6 +256,7 @@ export function PolicyEditDialog({
                             platform={platform}
                             profileId={profileId}
                             initialData={lockScreenMessagePolicy}
+                            onSave={onSave}
                         />
                     )}
                     {activePolicyType === "scep" && scepPolicy && (

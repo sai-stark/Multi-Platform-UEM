@@ -1,1178 +1,730 @@
+import { PolicyService } from '@/api/services/IOSpolicies';
 import {
-  ITunesSearchResult,
-  ITunesSearchService,
-} from "@/api/services/itunesSearch";
+    Application,
+    ApplicationService,
+} from '@/api/services/applications';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  DeviceApplication,
-  MobileApplicationService,
-} from "@/api/services/mobileApps";
-import { PolicyService } from "@/api/services/IOSpolicies";
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
+import { cn } from '@/lib/utils';
+import { Platform } from '@/types/models';
+import { IosApplicationPolicy } from '@/types/policy';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { getErrorMessage } from "@/utils/errorUtils";
-import {
-  AndroidApplicationPolicy,
-  ApplicationAction,
-  ApplicationPolicy,
-  IosApplicationPolicy,
-  Platform,
-} from "@/types/models";
-import {
-  ChevronDown,
-  ChevronRight,
-  Edit2,
-  Loader2,
-  Plus,
-  Save,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useLanguage } from '@/contexts/LanguageContext';
+    AlertTriangle,
+    ChevronDown,
+    ChevronRight,
+    Grid,
+    Loader2,
+    Plus,
+    Save,
+    Trash2,
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ApplicationPolicy as ApplicationPolicyType } from '@/types/policy';
 
+// ====================================================================
+// Props
+// ====================================================================
 interface ApplicationPolicyProps {
-  profileId: string;
-  platform: Platform;
-  initialData?: ApplicationPolicy[];
-  onSave: () => void;
-  onCancel: () => void;
+    profileId: string;
+    platform: Platform;
+    initialData?: ApplicationPolicyType[];
+    onSave: () => void;
+    onCancel: () => void;
 }
 
-// Type guards
-const isIosApplicationPolicy = (
-  policy: ApplicationPolicy
-): policy is IosApplicationPolicy => {
-  return (
-    policy.devicePolicyType === "IosApplicationPolicy" ||
-    ("applicationId" in policy && !("applicationVersionId" in policy))
-  );
+// Extended type with UI-only fields
+type ExtendedPolicy = IosApplicationPolicy & {
+    isNew?: boolean;
+    displayName?: string;
 };
 
-const isAndroidApplicationPolicy = (
-  policy: ApplicationPolicy
-): policy is AndroidApplicationPolicy => {
-  return (
-    policy.devicePolicyType === "AndroidApplicationPolicy" ||
-    ("applicationVersionId" in policy && !("applicationId" in policy))
-  );
-};
-
-// Deep equality check for policy comparison
-const arePoliciesEqual = (
-  a: ApplicationPolicy,
-  b: ApplicationPolicy
-): boolean => {
-  return JSON.stringify(a) === JSON.stringify(b);
-};
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
+// ====================================================================
+// Component
+// ====================================================================
 export const ApplicationPolicyEditor = ({
-  profileId,
-  platform,
-  initialData,
-  onSave,
-  onCancel,
+    profileId,
+    platform,
+    initialData,
+    onSave,
+    onCancel,
 }: ApplicationPolicyProps) => {
-  const { toast } = useToast();
+    const { toast } = useToast();
 
-  // Existing policies state
-  const [existingPolicies, setExistingPolicies] = useState<ApplicationPolicy[]>(
-    []
-  );
-  const [originalPolicies, setOriginalPolicies] = useState<ApplicationPolicy[]>(
-    []
-  );
-  const [isFetching, setIsFetching] = useState(false);
+    // State
+    const [policies, setPolicies] = useState<ExtendedPolicy[]>([]);
+    const [availableApps, setAvailableApps] = useState<Application[]>([]);
+    const [changedPolicies, setChangedPolicies] = useState<ExtendedPolicy[]>([]);
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [isFetching, setIsFetching] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-  // Available apps (for Android)
-  const [availableApps, setAvailableApps] = useState<DeviceApplication[]>([]);
+    // Modal states
+    const [openAddModal, setOpenAddModal] = useState(false);
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const [appToDelete, setAppToDelete] = useState<ExtendedPolicy | null>(null);
 
-  // New app staging state (for iOS)
-  const [stagedNewApp, setStagedNewApp] = useState<IosApplicationPolicy | null>(
-    null
-  );
+    // Add Application Modal states
+    const [selectedAppId, setSelectedAppId] = useState('');
+    const [selectedPurchaseMethod, setSelectedPurchaseMethod] = useState(1);
+    const [selectedEnableAnalytics, setSelectedEnableAnalytics] = useState(false);
 
-  // iTunes Search state (iOS only)
-  const [itunesSearchTerm, setItunesSearchTerm] = useState("");
-  const [itunesResults, setItunesResults] = useState<ITunesSearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+    // ====================================================================
+    // Data loading
+    // ====================================================================
+    useEffect(() => {
+        fetchApplications();
+        if (initialData && initialData.length > 0) {
+            const iosPolicies = initialData.filter(
+                (p): p is IosApplicationPolicy =>
+                    p.devicePolicyType === 'IosApplicationPolicy' || !('applicationVersionId' in p)
+            ) as ExtendedPolicy[];
+            setPolicies(iosPolicies);
+        } else {
+            loadExistingPolicies();
+        }
+    }, [platform, profileId]);
 
-  // Confirmation dialog state
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    type: "create" | "edit" | "delete";
-    title: string;
-    description: string;
-    onConfirm: () => void;
-    loading?: boolean;
-  }>({
-    open: false,
-    type: "create",
-    title: "",
-    description: "",
-    onConfirm: () => {},
-  });
-
-  // Expanded policies state (for collapsible)
-  const [expandedPolicies, setExpandedPolicies] = useState<Set<string>>(
-    new Set()
-  );
-
-  // Edit state tracking
-  const [editingPolicies, setEditingPolicies] = useState<
-    Map<string, ApplicationPolicy>
-  >(new Map());
-
-  // ============================================================================
-  // DATA LOADING
-  // ============================================================================
-  useEffect(() => {
-    if (platform === "android") loadApplications();
-    if (initialData && initialData.length > 0) {
-      const normalized = initialData.map((p) => ({
-        ...p,
-        devicePolicyType:
-          p.devicePolicyType ||
-          (platform === "ios"
-            ? "IosApplicationPolicy"
-            : "AndroidApplicationPolicy"),
-      })) as ApplicationPolicy[];
-      setExistingPolicies(normalized);
-      setOriginalPolicies(JSON.parse(JSON.stringify(normalized)));
-    } else {
-      loadExistingPolicies();
-    }
-  }, [platform, profileId]);
-
-  // Close search results when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        setShowSearchResults(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const loadApplications = async () => {
-    try {
-      const response = await MobileApplicationService.getApplications(platform);
-      // API may return a paged response { content: [...] } or a direct array
-      const apps = Array.isArray(response) ? response : (response as any).content || [];
-      setAvailableApps(apps);
-    } catch (error) {
-      console.error("Failed to load apps", error);
-    }
-  };
-
-  const loadExistingPolicies = async () => {
-    setIsFetching(true);
-    try {
-      const response = await PolicyService.getApplicationPolicies(
-        platform,
-        profileId
-      );
-      const normalizedPolicies = response.content.map((policy) => ({
-        ...policy,
-        devicePolicyType:
-          policy.devicePolicyType ||
-          (platform === "ios"
-            ? "IosApplicationPolicy"
-            : "AndroidApplicationPolicy"),
-      })) as ApplicationPolicy[];
-      setExistingPolicies(normalizedPolicies);
-      setOriginalPolicies(JSON.parse(JSON.stringify(normalizedPolicies)));
-    } catch (error) {
-      console.error("Failed to load policies", error);
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  // ============================================================================
-  // ITUNES SEARCH (iOS)
-  // ============================================================================
-  const searchITunes = useCallback(
-    async (term: string) => {
-      if (!term || term.trim().length < 2) {
-        setItunesResults([]);
-        setShowSearchResults(false);
-        return;
-      }
-      setIsSearching(true);
-      try {
-        const results = await ITunesSearchService.searchApps(term);
-        setItunesResults(results);
-        setShowSearchResults(true);
-      } catch (error) {
-        console.error("iTunes search failed:", error);
-        toast({
-          title: "Search Error",
-          description: getErrorMessage(error, "Failed to search iTunes Store"),
-          variant: "destructive",
-        });
-        setItunesResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [toast]
-  );
-
-  const handleItunesSearchChange = (value: string) => {
-    setItunesSearchTerm(value);
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    searchTimeoutRef.current = setTimeout(() => {
-      searchITunes(value);
-    }, 400);
-  };
-
-  const clearItunesSearch = () => {
-    setItunesSearchTerm("");
-    setItunesResults([]);
-    setShowSearchResults(false);
-  };
-
-  // ============================================================================
-  // STAGING NEW APP (before create)
-  // ============================================================================
-  const handleSelectItunesApp = (app: ITunesSearchResult) => {
-    // Check if already exists
-    const exists = existingPolicies.some(
-      (p) => isIosApplicationPolicy(p) && p.name === app.trackName
-    );
-    if (exists) {
-      toast({
-        title: "App Already Exists",
-        description: `${app.trackName} is already in your policies`,
-        variant: "default",
-      });
-      return;
-    }
-
-    // Stage the new app with default values
-    const now = new Date().toISOString();
-    const newPolicy = {
-      creationTime: now,
-      modificationTime: now,
-      createdBy: "",
-      lastModifiedBy: "",
-      name: app.trackName,
-      action: "INSTALL" as const,
-      purchaseMethod: 1,
-      enableAppAnalytics: false,
-      devicePolicyType: "IosApplicationPolicy" as const,
-    } as IosApplicationPolicy;
-
-    setStagedNewApp(newPolicy);
-    clearItunesSearch();
-  };
-
-  const updateStagedApp = (updates: Partial<IosApplicationPolicy>) => {
-    if (stagedNewApp) {
-      setStagedNewApp({ ...stagedNewApp, ...updates });
-    }
-  };
-
-  const cancelStagedApp = () => {
-    setStagedNewApp(null);
-  };
-
-  // ============================================================================
-  // CREATE (POST)
-  // ============================================================================
-  const handleCreateConfirm = () => {
-    if (!stagedNewApp) return;
-
-    setConfirmDialog({
-      open: true,
-      type: "create",
-      title: "Add Application Policy",
-      description: `Are you sure you want to add "${stagedNewApp.name}" to the application policies?`,
-      onConfirm: executeCreate,
-    });
-  };
-
-  const executeCreate = async () => {
-    if (!stagedNewApp) return;
-
-    setConfirmDialog((prev) => ({ ...prev, loading: true }));
-    try {
-      await PolicyService.createApplicationPolicy(
-        platform,
-        profileId,
-        stagedNewApp
-      );
-      toast({
-        title: "Success",
-        description: `${stagedNewApp.name} has been added to policies`,
-      });
-      setStagedNewApp(null);
-      await loadExistingPolicies();
-    } catch (error) {
-      console.error("Create error:", error);
-      toast({
-        title: "Error",
-        description: getErrorMessage(error, "Failed to create application policy"),
-        variant: "destructive",
-      });
-    } finally {
-      setConfirmDialog((prev) => ({ ...prev, open: false, loading: false }));
-    }
-  };
-
-  // ============================================================================
-  // EDIT (PUT)
-  // ============================================================================
-  const getPolicyKey = (policy: ApplicationPolicy): string => {
-    if (isIosApplicationPolicy(policy)) {
-      return policy.id || policy.applicationId || policy.name;
-    }
-    return policy.id || policy.applicationVersionId;
-  };
-
-  const toggleExpanded = (key: string) => {
-    const newExpanded = new Set(expandedPolicies);
-    if (newExpanded.has(key)) {
-      newExpanded.delete(key);
-    } else {
-      newExpanded.add(key);
-    }
-    setExpandedPolicies(newExpanded);
-  };
-
-  const startEditing = (policy: ApplicationPolicy) => {
-    const key = getPolicyKey(policy);
-    setEditingPolicies(
-      new Map(editingPolicies).set(key, JSON.parse(JSON.stringify(policy)))
-    );
-  };
-
-  const updateEditingPolicy = (
-    key: string,
-    updates: Partial<ApplicationPolicy>
-  ) => {
-    const current = editingPolicies.get(key);
-    if (current) {
-      const updated = {
-        ...current,
-        ...updates,
-        modificationTime: new Date().toISOString(),
-      };
-      setEditingPolicies(
-        new Map(editingPolicies).set(key, updated as ApplicationPolicy)
-      );
-    }
-  };
-
-  const cancelEditing = (key: string) => {
-    const newEditing = new Map(editingPolicies);
-    newEditing.delete(key);
-    setEditingPolicies(newEditing);
-  };
-
-  const hasChanges = (key: string): boolean => {
-    const edited = editingPolicies.get(key);
-    const original = originalPolicies.find((p) => getPolicyKey(p) === key);
-    if (!edited || !original) return false;
-    return !arePoliciesEqual(edited, original);
-  };
-
-  const handleEditConfirm = (key: string) => {
-    const editedPolicy = editingPolicies.get(key);
-    if (!editedPolicy) return;
-
-    const appName = isIosApplicationPolicy(editedPolicy)
-      ? editedPolicy.name
-      : "Application";
-
-    setConfirmDialog({
-      open: true,
-      type: "edit",
-      title: "Save Changes",
-      description: `Are you sure you want to save changes to "${appName}"?`,
-      onConfirm: () => executeEdit(key),
-    });
-  };
-
-  const executeEdit = async (key: string) => {
-    const editedPolicy = editingPolicies.get(key);
-    if (!editedPolicy || !editedPolicy.id) return;
-
-    setConfirmDialog((prev) => ({ ...prev, loading: true }));
-    try {
-      await PolicyService.updateApplicationPolicy(
-        platform,
-        profileId,
-        editedPolicy.id,
-        editedPolicy
-      );
-      toast({
-        title: "Success",
-        description: "Application policy updated successfully",
-      });
-      cancelEditing(key);
-      await loadExistingPolicies();
-    } catch (error) {
-      console.error("Update error:", error);
-      toast({
-        title: "Error",
-        description: getErrorMessage(error, "Failed to update application policy"),
-        variant: "destructive",
-      });
-    } finally {
-      setConfirmDialog((prev) => ({ ...prev, open: false, loading: false }));
-    }
-  };
-
-  // ============================================================================
-  // DELETE
-  // ============================================================================
-  const handleDeleteConfirm = (policy: ApplicationPolicy) => {
-    const appName = isIosApplicationPolicy(policy)
-      ? policy.name
-      : "Application";
-
-    setConfirmDialog({
-      open: true,
-      type: "delete",
-      title: "Delete Application Policy",
-      description: `Are you sure you want to delete "${appName}"? This action cannot be undone.`,
-      onConfirm: () => executeDelete(policy),
-    });
-  };
-
-  const executeDelete = async (policy: ApplicationPolicy) => {
-    if (!policy.id) return;
-
-    setConfirmDialog((prev) => ({ ...prev, loading: true }));
-    try {
-      await PolicyService.deleteApplicationPolicy(
-        platform,
-        profileId,
-        policy.id
-      );
-      const appName = isIosApplicationPolicy(policy)
-        ? policy.name
-        : "Application";
-      toast({
-        title: "Success",
-        description: `${appName} has been removed from policies`,
-      });
-      await loadExistingPolicies();
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast({
-        title: "Error",
-        description: getErrorMessage(error, "Failed to delete application policy"),
-        variant: "destructive",
-      });
-    } finally {
-      setConfirmDialog((prev) => ({ ...prev, open: false, loading: false }));
-    }
-  };
-
-  // ============================================================================
-  // ANDROID: Add app from dropdown
-  // ============================================================================
-  const handleAddAndroidApp = (appId: string) => {
-    const app = availableApps.find((a) => a.appId === appId);
-    if (!app) return;
-
-    const exists = existingPolicies.some(
-      (p) =>
-        isAndroidApplicationPolicy(p) &&
-        p.applicationVersionId === app.appVersionId
-    );
-    if (exists) {
-      toast({
-        title: "App Already Exists",
-        description: `${app.name} is already in your policies`,
-      });
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const newPolicy: AndroidApplicationPolicy = {
-      creationTime: now,
-      modificationTime: now,
-      createdBy: "",
-      lastModifiedBy: "",
-      applicationVersionId: app.appVersionId,
-      applicationVersion: app.appVersion,
-      action: "INSTALL",
-      devicePolicyType: "AndroidApplicationPolicy",
-    };
-
-    // Show confirmation dialog
-    setConfirmDialog({
-      open: true,
-      type: "create",
-      title: "Add Application Policy",
-      description: `Are you sure you want to add "${app.name}" to the application policies?`,
-      onConfirm: async () => {
-        setConfirmDialog((prev) => ({ ...prev, loading: true }));
+    const fetchApplications = async () => {
         try {
-          await PolicyService.createApplicationPolicy(
-            platform,
-            profileId,
-            newPolicy
-          );
-          toast({
-            title: "Success",
-            description: `${app.name} has been added to policies`,
-          });
-          await loadExistingPolicies();
+            const response = await ApplicationService.getApplications('ios');
+            setAvailableApps(response.content || []);
         } catch (error) {
-          console.error("Create error:", error);
-          toast({
-            title: "Error",
-            description: getErrorMessage(error, "Failed to create application policy"),
-            variant: "destructive",
-          });
+            console.error('Failed to fetch iOS applications:', error);
+        }
+    };
+
+    const loadExistingPolicies = async () => {
+        setIsFetching(true);
+        try {
+            const response = await PolicyService.getApplicationPolicies(platform, profileId);
+            const items = Array.isArray(response)
+                ? response
+                : (response as any).content || [];
+            setPolicies(items);
+        } catch (error) {
+            console.error('Failed to load existing policies:', error);
         } finally {
-          setConfirmDialog((prev) => ({
-            ...prev,
-            open: false,
-            loading: false,
-          }));
+            setIsFetching(false);
         }
-      },
-    });
-  };
+    };
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
-  return (
-    <div className="space-y-8">
-      {/* ================================================================ */}
-      {/* SECTION 1: ADD NEW APPLICATION */}
-      {/* ================================================================ */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Plus className="w-5 h-5" />
-            Add New Application
-          </CardTitle>
-          <CardDescription>
-            {platform === "ios"
-              ? "Search the iTunes Store to find and add iOS applications"
-              : "Select from available applications to add to your policy"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* iOS: iTunes Search */}
-          {platform === "ios" && !stagedNewApp && (
-            <div className="space-y-2" ref={searchContainerRef}>
-              <Label
-                htmlFor="itunes-search"
-                className="flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search iTunes Store
-              </Label>
-              <div className="relative">
-                <Input
-                  id="itunes-search"
-                  type="text"
-                  placeholder="Search for apps (e.g., Amazon, Slack, Zoom)..."
-                  value={itunesSearchTerm}
-                  onChange={(e) => handleItunesSearchChange(e.target.value)}
-                  onFocus={() =>
-                    itunesResults.length > 0 && setShowSearchResults(true)
-                  }
-                  className="pr-16"
-                  aria-label="Search iTunes Store for iOS apps"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {isSearching && (
-                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  )}
-                  {itunesSearchTerm && !isSearching && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={clearItunesSearch}
-                      aria-label="Clear search"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
+    // ====================================================================
+    // Helpers
+    // ====================================================================
+    const getAvailableAppsForAdd = () => {
+        const usedAppIds = new Set(
+            policies.map((p) => p.applicationId).filter(Boolean)
+        );
+        return availableApps.filter((app) => !usedAppIds.has(app.id));
+    };
 
-                {/* Search Results Dropdown */}
-                {showSearchResults && itunesResults.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-[320px] overflow-y-auto">
-                    <div className="p-2 text-xs text-muted-foreground border-b sticky top-0 bg-popover">
-                      {itunesResults.length} app
-                      {itunesResults.length !== 1 ? "s" : ""} found — Click to
-                      select
-                    </div>
-                    <ul role="listbox" aria-label="iTunes search results">
-                      {itunesResults.map((app) => {
-                        const isAdded = existingPolicies.some(
-                          (p) =>
-                            isIosApplicationPolicy(p) &&
-                            p.name === app.trackName
-                        );
-                        return (
-                          <li
-                            key={app.trackId}
-                            role="option"
-                            aria-selected={isAdded}
-                          >
-                            <button
-                              type="button"
-                              disabled={isAdded}
-                              onClick={() => handleSelectItunesApp(app)}
-                              className={`w-full flex items-center gap-3 p-3 text-left hover:bg-accent transition-colors border-b last:border-b-0 ${
-                                isAdded
-                                  ? "opacity-50 cursor-not-allowed bg-muted"
-                                  : "cursor-pointer"
-                              }`}
-                            >
-                              {app.artworkUrl60 && (
-                                <img
-                                  src={app.artworkUrl60}
-                                  alt=""
-                                  className="w-10 h-10 rounded-lg flex-shrink-0"
-                                  loading="lazy"
-                                />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">
-                                  {app.trackName}
-                                  {isAdded && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                      (Already added)
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-xs text-muted-foreground truncate">
-                                  {app.bundleId}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {app.sellerName} • {app.primaryGenreName}
-                                </div>
-                              </div>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
+    const getAppDisplayInfo = (applicationId: string) => {
+        const app = availableApps.find((a) => a.id === applicationId);
+        if (app) {
+            return {
+                name: app.name,
+                bundleId: (app as any).bundleId || (app as any).packageName || '',
+                iconUrl: (app as any).artworkUrl60 || (app as any).iconUrl || '',
+            };
+        }
+        return { name: 'Unknown', bundleId: '', iconUrl: '' };
+    };
 
-                {/* No Results */}
-                {showSearchResults &&
-                  itunesResults.length === 0 &&
-                  !isSearching &&
-                  itunesSearchTerm.length >= 2 && (
-                    <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg p-4 text-center text-muted-foreground">
-                      No apps found for "{itunesSearchTerm}"
-                    </div>
-                  )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Type at least 2 characters to search. Select an app to configure
-                its policy settings.
-              </p>
-            </div>
-          )}
+    const getPurchaseMethodLabel = (method?: number) => {
+        switch (method) {
+            case 0: return 'Free / VPP Redemption';
+            case 1: return 'VPP Assignment';
+            default: return 'VPP Assignment';
+        }
+    };
 
-          {/* iOS: Staged New App Form */}
-          {platform === "ios" && stagedNewApp && (
-            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold">{stagedNewApp.name}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {stagedNewApp.applicationId || 'New application'}
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={cancelStagedApp}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+    // ====================================================================
+    // Handlers
+    // ====================================================================
+    const resetAddModalState = () => {
+        setSelectedAppId('');
+        setSelectedPurchaseMethod(1);
+        setSelectedEnableAnalytics(false);
+    };
 
-              <Separator />
+    const toggleRowExpansion = (id: string) => {
+        setExpandedRows((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="staged-action">Action</Label>
-                  <Select
-                    value={stagedNewApp.action}
-                    onValueChange={(val: "INSTALL") =>
-                      updateStagedApp({ action: val })
-                    }
-                  >
-                    <SelectTrigger id="staged-action">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INSTALL">Install</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+    const handleFieldChange = (
+        id: string,
+        field: keyof IosApplicationPolicy,
+        value: boolean | string | number | undefined | Record<string, object>
+    ) => {
+        setPolicies((prev) =>
+            prev.map((row) => {
+                const key = row.id || row.applicationId;
+                return key === id ? { ...row, [field]: value } : row;
+            })
+        );
+        setChangedPolicies((prev) => {
+            const rowToUpdate = policies.find((r) => (r.id || r.applicationId) === id);
+            if (!rowToUpdate) return prev;
+            const updatedRow = { ...rowToUpdate, [field]: value };
+            if (prev.find((r) => (r.id || r.applicationId) === id)) {
+                return prev.map((r) => ((r.id || r.applicationId) === id ? updatedRow : r));
+            }
+            return [...prev, updatedRow];
+        });
+    };
 
-                <div className="space-y-2">
-                  <Label htmlFor="staged-purchase">Purchase Method</Label>
-                  <Select
-                    value={stagedNewApp.purchaseMethod?.toString() ?? "1"}
-                    onValueChange={(val) =>
-                      updateStagedApp({ purchaseMethod: parseInt(val) })
-                    }
-                  >
-                    <SelectTrigger id="staged-purchase">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">
-                        Free/VPP with redemption code
-                      </SelectItem>
-                      <SelectItem value="1">VPP app assignment</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+    const handleAddApplication = () => {
+        if (!selectedAppId) {
+            toast({ title: 'Error', description: 'Please select an application', variant: 'destructive' });
+            return;
+        }
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="staged-analytics"
-                    checked={stagedNewApp.enableAppAnalytics ?? false}
-                    onCheckedChange={(checked) =>
-                      updateStagedApp({ enableAppAnalytics: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="staged-analytics" className="cursor-pointer">
-                    Enable App Analytics
-                  </Label>
-                </div>
-              </div>
+        const selectedApp = availableApps.find((app) => app.id === selectedAppId);
+        if (!selectedApp) {
+            toast({ title: 'Error', description: 'Selected application not found', variant: 'destructive' });
+            return;
+        }
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={cancelStagedApp}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateConfirm} className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add to Policy
-                </Button>
-              </div>
-            </div>
-          )}
+        const now = new Date().toISOString();
+        const newPolicy: ExtendedPolicy = {
+            applicationId: selectedApp.id,
+            name: selectedApp.name,
+            action: 'INSTALL',
+            purchaseMethod: selectedPurchaseMethod,
+            enableAppAnalytics: selectedEnableAnalytics,
+            devicePolicyType: 'IosApplicationPolicy',
+            isNew: true,
+            displayName: selectedApp.name,
+            createdBy: '',
+            lastModifiedBy: '',
+            creationTime: now,
+            modificationTime: now,
+        };
 
-          {/* Android: Select from available apps */}
-          {platform === "android" && (
-            <div className="space-y-2">
-              <Label htmlFor="android-app-select">Select Application</Label>
-              <Select onValueChange={handleAddAndroidApp}>
-                <SelectTrigger id="android-app-select">
-                  <SelectValue placeholder="Choose an application to add..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableApps.map((app) => {
-                    const exists = existingPolicies.some(
-                      (p) =>
-                        isAndroidApplicationPolicy(p) &&
-                        p.applicationVersionId === app.appVersionId
-                    );
-                    return (
-                      <SelectItem
-                        key={app.appId}
-                        value={app.appId}
-                        disabled={exists}
-                      >
-                        {app.name} ({app.appVersion})
-                        {exists && " (Already added)"}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        setChangedPolicies((prev) => [...prev, newPolicy]);
+        setPolicies((prev) => [...prev, newPolicy]);
+        setOpenAddModal(false);
+        resetAddModalState();
+    };
 
-      {/* ================================================================ */}
-      {/* SECTION 2: EXISTING APPLICATION POLICIES */}
-      {/* ================================================================ */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Edit2 className="w-5 h-5" />
-            Existing Application Policies
-            {existingPolicies.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {existingPolicies.length}
-              </Badge>
-            )}
-          </CardTitle>
-          <CardDescription>
-            View, edit, or remove existing application policies. Click on an app
-            to expand its details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isFetching ? (
-            <div className="text-center p-8 text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-              Loading policies...
-            </div>
-          ) : existingPolicies.length === 0 ? (
-            <div className="text-center p-8 border rounded-lg text-muted-foreground border-dashed">
-              No application policies configured yet. Use the search above to
-              add applications.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {existingPolicies.map((policy) => {
-                const key = getPolicyKey(policy);
-                const isExpanded = expandedPolicies.has(key);
-                const isEditing = editingPolicies.has(key);
-                const editedPolicy = editingPolicies.get(key) || policy;
-                const changed = hasChanges(key);
-                const appDetails = isAndroidApplicationPolicy(policy)
-                  ? availableApps.find(
-                      (a) => a.appVersionId === policy.applicationVersionId
-                    )
-                  : null;
+    const handleDeleteApplication = (policy: ExtendedPolicy) => {
+        setAppToDelete(policy);
+        setOpenDeleteModal(true);
+    };
 
-                return (
-                  <Collapsible
-                    key={key}
-                    open={isExpanded}
-                    onOpenChange={() => toggleExpanded(key)}
-                  >
-                    <div className="border rounded-lg overflow-hidden">
-                      <CollapsibleTrigger asChild>
-                        <button
-                          className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
-                          aria-expanded={isExpanded}
-                        >
-                          <div className="flex items-center gap-3">
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                            )}
-                            <div>
-                              <div className="font-medium">
-                                {isIosApplicationPolicy(policy)
-                                  ? policy.name
-                                  : appDetails?.name || "Unknown App"}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {isIosApplicationPolicy(policy)
-                                  ? (policy.applicationId || 'No application ID')
-                                  : `Version: ${policy.applicationVersion}`}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{policy.action}</Badge>
-                            {isEditing && changed && (
-                              <Badge variant="secondary">Modified</Badge>
-                            )}
-                          </div>
-                        </button>
-                      </CollapsibleTrigger>
+    const confirmDelete = async () => {
+        if (!appToDelete) return;
+        try {
+            if (!appToDelete.isNew && appToDelete.id) {
+                await PolicyService.deleteApplicationPolicy(platform, profileId, appToDelete.id);
+            }
+            const key = appToDelete.id || appToDelete.applicationId;
+            setPolicies((prev) => prev.filter((p) => (p.id || p.applicationId) !== key));
+            setChangedPolicies((prev) => prev.filter((p) => (p.id || p.applicationId) !== key));
+            toast({ title: 'Success', description: 'Application policy deleted.' });
+            if (onSave) onSave();
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete application policy'), variant: 'destructive' });
+        }
+        setOpenDeleteModal(false);
+        setAppToDelete(null);
+    };
 
-                      <CollapsibleContent>
-                        <div className="border-t p-4 bg-muted/20">
-                          {isIosApplicationPolicy(editedPolicy) ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Name</Label>
-                                <Input
-                                  value={
-                                    (editedPolicy as IosApplicationPolicy)
-                                      .name || ""
-                                  }
-                                  onChange={(e) => {
-                                    if (!isEditing) startEditing(policy);
-                                    updateEditingPolicy(key, {
-                                      name: e.target.value,
-                                    });
-                                  }}
-                                  onFocus={() =>
-                                    !isEditing && startEditing(policy)
-                                  }
-                                />
-                              </div>
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            const promises: Promise<unknown>[] = [];
 
-                              <div className="space-y-2">
-                                <Label>Application ID</Label>
-                                <Input
-                                  value={
-                                    (editedPolicy as IosApplicationPolicy)
-                                      .applicationId || ""
-                                  }
-                                  disabled
-                                  className="bg-muted"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>Action</Label>
-                                <Select
-                                  value={
-                                    (editedPolicy as IosApplicationPolicy)
-                                      .action || "INSTALL"
-                                  }
-                                  onValueChange={(val: "INSTALL") => {
-                                    if (!isEditing) startEditing(policy);
-                                    updateEditingPolicy(key, { action: val });
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="INSTALL">
-                                      Install
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>Purchase Method</Label>
-                                <Select
-                                  value={
-                                    (
-                                      editedPolicy as IosApplicationPolicy
-                                    ).purchaseMethod?.toString() ?? "0"
-                                  }
-                                  onValueChange={(val) => {
-                                    if (!isEditing) startEditing(policy);
-                                    updateEditingPolicy(key, {
-                                      purchaseMethod: parseInt(val),
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="0">
-                                      Free/VPP with redemption code
-                                    </SelectItem>
-                                    <SelectItem value="1">
-                                      VPP app assignment
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`analytics-${key}`}
-                                  checked={
-                                    (editedPolicy as IosApplicationPolicy)
-                                      .enableAppAnalytics ?? false
-                                  }
-                                  onCheckedChange={(checked) => {
-                                    if (!isEditing) startEditing(policy);
-                                    updateEditingPolicy(key, {
-                                      enableAppAnalytics: checked as boolean,
-                                    });
-                                  }}
-                                />
-                                <Label
-                                  htmlFor={`analytics-${key}`}
-                                  className="cursor-pointer"
-                                >
-                                  Enable App Analytics
-                                </Label>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Action</Label>
-                                <Select
-                                  value={
-                                    (editedPolicy as AndroidApplicationPolicy)
-                                      .action || "INSTALL"
-                                  }
-                                  onValueChange={(val: ApplicationAction) => {
-                                    if (!isEditing) startEditing(policy);
-                                    updateEditingPolicy(key, { action: val });
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="INSTALL">
-                                      Install
-                                    </SelectItem>
-                                    <SelectItem value="UNINSTALL">
-                                      Uninstall
-                                    </SelectItem>
-                                    <SelectItem value="ALLOW">Allow</SelectItem>
-                                    <SelectItem value="BLOCK">Block</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>Application Version</Label>
-                                <Input
-                                  value={
-                                    (editedPolicy as AndroidApplicationPolicy)
-                                      .applicationVersion || ""
-                                  }
-                                  disabled
-                                  className="bg-muted"
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Action Buttons */}
-                          <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteConfirm(policy)}
-                              className="gap-2"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </Button>
-
-                            <div className="flex gap-2">
-                              {isEditing && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => cancelEditing(key)}
-                                >
-                                  Cancel
-                                </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                disabled={!isEditing || !changed}
-                                onClick={() => handleEditConfirm(key)}
-                                className="gap-2"
-                              >
-                                <Save className="w-4 h-4" />
-                                Save Changes
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CollapsibleContent>
-                    </div>
-                  </Collapsible>
+            const newPolicies = changedPolicies.filter((p) => p.isNew);
+            for (const policy of newPolicies) {
+                const { isNew, displayName, ...policyData } = policy;
+                promises.push(
+                    PolicyService.createApplicationPolicy(platform, profileId, policyData)
                 );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            }
 
-      {/* Footer Actions */}
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          Close
-        </Button>
-      </div>
+            const updatedPolicies = changedPolicies.filter((p) => !p.isNew);
+            for (const policy of updatedPolicies) {
+                const { isNew, displayName, ...policyData } = policy;
+                if (policy.id) {
+                    promises.push(
+                        PolicyService.updateApplicationPolicy(platform, profileId, policy.id, policyData)
+                    );
+                }
+            }
 
-      {/* Confirmation Dialog */}
-      <AlertDialog
-        open={confirmDialog.open}
-        onOpenChange={(open) =>
-          !confirmDialog.loading &&
-          setConfirmDialog((prev) => ({ ...prev, open }))
+            await Promise.all(promises);
+            setChangedPolicies([]);
+            toast({ title: 'Success', description: 'Application policies saved successfully!' });
+            if (onSave) onSave();
+        } catch (error) {
+            console.error('Error saving application policies:', error);
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save application policies'), variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmDialog.description}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={confirmDialog.loading}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDialog.onConfirm}
-              disabled={confirmDialog.loading}
-              className={
-                confirmDialog.type === "delete"
-                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  : ""
-              }
-            >
-              {confirmDialog.loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : confirmDialog.type === "delete" ? (
-                "Delete"
-              ) : (
-                "Confirm"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
+    };
+
+    const availableForAdd = getAvailableAppsForAdd();
+    const hasChanges = changedPolicies.length > 0;
+
+    // ====================================================================
+    // Render
+    // ====================================================================
+    return (
+        <div className="space-y-6 max-w-5xl mt-6">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-500/10 rounded-full">
+                        <Grid className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-semibold">Application Policies</h3>
+                        <p className="text-sm text-muted-foreground">Manage app installation and configuration for iOS</p>
+                    </div>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOpenAddModal(true)}
+                    disabled={availableForAdd.length === 0 && policies.length === 0}
+                >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Application
+                </Button>
+            </div>
+
+            {/* No apps warning */}
+            {availableForAdd.length === 0 && policies.length === 0 && !isFetching && (
+                <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                        No iOS applications available. Please register iOS applications first.
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {/* Loading state */}
+            {isFetching && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-10">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading existing policies...
+                </div>
+            )}
+
+            {/* Policies Table */}
+            {policies.length > 0 && (
+                <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[40px]" />
+                                <TableHead className="w-[260px]">Application</TableHead>
+                                <TableHead className="w-[120px]">Action</TableHead>
+                                <TableHead className="w-[180px]">Purchase Method</TableHead>
+                                <TableHead className="w-[100px] text-center">Analytics</TableHead>
+                                <TableHead className="w-[100px] text-center">Status</TableHead>
+                                <TableHead className="w-[80px] text-center">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {policies.map((policy) => {
+                                const policyKey = policy.id || policy.applicationId;
+                                const appInfo = getAppDisplayInfo(policy.applicationId);
+                                const displayName = policy.name || appInfo.name;
+                                const isExpanded = expandedRows.has(policyKey);
+
+                                return (
+                                    <React.Fragment key={policyKey}>
+                                        {/* Main Row */}
+                                        <TableRow className={cn(isExpanded && 'bg-muted/30')}>
+                                            <TableCell className="px-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() => toggleRowExpansion(policyKey)}
+                                                >
+                                                    {isExpanded
+                                                        ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                        : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                    }
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    {appInfo.iconUrl && (
+                                                        <img
+                                                            src={appInfo.iconUrl}
+                                                            alt=""
+                                                            className="w-8 h-8 rounded-lg flex-shrink-0"
+                                                            loading="lazy"
+                                                        />
+                                                    )}
+                                                    <div>
+                                                        <p className="font-medium text-sm">{displayName}</p>
+                                                        {appInfo.bundleId && (
+                                                            <p className="text-xs text-muted-foreground">{appInfo.bundleId}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{policy.action}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Select
+                                                    value={(policy.purchaseMethod ?? 1).toString()}
+                                                    onValueChange={(v) => handleFieldChange(policyKey, 'purchaseMethod', parseInt(v))}
+                                                >
+                                                    <SelectTrigger className="h-8 text-xs w-[160px]">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="0" className="text-xs">Free / VPP Redemption</SelectItem>
+                                                        <SelectItem value="1" className="text-xs">VPP Assignment</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Switch
+                                                    checked={policy.enableAppAnalytics ?? false}
+                                                    onCheckedChange={(v) => handleFieldChange(policyKey, 'enableAppAnalytics', v)}
+                                                    className="scale-90"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {policy.isNew ? (
+                                                    <Badge variant="secondary">New</Badge>
+                                                ) : (
+                                                    <Badge variant="outline">Saved</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                                                onClick={() => handleDeleteApplication(policy)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Delete</TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </TableCell>
+                                        </TableRow>
+
+                                        {/* Expanded Detail Row */}
+                                        {isExpanded && (
+                                            <TableRow className="bg-muted/10 hover:bg-muted/10">
+                                                <TableCell colSpan={7} className="border-t border-dashed p-0">
+                                                    <div className="px-6 py-4 pl-12">
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+                                                            {/* Application ID */}
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-xs text-muted-foreground">Application ID</Label>
+                                                                <Input
+                                                                    value={policy.applicationId || ''}
+                                                                    disabled
+                                                                    className="h-8 text-xs bg-muted"
+                                                                />
+                                                            </div>
+
+                                                            {/* Name */}
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-xs text-muted-foreground">Name</Label>
+                                                                <Input
+                                                                    value={policy.name || ''}
+                                                                    disabled
+                                                                    className="h-8 text-xs bg-muted"
+                                                                />
+                                                            </div>
+
+                                                            {/* Action */}
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-xs text-muted-foreground">Action</Label>
+                                                                <Input
+                                                                    value={policy.action || 'INSTALL'}
+                                                                    disabled
+                                                                    className="h-8 text-xs bg-muted"
+                                                                />
+                                                            </div>
+
+                                                            {/* Attribute: Associated Domains */}
+                                                            <div className="space-y-1.5 col-span-2">
+                                                                <Label className="text-xs text-muted-foreground">Associated Domains</Label>
+                                                                <Input
+                                                                    placeholder="Comma-separated domains (e.g. example.com, app.example.com)"
+                                                                    value={policy.attribute?.associatedDomains?.join(', ') || ''}
+                                                                    onChange={(e) => {
+                                                                        const domains = e.target.value
+                                                                            .split(',')
+                                                                            .map((d) => d.trim())
+                                                                            .filter(Boolean);
+                                                                        handleFieldChange(policyKey, 'attribute', {
+                                                                            ...policy.attribute,
+                                                                            associatedDomains: domains,
+                                                                        } as any);
+                                                                    }}
+                                                                    className="h-8 text-xs"
+                                                                />
+                                                            </div>
+
+                                                            {/* Attribute Toggles */}
+                                                            <div className="space-y-2.5 col-span-3">
+                                                                <Label className="text-xs text-muted-foreground block">Attributes</Label>
+                                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                                                    <label className="flex items-center gap-2 text-xs">
+                                                                        <Switch
+                                                                            checked={policy.attribute?.associatedDomainsEnableDirectDownloads ?? false}
+                                                                            onCheckedChange={(v) =>
+                                                                                handleFieldChange(policyKey, 'attribute', {
+                                                                                    ...policy.attribute,
+                                                                                    associatedDomainsEnableDirectDownloads: v,
+                                                                                } as any)
+                                                                            }
+                                                                            className="scale-90"
+                                                                        />
+                                                                        <span>Direct Downloads</span>
+                                                                    </label>
+                                                                    <label className="flex items-center gap-2 text-xs">
+                                                                        <Switch
+                                                                            checked={policy.attribute?.tapToPayScreenLock ?? false}
+                                                                            onCheckedChange={(v) =>
+                                                                                handleFieldChange(policyKey, 'attribute', {
+                                                                                    ...policy.attribute,
+                                                                                    tapToPayScreenLock: v,
+                                                                                } as any)
+                                                                            }
+                                                                            className="scale-90"
+                                                                        />
+                                                                        <span>Tap to Pay Screen Lock</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+
+            {/* Empty state - apps exist but none added */}
+            {policies.length === 0 && availableForAdd.length > 0 && !isFetching && (
+                <Card className="border-dashed">
+                    <CardContent className="py-10 text-center">
+                        <Grid className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                        <h4 className="font-medium mb-2">No application policies configured</h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Add iOS applications to configure install and management settings.
+                        </p>
+                        <Button variant="outline" onClick={() => setOpenAddModal(true)}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Application
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={onCancel} disabled={loading}>
+                    Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={loading || !hasChanges} className="gap-2 min-w-[140px]">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save Changes
+                </Button>
+            </div>
+
+            {/* Add Application Modal */}
+            <Dialog open={openAddModal} onOpenChange={(open) => {
+                setOpenAddModal(open);
+                if (!open) resetAddModalState();
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Plus className="h-5 w-5" />
+                            Add iOS Application Policy
+                        </DialogTitle>
+                        <DialogDescription>
+                            Select a registered iOS application and configure its policy settings.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        {availableForAdd.length === 0 ? (
+                            <Alert>
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                    All available iOS applications have already been added, or no apps are registered.
+                                </AlertDescription>
+                            </Alert>
+                        ) : (
+                            <div className="space-y-4">
+                                {/* Application */}
+                                <div className="space-y-2">
+                                    <Label>Application</Label>
+                                    <Select
+                                        value={selectedAppId}
+                                        onValueChange={setSelectedAppId}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select an iOS application" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableForAdd.map((app) => (
+                                                <SelectItem key={app.id} value={app.id}>
+                                                    <div className="flex items-center gap-2">
+                                                        {(app as any).artworkUrl60 && (
+                                                            <img
+                                                                src={(app as any).artworkUrl60}
+                                                                alt=""
+                                                                className="w-5 h-5 rounded"
+                                                            />
+                                                        )}
+                                                        <span>{app.name}</span>
+                                                        {(app as any).bundleId && (
+                                                            <span className="text-xs text-muted-foreground ml-1">
+                                                                ({(app as any).bundleId})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Purchase Method */}
+                                <div className="space-y-2">
+                                    <Label>Purchase Method</Label>
+                                    <Select
+                                        value={selectedPurchaseMethod.toString()}
+                                        onValueChange={(v) => setSelectedPurchaseMethod(parseInt(v))}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="0">Free / VPP with Redemption Code</SelectItem>
+                                            <SelectItem value="1">VPP App Assignment</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Enable Analytics */}
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="add-analytics"
+                                        checked={selectedEnableAnalytics}
+                                        onCheckedChange={(checked) =>
+                                            setSelectedEnableAnalytics(checked as boolean)
+                                        }
+                                    />
+                                    <Label htmlFor="add-analytics" className="cursor-pointer">
+                                        Enable App Analytics
+                                    </Label>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenAddModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleAddApplication} disabled={!selectedAppId}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Modal */}
+            <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <Trash2 className="h-5 w-5" />
+                            Delete Application Policy
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to remove this application policy? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            Removing this policy will affect all devices using this profile.
+                        </AlertDescription>
+                    </Alert>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 };

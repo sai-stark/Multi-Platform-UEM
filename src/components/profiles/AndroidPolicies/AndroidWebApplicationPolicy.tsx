@@ -175,6 +175,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
                 title: t('common.success'),
                 description: t('policies.webApp.deleteSuccess'),
             });
+            onSave();
         } catch (error) {
             console.error('Failed to delete policy:', error);
             toast({

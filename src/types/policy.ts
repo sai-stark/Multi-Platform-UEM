@@ -183,7 +183,7 @@ export interface ApplicationAttribute {
 export interface IosApplicationPolicy extends UserAuditData {
     id?: string; // UUID, read-only
     name: string;
-    applicationId?: string; // UUID, deprecated - internal application id
+    applicationId: string; // UUID - internal application id (required per spec)
     action: 'INSTALL';
     configurationValues?: Record<string, object>;
     purchaseMethod?: number; // 0 = Free/VPP with redemption code, 1 = VPP app assignment

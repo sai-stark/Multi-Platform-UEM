@@ -1,6 +1,7 @@
 import { PolicyService } from '@/api/services/IOSpolicies';
 import {
     Application,
+    ApplicationPermission,
     ApplicationService,
     ApplicationVersion,
 } from '@/api/services/applications';
@@ -54,6 +55,8 @@ import {
     Loader2,
     Plus,
     Save,
+    Settings2,
+    Shield,
     Trash2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -82,6 +85,7 @@ type ExtendedPolicy = AndroidApplicationPolicyType & {
 type InstallType = 'INSTALL_REMOVABLE' | 'INSTALL_NONREMOVABLE' | 'UNINSTALL' | 'AVAILABLE';
 type AutoUpdateMode = 'HIGH_PRIORITY' | 'POSTPONE';
 type PermissionGrant = 'PROMPT' | 'GRANT' | 'DENY';
+type PermissionGrantValue = 'PROMPT' | 'GRANT' | 'DENY';
 type CommunicateWithPersonalApp = 'DENY' | 'ALLOW_WITH_USER_CONSENT';
 
 const INSTALL_TYPES: InstallType[] = ['INSTALL_REMOVABLE', 'INSTALL_NONREMOVABLE', 'UNINSTALL', 'AVAILABLE'];
@@ -134,6 +138,17 @@ export function AndroidApplicationPolicy({
     const [selectedVersion, setSelectedVersion] = useState('');
     const [selectedVersionId, setSelectedVersionId] = useState('');
     const [selectedInstallType, setSelectedInstallType] = useState<InstallType>('INSTALL_REMOVABLE');
+
+    // Permissions Dialog states
+    const [openPermissionDialogFor, setOpenPermissionDialogFor] = useState<string | null>(null);
+    const [permissionList, setPermissionList] = useState<ApplicationPermission[]>([]);
+    const [permissionLoading, setPermissionLoading] = useState(false);
+    const [permissionSelections, setPermissionSelections] = useState<
+        Record<string, PermissionGrantValue | undefined>
+    >({});
+    const [permissionEdits, setPermissionEdits] = useState<
+        Record<string, Record<string, PermissionGrantValue>>
+    >({});
 
     // ====================================================================
     // Data loading
@@ -281,6 +296,63 @@ export function AndroidApplicationPolicy({
         resetAddModalState();
     };
 
+    // Resolve applicationId from a policy (via its applicationVersionId)
+    const getApplicationIdForPolicy = (policy: ExtendedPolicy) => {
+        for (const app of availableApps) {
+            if ((app.versions || []).some((v) => v.id === policy.applicationVersionId)) {
+                return app.id;
+            }
+        }
+        return undefined;
+    };
+
+    // Open permissions dialog for a policy row
+    const openPermissionDialog = async (policy: ExtendedPolicy) => {
+        const appId = getApplicationIdForPolicy(policy) || policy.id;
+        if (!appId) {
+            toast({ title: 'Error', description: 'Unable to resolve application for this policy.', variant: 'destructive' });
+            return;
+        }
+        setPermissionLoading(true);
+        try {
+            const perms = await ApplicationService.getPermissions(platform, appId);
+            setPermissionList(perms || []);
+            const existing: Record<string, PermissionGrantValue | undefined> = {};
+            (policy.permissionGrants || []).forEach((pg) => {
+                existing[pg.permission] = pg.permissionGrant;
+            });
+            setPermissionSelections(existing);
+            setOpenPermissionDialogFor(policy.id);
+        } catch (e) {
+            toast({ title: 'Error', description: getErrorMessage(e, 'Failed to fetch application permissions.'), variant: 'destructive' });
+        } finally {
+            setPermissionLoading(false);
+        }
+    };
+
+    // Persist permission selection changes locally (applied on Save)
+    const savePermissionDialog = (policyId: string) => {
+        const row = policies.find((r) => r.id === policyId);
+        const currentMap: Record<string, PermissionGrantValue | undefined> = {};
+        (row?.permissionGrants || []).forEach((pg) => {
+            currentMap[pg.permission] = pg.permissionGrant;
+        });
+        const delta: Record<string, PermissionGrantValue> = {};
+        for (const [permId, val] of Object.entries(permissionSelections)) {
+            if (val !== undefined && currentMap[permId] !== val) {
+                delta[permId] = val;
+            }
+        }
+        setPermissionEdits((prev) => ({ ...prev, [policyId]: delta }));
+        setOpenPermissionDialogFor(null);
+        toast({
+            title: 'Permissions prepared',
+            description: Object.keys(delta).length > 0
+                ? 'Changes will be applied on Save.'
+                : 'No permission changes detected.',
+        });
+    };
+
     const handleDeleteApplication = (policy: ExtendedPolicy) => {
         setAppToDelete(policy);
         setOpenDeleteModal(true);
@@ -295,6 +367,7 @@ export function AndroidApplicationPolicy({
             setPolicies((prev) => prev.filter((p) => p.id !== appToDelete.id));
             setChangedPolicies((prev) => prev.filter((p) => p.id !== appToDelete.id));
             toast({ title: 'Success', description: 'Application policy deleted.' });
+            if (onSave) onSave();
         } catch (error) {
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete application policy'), variant: 'destructive' });
         }
@@ -310,6 +383,12 @@ export function AndroidApplicationPolicy({
             const newPolicies = changedPolicies.filter((p) => p.isNew);
             for (const policy of newPolicies) {
                 const { isNew, displayName, displayVersion, ...policyData } = policy;
+                // Attach permission edits for new policies
+                if (permissionEdits[policy.id]) {
+                    (policyData as any).permissionGrants = Object.entries(
+                        permissionEdits[policy.id]
+                    ).map(([permission, permissionGrant]) => ({ permission, permissionGrant }));
+                }
                 promises.push(
                     PolicyService.createApplicationPolicy(platform, profileId, policyData)
                 );
@@ -318,6 +397,14 @@ export function AndroidApplicationPolicy({
             const updatedPolicies = changedPolicies.filter((p) => !p.isNew);
             for (const policy of updatedPolicies) {
                 const { isNew, displayName, displayVersion, ...policyData } = policy;
+                // Include only changed permission grants
+                if (permissionEdits[policy.id]) {
+                    (policyData as any).permissionGrants = Object.entries(
+                        permissionEdits[policy.id]
+                    ).map(([permission, permissionGrant]) => ({ permission, permissionGrant }));
+                } else {
+                    delete (policyData as any).permissionGrants;
+                }
                 promises.push(
                     PolicyService.updateApplicationPolicy(platform, profileId, policy.id, policyData)
                 );
@@ -325,7 +412,10 @@ export function AndroidApplicationPolicy({
 
             await Promise.all(promises);
             setChangedPolicies([]);
+            setPermissionEdits({});
             toast({ title: 'Success', description: 'Application policies saved successfully!' });
+            // Reload policies from API so UI reflects the saved state
+            await loadExistingPolicies();
             if (onSave) onSave();
         } catch (error) {
             console.error('Error saving application policies:', error);
@@ -592,6 +682,18 @@ export function AndroidApplicationPolicy({
                                                                 </div>
                                                             </div>
                                                         </div>
+
+                                                        {/* Set Permissions button */}
+                                                        <div className="mt-4 flex justify-end">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="secondary"
+                                                                onClick={() => openPermissionDialog(policy)}
+                                                            >
+                                                                <Settings2 className="h-4 w-4 mr-2" />
+                                                                Set Permissions
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -777,6 +879,100 @@ export function AndroidApplicationPolicy({
                             <Trash2 className="w-4 h-4 mr-2" />
                             Delete
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Permissions Dialog */}
+            <Dialog
+                open={openPermissionDialogFor !== null}
+                onOpenChange={(open) => !open && setOpenPermissionDialogFor(null)}
+            >
+                <DialogContent className="sm:max-w-[700px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Shield className="h-5 w-5" />
+                            Set Application Permissions
+                        </DialogTitle>
+                        <DialogDescription>
+                            Select how each permission should be handled for this app
+                            (Prompt / Grant / Deny). Only changed entries will be sent on save.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-auto">
+                        {permissionLoading ? (
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-6">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Loading permissions...
+                            </div>
+                        ) : permissionList.length === 0 ? (
+                            <div className="text-sm text-muted-foreground py-4">
+                                No permissions available for this application.
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {permissionList.map((p) => {
+                                    // Format raw permission ID into a readable label
+                                    const displayName = p.name || p.permissionId
+                                        .replace(/^android\.permission\./i, '')
+                                        .replace(/^com\.\w+(\.\w+)*\.permission\./i, '')
+                                        .replace(/_/g, ' ')
+                                        .toLowerCase()
+                                        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+                                    return (
+                                        <div
+                                            key={p.permissionId}
+                                            className="flex items-center gap-3 border rounded-md px-3 py-2.5"
+                                        >
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-medium truncate" title={p.permissionId}>
+                                                    {displayName}
+                                                </div>
+                                                {p.description && (
+                                                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                                        {p.description}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="w-[140px] shrink-0">
+                                                <Select
+                                                    value={permissionSelections[p.permissionId] || ''}
+                                                    onValueChange={(v) =>
+                                                        setPermissionSelections((prev) => ({
+                                                            ...prev,
+                                                            [p.permissionId]: v as PermissionGrantValue,
+                                                        }))
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue placeholder="Select" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {PERMISSION_GRANTS.map((perm) => (
+                                                            <SelectItem key={perm} value={perm}>
+                                                                {formatEnumLabel(perm)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenPermissionDialogFor(null)}>
+                            Cancel
+                        </Button>
+                        {openPermissionDialogFor && (
+                            <Button onClick={() => savePermissionDialog(openPermissionDialogFor)}>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

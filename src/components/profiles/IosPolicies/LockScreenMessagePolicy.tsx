@@ -15,9 +15,10 @@ interface LockScreenMessagePolicyProps {
     platform: Platform;
     profileId: string;
     initialData?: LockScreenMessagePolicyType | null;
+    onSave?: () => void | Promise<void>;
 }
 
-export function LockScreenMessagePolicy({ platform, profileId, initialData }: LockScreenMessagePolicyProps) {
+export function LockScreenMessagePolicy({ platform, profileId, initialData, onSave }: LockScreenMessagePolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
     const [policy, setPolicy] = useState<LockScreenMessagePolicyType | null>(null);
@@ -84,6 +85,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData }: Lo
             }
             setIsDialogOpen(false);
             fetchPolicy();
+            if (onSave) onSave();
         } catch (error) {
             console.error('Failed to save policy:', error);
             toast({
@@ -100,6 +102,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData }: Lo
             await PolicyService.deleteLockScreenMessage(platform, profileId);
             toast({ title: 'Success', description: 'Lock Screen Message removed successfully' });
             setPolicy(null);
+            if (onSave) onSave();
         } catch (error) {
             console.error('Failed to delete policy:', error);
             toast({

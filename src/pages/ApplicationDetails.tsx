@@ -64,6 +64,7 @@ import { cn } from '@/lib/utils';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
+import { getAssetUrl } from '@/config/env';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 
 // Action configuration for badges
@@ -87,6 +88,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   // Configuration state
   const [configs, setConfigs] = useState<ApplicationConfiguration[]>([]);
@@ -242,28 +244,25 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
       <TooltipProvider>
         <div className="space-y-6">
           {/* Header */}
-          <header className="flex items-center gap-4">
+          <header className="space-y-4">
             <Button variant="ghost" size="sm" onClick={() => navigate('/applications')} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Back
+              Back to Applications
             </Button>
             <div className="flex items-center gap-4">
-              {app.artworkUrl100 || app.artworkUrl60 ? (
+              {(app.artworkUrl100 || app.artworkUrl60) && (
                 <img
                   src={app.artworkUrl100 || app.artworkUrl60}
                   alt={app.trackName || app.name}
                   className="w-16 h-16 rounded-xl shadow-sm border"
                 />
-              ) : (
-                <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center border">
-                  <Apple className="h-8 w-8 text-muted-foreground" />
-                </div>
               )}
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-foreground">
                     {app.trackName || app.name}
                   </h1>
+                  <img src={getAssetUrl('/Assets/apple.png')} alt="iOS" className="w-5 h-5 object-contain" />
                   {app.enrollmentStatus && (
                     <Badge variant={app.enrollmentStatus === 'REGISTERED' ? 'default' : 'secondary'}>
                       {app.enrollmentStatus}
@@ -337,8 +336,9 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
             </Card>
           </div>
 
-          {/* Description & Release Notes */}
-          <div className="grid gap-6 md:grid-cols-2">
+
+          {/* Description */}
+          {app.description && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -347,39 +347,45 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {app.description ? (
-                  <p className="text-sm text-muted-foreground whitespace-pre-line max-h-[300px] overflow-y-auto">
-                    {app.description}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No description available</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-line">
+                  {!descriptionExpanded && app.description.length > 300
+                    ? app.description.slice(0, 300).trimEnd() + '...'
+                    : app.description
+                  }
+                </p>
+                {app.description.length > 300 && (
+                  <button
+                    className="text-primary hover:underline text-sm font-medium mt-2"
+                    onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+                  >
+                    {descriptionExpanded ? 'Show less' : 'Show more'}
+                  </button>
                 )}
               </CardContent>
             </Card>
+          )}
 
+          {/* Release Notes */}
+          {app.releaseNotes && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Info className="h-4 w-4" />
                   Release Notes
+                  {app.currentVersionReleaseDate && (
+                    <span className="text-xs font-normal text-muted-foreground ml-2">
+                      ({new Date(app.currentVersionReleaseDate).toLocaleDateString()})
+                    </span>
+                  )}
                 </CardTitle>
-                {app.currentVersionReleaseDate && (
-                  <CardDescription>
-                    {new Date(app.currentVersionReleaseDate).toLocaleDateString()}
-                  </CardDescription>
-                )}
               </CardHeader>
               <CardContent>
-                {app.releaseNotes ? (
-                  <p className="text-sm text-muted-foreground whitespace-pre-line max-h-[300px] overflow-y-auto">
-                    {app.releaseNotes}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No release notes available</p>
-                )}
+                <p className="text-sm text-muted-foreground whitespace-pre-line">
+                  {app.releaseNotes}
+                </p>
               </CardContent>
             </Card>
-          </div>
+          )}
 
           {/* Screenshots */}
           {app.screenshotUrls && app.screenshotUrls.length > 0 && (
@@ -747,9 +753,6 @@ const ApplicationDetails = () => {
               {item.versionCode}
             </span>
           )}
-          {item.isProduction && (
-            <Badge className="text-xs bg-green-100 text-green-800">Production</Badge>
-          )}
         </div>
       ),
     },
@@ -760,7 +763,7 @@ const ApplicationDetails = () => {
       sortable: true,
       align: 'center',
       render: (value) => (
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-sm font-medium">
+        <span className="text-sm font-medium">
           {value}
         </span>
       ),
@@ -858,7 +861,7 @@ const ApplicationDetails = () => {
       <TooltipProvider>
         <div className="space-y-6">
           {/* Header */}
-          <header className="flex items-center gap-4">
+          <header className="space-y-4">
             <Button
               variant="ghost"
               size="sm"
@@ -866,25 +869,22 @@ const ApplicationDetails = () => {
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back
+              Back to Applications
             </Button>
             <div className="flex items-center gap-4">
-              {application.iconUrl ? (
+              {application.iconUrl && (
                 <img 
                   src={application.iconUrl} 
                   alt={application.name}
                   className="w-14 h-14 rounded-xl shadow-sm border"
                 />
-              ) : (
-                <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center border">
-                  {getAppIcon(application)}
-                </div>
               )}
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-foreground">
                     {application.name}
                   </h1>
+                  <img src={getAssetUrl('/Assets/android.png')} alt="Android" className="w-5 h-5 object-contain" />
                   {getAppTypeBadge(application)}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
@@ -925,8 +925,8 @@ const ApplicationDetails = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Version</label>
-                  <p className="text-sm font-medium mt-1">{application.version || '-'}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Latest Version</label>
+                  <p className="text-sm font-medium mt-1">{application.versions?.[0]?.version || application.versions?.[0]?.versionName || application.version || '-'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">

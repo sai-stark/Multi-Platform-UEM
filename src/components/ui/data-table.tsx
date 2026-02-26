@@ -644,6 +644,12 @@ export function DataTable<T extends Record<string, any>>({
     setPage(1);
   }, [searchTerm, filters]);
 
+  // Sync visibleColumns when columns prop changes (e.g. switching platforms)
+  // Ensures newly added columns are visible by default
+  useEffect(() => {
+    setVisibleColumns(new Set(columns.filter((col) => !col.hidden).map((col) => col.key)));
+  }, [columns.map((c) => c.key).join(',')]);
+
   // Render helpers
   const renderSortIcon = (key: string) => {
     if (!sortable) return null;
