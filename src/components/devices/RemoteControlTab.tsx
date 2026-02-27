@@ -1,6 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
+    isTrackReference,
     LiveKitRoom,
     useLocalParticipant,
     useRoomContext,
@@ -37,6 +38,8 @@ export function RemoteControlTab({ roomToken, serverUrl, onDisconnect }: RemoteC
             token={roomToken}
             serverUrl={serverUrl}
             connect={true}
+            options={{ adaptiveStream: true }}
+            connectOptions={{ autoSubscribe: true }}
             className="flex flex-col h-full w-full border rounded-lg overflow-hidden bg-card"
         >
             <RemoteControlInner onDisconnect={onDisconnect} />
@@ -48,9 +51,16 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
     const context = useRoomContext();
     const { localParticipant } = useLocalParticipant();
 
-    // Find screen share track from the device
-    const tracks = useTracks([Track.Source.ScreenShare]);
-    const screenTrack = tracks.length > 0 ? tracks[0] : null;
+    // Find any video track from the device (it might publish as ScreenShare, Camera, or Unknown)
+    const tracks = useTracks([
+        { source: Track.Source.ScreenShare, withPlaceholder: false },
+        { source: Track.Source.Camera, withPlaceholder: false },
+        { source: Track.Source.Unknown, withPlaceholder: false }
+    ]);
+
+    // Filter to only remote actual tracks, skipping placeholders
+    const remoteVideoTracks = tracks.filter(isTrackReference).filter(t => t.publication?.kind === 'video');
+    const screenTrack = (remoteVideoTracks.length > 0 ? remoteVideoTracks[0] : null) as any;
 
     const [isDragging, setIsDragging] = useState(false);
 
@@ -103,6 +113,8 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
         // Encode and send via LiveKit Data Channel
         const data = new TextEncoder().encode(payload);
         const isReliable = action !== 'MOVE'; // Use reliable UDP for discrete actions, lossy for continuous drags
+
+        console.log(`Sending pointer event: ${payload}`);
 
         try {
             localParticipant.publishData(data, { reliable: isReliable });

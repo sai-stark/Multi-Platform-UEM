@@ -179,7 +179,15 @@ export default function DeviceDetails() {
 
                 try {
                     const certs = await DeviceService.getDeviceCertificates(platform as Platform, id);
-                    setCertificates(Array.isArray(certs?.CertificateList) ? certs.CertificateList : (Array.isArray(certs) ? certs : []));
+                    if (certs?.content && Array.isArray(certs.content)) {
+                        setCertificates(certs.content);
+                    } else if (Array.isArray(certs?.CertificateList)) {
+                        setCertificates(certs.CertificateList);
+                    } else if (Array.isArray(certs)) {
+                        setCertificates(certs);
+                    } else {
+                        setCertificates([]);
+                    }
                 } catch (e) {
                     console.error("Failed to load certificates", e);
                     setCertificates([]);
@@ -985,23 +993,27 @@ export default function DeviceDetails() {
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
-                                    <h4 className="font-semibold mb-2">Encryption & Recovery</h4>
-                                    <BooleanStatus label="FileVault Enabled" value={securityInfo?.FDE_Enabled} />
-                                    <BooleanStatus label="Institutional Recovery Key" value={securityInfo?.FDE_HasInstitutionalRecoveryKey} />
-                                    <BooleanStatus label="Personal Recovery Key" value={securityInfo?.FDE_HasPersonalRecoveryKey} />
+                                    <h4 className="font-semibold mb-2">Passcode & Authentication</h4>
+                                    <BooleanStatus label="Passcode Present" value={securityInfo?.passcodePresent} />
+                                    <BooleanStatus label="Passcode Compliant" value={securityInfo?.passcodeCompliant} />
+                                    <BooleanStatus label="Compliant with Profiles" value={securityInfo?.passcodeCompliantWithProfiles} />
+                                    <InfoRow label="Lock Grace Period (Min)" value={securityInfo?.passcodeLockGracePeriod} />
+                                    <InfoRow label="Grace Period Enforced" value={securityInfo?.passcodeLockGracePeriodEnforced} />
                                 </div>
                                 <div className="space-y-4">
-                                    <h4 className="font-semibold mb-2">Secure Boot</h4>
-                                    <InfoRow label="Secure Boot Level" value={securityInfo?.SecureBoot?.SecureBootLevel} />
-                                    <InfoRow label="External Boot Level" value={securityInfo?.SecureBoot?.ExternalBootLevel} />
-                                    <div className="pt-2">
-                                        <h5 className="text-sm font-medium mb-2 text-muted-foreground">Reduced Security</h5>
-                                        <div className="space-y-2 pl-2 border-l-2">
-                                            <InfoRow label="Allows Any Apple Signed OS" value={securityInfo?.SecureBoot?.ReducedSecurity?.AllowsAnyAppleSignedOS} />
-                                            <InfoRow label="Allows MDM" value={securityInfo?.SecureBoot?.ReducedSecurity?.AllowsMDM} />
-                                            <InfoRow label="Allows User Kext Approval" value={securityInfo?.SecureBoot?.ReducedSecurity?.AllowsUserKextApproval} />
-                                        </div>
-                                    </div>
+                                    <h4 className="font-semibold mb-2">Device Security Measures</h4>
+                                    <InfoRow label="Hardware Encryption Level" value={securityInfo?.hardwareEncryptionCaps} />
+                                    <BooleanStatus label="Is User Enrollment" value={securityInfo?.IsUserEnrollment} />
+
+                                    {/* Fallbacks for older MacOS-specific schema if they exist */}
+                                    {securityInfo?.FDE_Enabled !== undefined && (
+                                        <>
+                                            <h4 className="font-semibold mt-6 mb-2">MacOS Encryption</h4>
+                                            <BooleanStatus label="FileVault Enabled" value={securityInfo?.FDE_Enabled} />
+                                            <BooleanStatus label="Institutional Recovery Key" value={securityInfo?.FDE_HasInstitutionalRecoveryKey} />
+                                            <BooleanStatus label="Personal Recovery Key" value={securityInfo?.FDE_HasPersonalRecoveryKey} />
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -1170,8 +1182,8 @@ export default function DeviceDetails() {
                             </CardHeader>
                             <CardContent className="p-0 sm:p-2 sm:px-6 h-[800px]">
                                 <RemoteControlTab
-                                    roomToken={(device as any).remoteSessionToken || ""}
-                                    serverUrl={(device as any).remoteSessionUrl || ""}
+                                    roomToken="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzMwNDQ2MTAsImlkZW50aXR5IjoidXNlcjE4IiwiaXNzIjoiZGV2a2V5IiwibmFtZSI6InVzZXIxOCIsIm5iZiI6MTc3MjE4MDYxMCwic3ViIjoidXNlcjE4IiwidmlkZW8iOnsicm9vbSI6InRlc3Qtcm9vbSIsInJvb21Kb2luIjp0cnVlfX0.7ws79G-VwrvnlhhqfwH8VBRrjrIXq3zfYLXIKxISXAg"
+                                    serverUrl="wss://192.168.75.231/livekit/sfu/"
                                 />
                             </CardContent>
                         </Card>
