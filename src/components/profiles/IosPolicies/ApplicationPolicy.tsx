@@ -56,6 +56,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ApplicationPolicy as ApplicationPolicyType } from '@/types/policy';
 
 // ====================================================================
@@ -86,6 +87,7 @@ export const ApplicationPolicyEditor = ({
     onCancel,
 }: ApplicationPolicyProps) => {
     const { toast } = useToast();
+    const navigate = useNavigate();
 
     // State
     const [policies, setPolicies] = useState<ExtendedPolicy[]>([]);
@@ -608,12 +610,24 @@ export const ApplicationPolicyEditor = ({
 
                     <div className="space-y-4 py-4">
                         {availableForAdd.length === 0 ? (
-                            <Alert>
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertDescription>
-                                    All available iOS applications have already been added, or no apps are registered.
-                                </AlertDescription>
-                            </Alert>
+                            <div className="space-y-3">
+                                <Alert>
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertDescription>
+                                        All available iOS applications have already been added, or no apps are registered.
+                                    </AlertDescription>
+                                </Alert>
+                                <span
+                                    className="text-sm text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors inline-flex items-center gap-1"
+                                    onClick={() => {
+                                        setOpenAddModal(false);
+                                        navigate('/applications?platform=ios');
+                                    }}
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Add Application
+                                </span>
+                            </div>
                         ) : (
                             <div className="space-y-4">
                                 {/* Application */}

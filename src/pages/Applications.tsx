@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Application, ApplicationService, AppActionType } from '@/api/services/applications';
 import { IosApplication, AppRequest } from '@/types/application';
@@ -200,8 +200,17 @@ const getIframeToken = async (
 const Applications = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { shouldBlock: shouldBlockAndroid } = useAndroidFeaturesEnabled();
-  const [platform, setPlatform] = useState<Platform>(shouldBlockAndroid ? 'ios' : 'android');
+
+  // Read platform from URL search params (e.g., ?platform=ios)
+  const getInitialPlatform = (): Platform => {
+    const urlPlatform = searchParams.get('platform');
+    if (urlPlatform === 'ios' || urlPlatform === 'android') return urlPlatform;
+    return shouldBlockAndroid ? 'ios' : 'android';
+  };
+
+  const [platform, setPlatform] = useState<Platform>(getInitialPlatform());
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);

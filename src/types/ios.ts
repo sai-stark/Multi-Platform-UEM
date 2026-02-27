@@ -249,30 +249,30 @@ export interface IosVpnIKEv2 {
     certificateType?: 'RSA' | 'ECDSA256' | 'ECDSA384' | 'ECDSA521' | 'RSA-PSS';
     serverCertificateCommonName?: string;
     serverCertificateIssuerCommonName?: string;
-    enablePFS?: boolean;
-    enableCertificateRevocationCheck?: boolean;
-    disableMOBIKE?: boolean;
-    disableRedirect?: boolean;
-    enableFallback?: boolean;
-    extendedAuthEnabled?: boolean;
-    useConfigurationAttributeInternalIPSubnet?: boolean;
+    enablePFS?: number; // 0 | 1
+    enableCertificateRevocationCheck?: number; // 0 | 1
+    disableMOBIKE?: number; // 0 | 1
+    disableRedirect?: number; // 0 | 1
+    enableFallback?: number; // 0 | 1
+    extendedAuthEnabled?: number; // 0 | 1
+    useConfigurationAttributeInternalIPSubnet?: number; // 0 | 1
     deadPeerDetectionRate?: 'None' | 'Low' | 'Medium' | 'High';
-    disconnectOnIdle?: boolean;
+    disconnectOnIdle?: number; // 0 | 1
     disconnectOnIdleTimer?: number;
     mTU?: number;
     nATKeepAliveInterval?: number;
-    nATKeepAliveOffloadEnable?: boolean;
-    includeAllNetworks?: boolean;
-    enforceRoutes?: boolean;
-    excludeLocalNetworks?: boolean;
-    excludeCellularServices?: boolean;
-    excludeAPNs?: boolean;
-    excludeDeviceCommunication?: boolean;
+    nATKeepAliveOffloadEnable?: number; // 0 | 1
+    includeAllNetworks?: number; // 0 | 1
+    enforceRoutes?: number; // 0 | 1
+    excludeLocalNetworks?: number; // 0 | 1
+    excludeCellularServices?: number; // 0 | 1
+    excludeAPNs?: number; // 0 | 1
+    excludeDeviceCommunication?: number; // 0 | 1
     pPK?: string;
     pPKIdentifier?: string;
-    pPKMandatory?: boolean;
-    allowPostQuantumKeyExchangeFallback?: boolean;
-    enforceStrictAlgorithmSelection?: boolean;
+    pPKMandatory?: number; // 0 | 1
+    allowPostQuantumKeyExchangeFallback?: number; // 0 | 1
+    enforceStrictAlgorithmSelection?: number; // 0 | 1
     tLSMaximumVersion?: string;
     tLSMinimumVersion?: string;
     iKESecurityAssociationParameters?: IosVpnIKEv2SA;
@@ -285,13 +285,13 @@ export interface IosVpnIPSec {
     localIdentifierType?: 'KeyID';
     sharedSecret?: string;
     payloadCertificateUUID?: string;
-    xAuthEnabled?: boolean;
+    xAuthEnabled?: number; // 0 | 1
     xAuthName?: string;
     xAuthPassword?: string;
     xAuthPasswordEncryption?: 'Prompt';
-    promptForVPNPIN?: boolean;
-    onDemandEnabled?: boolean;
-    disconnectOnIdle?: boolean;
+    promptForVPNPIN?: number; // 0 | 1
+    onDemandEnabled?: number; // 0 | 1
+    disconnectOnIdle?: number; // 0 | 1
     disconnectOnIdleTimer?: number;
 }
 
@@ -299,18 +299,18 @@ export interface IosVpnPPP {
     authName?: string;
     authPassword?: string;
     commRemoteAddress?: string;
-    tokenCard?: boolean;
-    disconnectOnIdle?: boolean;
+    tokenCard?: number; // 0 | 1
+    disconnectOnIdle?: number; // 0 | 1
     disconnectOnIdleTimer?: number;
     authEAPPlugins?: string[];
     authProtocol?: string[];
-    cCPEnabled?: boolean;
-    cCPMPPE40Enabled?: boolean;
-    cCPMPPE128Enabled?: boolean;
+    cCPEnabled?: number; // 0 | 1
+    cCPMPPE40Enabled?: number; // 0 | 1
+    cCPMPPE128Enabled?: number; // 0 | 1
 }
 
 export interface IosVpnIPv4 {
-    overridePrimary?: boolean;
+    overridePrimary?: number; // 0 | 1
     configMethod?: string;
 }
 
@@ -321,10 +321,11 @@ export interface IosVpnDNS {
 }
 
 export interface IosVpnProxies {
-    hTTPEnable?: boolean;
+    hTTPEnable?: number; // 0 | 1
+    hTTPSEnable?: number; // 0 | 1
     hTTPProxy?: string;
     hTTPPort?: number;
-    proxyAutoConfigEnable?: boolean;
+    proxyAutoConfigEnable?: number; // 0 | 1
     proxyAutoConfigURLString?: string;
 }
 

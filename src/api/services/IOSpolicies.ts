@@ -263,6 +263,12 @@ export const PolicyService = {
         await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/relay`);
     },
 
+    // --- iOS PKCS12 Certificates ---
+    getCertificatesPkcs12: async (profileId: string) => {
+        const response = await apiClient.get<{ content: Array<{ id: string; name: string; policyType?: string }> }>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12`);
+        return response.data;
+    },
+
     // --- iOS Home Screen Layout (UEM Phase 2) ---
     getHomeScreenLayoutPolicy: async (profileId: string) => {
         const response = await apiClient.get<IosHomeScreenLayoutPolicy>(`/ios${CORE_PATH}/${profileId}/policies/homeScreenLayout`);

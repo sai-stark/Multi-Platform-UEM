@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,6 +25,19 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
     const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
+    const [certificates, setCertificates] = useState<Array<{ id: string; name: string }>>([]);
+
+    useEffect(() => {
+        const fetchCertificates = async () => {
+            try {
+                const data = await PolicyService.getCertificatesPkcs12(profileId);
+                setCertificates(data?.content || []);
+            } catch {
+                // Silently fail - dropdown will just be empty
+            }
+        };
+        fetchCertificates();
+    }, [profileId]);
 
     const [formData, setFormData] = useState<Partial<IosVpnPolicy>>({
         name: '',
@@ -168,8 +181,17 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                 </div>
 
                 <div>
-                    <label className="text-sm font-medium">Certificate UUID</label>
-                    <Input value={formData.payloadCertificateUUID || ''} onChange={e => handleChange('payloadCertificateUUID', e.target.value)} placeholder="UUID" />
+                    <label className="text-sm font-medium">Certificate</label>
+                    <Select value={formData.payloadCertificateUUID || ''} onValueChange={v => handleChange('payloadCertificateUUID', v)}>
+                        <SelectTrigger>
+                            <SelectValue placeholder={certificates.length === 0 ? 'No certificates available' : 'Select a certificate'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {certificates.map(cert => (
+                                <SelectItem key={cert.id} value={cert.id}>{cert.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 {/* IKEv2 Section */}
@@ -216,19 +238,19 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                                     </Select>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Checkbox checked={formData.ikev2?.enablePFS || false} onCheckedChange={v => handleNestedChange('ikev2', 'enablePFS', v)} />
+                                    <Checkbox checked={!!formData.ikev2?.enablePFS} onCheckedChange={v => handleNestedChange('ikev2', 'enablePFS', v ? 1 : 0)} />
                                     <label className="text-sm">Enable Perfect Forward Secrecy</label>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Checkbox checked={formData.ikev2?.includeAllNetworks || false} onCheckedChange={v => handleNestedChange('ikev2', 'includeAllNetworks', v)} />
+                                    <Checkbox checked={!!formData.ikev2?.includeAllNetworks} onCheckedChange={v => handleNestedChange('ikev2', 'includeAllNetworks', v ? 1 : 0)} />
                                     <label className="text-sm">Include All Networks</label>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Checkbox checked={formData.ikev2?.excludeLocalNetworks || false} onCheckedChange={v => handleNestedChange('ikev2', 'excludeLocalNetworks', v)} />
+                                    <Checkbox checked={!!formData.ikev2?.excludeLocalNetworks} onCheckedChange={v => handleNestedChange('ikev2', 'excludeLocalNetworks', v ? 1 : 0)} />
                                     <label className="text-sm">Exclude Local Networks</label>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Checkbox checked={formData.ikev2?.disableMOBIKE || false} onCheckedChange={v => handleNestedChange('ikev2', 'disableMOBIKE', v)} />
+                                    <Checkbox checked={!!formData.ikev2?.disableMOBIKE} onCheckedChange={v => handleNestedChange('ikev2', 'disableMOBIKE', v ? 1 : 0)} />
                                     <label className="text-sm">Disable MOBIKE</label>
                                 </div>
                             </div>
@@ -263,10 +285,10 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                                     <Input value={formData.ipsec?.localIdentifier || ''} onChange={e => handleNestedChange('ipsec', 'localIdentifier', e.target.value)} />
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Checkbox checked={formData.ipsec?.xAuthEnabled || false} onCheckedChange={v => handleNestedChange('ipsec', 'xAuthEnabled', v)} />
+                                    <Checkbox checked={!!formData.ipsec?.xAuthEnabled} onCheckedChange={v => handleNestedChange('ipsec', 'xAuthEnabled', v ? 1 : 0)} />
                                     <label className="text-sm">Enable XAuth</label>
                                 </div>
-                                {formData.ipsec?.xAuthEnabled && (
+                                {formData.ipsec?.xAuthEnabled === 1 && (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-sm font-medium">XAuth Name</label>
@@ -304,7 +326,7 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                                     <Input value={formData.ppp?.commRemoteAddress || ''} onChange={e => handleNestedChange('ppp', 'commRemoteAddress', e.target.value)} />
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Checkbox checked={formData.ppp?.tokenCard || false} onCheckedChange={v => handleNestedChange('ppp', 'tokenCard', v)} />
+                                    <Checkbox checked={!!formData.ppp?.tokenCard} onCheckedChange={v => handleNestedChange('ppp', 'tokenCard', v ? 1 : 0)} />
                                     <label className="text-sm">Token Card</label>
                                 </div>
                             </div>
@@ -343,10 +365,10 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                     {expandedSections.proxies && (
                         <div className="pl-4 space-y-3 border-l-2 border-muted">
                             <div className="flex items-center gap-2">
-                                <Checkbox checked={formData.proxies?.hTTPEnable || false} onCheckedChange={v => handleNestedChange('proxies', 'hTTPEnable', v)} />
+                                <Checkbox checked={!!formData.proxies?.hTTPEnable} onCheckedChange={v => handleNestedChange('proxies', 'hTTPEnable', v ? 1 : 0)} />
                                 <label className="text-sm">Enable HTTP Proxy</label>
                             </div>
-                            {formData.proxies?.hTTPEnable && (
+                            {formData.proxies?.hTTPEnable === 1 && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-sm font-medium">HTTP Proxy</label>
@@ -359,10 +381,10 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                                 </div>
                             )}
                             <div className="flex items-center gap-2">
-                                <Checkbox checked={formData.proxies?.proxyAutoConfigEnable || false} onCheckedChange={v => handleNestedChange('proxies', 'proxyAutoConfigEnable', v)} />
+                                <Checkbox checked={!!formData.proxies?.proxyAutoConfigEnable} onCheckedChange={v => handleNestedChange('proxies', 'proxyAutoConfigEnable', v ? 1 : 0)} />
                                 <label className="text-sm">Enable Proxy Auto-Config</label>
                             </div>
-                            {formData.proxies?.proxyAutoConfigEnable && (
+                            {formData.proxies?.proxyAutoConfigEnable === 1 && (
                                 <div>
                                     <label className="text-sm font-medium">PAC URL</label>
                                     <Input value={formData.proxies?.proxyAutoConfigURLString || ''} onChange={e => handleNestedChange('proxies', 'proxyAutoConfigURLString', e.target.value)} placeholder="https://example.com/proxy.pac" />
