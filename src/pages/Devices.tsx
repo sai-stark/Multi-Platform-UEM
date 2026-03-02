@@ -189,7 +189,7 @@ const Devices = () => {
           connectionStatus: (item.status === 'ONLINE' || item.connectionStatus === 'online') ? 'online' : 'offline',
           // Map -1.0...1.0 to -1...100
           batteryLevel: (item.batteryLevel !== undefined && item.batteryLevel !== null)
-            ? (item.batteryLevel >= 0 && item.batteryLevel <= 1 ? Math.round(item.batteryLevel * 100) : Math.round(item.batteryLevel))
+            ? (item.batteryLevel >= 0 && item.batteryLevel <= 1 ? Number((item.batteryLevel * 100).toFixed(2)) : Number(item.batteryLevel.toFixed(2)))
             : -1,
           storageUsed: storageUsed,
           storageTotal: storageTotal
@@ -375,16 +375,16 @@ const Devices = () => {
     {
       key: 'storage',
       header: 'Storage',
-      accessor: (item) => item.storageTotal > 0 ? Math.round((item.storageUsed / item.storageTotal) * 100) : 0,
+      accessor: (item) => item.storageTotal > 0 ? Number(((item.storageUsed / item.storageTotal) * 100).toFixed(2)) : 0,
       sortable: true,
       render: (_, item) => {
-        const storagePercent = item.storageTotal > 0 ? Math.round((item.storageUsed / item.storageTotal) * 100) : 0;
+        const storagePercent = item.storageTotal > 0 ? Number(((item.storageUsed / item.storageTotal) * 100).toFixed(2)) : 0;
         return (
           <div className="flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <div className="text-sm">
-              <span className="font-mono">{item.storageUsed}</span>
-              <span className="text-muted-foreground">/{item.storageTotal} GB</span>
+              <span className="font-mono">{Number(item.storageUsed).toFixed(2)}</span>
+              <span className="text-muted-foreground">/{Number(item.storageTotal).toFixed(2)} GB</span>
               <span className={cn('ml-1 text-xs', storagePercent > 90 ? 'text-destructive' : storagePercent > 75 ? 'text-warning' : 'text-muted-foreground')}>
                 ({storagePercent}%)
               </span>

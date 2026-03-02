@@ -1,5 +1,6 @@
 
 import { DeviceService } from '@/api/services/devices';
+import { CertificateViewer } from '@/components/devices/CertificateViewer';
 import { RemoteControlTab } from '@/components/devices/RemoteControlTab';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Badge } from '@/components/ui/badge';
@@ -95,6 +96,7 @@ export default function DeviceDetails() {
     const [effectiveProfile, setEffectiveProfile] = useState<FullProfile | null>(null);
     const [securityInfo, setSecurityInfo] = useState<DeviceSecurityInfo | null>(null);
     const [certificates, setCertificates] = useState<DeviceCertificateItem[]>([]);
+    const [selectedCertificate, setSelectedCertificate] = useState<DeviceCertificateItem | null>(null);
     const [showProfileDialog, setShowProfileDialog] = useState(false);
     const [loadingApps, setLoadingApps] = useState(false);
 
@@ -505,14 +507,14 @@ export default function DeviceDetails() {
     }
 
     // Calculations
-    const storagePercent = Math.min(100, ((Number(device.storageUsed || device.usedStorage) || 0) / (Number(device.storageCapacity || device.totalStorage || device.deviceCapacity) || 1)) * 100);
-    const ramPercent = Math.min(100, ((Number(device.ramUsed || device.usedRam) || 0) / (Number(device.ramCapacity || device.totalRam) || 1)) * 100);
+    const storagePercent = Math.min(100, (Number((((Number(device.storageUsed || device.usedStorage) || 0) / (Number(device.storageCapacity || device.totalStorage || device.deviceCapacity) || 1)) * 100).toFixed(2))));
+    const ramPercent = Math.min(100, (Number((((Number(device.ramUsed || device.usedRam) || 0) / (Number(device.ramCapacity || device.totalRam) || 1)) * 100).toFixed(2))));
 
     const isIos = device.platform === 'ios' || device.deviceType === 'IosDeviceInfo';
 
     return (
         <MainLayout>
-            <div className="space-y-6 pb-20 max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="space-y-6 pb-20">
                 {/* Navigation */}
                 <Button variant="ghost" size="sm" onClick={() => navigate('/devices')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
                     <ArrowLeft className="w-4 h-4" />
@@ -731,9 +733,26 @@ export default function DeviceDetails() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex flex-col gap-4">
-                                            <InfoRow label="Total Capacity" value={device.deviceCapacity ? `${device.deviceCapacity} GB` : '-'} icon={Database} />
-                                            {/* Calculate used if available, or just show capacity */}
-                                            {/* Note: iOS API provided might not have used storage directly in this specific response subset, only capacity */}
+                                            {(() => {
+                                                const capacity = device.deviceCapacity || 0;
+                                                const available = device.availableDeviceCapacity || 0;
+                                                const used = capacity > 0 ? capacity - available : 0;
+                                                const percent = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 0;
+
+                                                return (
+                                                    <>
+                                                        <div className="flex justify-between items-baseline mb-2">
+                                                            <span className="text-2xl font-bold">{used.toFixed(2)} GB</span>
+                                                            <span className="text-sm text-muted-foreground">of {capacity.toFixed(2)} GB</span>
+                                                        </div>
+                                                        <Progress value={percent} className="h-2 mb-2" />
+                                                        <div className="flex justify-between text-xs text-muted-foreground">
+                                                            <span>Used: {percent.toFixed(2)}%</span>
+                                                            <span>Free: {available.toFixed(2)} GB</span>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -744,10 +763,35 @@ export default function DeviceDetails() {
                                     </CardHeader>
                                     <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <BooleanStatus label="Supervised" value={device.isSupervised} />
+                                        <BooleanStatus label="Shared Device" value={device.isMultiUser} />
                                         <BooleanStatus label="Device Locator" value={device.isDeviceLocatorServiceEnabled} />
                                         <BooleanStatus label="Do Not Disturb" value={device.isDoNotDisturbInEffect} />
                                         <BooleanStatus label="Cloud Backup" value={device.isCloudBackupEnabled} />
                                         <BooleanStatus label="MDM Lost Mode" value={device.isMDMLostModeEnabled} invertColor />
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="col-span-1 border-t-4 border-t-primary/50">
+                                    <CardHeader>
+                                        <SectionHeader title="Battery" icon={Battery} />
+                                    </CardHeader>
+                                    <CardContent>
+                                        {(() => {
+                                            const raw = device.batteryLevel;
+                                            const normalized = (raw !== undefined && raw !== null && raw >= 0)
+                                                ? (raw <= 1 ? Number((raw * 100).toFixed(2)) : Number(raw.toFixed(2)))
+                                                : -1;
+                                            return (
+                                                <>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={cn("text-4xl font-bold", getBatteryColor(normalized))}>
+                                                            {normalized >= 0 ? normalized : '-'}%
+                                                        </div>
+                                                    </div>
+                                                    <Progress value={normalized >= 0 ? normalized : 0} className="mt-4 h-2" />
+                                                </>
+                                            );
+                                        })()}
                                     </CardContent>
                                 </Card>
                             </div>
@@ -802,7 +846,7 @@ export default function DeviceDetails() {
                                         </div>
                                         <Progress value={storagePercent} className="h-2 mb-2" />
                                         <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>Used: {Math.round(storagePercent)}%</span>
+                                            <span>Used: {storagePercent.toFixed(2)}%</span>
                                             <span>Free: {formatBytes(device.freeStorage || (device.availableDeviceCapacity))}</span>
                                         </div>
                                     </CardContent>
@@ -1041,7 +1085,7 @@ export default function DeviceDetails() {
                                         <TableRow>
                                             <TableHead>Common Name</TableHead>
                                             <TableHead>Is Identity</TableHead>
-                                            <TableHead>Data (Preview)</TableHead>
+                                            <TableHead className="w-[100px]">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -1053,11 +1097,18 @@ export default function DeviceDetails() {
                                             </TableRow>
                                         ) : (
                                             certificates.map((cert, idx) => (
-                                                <TableRow key={idx}>
-                                                    <TableCell className="font-medium">{cert.CommonName}</TableCell>
-                                                    <TableCell>{cert.IsIdentity ? <Badge variant="outline" className="bg-green-50 text-green-700">Yes</Badge> : 'No'}</TableCell>
-                                                    <TableCell className="max-w-[200px] truncate text-muted-foreground font-mono text-xs" title={cert.Data}>
-                                                        {cert.Data}
+                                                <TableRow key={idx} className="hover:bg-muted/50 transition-colors">
+                                                    <TableCell className="font-medium p-4">{cert.CommonName}</TableCell>
+                                                    <TableCell className="p-4">{cert.IsIdentity ? <Badge variant="outline" className="bg-green-50 text-green-700">Yes</Badge> : 'No'}</TableCell>
+                                                    <TableCell className="p-4">
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            className="gap-2"
+                                                            onClick={() => setSelectedCertificate(cert)}
+                                                        >
+                                                            <FileText className="w-4 h-4" /> View Details
+                                                        </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             ))
@@ -1066,6 +1117,13 @@ export default function DeviceDetails() {
                                 </Table>
                             </CardContent>
                         </Card>
+
+                        {/* Certificate Viewer Modal */}
+                        <CertificateViewer
+                            isOpen={!!selectedCertificate}
+                            onClose={() => setSelectedCertificate(null)}
+                            certificate={selectedCertificate}
+                        />
                     </TabsContent>
 
                     {/* SYSTEM TAB - Hide for iOS */}

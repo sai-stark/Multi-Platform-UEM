@@ -22,7 +22,7 @@ export function StorageUsage() {
             const percentage = (item.used / item.total) * 100;
             const isWarning = percentage > 80;
             const isCritical = percentage > 90;
-            
+
             return (
               <div key={item.label} role="listitem">
                 <div className="flex items-center justify-between mb-1.5">
@@ -34,27 +34,26 @@ export function StorageUsage() {
                     {item.used} / {item.total} {item.unit}
                   </span>
                 </div>
-                <div 
+                <div
                   className="h-2 bg-muted rounded-full overflow-hidden"
                   role="progressbar"
                   aria-valuenow={item.used}
                   aria-valuemin={0}
                   aria-valuemax={item.total}
-                  aria-label={`${item.label}: ${item.used} of ${item.total} ${item.unit} used (${percentage.toFixed(0)}%)`}
+                  aria-label={`${item.label}: ${item.used} of ${item.total} ${item.unit} used (${percentage.toFixed(2)}%)`}
                 >
-                  <div 
-                    className={`h-full rounded-full transition-all ${
-                      isCritical 
-                        ? 'bg-destructive' 
-                        : isWarning 
-                          ? 'bg-warning' 
+                  <div
+                    className={`h-full rounded-full transition-all ${isCritical
+                        ? 'bg-destructive'
+                        : isWarning
+                          ? 'bg-warning'
                           : 'bg-info'
-                    }`}
+                      }`}
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
                 {isWarning && (
-                  <p 
+                  <p
                     className={`text-xs mt-1 ${isCritical ? 'text-destructive' : 'text-warning'}`}
                     role="alert"
                   >

@@ -1,5 +1,5 @@
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 const platformData = [
   { name: 'Android', value: 2450, pattern: 'solid' },
@@ -43,8 +43,8 @@ export function PlatformChart() {
                   dataKey="value"
                 >
                   {platformData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
+                    <Cell
+                      key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
                       stroke="hsl(var(--background))"
                       strokeWidth={2}
@@ -59,7 +59,7 @@ export function PlatformChart() {
                     color: 'hsl(var(--popover-foreground))',
                   }}
                   formatter={(value: number) => [
-                    `${value.toLocaleString()} (${((value / total) * 100).toFixed(1)}%)`,
+                    `${value.toLocaleString()} (${((value / total) * 100).toFixed(2)}%)`,
                     'Devices'
                   ]}
                 />
@@ -75,7 +75,7 @@ export function PlatformChart() {
               <ul>
                 {platformData.map((item) => (
                   <li key={item.name}>
-                    {item.name}: {item.value.toLocaleString()} devices ({((item.value / total) * 100).toFixed(1)}%)
+                    {item.name}: {item.value.toLocaleString()} devices ({((item.value / total) * 100).toFixed(2)}%)
                   </li>
                 ))}
               </ul>
@@ -93,8 +93,8 @@ export function PlatformChart() {
                 {platformData.map((item, index) => (
                   <tr key={item.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
                     <td className="flex items-center gap-2">
-                      <span 
-                        className="w-3 h-3 rounded-sm" 
+                      <span
+                        className="w-3 h-3 rounded-sm"
                         style={{ backgroundColor: COLORS[index] }}
                         aria-hidden="true"
                       />
@@ -103,7 +103,7 @@ export function PlatformChart() {
                     <td className="text-muted-foreground font-mono">
                       {item.value.toLocaleString()}
                       <span className="ml-2 text-xs">
-                        ({((item.value / total) * 100).toFixed(1)}%)
+                        ({((item.value / total) * 100).toFixed(2)}%)
                       </span>
                     </td>
                   </tr>
