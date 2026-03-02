@@ -140,7 +140,14 @@ export default function DeviceDetails() {
                 try {
                     setLoadingApps(true);
                     const apps = await DeviceService.getDeviceApplications(platform as Platform, id);
-                    setApplications(Array.isArray(apps) ? apps : []);
+                    const appsAny = apps as any;
+                    if (appsAny?.content && Array.isArray(appsAny.content)) {
+                        setApplications(appsAny.content);
+                    } else if (Array.isArray(apps)) {
+                        setApplications(apps);
+                    } else {
+                        setApplications([]);
+                    }
                 } catch (e) {
                     console.error("Failed to load apps", e);
                     setApplications([]);
@@ -179,10 +186,11 @@ export default function DeviceDetails() {
 
                 try {
                     const certs = await DeviceService.getDeviceCertificates(platform as Platform, id);
-                    if (certs?.content && Array.isArray(certs.content)) {
-                        setCertificates(certs.content);
-                    } else if (Array.isArray(certs?.CertificateList)) {
-                        setCertificates(certs.CertificateList);
+                    const certsAny = certs as any;
+                    if (certsAny?.content && Array.isArray(certsAny.content)) {
+                        setCertificates(certsAny.content);
+                    } else if (Array.isArray(certsAny?.CertificateList)) {
+                        setCertificates(certsAny.CertificateList);
                     } else if (Array.isArray(certs)) {
                         setCertificates(certs);
                     } else {

@@ -214,7 +214,7 @@ export interface DeviceApplication {
     externalVersionIdentifier?: number; // iOS
 }
 
-export type DeviceApplicationList = DeviceApplication[];
+export type DeviceApplicationList = DeviceApplication[] | { content: DeviceApplication[] };
 
 // New Types for Security and Certificates
 export interface DeviceSecurityInfo {
@@ -224,6 +224,13 @@ export interface DeviceSecurityInfo {
     FDE_PersonalRecoveryKeyCMS?: string;
     FDE_PersonalRecoveryKeyDeviceKey?: string;
     HardwareEncryptionCaps?: number;
+    hardwareEncryptionCaps?: number;
+    IsUserEnrollment?: boolean;
+    passcodePresent?: boolean;
+    passcodeCompliant?: boolean;
+    passcodeCompliantWithProfiles?: boolean;
+    passcodeLockGracePeriod?: number;
+    passcodeLockGracePeriodEnforced?: number;
     SecureBoot?: {
         SecureBootLevel?: 'full' | 'medium' | 'off' | 'not supported';
         ExternalBootLevel?: 'allowed' | 'disallowed' | 'not supported';
@@ -242,7 +249,8 @@ export interface DeviceCertificateItem {
 }
 
 export interface DeviceCertificateList {
-    CertificateList: DeviceCertificateItem[];
+    CertificateList?: DeviceCertificateItem[];
+    content?: DeviceCertificateItem[];
 }
 
 export interface SyncDevice {
