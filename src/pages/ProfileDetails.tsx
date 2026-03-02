@@ -63,6 +63,8 @@ import {
   Bell,
   Bluetooth,
   CheckCircle,
+  ChevronDown,
+  ChevronRight,
   Clock,
   Database,
   Edit,
@@ -336,6 +338,8 @@ function PolicyCardGrid({
   const isAndroid = platform === "android";
   const { t } = useLanguage();
   const [policySearchQuery, setPolicySearchQuery] = useState("");
+  const [policiesCollapsed, setPoliciesCollapsed] = useState(false);
+  const [restrictionsCollapsed, setRestrictionsCollapsed] = useState(false);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -357,6 +361,7 @@ function PolicyCardGrid({
     colorClass?: string;
     borderClass?: string;
     badgeText?: string;
+    category?: 'policy' | 'restriction';
   };
 
   const allPolicies: PolicyItem[] = [];
@@ -538,28 +543,28 @@ function PolicyCardGrid({
 
     const androidItems = [
       // -- WP-supported Policies --
-      { id: "androidPasscode", title: "Passcode Policy", icon: <Shield className="w-5 h-5" />, check: !!androidPasscodePolicy, desc: "Password complexity settings.", status: "Complexity settings active", wpSupported: true },
-      { id: "commonSettings", title: "Common", icon: <Settings className="w-5 h-5" />, check: !!commonSettingsPolicy, desc: "Common global settings.", status: commonSettingsPolicy ? "Common settings active" : "", wpSupported: true },
-      { id: "androidWebApp", title: "Web Apps", icon: <Globe className="w-5 h-5" />, check: webApplicationPolicy.length > 0, desc: "Web shortcuts.", status: `${webApplicationPolicy.length} Web Apps`, wpSupported: true },
+      { id: "androidPasscode", title: "Passcode Policy", icon: <Shield className="w-5 h-5" />, check: !!androidPasscodePolicy, desc: "Password complexity settings.", status: "Complexity settings active", wpSupported: true, category: 'policy' as const },
+      { id: "commonSettings", title: "Common", icon: <Settings className="w-5 h-5" />, check: !!commonSettingsPolicy, desc: "Common global settings.", status: commonSettingsPolicy ? "Common settings active" : "", wpSupported: true, category: 'policy' as const },
+      { id: "androidWebApp", title: "Web Apps", icon: <Globe className="w-5 h-5" />, check: webApplicationPolicy.length > 0, desc: "Web shortcuts.", status: `${webApplicationPolicy.length} Web Apps`, wpSupported: true, category: 'policy' as const },
 
       // -- WP-supported Restrictions --
-      { id: "securityRestriction", title: "Security", icon: <Shield className="w-5 h-5" />, check: !!androidRestrictions?.security, desc: "Device security settings.", status: "Security restrictions active", wpSupported: true },
-      { id: "networkRestriction", title: "Network", icon: <WifiOff className="w-5 h-5" />, check: !!androidRestrictions?.network, desc: "Network restrictions.", status: "Network restrictions active", wpSupported: true },
-      { id: "locationRestriction", title: "Location", icon: <MapPin className="w-5 h-5" />, check: !!androidRestrictions?.location, desc: "Location services.", status: "Location settings active", wpSupported: true },
-      // { id: "miscRestriction", title: "Miscellaneous", icon: <Settings className="w-5 h-5" />, check: !!androidRestrictions?.miscellaneous, desc: "System-level controls.", status: "Miscellaneous settings active", wpSupported: true },
+      { id: "securityRestriction", title: "Security", icon: <Shield className="w-5 h-5" />, check: !!androidRestrictions?.security, desc: "Device security settings.", status: "Security restrictions active", wpSupported: true, category: 'restriction' as const },
+      { id: "networkRestriction", title: "Network", icon: <WifiOff className="w-5 h-5" />, check: !!androidRestrictions?.network, desc: "Network restrictions.", status: "Network restrictions active", wpSupported: true, category: 'restriction' as const },
+      { id: "locationRestriction", title: "Location", icon: <MapPin className="w-5 h-5" />, check: !!androidRestrictions?.location, desc: "Location services.", status: "Location settings active", wpSupported: true, category: 'restriction' as const },
+      // { id: "miscRestriction", title: "Miscellaneous", icon: <Settings className="w-5 h-5" />, check: !!androidRestrictions?.miscellaneous, desc: "System-level controls.", status: "Miscellaneous settings active", wpSupported: true, category: 'restriction' as const },
 
       // -- DO-only Policies (hidden for WP) --
-      { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: !!enrollmentPolicy, desc: "Enrollment settings.", status: enrollmentPolicy ? "Enrollment settings active" : "", wpSupported: false },
-      { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: !!deviceThemePolicy, desc: "Device theme settings.", status: deviceThemePolicy ? "Theme settings active" : "", wpSupported: false },
+      { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: !!enrollmentPolicy, desc: "Enrollment settings.", status: enrollmentPolicy ? "Enrollment settings active" : "", wpSupported: false, category: 'policy' as const },
+      { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: !!deviceThemePolicy, desc: "Device theme settings.", status: deviceThemePolicy ? "Theme settings active" : "", wpSupported: false, category: 'policy' as const },
 
       // -- DO-only Restrictions (hidden for WP) --
-      { id: "kioskRestriction", title: "Kiosk", icon: <TabletSmartphone className="w-5 h-5" />, check: !!androidRestrictions?.kiosk, desc: "Kiosk mode settings.", status: "Kiosk mode active", wpSupported: true },
-      { id: "tetheringRestriction", title: "Tethering", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.tethering, desc: "Bluetooth & tethering.", status: "Tethering settings active", wpSupported: false },
-      { id: "phoneRestriction", title: "Phone", icon: <Phone className="w-5 h-5" />, check: !!androidRestrictions?.phone, desc: "Telephony restrictions.", status: "Phone restrictions active", wpSupported: false },
-      { id: "dateTimeRestriction", title: "Date/Time", icon: <Clock className="w-5 h-5" />, check: !!androidRestrictions?.dateTime, desc: "Date and time settings.", status: "Date/Time settings active", wpSupported: false },
-      { id: "displayRestriction", title: "Display", icon: <Monitor className="w-5 h-5" />, check: !!androidRestrictions?.display, desc: "Display settings.", status: "Display settings active", wpSupported: false },
-      { id: "storageRestriction", title: "Storage", icon: <Database className="w-5 h-5" />, check: !!androidRestrictions?.syncStorage, desc: "Storage & Sync.", status: "Storage settings active", wpSupported: true },
-      // { id: "connectivityRestriction", title: "Connectivity", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.connectivity, desc: "Bluetooth & NFC.", status: "Connectivity settings active", wpSupported: false },
+      { id: "kioskRestriction", title: "Kiosk", icon: <TabletSmartphone className="w-5 h-5" />, check: !!androidRestrictions?.kiosk, desc: "Kiosk mode settings.", status: "Kiosk mode active", wpSupported: true, category: 'restriction' as const },
+      { id: "tetheringRestriction", title: "Tethering", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.tethering, desc: "Bluetooth & tethering.", status: "Tethering settings active", wpSupported: false, category: 'restriction' as const },
+      { id: "phoneRestriction", title: "Phone", icon: <Phone className="w-5 h-5" />, check: !!androidRestrictions?.phone, desc: "Telephony restrictions.", status: "Phone restrictions active", wpSupported: false, category: 'restriction' as const },
+      { id: "dateTimeRestriction", title: "Date/Time", icon: <Clock className="w-5 h-5" />, check: !!androidRestrictions?.dateTime, desc: "Date and time settings.", status: "Date/Time settings active", wpSupported: false, category: 'restriction' as const },
+      { id: "displayRestriction", title: "Display", icon: <Monitor className="w-5 h-5" />, check: !!androidRestrictions?.display, desc: "Display settings.", status: "Display settings active", wpSupported: false, category: 'restriction' as const },
+      { id: "storageRestriction", title: "Storage", icon: <Database className="w-5 h-5" />, check: !!androidRestrictions?.syncStorage, desc: "Storage & Sync.", status: "Storage settings active", wpSupported: true, category: 'restriction' as const },
+      // { id: "connectivityRestriction", title: "Connectivity", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.connectivity, desc: "Bluetooth & NFC.", status: "Connectivity settings active", wpSupported: false, category: 'restriction' as const },
     ];
 
     // Filter based on current profile mode
@@ -577,6 +582,7 @@ function PolicyCardGrid({
         isConfigured: item.check,
         colorClass: item.check ? "text-primary" : undefined,
         borderClass: item.check ? "border-t-primary" : undefined,
+        category: item.category,
       });
     });
   }
@@ -591,7 +597,8 @@ function PolicyCardGrid({
     isConfigured: applicationPolicy.length > 0,
     colorClass: "text-blue-600",
     borderClass: "border-t-blue-600",
-    badgeText: `${applicationPolicy.length} Active`
+    badgeText: `${applicationPolicy.length} Active`,
+    category: isAndroid ? 'policy' as const : undefined,
   });
 
 
@@ -607,6 +614,51 @@ function PolicyCardGrid({
 
   const configuredPolicies = filteredPolicies.filter(p => p.isConfigured);
   const availablePolicies = filteredPolicies.filter(p => !p.isConfigured);
+
+  // For Android, split into policy vs restriction categories
+  const policyItems = filteredPolicies.filter(p => p.category === 'policy');
+  const restrictionItems = filteredPolicies.filter(p => p.category === 'restriction');
+  const hasCategories = isAndroid && (policyItems.length > 0 || restrictionItems.length > 0);
+
+  // Helper to render a grid of policy cards (configured + available)
+  const renderPolicyGrid = (items: PolicyItem[]) => {
+    const configured = items.filter(p => p.isConfigured);
+    const available = items.filter(p => !p.isConfigured);
+    return (
+      <div className="space-y-4">
+        {configured.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {configured.map(policy => (
+              <ConfiguredPolicyCard
+                key={policy.id}
+                icon={policy.icon}
+                title={policy.title}
+                description={policy.description}
+                statusText={policy.statusText}
+                colorClass={policy.colorClass}
+                borderClass={policy.borderClass}
+                badgeText={policy.badgeText}
+                onClick={() => onSelectPolicy(policy.id)}
+              />
+            ))}
+          </div>
+        )}
+        {available.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {available.map(policy => (
+              <AvailablePolicyCard
+                key={policy.id}
+                icon={policy.icon}
+                title={policy.title}
+                description={policy.description}
+                onClick={() => onSelectPolicy(policy.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <motion.div
@@ -628,68 +680,124 @@ function PolicyCardGrid({
         </div>
       </div>
 
-      {configuredPolicies.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-primary" /> Configured Policies
-            </h3>
-            <AddPolicyDropdown
-              platform={platform}
-              passcodePolicy={passcodePolicy}
-              wifiPolicy={wifiPolicy}
-              mailPolicy={mailPolicy}
-              restrictionsPolicy={restrictionsPolicy}
-              applicationPolicy={applicationPolicy}
-              webApplicationPolicy={webApplicationPolicy}
-              notificationPolicy={notificationPolicy}
-              lockScreenMessagePolicy={lockScreenMessagePolicy}
-              webContentFilterPolicy={webContentFilterPolicy}
-              globalHttpProxyPolicy={globalHttpProxyPolicy}
-              vpnPolicy={vpnPolicy}
-              perAppVpnPolicy={perAppVpnPolicy}
-              perDomainVpnPolicy={perDomainVpnPolicy}
-              relayPolicy={relayPolicy}
-              homeScreenLayoutPolicy={homeScreenLayoutPolicy}
-              onSelect={onSelectPolicy}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {configuredPolicies.map(policy => (
-              <ConfiguredPolicyCard
-                key={policy.id}
-                icon={policy.icon}
-                title={policy.title}
-                description={policy.description}
-                statusText={policy.statusText}
-                colorClass={policy.colorClass}
-                borderClass={policy.borderClass}
-                badgeText={policy.badgeText}
-                onClick={() => onSelectPolicy(policy.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {hasCategories ? (
+        /* Android: Separate collapsible sections for Policies and Restrictions */
+        <>
+          {/* Policies Section */}
+          {policyItems.length > 0 && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                className="flex items-center gap-2 w-full text-left group"
+                onClick={() => setPoliciesCollapsed(!policiesCollapsed)}
+              >
+                {policiesCollapsed
+                  ? <ChevronRight className="w-5 h-5 text-primary transition-transform" />
+                  : <ChevronDown className="w-5 h-5 text-primary transition-transform" />
+                }
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-primary" />
+                  Policies
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {policyItems.filter(p => p.isConfigured).length}/{policyItems.length}
+                  </Badge>
+                </h3>
+              </button>
+              {!policiesCollapsed && renderPolicyGrid(policyItems)}
+            </div>
+          )}
 
-      {availablePolicies.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2">
-            <Plus className="w-5 h-5" /> Available Policies
-          </h3>
-          <p className="text-sm text-muted-foreground/70">Select a policy to configure settings for this profile.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {availablePolicies.map(policy => (
-              <AvailablePolicyCard
-                key={policy.id}
-                icon={policy.icon}
-                title={policy.title}
-                description={policy.description}
-                onClick={() => onSelectPolicy(policy.id)}
-              />
-            ))}
-          </div>
-        </div>
+          {/* Restrictions Section */}
+          {restrictionItems.length > 0 && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                className="flex items-center gap-2 w-full text-left group"
+                onClick={() => setRestrictionsCollapsed(!restrictionsCollapsed)}
+              >
+                {restrictionsCollapsed
+                  ? <ChevronRight className="w-5 h-5 text-orange-500 transition-transform" />
+                  : <ChevronDown className="w-5 h-5 text-orange-500 transition-transform" />
+                }
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Ban className="w-5 h-5 text-orange-500" />
+                  Restrictions
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {restrictionItems.filter(p => p.isConfigured).length}/{restrictionItems.length}
+                  </Badge>
+                </h3>
+              </button>
+              {!restrictionsCollapsed && renderPolicyGrid(restrictionItems)}
+            </div>
+          )}
+        </>
+      ) : (
+        /* iOS / non-categorized: Original layout */
+        <>
+          {configuredPolicies.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-primary" /> Configured Policies
+                </h3>
+                <AddPolicyDropdown
+                  platform={platform}
+                  passcodePolicy={passcodePolicy}
+                  wifiPolicy={wifiPolicy}
+                  mailPolicy={mailPolicy}
+                  restrictionsPolicy={restrictionsPolicy}
+                  applicationPolicy={applicationPolicy}
+                  webApplicationPolicy={webApplicationPolicy}
+                  notificationPolicy={notificationPolicy}
+                  lockScreenMessagePolicy={lockScreenMessagePolicy}
+                  webContentFilterPolicy={webContentFilterPolicy}
+                  globalHttpProxyPolicy={globalHttpProxyPolicy}
+                  vpnPolicy={vpnPolicy}
+                  perAppVpnPolicy={perAppVpnPolicy}
+                  perDomainVpnPolicy={perDomainVpnPolicy}
+                  relayPolicy={relayPolicy}
+                  homeScreenLayoutPolicy={homeScreenLayoutPolicy}
+                  onSelect={onSelectPolicy}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {configuredPolicies.map(policy => (
+                  <ConfiguredPolicyCard
+                    key={policy.id}
+                    icon={policy.icon}
+                    title={policy.title}
+                    description={policy.description}
+                    statusText={policy.statusText}
+                    colorClass={policy.colorClass}
+                    borderClass={policy.borderClass}
+                    badgeText={policy.badgeText}
+                    onClick={() => onSelectPolicy(policy.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {availablePolicies.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-muted-foreground flex items-center gap-2">
+                <Plus className="w-5 h-5" /> Available Policies
+              </h3>
+              <p className="text-sm text-muted-foreground/70">Select a policy to configure settings for this profile.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {availablePolicies.map(policy => (
+                  <AvailablePolicyCard
+                    key={policy.id}
+                    icon={policy.icon}
+                    title={policy.title}
+                    description={policy.description}
+                    onClick={() => onSelectPolicy(policy.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {policySearchQuery.trim() && configuredPolicies.length === 0 && availablePolicies.length === 0 && (
@@ -795,6 +903,7 @@ export default function ProfileDetails() {
       // Set platform from URL params since API response might simplify it
       setProfile({
         ...data,
+        id: data.id || id,
         platform: platform as Platform,
       } as ProfileDetailsData);
 

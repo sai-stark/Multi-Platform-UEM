@@ -55,7 +55,6 @@ const enrollmentSubItems = [
 ];
 
 const configurationSubItems = [
-  { title: "Passcode Policy", url: "/policies", icon: Shield },
   { title: "Geo Fence Policy", url: "/geofences/policy", icon: MapPin },
 ];
 

@@ -232,7 +232,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Error loading application</h3>
             <p className="text-muted-foreground mb-4">{error || 'Application not found'}</p>
-            <Button onClick={() => navigate('/applications')}>Back to Applications</Button>
+            <Button onClick={() => navigate('/applications?platform=ios')}>Back to Applications</Button>
           </div>
         </div>
       </MainLayout>
@@ -245,7 +245,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
         <div className="space-y-6">
           {/* Header */}
           <header className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/applications')} className="gap-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/applications?platform=ios')} className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back to Applications
             </Button>
@@ -841,7 +841,7 @@ const ApplicationDetails = () => {
             <p className="text-muted-foreground mb-4">
               {error || 'Application not found'}
             </p>
-            <Button onClick={() => navigate('/applications')}>
+            <Button onClick={() => navigate(`/applications?platform=${platform}`)}>
               Back to Applications
             </Button>
           </div>
@@ -865,7 +865,7 @@ const ApplicationDetails = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/applications')}
+              onClick={() => navigate(`/applications?platform=${platform}`)}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />

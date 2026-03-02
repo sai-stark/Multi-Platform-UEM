@@ -1,0 +1,131 @@
+# WCAG 2.2 AA Compliance Rules
+
+> **Target**: WCAG 2.2 Level AA conformance
+> **Standard**: https://www.w3.org/TR/WCAG22/
+> **Severity levels**: MUST (violates AA if ignored), SHOULD (strongly recommended), PREFER (advisory)
+
+---
+
+## 1. Perceivable
+
+### 1.1 Text Alternatives (SC 1.1.1)
+
+- MUST: Every `<img>` has a meaningful `alt` attribute. Decorative images use `alt=""` with `aria-hidden="true"`.
+- MUST: All icon-only buttons and links have `aria-label` or visually hidden text.
+- MUST: Lucide icons used decoratively carry `aria-hidden="true"`. Icons conveying meaning carry an accessible name.
+- MUST: Chart components (Recharts) include a screen-reader-only data table fallback using `sr-only` class.
+
+### 1.2 Time-based Media (SC 1.2.x)
+
+- SHOULD: If video or audio content is added, provide captions (prerecorded) and audio descriptions.
+
+### 1.3 Adaptable
+
+- MUST (SC 1.3.1 — Info and Relationships): Use semantic HTML elements (`<header>`, `<main>`, `<nav>`, `<section>`, `<table>`, `<form>`, `<label>`, `<fieldset>`, `<legend>`). Never use `<div>` or `<span>` where a semantic element exists.
+- MUST: Every form control has an associated `<label htmlFor>` or `aria-label`. Placeholder text alone is NOT a label.
+- MUST: All `<Switch>` components have a paired `<label>` element with `htmlFor` matching the switch `id`. Never use a bare `<span>` as a label.
+- MUST: Table elements maintain native table semantics. Never apply `display: flex` or `display: grid` to `<tr>`, `<th>`, or `<td>` elements — this breaks assistive technology table navigation.
+- MUST: Heading hierarchy is sequential (`h1` → `h2` → `h3`). Never skip levels. Sidebar group labels use `<p>` or proper heading level, not `<h4>` out of context.
+- MUST (SC 1.3.4 — Orientation): Do not lock content to a single display orientation unless essential.
+- MUST (SC 1.3.5 — Identify Input Purpose): Use `autocomplete` attributes on input fields collecting personal data (name, email, address, phone, etc.).
+
+### 1.4 Distinguishable
+
+- MUST (SC 1.4.1 — Use of Color): Never rely on color alone to convey information. Status badges, compliance indicators, and chart data MUST use a secondary differentiator: icon, text label, or pattern.
+- MUST (SC 1.4.3 — Contrast Minimum): Normal text (below 18pt / 14pt bold): contrast ratio ≥ 4.5:1. Large text (18pt+ / 14pt+ bold): contrast ratio ≥ 3:1. Verify `--muted-foreground` against all background tokens — borderline at 4.48:1 currently.
+- MUST (SC 1.4.4 — Resize Text): UI must remain functional when text is resized up to 200%. Use `rem`-based sizing, never fixed `px` for font sizes on the root element. The AccessibilityContext font size control must use CSS classes or rem scale factor, not `root.style.fontSize = 'Xpx'`.
+- MUST (SC 1.4.10 — Reflow): Content must reflow at 320px CSS width (1280px at 400% zoom) with no horizontal scrolling for vertical content.
+- MUST (SC 1.4.11 — Non-text Contrast): UI components and graphical objects require ≥ 3:1 contrast against adjacent colors. This includes form field borders, focus indicators, chart segments, and icon buttons.
+- MUST (SC 1.4.12 — Text Spacing): No loss of content or functionality when user overrides: line-height to 1.5×, paragraph spacing to 2×, letter-spacing to 0.12em, word-spacing to 0.16em.
+- MUST (SC 1.4.13 — Content on Hover or Focus): Tooltips, popovers, and hover content must be dismissible (Escape key), hoverable (mouse can move into the tooltip), and persistent (stays visible until dismissed or trigger loses focus/hover).
+
+---
+
+## 2. Operable
+
+### 2.1 Keyboard Accessible
+
+- MUST (SC 2.1.1 — Keyboard): Every interactive element is fully operable via keyboard alone. This includes all buttons, links, tabs, dropdowns, modals, and table actions.
+- MUST (SC 2.1.2 — No Keyboard Trap): Focus must never become trapped. Modals must trap focus internally but release it on close. Verify Radix Dialog, Popover, and DropdownMenu components handle this correctly.
+- SHOULD (SC 2.1.4 — Character Key Shortcuts): If single-character keyboard shortcuts are added (e.g., `?` for help), provide a mechanism to remap or disable them.
+
+### 2.2 Enough Time
+
+- MUST (SC 2.2.1 — Timing Adjustable): If any session timeouts or auto-refresh are implemented, users must be able to extend or disable them.
+- SHOULD (SC 2.2.6 — Timeouts): Warn users of data loss from inactivity timeouts. Preserve form data where possible.
+
+### 2.3 Seizures and Physical Reactions
+
+- MUST (SC 2.3.1 — Three Flashes): No content flashes more than three times per second.
+- MUST (SC 2.3.3 — Animation from Interactions): All motion animations MUST respect `prefers-reduced-motion: reduce`. When reduced motion is active, disable transforms, slides, and bounces — use opacity-only transitions or instant state changes. The existing `@media (prefers-reduced-motion: reduce)` block in `index.css` must be maintained and extended to cover all new animations.
+
+### 2.4 Navigable
+
+- MUST (SC 2.4.1 — Bypass Blocks): Maintain the existing skip link. It must remain the first focusable element and target `<main>`.
+- MUST (SC 2.4.2 — Page Titled): Every route must set a unique, descriptive `<title>` via `document.title` or a helmet equivalent. Format: `{PageName} — UEM Console`.
+- MUST (SC 2.4.3 — Focus Order): Focus order follows visual layout order. Tab sequence must be logical and predictable. Never use positive `tabIndex` values (only `0` or `-1`).
+- MUST (SC 2.4.5 — Multiple Ways): Provide at least two ways to reach any page: sidebar navigation plus at least one of breadcrumbs, search, or command palette (⌘K).
+- MUST (SC 2.4.6 — Headings and Labels): Headings are descriptive. Form labels clearly describe purpose. Avoid ambiguous labels like "Submit" without context.
+- MUST (SC 2.4.7 — Focus Visible): All focusable elements must have a clearly visible focus indicator. Use `--tw-ring-color` and `--tw-ring-offset-color` with Tailwind's `ring` utilities. Never use raw `ring-color:` — it is not a valid CSS property.
+- MUST (SC 2.4.11 — Focus Not Obscured, Minimum): When an element receives focus, it must not be entirely hidden by sticky headers, modals, or other fixed-position elements. The sticky header (`sticky top-0`) must not cover focused content. Implement scroll-margin-top on focusable elements below sticky containers.
+- SHOULD (SC 2.4.8 — Location): Implement breadcrumb navigation on all pages with nested routes. The existing `breadcrumb.tsx` component must be integrated into `MainLayout` below the header.
+- SHOULD: Manage focus on route changes — move focus to the page heading or main content area when navigating via the sidebar or breadcrumbs.
+
+### 2.5 Input Modalities
+
+- MUST (SC 2.5.2 — Pointer Cancellation): For click/tap actions, use `onClick` (fires on release). Never bind destructive actions to `mousedown` or `touchstart`.
+- MUST (SC 2.5.3 — Label in Name): The accessible name of a component must contain its visible text label. If a button says "Export", its `aria-label` must include "Export".
+- MUST (SC 2.5.7 — Dragging Movements): Any drag-and-drop interaction (e.g., dashboard widget reordering) must have a non-drag alternative such as arrow-key reordering or a move-to menu.
+- MUST (SC 2.5.8 — Target Size, Minimum): All interactive targets must be at least 24×24 CSS pixels, or have sufficient spacing (at least 24px between the target's edge and the nearest adjacent target). Inline text links within paragraphs are exempt.
+
+---
+
+## 3. Understandable
+
+### 3.1 Readable
+
+- MUST (SC 3.1.1 — Language of Page): The `<html>` element must have a valid `lang` attribute matching the content language. Update dynamically when the user switches locale via `LanguageContext`.
+- SHOULD (SC 3.1.2 — Language of Parts): Inline content in a different language (e.g., Hindi enrollment steps) must use the `lang` attribute on the containing element.
+
+### 3.2 Predictable
+
+- MUST (SC 3.2.1 — On Focus): Focusing an element must not trigger a context change (no navigation, no form submission, no modal opening on focus alone).
+- MUST (SC 3.2.2 — On Input): Changing a form control value must not automatically trigger unexpected context changes unless the user is informed beforehand.
+- MUST (SC 3.2.3 — Consistent Navigation): Sidebar navigation order and structure must remain consistent across all pages. Never reorder nav items based on context.
+- MUST (SC 3.2.6 — Consistent Help): If a help mechanism is provided (help icon, documentation link, support contact), it must appear in the same relative position on every page.
+
+### 3.3 Input Assistance
+
+- MUST (SC 3.3.1 — Error Identification): Form validation errors must be identified in text, associated with the relevant field, and not rely solely on color.
+- MUST (SC 3.3.2 — Labels or Instructions): Every input has a visible, persistent label. Required fields are indicated.
+- MUST (SC 3.3.3 — Error Suggestion): When an input error is detected and a correction is known, suggest the correction to the user.
+- MUST (SC 3.3.4 — Error Prevention): Destructive actions (device wipe, unenroll, delete profile/group/geofence) MUST use a confirmation dialog (Radix `AlertDialog`). Never use `window.confirm()` — it is inaccessible to screen readers, visually inconsistent, and blocks the main thread.
+- MUST (SC 3.3.7 — Redundant Entry): Do not require users to re-enter information they have already provided in the same session unless re-confirmation is required for security.
+- MUST (SC 3.3.8 — Accessible Authentication, Minimum): Authentication flows must not require cognitive function tests (e.g., CAPTCHA puzzles, memorizing passwords without paste support). Allow password managers, biometrics, and passkeys.
+
+---
+
+## 4. Robust
+
+### 4.1 Compatible
+
+- MUST (SC 4.1.2 — Name, Role, Value): All interactive components expose correct name, role, and state to assistive technology. Specifically:
+  - `aria-expanded` must reflect actual collapsed/expanded state dynamically. Never hardcode `aria-expanded="true"`.
+  - `aria-selected` on tab-like elements must reflect actual selection.
+  - `aria-current="page"` on the active sidebar navigation link.
+  - Custom components built with Radix primitives must preserve their built-in ARIA semantics.
+- MUST (SC 4.1.3 — Status Messages): Dynamic content updates that don't receive focus must be announced via ARIA live regions.
+  - Stat card value changes: use `role="status"` or `aria-live="polite"`.
+  - Toast notifications: ensure the toast container has `aria-live="polite"` and `role="status"`.
+  - Table loading/error states: announce via `aria-live="polite"`.
+  - Form submission success/failure: announce results without moving focus.
+
+---
+
+## General Enforcement Rules
+
+- When modifying any file, audit adjacent code for WCAG violations listed above. Fix violations in the same changeset when effort is low.
+- Every new interactive component must pass a keyboard-only navigation test before merge.
+- Every new color combination must be verified against WCAG AA contrast thresholds before use.
+- All animations must include a `prefers-reduced-motion` fallback.
+- Never suppress or remove existing accessibility features (skip link, aria labels, sr-only tables, high contrast mode, reduced motion support) without explicit justification.

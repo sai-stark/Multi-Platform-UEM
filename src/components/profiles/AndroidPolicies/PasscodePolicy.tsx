@@ -384,25 +384,6 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     </div>
                 </div>
 
-                {/* Policy Variant Selector */}
-                <div className="p-4 rounded-xl border bg-card mb-4">
-                    <Label className="font-medium mb-2 block">{t('passcodePolicy.policyType')}</Label>
-                    <Select value={policyVariant} onValueChange={(v) => setPolicyVariant(v as 'personal' | 'dedicated')}>
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="personal">{t('passcodePolicy.personalDevice')}</SelectItem>
-                            <SelectItem value="dedicated">{t('passcodePolicy.dedicatedDevice')}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        {policyVariant === 'dedicated'
-                            ? t('passcodePolicy.dedicatedDeviceDesc')
-                            : t('passcodePolicy.personalDeviceDesc')}
-                    </p>
-                </div>
-
                 {/* Work Profile Section */}
                 <div className="space-y-4">
                     <h4 className="text-md font-semibold flex items-center gap-2 border-b pb-2">

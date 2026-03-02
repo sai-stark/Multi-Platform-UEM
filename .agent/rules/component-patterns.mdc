@@ -1,0 +1,144 @@
+# Component & Architecture Patterns
+
+> **Stack**: React 18 + TypeScript + Vite 5 + shadcn/ui + Radix UI + React Router + React Query + Framer Motion
+> **Severity levels**: MUST (non-negotiable), SHOULD (strongly recommended), PREFER (advisory)
+
+---
+
+## 1. Component Size & Decomposition
+
+- MUST: No single component file exceeds 500 lines. Files approaching this limit must be decomposed into sub-components.
+- MUST: Pages with tab-based content extract each tab's content into its own component file.
+- MUST: Column definitions for DataTable are extracted as constants or into separate files, not defined inline inside the component body.
+- MUST: Inline data mapping and transformation logic is extracted into mapper utilities under `lib/` or `utils/`, not performed inside JSX render paths.
+- SHOULD: Follow the decomposition pattern: page → section components → atomic UI components. Pages orchestrate layout and data fetching; sections handle domain logic; UI components are presentational.
+- SHOULD: Complex components (especially DataTable at 1,377 lines) should be split into composable sub-components: orchestrator, header, body, pagination, toolbar, filters, column visibility, state hook, and types.
+
+---
+
+## 2. Routing & Code Splitting
+
+- MUST: All page-level imports use `React.lazy()` with a `<Suspense>` fallback.
+- MUST: The Suspense fallback renders a meaningful loading skeleton (not a blank screen or spinner alone).
+- MUST: No duplicate routes exist in `App.tsx`. Each path maps to exactly one component.
+- MUST: Every sidebar navigation link resolves to an existing route. Dead links to undefined routes (e.g., `/settings` with no matching route) are bugs.
+- MUST: Vite's build config uses `manualChunks` to split vendor bundles: `vendor-react` (react, react-dom), `vendor-charts` (recharts), `vendor-maps` (leaflet, react-leaflet), `vendor-motion` (framer-motion).
+
+---
+
+## 3. State Management
+
+### React Query
+
+- MUST: All API data fetching uses React Query (`useQuery`, `useMutation`). Pages must not use raw `useEffect` + `useState` for data fetching.
+- MUST: Configure `QueryClient` with sensible defaults: `staleTime: 5 * 60 * 1000` (5 min), `retry: 2`, `refetchOnWindowFocus: false` (enterprise apps should not aggressively refetch).
+- MUST: Dashboard stat values, device lists, profile lists, and all other displayed data come from API services via React Query — not hardcoded strings.
+- SHOULD: Cache fetched data per-key. Switching platform tabs should not re-fetch data that was already fetched for that platform.
+
+### Context
+
+- MUST: Wrap `JSON.parse(localStorage.getItem(...))` calls in `try/catch` with fallback to defaults. Corrupted localStorage must not crash the app.
+- MUST: `AccessibilityContext` initial `darkMode` state is derived from `document.documentElement.classList.contains('dark')` to prevent theme flash.
+- MUST: `speechSynthesis.cancel()` is called before queuing new speech in `speakText()`.
+- MUST: `isDebugMode` in `EnterpriseContext` reads from `import.meta.env.MODE` — never hardcoded to `true`.
+
+### Local State
+
+- SHOULD: Prefer `useRef` over `useState` for values that don't trigger re-renders (iframe loading flags, DOM references, timer IDs).
+- SHOULD: Use `useMemo` for expensive computed values and stable object references passed as props (column definitions, filter configs).
+- MUST: `useEffect` cleanup functions must remove all event listeners, cancel all timers, and abort all pending requests added during the effect.
+
+---
+
+## 4. Error Handling
+
+- MUST: A global `ErrorBoundary` wraps the application route tree. Unhandled errors render a recovery UI, not a white screen.
+- SHOULD: Per-route error boundaries wrap individual page `<Suspense>` blocks for isolated failure recovery.
+- MUST: Error fallback UI includes: a human-readable error description, a "Try Again" button (calls `resetErrorBoundary`), and proper `role="alert"` for screen readers.
+- MUST: API errors surface user-visible feedback (toast notification or inline error message). Empty `catch` blocks that silently swallow errors are forbidden.
+- MUST: The axios client has `timeout: 30000` configured. Network failures must not hang indefinitely.
+- SHOULD: The axios 401 interceptor redirects to a login flow or clears the session rather than logging a console warning.
+
+---
+
+## 5. Destructive Actions
+
+- MUST: All destructive actions (delete, wipe, unenroll, remove) use Radix `AlertDialog` with a clear description of consequences. Never use `window.confirm()`.
+- MUST: Confirmation dialogs include: a descriptive title, the specific item being affected, and distinct "Cancel" and "Confirm" buttons with the confirm button styled as `destructive` variant.
+- MUST: Destructive action handlers are not bound to `mousedown` or `touchstart`. Use `onClick` only (fires on pointer release for cancellability per WCAG 2.5.2).
+- SHOULD: Follow the pattern established in `WebApplications.tsx` (AlertDialog-based confirmation) as the reference implementation for all destructive actions.
+
+---
+
+## 6. Loading & Empty States
+
+- MUST: Every page that fetches data displays a skeleton loading state during the fetch, using the existing `<Skeleton>` component.
+- MUST: Loading containers carry `aria-busy="true"` with a descriptive `aria-label`.
+- MUST: Empty states (no data returned, filters yield zero results) display an illustrated empty state with a message and a suggested action — not plain text.
+- SHOULD: Skeleton loaders match the approximate layout of the content they replace (same number of rows, similar widths).
+- SHOULD: Table skeleton rows use a staggered fade-in for perceived speed.
+
+---
+
+## 7. Forms & Validation
+
+- MUST: Every form input has a visible, persistent `<label>`. Placeholder-only labels are forbidden.
+- MUST: Validation errors appear inline next to the relevant field, are announced to screen readers, and describe what went wrong and how to fix it.
+- MUST: Required fields are visually indicated (asterisk, "Required" text, or equivalent).
+- MUST: Form submission results (success or failure) are announced to screen readers via `aria-live` region or toast with `role="status"`.
+- SHOULD: File upload inputs validate file size and type before upload. Provide clear limits in the UI label.
+- SHOULD: CSV export sanitizes cell values to prevent formula injection (prefix cells starting with `=`, `+`, `-`, `@` with a tab character or single quote).
+
+---
+
+## 8. Navigation & Wayfinding
+
+- MUST: Breadcrumb navigation is rendered on all pages with nested routes, using the existing `breadcrumb.tsx` component in `MainLayout` below the header.
+- MUST: The header is sticky (`sticky top-0 z-40`) with `backdrop-blur-sm` so users retain access to navigation on long pages.
+- MUST: The ⌘K / Ctrl+K command palette is implemented using the installed `cmdk` dependency for quick navigation and search.
+- MUST: The sidebar `aria-expanded` attribute reflects the actual collapsed/expanded state dynamically, not hardcoded.
+- MUST: Sidebar section labels in collapsed mode use `sr-only` text or tooltip — never render as empty elements.
+- MUST: Active sidebar link carries `aria-current="page"`.
+- SHOULD: Focus is managed on route changes — move focus to the page heading or main content region after navigation.
+
+---
+
+## 9. Internationalization (i18n)
+
+- MUST: All user-visible strings are wrapped in the `t()` function from `useLanguage()`. Hardcoded English strings in components are forbidden.
+- MUST: Pages that import `useLanguage` must actually use it for all visible text. Importing without usage (Groups, Geofences, WebApplications, NotFound) indicates missed strings.
+- MUST: Enrollment step text is stored in i18n locale files, not inline in component files.
+- MUST: Hardcoded configuration values (e.g., `mdmadmin@cdot.in`) are extracted to environment config or enterprise context, not embedded in component markup.
+- SHOULD: The `<html lang>` attribute updates dynamically when the user switches locale.
+
+---
+
+## 10. Performance
+
+- MUST: Remove or gate all `console.log` statements behind `import.meta.env.DEV`. Production builds must not emit debug logs.
+- MUST: The toast remove delay (`TOAST_REMOVE_DELAY`) is set to a reasonable value (5000ms), not 1,000,000ms.
+- MUST: Event listeners added in `useEffect` are cleaned up in the effect's return function.
+- SHOULD: Wrap `<React.StrictMode>` around the app in `main.tsx` for development-time detection of deprecated APIs and side-effect bugs.
+- SHOULD: Use `#root` null check instead of non-null assertion: `const root = document.getElementById('root'); if (root) createRoot(root).render(...)`.
+- SHOULD: Large tables (200+ rows) use virtual scrolling (`@tanstack/react-virtual`).
+- PREFER: Mock data files (`mockGeofences.ts`, `mockInventory.ts`) are behind feature flags or removed when API integration is complete.
+
+---
+
+## 11. Security
+
+- MUST: `isDebugMode` reads from environment variables, never hardcoded `true`.
+- MUST: API client fallback URL is relative (`/api`), not `http://127.0.0.1`.
+- MUST: CSV export values are sanitized against formula injection.
+- SHOULD: Authentication tokens use httpOnly cookies rather than `localStorage` (XSS mitigation). If localStorage is used, the token key must not be predictable.
+- SHOULD: Implement CSRF protection for state-changing API requests.
+
+---
+
+## 12. File & Import Conventions
+
+- MUST: Hooks import from `@/hooks/` path. Never import hooks from `@/components/ui/` (e.g., use `@/hooks/use-toast`, not `@/components/ui/use-toast`).
+- MUST: Hook files that contain no JSX use `.ts` extension, not `.tsx`.
+- MUST: `<Link to="/">` from React Router for internal navigation. Never use `<a href="/">` which causes full page reloads.
+- SHOULD: Barrel exports (`index.ts`) are used for component directories to simplify imports.
+- PREFER: Dead code (empty `EnrollmentGuard`, commented-out clone actions, no-op `onClick` handlers) is removed or implemented, not left dormant.

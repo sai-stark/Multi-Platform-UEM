@@ -1,0 +1,191 @@
+# Known Issues & Anti-Patterns
+
+> Consolidated from: walkthrough review, UI/UX analysis, and deep-dive file-by-file review.
+> These are existing violations that MUST be fixed when touching affected files.
+> **Rule**: When modifying a file listed below, fix all issues tagged for that file in the same changeset.
+
+---
+
+## Priority Legend
+
+- **P1 CRITICAL**: Fix immediately. Security risk, accessibility blocker, or data integrity bug.
+- **P2 IMPORTANT**: Fix in current sprint. Significant UX, performance, or correctness issue.
+- **P3 IMPROVEMENT**: Fix when touching the file. Polish, consistency, or minor enhancement.
+
+---
+
+## 1. Security Issues (P1)
+
+### EnterpriseContext.tsx
+- `isDebugMode` is hardcoded to `true` — bypasses enterprise enrollment checks in production. Restore to `import.meta.env.MODE !== 'production'`.
+
+### api/client.ts
+- Fallback base URL is `http://127.0.0.1` — insecure and non-functional behind proxies. Change to `/api`.
+- No request timeout configured — network failures hang indefinitely. Add `timeout: 30000`.
+- 401 interceptor only logs a console warning instead of redirecting to login or clearing session.
+
+### exportUtils.ts
+- CSV export does not sanitize cell values. Cells starting with `=`, `+`, `-`, `@` can trigger formula injection in Excel. Prefix with tab or single-quote escape.
+
+### Applications.tsx
+- `iFrameWebToken` stored in `localStorage` as plaintext — XSS-accessible. Evaluate httpOnly cookie approach.
+
+---
+
+## 2. Accessibility Blockers (P1)
+
+### index.css (line ~197)
+- Focus ring CSS uses invalid property names `ring-color:` and `ring-offset-color:`. These are NOT valid CSS properties and focus indicators are broken for keyboard users. Replace with `--tw-ring-color` and `--tw-ring-offset-color`.
+
+### Devices.tsx, Groups.tsx, Geofences.tsx
+- Destructive actions use `window.confirm()` which is inaccessible to screen readers, inconsistent with the design system, and blocks the main thread. Replace with Radix `AlertDialog`.
+
+### AccessibilityPanel.tsx
+- Switch controls use `<span>` text instead of `<label htmlFor>` with matching switch IDs. Screen readers cannot associate the label with the control.
+
+### AppSidebar.tsx
+- `aria-expanded="true"` is hardcoded on collapsible sections. This does not reflect actual state — screen readers always announce sections as expanded.
+- Heading hierarchy issue: uses `<h4>` for sidebar labels when no `<h1>`–`<h3>` precedes them. Use `<p>` with appropriate styling.
+- Active nav link lacks `aria-current="page"`.
+- Section labels disappear in collapsed mode with no `sr-only` fallback.
+
+### PlatformChart.tsx
+- `<tr className="flex ...">` applies flex layout to table rows, breaking native table semantics for assistive technology. Remove flex from table elements or restructure as a non-table layout.
+
+---
+
+## 3. Bugs (P1–P2)
+
+### App.tsx
+- **Duplicate route**: `/inventory/:id` is registered twice (lines ~58–59). Second route is silently ignored. Remove the duplicate.
+- **Dead route**: Sidebar links to `/settings` but no route is defined — navigates to 404. Either create the settings page or remove the sidebar link.
+
+### Applications.tsx (1,560 lines — P1 decomposition target)
+- **Stale closure bug**: `handleIframeMessage` timeout callbacks read `isIframeLoading` from closure, not current state. Use `useRef` for the flag.
+- **iOS stats calculation bug**: `stats.mandatory` filters `applications` (Android array) even when `platform === 'ios'`. Must use `iosApplications` when iOS is selected.
+- **20+ unguarded `console.log` statements** in production code. Remove or gate behind `import.meta.env.DEV`.
+- **Event listener not cleaned up**: `window.addEventListener("message", handleIframeMessage)` added in useEffect but cleanup is only in `cleanupIframe()`, not in the effect's return.
+- **Google API script injection**: Manually appends `<script>` to `<head>` without cleanup on unmount. Use a React hook or loader utility.
+
+### Geofences.tsx
+- Stats computed from `mockGeofences` constant instead of `geofences` state. Stats do not update when items are deleted.
+
+### use-toast.ts
+- `TOAST_REMOVE_DELAY` is `1,000,000` ms (~16 minutes). Toasts linger in memory. Change to `5000`.
+- `useEffect` depends on `[state]`, causing re-subscription on every state change. Should be `[]` (mount-only).
+
+### use-mobile.tsx
+- Initial `isMobile` state is `undefined` (falsy). Desktop layout flashes before mobile breakpoint kicks in. Initialize from `window.innerWidth < MOBILE_BREAKPOINT`.
+
+### NotFound.tsx
+- Uses `<a href="/">` instead of `<Link to="/">`, causing a full SPA page reload on navigation.
+
+### AccessibilityContext.tsx
+- No `try/catch` on `JSON.parse(localStorage.getItem('accessibility-settings'))`. Corrupted localStorage will crash the app on load.
+- `speakText()` does not cancel previous speech. Rapid calls queue up. Call `speechSynthesis.cancel()` first.
+- Font size control sets `root.style.fontSize = 'Xpx'` which overrides browser user preferences. Use CSS class approach with rem scale factor.
+- Greyscale filter applied via `root.style.filter` affects the entire page including modals and overlays. Apply via CSS class on `.app-container` container instead.
+
+---
+
+## 4. Data Integrity Issues (P1–P2)
+
+### Dashboard.tsx
+- All stat values hardcoded as strings (`"6,560"`, `"4,820"`, `"82%"`). `DashboardService.getStats()` exists but is not called. Integrate React Query.
+- `DeviceTable` renders hardcoded mock device list. Not connected to API.
+- `StorageUsage` widget uses hardcoded data.
+- `FilterBar` component renders but `onFilterChange` is not wired — filters do nothing.
+
+### Groups.tsx
+- Entirely mock data. `fetchGroups()` uses `setTimeout` to simulate API. No real API integration.
+- Edit action button has empty `onClick={() => {}}` — non-functional.
+
+### Geofences.tsx
+- Entirely mock data. Uses `mockGeofences` import. No real API integration.
+
+### Enrollment.tsx
+- Stats (`pendingEnrollments: 12, completedToday: 8`) are hardcoded. Not connected to API.
+- `mdmadmin@cdot.in` appears 5 times as hardcoded string. Extract to config.
+
+### ComplianceOverview.tsx, PlatformChart.tsx
+- Both render hardcoded compliance and platform distribution data. Must integrate with API.
+
+---
+
+## 5. Architecture Anti-Patterns (P2)
+
+### Monolithic Files — Decomposition Required
+| File | Lines | Action |
+|------|-------|--------|
+| Applications.tsx | 1,560 | Split into: AndroidAppManager, IosAppManager, GooglePlayIframe, AppStatsSection, AddAppDialog |
+| data-table.tsx | 1,377 | Split into: DataTable (orchestrator), DataTableHeader, DataTableBody, DataTablePagination, DataTableToolbar, DataTableFilters, DataTableColumnVisibility, useDataTable hook, types |
+| DeviceDetails.tsx | ~2,600 | Split into: DeviceInfoTab, DeviceSecurityTab, DeviceAppsTab, DeviceHardwareTab |
+| Profiles.tsx | 789 | Extract platform tabs, stat section, column definitions |
+| Enrollment.tsx | 678 | Extract platform-specific enrollment flows into sub-components |
+
+### Missing Patterns
+- No `React.lazy()` code splitting — all 21 pages are eagerly imported.
+- No global `<Suspense>` fallback for code-split routes.
+- No root `<ErrorBoundary>` — unhandled errors white-screen the app.
+- No `<React.StrictMode>` wrapper in `main.tsx`.
+- `QueryClient` created with no custom defaults (no staleTime, retry, or refetchOnWindowFocus config).
+- `EnrollmentGuard` component is a pass-through (`return <>{children}</>`) — dead code.
+
+---
+
+## 6. UX Gaps (P2–P3)
+
+### Navigation
+- No breadcrumb navigation despite having `breadcrumb.tsx` component. Critical for 4-level-deep routes.
+- Header is not sticky — users lose navigation context on long scrollable pages.
+- No ⌘K command palette despite `cmdk` being installed as a dependency.
+- Sidebar collapsed mode renders empty `<SidebarGroupLabel>` divs for section labels.
+
+### Responsive Design
+- Platform tabs use `grid-cols-6` (Devices.tsx, Profiles.tsx) which breaks on mobile.
+- Main content padding is fixed `p-6` across all breakpoints.
+- No max-width constraint — content runs edge-to-edge on ultrawide monitors.
+
+### Visual Polish
+- No page transition animations despite Framer Motion being installed.
+- Stat card values are static text with no count-up animation.
+- No skeleton loading states deployed on any page.
+- Notification badge count is hardcoded `3`, not connected to real data.
+- Static notification icon — no visual indication of new notifications.
+
+### Consistency Violations
+| Pattern | Correct Usage | Violations |
+|---------|--------------|------------|
+| AlertDialog for destructive actions | Applications.tsx, WebApplications.tsx | Devices.tsx, Groups.tsx, Geofences.tsx |
+| i18n via useLanguage() | Dashboard, Profiles, Enrollment | Groups, Geofences, WebApps, NotFound |
+| stat-card design system class | Dashboard, Groups, WebApps | Geofences (raw `<Card>` with hardcoded colors), Profiles (inline cards) |
+| Design system color tokens | Most files | Geofences (`bg-blue-100`), Profiles (`text-blue-500`) |
+| useToast import path (`@/hooks/use-toast`) | Most files | Groups (`@/components/ui/use-toast`) |
+| Responsive platform tabs | Enrollment (`grid-cols-5`) | Devices, Profiles (`grid-cols-6`, non-responsive) |
+
+---
+
+## 7. i18n Gaps (P2–P3)
+
+### Pages with zero i18n usage despite importing useLanguage:
+- Groups.tsx — all strings hardcoded English
+- Geofences.tsx — all strings hardcoded English
+- WebApplications.tsx — all strings hardcoded English
+- NotFound.tsx — all strings hardcoded English
+
+### Inline translations that belong in locale files:
+- Enrollment.tsx — Hindi enrollment step translations embedded inline
+- ComplianceOverview.tsx — status labels not wrapped in `t()`
+- AppSidebar.tsx — "Profiles" section label hardcoded instead of using `nav.profiles` i18n key
+
+---
+
+## 8. Enforcement
+
+When modifying any file listed in this document:
+1. Check this document for known issues affecting that file.
+2. Fix all P1 issues in the same changeset — no exceptions.
+3. Fix P2 issues in the same changeset when the fix is under 30 minutes effort.
+4. Log P3 issues as TODOs if not fixing immediately, but prefer fixing them.
+5. Never introduce new instances of any anti-pattern listed above.
+6. When creating new pages or components, verify they do not replicate any pattern from the "Consistency Violations" table.

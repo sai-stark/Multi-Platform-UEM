@@ -1,0 +1,138 @@
+# Design System Rules
+
+> **Stack**: Tailwind CSS 3 + HSL CSS variable tokens + shadcn/ui + IBM Plex Sans/Mono
+> **Severity levels**: MUST (non-negotiable), SHOULD (strongly recommended), PREFER (polish)
+
+---
+
+## 1. Color Tokens & Theming
+
+### Token Architecture
+
+- MUST: All colors are defined as HSL CSS custom properties in `index.css` (`:root` for light, `.dark` for dark, `.high-contrast` for high contrast). Never use raw hex, rgb, or Tailwind color name classes (e.g., `bg-blue-100`, `text-green-600`) in component code.
+- MUST: Use semantic token names in components (`--primary`, `--accent`, `--destructive`, `--success`, `--warning`, `--info`, `--muted`, `--foreground`, `--background`, `--card`, `--border`). Never reference visual color names.
+- MUST: The `--accent` token must be visually distinct from `--primary`. Currently both sit in the 207–212° hue range. Accent should be differentiated (recommended: teal/cyan ~180° hue range or as chosen from the approved palettes).
+- MUST: The `--info` token must not duplicate `--accent`. These serve different semantic purposes.
+
+### Contrast Requirements
+
+- MUST: `--foreground` on `--background` ≥ 4.5:1.
+- MUST: `--muted-foreground` on `--background` ≥ 4.5:1 for normal-size text. Current value is borderline (~4.48:1) — audit and increase lightness separation if needed.
+- MUST: `--primary-foreground` on `--primary` ≥ 4.5:1.
+- MUST: `--destructive-foreground` on `--destructive` ≥ 4.5:1.
+- MUST: `--warning-foreground` on `--warning` in dark mode must not be pure black `0 0% 0%` — use a dark warm tone (e.g., `32 100% 10%`) for better readability.
+- MUST: Status colors (success, warning, destructive) on `--card` background must meet 3:1 non-text contrast for badges and icons, and 4.5:1 for text labels.
+
+### Chart Colors
+
+- MUST: No two adjacent chart segments share the same hue family. Chart-1 and Chart-2 must be visually distinguishable in both color and greyscale.
+- MUST: Chart colors work in greyscale mode (already designed for this — maintain it).
+- SHOULD: Provide pattern fills or distinct shapes as a secondary differentiator alongside color.
+
+### Dark Mode & High Contrast
+
+- MUST: Every new CSS variable added to `:root` must also have a `.dark` and `.high-contrast` variant defined.
+- MUST: Dark mode token values are not simply inverted — they are intentionally designed for readability. Maintain minimum contrast ratios in all modes.
+- MUST: The `index.html` initial class and `AccessibilityContext` default must be synchronized to prevent flash of incorrect theme (dark → light → dark). Default `darkMode` to `document.documentElement.classList.contains('dark')`.
+
+---
+
+## 2. Typography
+
+- MUST: Use the established font stack — IBM Plex Sans for UI text, IBM Plex Mono for code/data. Never introduce additional font families without design review.
+- MUST: All font sizes use `rem` or Tailwind size classes (`text-sm`, `text-base`, `text-lg`, etc.). Never set `font-size` in `px` on the root element or via inline styles.
+- SHOULD: Body text is 14–16px equivalent (`text-sm` or `text-base`). Data-dense tables may use `text-xs` (12px) but never smaller.
+- MUST: Numeric values in stat cards and dashboards use `toLocaleString()` for proper thousand separators and locale-aware formatting.
+- SHOULD: Large numeric displays (stat card values) should use tabular-nums (`font-variant-numeric: tabular-nums`) for alignment.
+
+---
+
+## 3. Spacing & Layout
+
+### Responsive Padding
+
+- MUST: Main content area uses responsive padding: `p-4 sm:p-6` minimum. Never use fixed `p-6` across all breakpoints.
+- SHOULD: Apply `max-w-screen-2xl mx-auto` to the main content area to prevent edge-to-edge text on ultrawide monitors.
+
+### Grid & Breakpoints
+
+- MUST: Platform tab grids (Devices, Profiles) must be responsive. Never use fixed `grid-cols-6` without responsive fallbacks. Use `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6` or `flex-wrap`.
+- MUST: Dashboard stat card grids use `grid-cols-1 md:grid-cols-2 lg:grid-cols-4`.
+- MUST: All layouts must work from 320px (mobile) to ultrawide without horizontal overflow for vertical-flow content.
+
+### Elevation & Depth
+
+- SHOULD: Cards use subtle shadow on hover (`hover:shadow-md`) with smooth transition (`transition-shadow duration-200`).
+- SHOULD: Stat cards have a hover lift effect (`hover:-translate-y-0.5 transition-transform`) for interactive feedback.
+- SHOULD: Elevated surfaces (header, modals, popovers) use `backdrop-blur-sm` with partial background opacity for glassmorphism depth.
+- PREFER: Stat cards use subtle gradient tint based on variant (`from-{variant}/[0.03] to-transparent`) for visual differentiation.
+
+---
+
+## 4. Component Visual Standards
+
+### Cards
+
+- MUST: Use the `.stat-card` design system class for all stat/metric cards. Never build inline card markup with raw `<Card>` when the stat-card pattern exists.
+- MUST: Variant differentiation uses the left-border color pattern plus icon color. Never rely on border color alone.
+- SHOULD: Loading states use `<Skeleton>` components with `aria-busy="true"` and descriptive `aria-label`.
+
+### Buttons & Interactive Targets
+
+- MUST: All clickable targets are at least 24×24px (WCAG 2.5.8).
+- MUST: Primary actions use `--primary` background. Destructive actions use `--destructive`. Secondary/ghost actions use transparent backgrounds.
+- SHOULD: Buttons have subtle press feedback (`active:scale-[0.97]` with `transition-transform`).
+
+### Status Badges
+
+- MUST: Badges combine color AND a secondary indicator (icon or text label). Examples: ✓ Compliant (green), ✕ Non-compliant (red), ⏳ Pending (orange).
+- MUST: Badge text meets minimum contrast ratio against the badge background.
+
+### Tables (DataTable)
+
+- MUST: Table rows have a hover state (`hover:bg-accent/5` with `transition-colors`).
+- MUST: Empty states are illustrated with a message and action, not plain text.
+- SHOULD: Loading states use staggered skeleton rows.
+
+---
+
+## 5. Animation & Motion
+
+### General Rules
+
+- MUST: All animations respect `prefers-reduced-motion: reduce`. When active, disable transforms, slides, and bounces — use instant or opacity-only transitions.
+- MUST: Only animate `transform` and `opacity` properties for GPU acceleration. Never animate `width`, `height`, `top`, `left`, `margin`, or `padding`.
+- MUST: No animation exceeds 400ms duration. Page transitions ≤ 250ms. Micro-interactions ≤ 200ms.
+- MUST: No content flashes more than 3 times per second.
+
+### Specific Animations
+
+- SHOULD: Page transitions use Framer Motion fade+slide (`opacity` + `translateY`) with `AnimatePresence`.
+- SHOULD: Stat card values animate counting up on mount using Framer Motion `useMotionValue`.
+- SHOULD: Sidebar active nav item has an animated indicator bar using Framer Motion `layoutId`.
+- PREFER: Table rows stagger entry on page load with 50–100ms delay per row.
+- PREFER: Notification badge has a subtle pulse when new notifications arrive.
+
+### Library Rules
+
+- MUST: Use Framer Motion (already installed) for orchestrated animations. Do not add GSAP, anime.js, or additional animation libraries.
+- MUST: Use CSS transitions for simple hover/focus effects. Reserve Framer Motion for page transitions, staggered lists, layout animations, and counter animations.
+- SHOULD: Use Framer Motion's `whileInView` for elements entering the viewport. Do not animate off-screen elements.
+
+---
+
+## 6. Iconography
+
+- MUST: Use Lucide React icons consistently. Do not mix icon libraries.
+- MUST: Platform logos (Android, iOS, Windows, macOS, Linux) use consistent sizing and style. Prefer SVG over PNG for platform icons.
+- MUST: Decorative icons carry `aria-hidden="true"`. Meaningful icons have an accessible name.
+- SHOULD: Icon containers in stat cards and nav items use consistent sizing (`w-5 h-5` for nav, `w-6 h-6` for cards, `w-4 h-4` for inline).
+
+---
+
+## 7. Design Consistency Rules
+
+- MUST: Use design system tokens everywhere. Hardcoded color values (`bg-blue-100`, `text-green-600`, `#636D77`) are forbidden in component files.
+- MUST: Use `cn()` utility (from `@/lib/utils`) for conditional class merging. Never string-concatenate Tailwind classes.
+- MUST: Components consuming the design system must not define their own color tokens. All color decisions flow from `index.css` variables through `tailwind.config.ts`.
+- SHOULD: When a design pattern exists in one page (e.g., `WebApplications.tsx` uses AlertDialog for delete confirmation), all pages must follow the same pattern.

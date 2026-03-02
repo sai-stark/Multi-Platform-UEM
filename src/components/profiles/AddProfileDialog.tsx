@@ -1,5 +1,4 @@
 import { ProfileService } from "@/api/services/profiles";
-import { LoadingAnimation } from "@/components/common/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,7 +25,7 @@ import { toast } from "@/hooks/use-toast";
 import { Platform, Profile, ProfileType, ManagementMode } from "@/types/models";
 import { getErrorMessage } from "@/utils/errorUtils";
 import { Layout } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Platform configuration with asset images
@@ -83,10 +82,6 @@ interface FormData {
   longSupportMessage: string;
 }
 
-// Constants for profile readiness polling
-const MAX_POLL_ATTEMPTS = 10;
-const POLL_INTERVAL_MS = 500; // 500ms between attempts, max ~5 seconds total
-
 export function AddProfileDialog({
   open,
   onOpenChange,
@@ -96,7 +91,6 @@ export function AddProfileDialog({
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [preparing, setPreparing] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
@@ -109,29 +103,6 @@ export function AddProfileDialog({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showOptionalFields, setShowOptionalFields] = useState(false);
 
-  // Poll the profile API until it returns valid data
-  const waitForProfileReady = useCallback(
-    async (platform: string, profileId: string): Promise<boolean> => {
-      for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
-        try {
-          const profile = await ProfileService.getProfile(
-            platform as Platform,
-            profileId
-          );
-          if (profile && profile.id) {
-            return true;
-          }
-        } catch {
-          // Profile not ready yet, continue polling
-        }
-        // Wait before next attempt
-        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-      }
-      // Timeout reached - navigate anyway after max attempts
-      return false;
-    },
-    []
-  );
 
   // Sync platform with defaultPlatform when dialog opens
   useEffect(() => {
@@ -259,25 +230,14 @@ export function AddProfileDialog({
 
       onProfileAdded();
       setLoading(false);
+      onOpenChange(false);
+      resetForm();
 
       // Navigate to edit policies page for the newly created profile
       if (createdProfile?.id) {
-        // Show preparing state while waiting for profile to be ready
-        setPreparing(true);
-
-        // Wait for profile to be available in the API
-        await waitForProfileReady(formData.platform, createdProfile.id);
-
-        setPreparing(false);
-        onOpenChange(false);
-        resetForm();
-
         navigate(
           `/profiles/${formData.platform}/${createdProfile.id}`
         );
-      } else {
-        onOpenChange(false);
-        resetForm();
       }
     } catch (error) {
       console.error("Failed to create profile:", error);
@@ -287,7 +247,6 @@ export function AddProfileDialog({
         variant: "destructive",
       });
       setLoading(false);
-      setPreparing(false);
     }
   };
 
@@ -305,20 +264,9 @@ export function AddProfileDialog({
     onOpenChange(isOpen);
   };
 
-  // Prevent closing dialog while preparing
-  const handleDialogOpenChange = (isOpen: boolean) => {
-    if (preparing) return; // Prevent closing during preparation
-    handleOpenChange(isOpen);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-background">
-        {preparing ? (
-          <div className="py-4">
-            <LoadingAnimation message="Preparing profile..." />
-          </div>
-        ) : (
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -571,7 +519,6 @@ export function AddProfileDialog({
             </DialogFooter>
           </form>
           </>
-        )}
       </DialogContent>
     </Dialog>
   );
