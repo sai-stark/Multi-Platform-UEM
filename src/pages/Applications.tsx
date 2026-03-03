@@ -769,11 +769,9 @@ const Applications = () => {
       key: 'name',
       header: 'Name',
       accessor: (item) => item.name,
-      sortable: true,
-      searchable: true,
       render: (_, item) => (
         <span
-          className="font-medium text-primary hover:text-primary/80 hover:underline cursor-pointer transition-colors"
+          className="font-medium text-blue-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors"
           onClick={() => navigate(`/applications/${platform}/${item.id}`)}
         >
           {item.name}
@@ -784,8 +782,6 @@ const Applications = () => {
       key: 'packageName',
       header: 'Package Name',
       accessor: (item) => item.packageName || '-',
-      sortable: true,
-      searchable: true,
       render: (value) => (
         <span className="font-mono text-xs text-muted-foreground">{value}</span>
       ),
@@ -793,6 +789,9 @@ const Applications = () => {
     {
       key: 'flags',
       header: 'Flags',
+      sortable: false,
+      searchable: false,
+      filterable: false,
       accessor: (item) => {
         const flags = [
           item.isEmmApp && 'EMM App',
@@ -842,7 +841,6 @@ const Applications = () => {
       key: 'description',
       header: 'Description',
       accessor: (item) => item.description || '-',
-      sortable: true,
       render: (value) => (
         <p className="text-sm text-muted-foreground max-w-[250px] truncate" title={String(value)}>
           {value}
@@ -853,7 +851,6 @@ const Applications = () => {
       key: 'versions',
       header: 'Versions',
       accessor: (item) => item.versions?.length || 0,
-      sortable: true,
       align: 'center',
       render: (value) => (
         <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium">
@@ -865,7 +862,6 @@ const Applications = () => {
       key: 'author',
       header: 'Author',
       accessor: (item) => item.author || '-',
-      sortable: true,
       render: (value) => (
         <span className="text-sm">{value}</span>
       ),
@@ -889,8 +885,6 @@ const Applications = () => {
       key: 'name',
       header: 'Application',
       accessor: (item) => item.trackName || item.name,
-      sortable: true,
-      searchable: true,
       render: (_, item) => (
         <div className="flex items-center gap-3">
           {item.artworkUrl60 || item.artworkUrl100 ? (
@@ -906,7 +900,7 @@ const Applications = () => {
             </div>
           )}
           <span
-            className="font-medium text-primary hover:text-primary/80 hover:underline cursor-pointer transition-colors"
+            className="font-medium text-blue-500 hover:text-blue-600 hover:underline cursor-pointer transition-colors"
             onClick={() => navigate(`/applications/ios/${item.id}`)}
           >
             {item.trackName || item.name}
@@ -918,8 +912,6 @@ const Applications = () => {
       key: 'bundleId',
       header: 'Package Name',
       accessor: (item) => item.bundleId || '-',
-      sortable: true,
-      searchable: true,
       render: (value) => (
         <span className="font-mono text-xs text-muted-foreground">{value}</span>
       ),
@@ -928,20 +920,17 @@ const Applications = () => {
       key: 'version',
       header: 'Version',
       accessor: (item) => item.version || '-',
-      sortable: true,
       render: (value) => <span className="font-mono text-sm">{value}</span>,
     },
     {
       key: 'sellerName',
       header: 'Seller',
       accessor: (item) => item.sellerName || '-',
-      sortable: true,
     },
     {
       key: 'primaryGenreName',
       header: 'Category',
       accessor: (item) => item.primaryGenreName || '-',
-      sortable: true,
       hidden: true,
       render: (value) => value !== '-' ? (
         <Badge variant="outline" className="text-xs">{value}</Badge>
@@ -951,7 +940,6 @@ const Applications = () => {
       key: 'averageUserRating',
       header: 'Rating',
       accessor: (item) => item.averageUserRating ?? '-',
-      sortable: true,
       render: (value) => value !== '-' ? (
         <div className="flex items-center gap-1">
           <Star className="w-3.5 h-3.5 fill-warning text-warning" />
@@ -963,7 +951,6 @@ const Applications = () => {
       key: 'enrollmentStatus',
       header: 'Status',
       accessor: (item) => item.enrollmentStatus || 'REGISTERED',
-      sortable: true,
       hidden: true,
       render: (value) => (
         <Badge variant={value === 'REGISTERED' ? 'default' : 'secondary'} className="text-xs">

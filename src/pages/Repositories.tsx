@@ -295,8 +295,6 @@ const Repositories = () => {
         key: "name",
         header: "Repository Name",
         accessor: (item) => getRepositoryName(item),
-        sortable: true,
-        searchable: true,
         render: (_, item) => {
           const repoId = getRepositoryId(item);
           const platform = getRepositoryPlatform(item);
@@ -317,8 +315,6 @@ const Repositories = () => {
         key: "repoType",
         header: "Repository Type",
         accessor: (item) => item.repoType,
-        sortable: true,
-        filterable: true,
         render: (_, item) => {
           const type = getRepositoryType(item);
           const typeColors: Record<string, string> = {
@@ -357,7 +353,6 @@ const Repositories = () => {
               accessor: (item: CustomRepository) =>
                 getRepositoryComponents(item).join(", "),
               sortable: false,
-              searchable: true,
               render: (_: any, item: CustomRepository) => {
                 const components = getRepositoryComponents(item);
                 if (components.length === 0)
@@ -382,7 +377,6 @@ const Repositories = () => {
               accessor: (item: CustomRepository) =>
                 getRepositoryArchitectures(item).join(", "),
               sortable: false,
-              searchable: true,
               render: (_: any, item: CustomRepository) => {
                 const archs = getRepositoryArchitectures(item);
                 if (archs.length === 0)
@@ -415,7 +409,6 @@ const Repositories = () => {
           }
           return item.creationTime || "";
         },
-        sortable: true,
         hidden: true,
         render: (value, item) => {
           const createdBy = getCreatedBy(item);
@@ -445,7 +438,6 @@ const Repositories = () => {
           }
           return item.modificationTime || "";
         },
-        sortable: true,
         hidden: true,
         render: (value, item) => {
           const modifiedBy = getLastModifiedBy(item);
@@ -467,7 +459,6 @@ const Repositories = () => {
         key: "createdBy",
         header: "Created By",
         accessor: (item) => getCreatedBy(item),
-        sortable: true,
         hidden: true,
         render: (value) => (
           <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
@@ -479,7 +470,6 @@ const Repositories = () => {
         key: "lastModifiedBy",
         header: "Last Modified By",
         accessor: (item) => getLastModifiedBy(item),
-        sortable: true,
         hidden: true,
         render: (value) => (
           <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">

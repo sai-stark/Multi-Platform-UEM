@@ -274,13 +274,11 @@ const Devices = () => {
       key: 'name',
       header: 'Device',
       accessor: (item) => item.name,
-      sortable: true,
-      searchable: true,
       render: (_, item) => (
         <div className="flex items-center gap-3">
           <div>
             <p
-              className="font-medium text-foreground hover:text-primary cursor-pointer hover:underline"
+              className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/devices/${item.platform}/${item.id}`);
@@ -297,8 +295,6 @@ const Devices = () => {
       key: 'platform',
       header: 'Platform',
       accessor: (item) => platformConfig[item.platform]?.label || item.platform,
-      sortable: true,
-      filterable: true,
       render: (_, item) => {
         const platformInfo = platformConfig[item.platform];
         const PlatformIcon = platformInfo?.icon || Smartphone;
@@ -332,8 +328,6 @@ const Devices = () => {
       key: 'owner',
       header: 'Owner',
       accessor: (item) => item.owner,
-      sortable: true,
-      searchable: true,
       render: (value) => (
         <span className="font-mono text-xs text-muted-foreground">{value}</span>
       ),
@@ -342,8 +336,6 @@ const Devices = () => {
       key: 'complianceStatus',
       header: 'Status',
       accessor: (item) => item.complianceStatus,
-      sortable: true,
-      filterable: true,
       render: (_, item) => {
         const compliance = complianceConfig[item.complianceStatus] || complianceConfig.pending;
         return (
@@ -366,7 +358,6 @@ const Devices = () => {
       key: 'batteryLevel',
       header: 'Battery',
       accessor: (item) => item.batteryLevel,
-      sortable: true,
       align: 'center',
       render: (value, item) => {
         if (value === undefined || value < 0) return <span className="text-muted-foreground">-</span>;
@@ -382,7 +373,6 @@ const Devices = () => {
       key: 'storage',
       header: 'Storage',
       accessor: (item) => item.storageTotal > 0 ? Number(((item.storageUsed / item.storageTotal) * 100).toFixed(2)) : 0,
-      sortable: true,
       render: (_, item) => {
         const storagePercent = item.storageTotal > 0 ? Number(((item.storageUsed / item.storageTotal) * 100).toFixed(2)) : 0;
         return (
@@ -403,7 +393,6 @@ const Devices = () => {
       key: 'lastSync',
       header: 'Last Sync',
       accessor: (item) => item.lastSync,
-      sortable: true,
       render: (value) => (
         <time className="text-xs text-muted-foreground font-mono" dateTime={value.replace(' ', 'T')}>
           {value}

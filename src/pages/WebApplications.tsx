@@ -235,8 +235,6 @@ const WebApplications = () => {
       key: 'name',
       header: 'Web Application',
       accessor: (item) => item.name,
-      sortable: true,
-      searchable: true,
       render: (_, item) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
@@ -270,14 +268,12 @@ const WebApplications = () => {
       key: 'iconText',
       header: 'Icon Text',
       accessor: (item) => item.iconText,
-      sortable: true,
       render: (value) => <span className="text-muted-foreground">{value}</span>,
     },
     {
       key: 'deviceCount',
       header: 'Deployed Devices',
       accessor: (item) => item.deviceCount,
-      sortable: true,
       align: 'right',
       render: (value) => <span className="font-mono">{(value || 0).toLocaleString()}</span>,
     },
@@ -285,7 +281,6 @@ const WebApplications = () => {
       key: 'modificationTime',
       header: 'Last Modified',
       accessor: (item) => item.modificationTime || '',
-      sortable: true,
       render: (value) => (
         <span className="text-muted-foreground">
           {value ? new Date(value).toLocaleDateString() : 'N/A'}

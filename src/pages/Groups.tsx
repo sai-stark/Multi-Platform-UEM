@@ -124,8 +124,6 @@ export default function Groups() {
             key: 'name',
             header: 'Name',
             accessor: (item) => item.name,
-            sortable: true,
-            searchable: true,
             render: (_, item) => (
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
@@ -147,15 +145,12 @@ export default function Groups() {
             key: 'description',
             header: 'Description',
             accessor: (item) => item.description || '-',
-            sortable: true,
-            searchable: true,
             render: (value) => <span className="text-muted-foreground">{value}</span>,
         },
         {
             key: 'deviceCount',
             header: 'Devices',
             accessor: (item) => item.deviceCount || 0,
-            sortable: true,
             align: 'center',
             render: (value) => (
                 <div className="flex items-center gap-2 justify-center">

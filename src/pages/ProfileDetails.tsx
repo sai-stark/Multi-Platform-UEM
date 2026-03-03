@@ -821,9 +821,10 @@ export default function ProfileDetails() {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [activePolicyType, setActivePolicyType] = useState<string | null>(null);
 
-  // Single field edit state
-  const [editingField, setEditingField] = useState<'name' | 'description' | null>(null);
-  const [editValue, setEditValue] = useState("");
+  // Profile edit state (name + description together)
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [savingField, setSavingField] = useState(false);
 
   // State for specific Policy Data (Merged from EditProfilePolicies)
@@ -1016,17 +1017,18 @@ export default function ProfileDetails() {
     }
   };
 
-  const openEditDialog = (field: 'name' | 'description', value: string) => {
-    setEditingField(field);
-    setEditValue(value || "");
+  const openEditDialog = () => {
+    setEditName(profile?.name || "");
+    setEditDescription(profile?.description || "");
+    setEditDialogOpen(true);
   };
 
   const handleSaveField = async () => {
-    if (!profile || !platform || !id || !editingField) return;
+    if (!profile || !platform || !id) return;
+    if (!editName.trim()) return;
 
     setSavingField(true);
     try {
-      // Map platform to profileType for API payload
       const profileTypeMap: Record<string, ProfileType> = {
         android: "AndroidProfile",
         ios: "IosProfile",
@@ -1034,26 +1036,23 @@ export default function ProfileDetails() {
 
       const updatedProfile: Profile = {
         id: profile.id,
-        name: editingField === 'name' ? editValue : profile.name,
-        description: editingField === 'description' ? editValue : (profile.description || ""),
+        name: editName,
+        description: editDescription,
         profileType: profileTypeMap[profile.platform] || profile.profileType,
         status: profile.status,
         creationTime: profile.creationTime,
         modificationTime: profile.modificationTime,
         createdBy: profile.createdBy,
         lastModifiedBy: profile.lastModifiedBy,
-        // Include platform as it's part of the Profile interface (UI field)
         platform: profile.platform
       };
 
-      // Map platform to profileType for API payload if needed, generic update
       await ProfileService.updateProfile(platform as Platform, id, updatedProfile);
 
       await fetchProfile();
-      setEditingField(null);
+      setEditDialogOpen(false);
     } catch (err) {
       console.error("Failed to update profile:", err);
-      // You might want to show a toast here
     } finally {
       setSavingField(false);
     }
@@ -1087,44 +1086,29 @@ export default function ProfileDetails() {
                       variant="ghost"
                       size="icon"
                       className="rounded-full w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
-                      onClick={() => openEditDialog('name', profile.name)}
+                      onClick={openEditDialog}
                       title={t('profiles.edit.title')}
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Badge variant={profile.status === 'PUBLISHED' ? "secondary" : "outline"} className={cn("ml-1 font-normal", profile.status === 'PUBLISHED' ? "bg-success/10 text-success border-success/30" : "")}>
-                      {profile.status}
-                    </Badge>
                   </div>
-                  <div className="flex items-start gap-2 group">
-                    <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">{profile.description}</p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full w-6 h-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground hover:bg-muted -mt-1"
-                      onClick={() => openEditDialog('description', profile.description || "")}
-                      title="Edit Description"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </Button>
-                  </div>
-
+                  <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">{profile.description}</p>
                 </div>
               </div>
 
-              {/* Publish Button (Left, Circular, Animated) */}
+              {/* Publish Button */}
               {profile.status !== "PUBLISHED" && (
                 <Button
                   onClick={handlePublish}
-                  size="icon"
                   className={cn(
-                    "rounded-full h-14 w-14 shadow-lg bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-2 border-white/20 dark:border-slate-800",
-                    "transition-all duration-300 hover:scale-105 active:scale-95",
+                    "gap-2 px-5 h-10 shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white",
+                    "transition-all duration-300 hover:scale-[1.02] active:scale-95",
                     "animate-in zoom-in slide-in-from-left-4 duration-500"
                   )}
                   title={t('profiles.publish.publish')}
                 >
-                  <Send className={cn("w-6 h-6 ml-0.5")} />
+                  {t('profiles.publish.publish')}
+                  <Send className="w-4 h-4" />
                 </Button>
               )}
             </div>
@@ -1251,37 +1235,40 @@ export default function ProfileDetails() {
           onProfilePublished={fetchProfile}
         />
 
-        <Dialog open={!!editingField} onOpenChange={(open) => !open && setEditingField(null)}>
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit {editingField === 'name' ? 'Name' : 'Description'}</DialogTitle>
+              <DialogTitle>Edit Profile</DialogTitle>
             </DialogHeader>
-            <div className="py-4">
-              <Label htmlFor="edit-field" className="mb-2 block">
-                {editingField === 'name' ? 'Profile Name' : 'Profile Description'}
-              </Label>
-              {editingField === 'name' ? (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Profile Name</Label>
                 <Input
-                  id="edit-field"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
+                  id="edit-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
                   placeholder="Enter profile name"
                 />
-              ) : (
+                {!editName.trim() && (
+                  <p className="text-xs text-destructive">Name is required</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
                 <Textarea
-                  id="edit-field"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
+                  id="edit-description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Enter profile description"
                   rows={4}
                 />
-              )}
+              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingField(null)} disabled={savingField}>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={savingField}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveField} disabled={savingField || !editValue.trim()}>
+              <Button onClick={handleSaveField} disabled={savingField || !editName.trim()}>
                 {savingField ? 'Saving...' : 'Save'}
               </Button>
             </DialogFooter>

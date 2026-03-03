@@ -169,7 +169,7 @@ const getOperatorsForType = (filterType: "text" | "number" | "date" = "text") =>
 
 export function DataTable<T extends Record<string, any>>({
   data,
-  columns,
+  columns: rawColumns,
   searchable = true,
   filterable = true,
   sortable = true,
@@ -201,6 +201,17 @@ export function DataTable<T extends Record<string, any>>({
   onPageSizeChange: externalOnPageSizeChange,
   serverSidePagination = false,
 }: DataTableProps<T>) {
+  // Normalize columns: default sortable, searchable, filterable to true
+  const columns = useMemo(() =>
+    rawColumns.map((col) => ({
+      ...col,
+      sortable: col.sortable !== false,
+      searchable: col.searchable !== false,
+      filterable: col.filterable !== false,
+    })),
+    [rawColumns]
+  );
+
   // State management
   const [searchTerm, setSearchTerm] = useState("");
   const [searchColumns, setSearchColumns] = useState<Set<string>>(new Set(["all"])); // Multi-select columns

@@ -744,7 +744,6 @@ const ApplicationDetails = () => {
       key: 'version',
       header: 'Version',
       accessor: (item) => item.version || item.versionName || '-',
-      sortable: true,
       render: (value, item) => (
         <div className="flex items-center gap-2">
           <span className="font-medium">{value}</span>
@@ -760,7 +759,6 @@ const ApplicationDetails = () => {
       key: 'deviceCount',
       header: 'Devices',
       accessor: (item) => item.deviceCount || 0,
-      sortable: true,
       align: 'center',
       render: (value) => (
         <span className="text-sm font-medium">
@@ -772,14 +770,12 @@ const ApplicationDetails = () => {
       key: 'profileCount',
       header: 'Profiles',
       accessor: (item) => item.profileCount || 0,
-      sortable: true,
       align: 'center',
     },
     {
       key: 'action',
       header: 'Status',
       accessor: (item) => item.action || 'OPTIONAL',
-      sortable: true,
       render: (_, item) => {
         const action = item.action || 'OPTIONAL';
         const config = actionConfig[action];
@@ -795,6 +791,9 @@ const ApplicationDetails = () => {
     {
       key: 'url',
       header: 'Download',
+      sortable: false,
+      searchable: false,
+      filterable: false,
       accessor: (item) => item.url || '',
       render: (value) => value ? (
         <Button

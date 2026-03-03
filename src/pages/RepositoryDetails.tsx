@@ -82,8 +82,6 @@ const RepositoryDetails = () => {
       key: "name",
       header: "Application Name",
       accessor: (item) => item.name,
-      sortable: true,
-      searchable: true,
       render: (_, item) => (
         <div>
           <a
@@ -106,8 +104,6 @@ const RepositoryDetails = () => {
       key: "description",
       header: "Description",
       accessor: (item) => item.description || "",
-      sortable: true,
-      searchable: true,
       render: (value) => (
         <p className="text-sm text-muted-foreground truncate max-w-[300px]">
           {value || "-"}
@@ -118,8 +114,6 @@ const RepositoryDetails = () => {
       key: "manufacturere",
       header: "Manufacturer",
       accessor: (item) => item.manufacturere || "",
-      sortable: true,
-      searchable: true,
       render: (value) => (
         <span className="text-muted-foreground">{value || "-"}</span>
       ),
@@ -128,7 +122,6 @@ const RepositoryDetails = () => {
       key: "version",
       header: "Version",
       accessor: (item) => item.version,
-      sortable: true,
       render: (value) => (
         <span className="text-muted-foreground font-mono text-sm">
           {value || "-"}
@@ -139,8 +132,6 @@ const RepositoryDetails = () => {
       key: "osType",
       header: "OS Type",
       accessor: (item) => item.osType || "",
-      sortable: true,
-      filterable: true,
       render: (value) => {
         if (!value) return <span className="text-muted-foreground">-</span>;
         const typeLabels: Record<string, string> = {
@@ -184,7 +175,6 @@ const RepositoryDetails = () => {
       key: "size",
       header: "Size",
       accessor: (item) => item.size || "",
-      sortable: true,
       render: (value) => (
         <span className="text-muted-foreground">{value || "-"}</span>
       ),
@@ -193,8 +183,6 @@ const RepositoryDetails = () => {
       key: "isMandatory",
       header: "Mandatory",
       accessor: (item) => (item.isMandatory ? "Yes" : "No"),
-      sortable: true,
-      filterable: true,
       render: (_, item) => (
         <span
           className={cn(
@@ -210,8 +198,6 @@ const RepositoryDetails = () => {
       key: "isBlocked",
       header: "Blocked",
       accessor: (item) => (item.isBlocked ? "Yes" : "No"),
-      sortable: true,
-      filterable: true,
       render: (_, item) => (
         <span
           className={cn(

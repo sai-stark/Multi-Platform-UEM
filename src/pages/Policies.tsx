@@ -72,8 +72,6 @@ const Policies = () => {
       key: 'name',
       header: 'Policy',
       accessor: (item) => item.name,
-      sortable: true,
-      searchable: true,
       render: (_, item) => {
         const TypeIcon = typeIcons[item.type] || Shield;
         return (
@@ -93,23 +91,18 @@ const Policies = () => {
       key: 'type',
       header: 'Type',
       accessor: (item) => item.type,
-      sortable: true,
-      filterable: true,
       render: (value) => <span className="text-muted-foreground">{value}</span>,
     },
     {
       key: 'platform',
       header: 'Platform',
       accessor: (item) => item.platform,
-      sortable: true,
-      filterable: true,
       render: (value) => <span className="text-muted-foreground">{value}</span>,
     },
     {
       key: 'assignedDevices',
       header: 'Assigned Devices',
       accessor: (item) => item.assignedDevices,
-      sortable: true,
       align: 'right',
       render: (value) => <span className="font-mono">{value.toLocaleString()}</span>,
     },
@@ -117,7 +110,6 @@ const Policies = () => {
       key: 'assignedGroups',
       header: 'Assigned Groups',
       accessor: (item) => item.assignedGroups,
-      sortable: true,
       align: 'right',
       render: (value) => <span className="font-mono">{value}</span>,
     },
@@ -125,8 +117,6 @@ const Policies = () => {
       key: 'status',
       header: 'Status',
       accessor: (item) => item.status,
-      sortable: true,
-      filterable: true,
       render: (_, item) => {
         const status = statusConfig[item.status];
         const StatusIcon = status.icon;

@@ -54,8 +54,6 @@ const Geofences = () => {
             key: 'name',
             header: 'Name',
             accessor: (item) => item.name,
-            sortable: true,
-            searchable: true,
             render: (value, item) => (
                 <div
                     className="flex items-center gap-2 cursor-pointer hover:underline text-primary"
@@ -73,8 +71,6 @@ const Geofences = () => {
             key: 'type',
             header: 'Type',
             accessor: (item) => item.type,
-            sortable: true,
-            filterable: true,
             render: (value) => (
                 <div className="flex items-center gap-2">
                     {value === 'POLYGON' ? (
@@ -89,14 +85,11 @@ const Geofences = () => {
             key: 'description',
             header: 'Description',
             accessor: (item) => item.description || '-',
-            sortable: true,
-            searchable: true,
         },
         {
             key: 'details',
             header: 'Details',
             accessor: (item) => item.type === 'POLYGON' ? `${item.coordinates?.length || 0} Points` : `${item.radius}m`,
-            sortable: true,
             render: (_, item) => (
                 item.type === 'POLYGON' ? (
                     <span className="text-xs text-muted-foreground">{item.coordinates?.length || 0} Points</span>

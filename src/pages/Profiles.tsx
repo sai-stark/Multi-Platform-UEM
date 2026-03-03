@@ -304,12 +304,9 @@ const Profiles = () => {
         key: "name",
         header: t('profiles.table.name'),
         accessor: (item) => item.name,
-        sortable: true,
-        searchable: true,
-        filterable: true,
         render: (_, item) => (
           <p
-            className="font-medium text-primary hover:text-primary/80 cursor-pointer hover:underline"
+            className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/profiles/${item.platform}/${item.id}`);
@@ -323,9 +320,6 @@ const Profiles = () => {
         key: "description",
         header: t('profiles.table.description'),
         accessor: (item) => item.description,
-        sortable: false,
-        searchable: true,
-        filterable: true,
         render: (value) => (
           <p className="text-sm text-muted-foreground truncate max-w-[280px]">
             {value || "-"}
@@ -336,9 +330,6 @@ const Profiles = () => {
         key: "platform",
         header: t('profiles.table.platform'),
         accessor: (item) => item.platform || "",
-        sortable: true,
-        filterable: true,
-        searchable: true,
         render: (_, item) => {
           const config = platformConfig[item.platform?.toLowerCase() || "all"];
           return (
@@ -360,9 +351,6 @@ const Profiles = () => {
         key: "status",
         header: t('profiles.table.status'),
         accessor: (item) => item.status || "DRAFT",
-        sortable: true,
-        filterable: true,
-        searchable: true,
         render: (value) => {
           const statusConfig: Record<
             string,
@@ -392,9 +380,6 @@ const Profiles = () => {
         key: "version",
         header: t('profiles.table.version'),
         accessor: (item) => item.version || 0,
-        sortable: true,
-        searchable: true,
-        filterable: true,
         filterType: "number",
         render: (value) => (
           <span className="text-muted-foreground font-mono text-sm">
@@ -406,9 +391,6 @@ const Profiles = () => {
         key: "deviceCount",
         header: t('profiles.table.devices'),
         accessor: (item) => item.deviceCount || 0,
-        sortable: true,
-        searchable: true,
-        filterable: true,
         filterType: "number",
         render: (value) => (
           <span className="text-muted-foreground">{value || 0}</span>
@@ -418,9 +400,7 @@ const Profiles = () => {
         key: "modificationTime",
         header: t('profiles.table.lastModified'),
         accessor: (item) => item.modificationTime || "",
-        sortable: true,
         hidden: true,
-        filterable: true,
         filterType: "date",
         render: (value) => (
           <span className="text-muted-foreground font-mono text-sm">
@@ -432,9 +412,7 @@ const Profiles = () => {
         key: "creationTime",
         header: t('profiles.table.created'),
         accessor: (item) => item.creationTime || "",
-        sortable: true,
         hidden: true,
-        filterable: true,
         filterType: "date",
         render: (value) => (
           <span className="text-muted-foreground font-mono text-sm">
@@ -446,9 +424,7 @@ const Profiles = () => {
         key: "createdBy",
         header: t('profiles.table.createdBy'),
         accessor: (item) => item.createdBy || "",
-        sortable: true,
         hidden: true,
-        filterable: true,
         render: (value) => (
           <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
             {value || "-"}
@@ -459,9 +435,7 @@ const Profiles = () => {
         key: "lastModifiedBy",
         header: t('profiles.table.lastModifiedBy'),
         accessor: (item) => item.lastModifiedBy || "",
-        sortable: true,
         hidden: true,
-        filterable: true,
         render: (value) => (
           <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]">
             {value || "-"}

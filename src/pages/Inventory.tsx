@@ -57,8 +57,6 @@ const Inventory = () => {
             key: 'serialNumber',
             header: 'Serial Number',
             accessor: (item) => item.serialNumber,
-            sortable: true,
-            searchable: true,
             render: (value, item) => (
                 <div
                     className="flex items-center gap-2 cursor-pointer hover:underline text-primary"
@@ -76,22 +74,16 @@ const Inventory = () => {
             key: 'modelNumber',
             header: 'Model',
             accessor: (item) => item.modelNumber,
-            sortable: true,
-            searchable: true,
         },
         {
             key: 'manufacturer',
             header: 'Manufacturer',
             accessor: (item) => item.manufacturer,
-            sortable: true,
-            filterable: true,
         },
         {
             key: 'assetTag',
             header: 'Asset Tag',
             accessor: (item) => item.assetTag || '-',
-            sortable: true,
-            searchable: true,
             render: (value) => (
                 <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
                     {value}
@@ -102,15 +94,11 @@ const Inventory = () => {
             key: 'location',
             header: 'Location',
             accessor: (item) => item.location || '-',
-            sortable: true,
-            filterable: true,
         },
         {
             key: 'assignedUser',
             header: 'Assigned User',
             accessor: (item) => item.assignedUser || '',
-            sortable: true,
-            searchable: true,
             render: (value) => (
                 value ? (
                     <div className="flex items-center gap-1.5">
