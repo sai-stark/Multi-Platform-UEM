@@ -43,7 +43,7 @@ export function usePlatformValidation(
         if (urlPlatform && actualPlatform && urlPlatform.toLowerCase() !== actualPlatform.toLowerCase()) {
             hasRedirected.current = true;
             const correctPath = buildCorrectPath(actualPlatform.toLowerCase());
-            console.log(`Platform mismatch: URL has "${urlPlatform}", data has "${actualPlatform}". Redirecting to ${correctPath}`);
+            if (import.meta.env.DEV) { console.log(`Platform mismatch: URL has "${urlPlatform}", data has "${actualPlatform}". Redirecting to ${correctPath}`); }
             navigate(correctPath, { replace: true });
         }
     }, [urlPlatform, actualPlatform, isLoading, buildCorrectPath, navigate]);

@@ -30,7 +30,15 @@ import Repositories from "./pages/Repositories";
 import RepositoryDetails from "./pages/RepositoryDetails";
 import WebApplications from "./pages/WebApplications";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Separate component for routes so EnrollmentGuard can use router hooks
 function AppRoutes() {
@@ -55,7 +63,6 @@ function AppRoutes() {
         <Route path="/geofences/:id" element={<GeofenceEditor />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/inventory/new" element={<InventoryEditor />} />
-        <Route path="/inventory/:id" element={<InventoryEditor />} />
         <Route path="/inventory/:id" element={<InventoryEditor />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/profiles/:platform/:id" element={<ProfileDetails />} />

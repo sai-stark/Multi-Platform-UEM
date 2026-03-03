@@ -2,9 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { EnterpriseService } from '@/api/services/enterprise';
 import { AndroidEnterprise } from '@/types/models';
 
-// Debug mode: true in development, false in production --> temporaily i changes to true later this will be removed for Actual deployment to the Client.
-// const isDebugMode = import.meta.env.MODE !== 'production';
-const isDebugMode = true;
+const isDebugMode = import.meta.env.MODE !== 'production';
 
 interface EnterpriseContextType {
     enterprise: AndroidEnterprise | null;
@@ -28,10 +26,10 @@ export function EnterpriseProvider({ children }: { children: ReactNode }) {
     const [enterprise, setEnterprise] = useState<AndroidEnterprise | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSkipped, setIsSkipped] = useState(() => {
-        return localStorage.getItem(SKIP_STORAGE_KEY) === 'true';
+        try { return localStorage.getItem(SKIP_STORAGE_KEY) === 'true'; } catch { return false; }
     });
     const [isEnrolled, setIsEnrolled] = useState(() => {
-        return localStorage.getItem(ENROLLED_STORAGE_KEY) === 'true';
+        try { return localStorage.getItem(ENROLLED_STORAGE_KEY) === 'true'; } catch { return false; }
     });
 
     const checkEnrollmentStatus = async () => {

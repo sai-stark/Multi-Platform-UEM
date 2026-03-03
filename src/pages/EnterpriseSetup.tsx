@@ -125,7 +125,7 @@ export default function EnterpriseSetup() {
             }
         } catch (error: any) {
             // Any error (404, network, etc.) means no enterprise configured
-            console.log('Enterprise not found or error occurred, proceeding to setup', error?.response?.status || error?.message);
+            if (import.meta.env.DEV) { console.log('Enterprise not found or error occurred, proceeding to setup', error?.response?.status || error?.message); }
             setCurrentStep(2);
         } finally {
             setLoading(false);
@@ -188,7 +188,7 @@ export default function EnterpriseSetup() {
                 description: "Please complete the Google signup process.",
             });
         } catch (error) {
-            console.error('Failed to create signup', error);
+            if (import.meta.env.DEV) { console.error('Failed to create signup', error); }
             toast({
                 title: "Error",
                 description: getErrorMessage(error, "Failed to initiate enterprise signup. Please try again."),
@@ -224,7 +224,7 @@ export default function EnterpriseSetup() {
                 });
             }
         } catch (error) {
-            console.error('Finalization failed', error);
+            if (import.meta.env.DEV) { console.error('Finalization failed', error); }
             setFinalizationStatus('error');
             toast({
                 title: "Error",
@@ -249,7 +249,7 @@ export default function EnterpriseSetup() {
                 description: "Signup URL copied to clipboard.",
             });
         } catch (error) {
-            console.error('Failed to copy', error);
+            if (import.meta.env.DEV) { console.error('Failed to copy', error); }
         }
     };
 

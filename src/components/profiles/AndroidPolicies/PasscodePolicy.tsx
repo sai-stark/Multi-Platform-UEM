@@ -1,4 +1,14 @@
 import { policyAPI } from '@/api/services/Androidpolicies';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,6 +66,7 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.work);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const complexityOptions: { value: PasscodeComplexity; label: string; description: string }[] = [
         { value: 'LOW', label: t('passcodePolicy.complexity.low'), description: t('passcodePolicy.complexity.lowDesc') },
@@ -233,8 +244,6 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
     };
 
     const handleDelete = async () => {
-        if (!confirm(t('passcodePolicy.deleteConfirm'))) return;
-        
         setLoading(true);
         try {
             await policyAPI.deletePasscodePolicy(platform, profileId);
@@ -278,10 +287,29 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="destructive" size="sm" onClick={handleDelete}>
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {t('form.delete')}
-                    </Button>
+                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                        <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {t('form.delete')}
+                        </Button>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>{t('passcodePolicy.deleteConfirm')}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently remove the passcode policy from this profile. Devices may lose enforcement settings.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>{t('form.cancel')}</AlertDialogCancel>
+                                <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={handleDelete}
+                                >
+                                    {t('form.delete')}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                         <Edit className="w-4 h-4 mr-2" />
                         {t('form.edit')}

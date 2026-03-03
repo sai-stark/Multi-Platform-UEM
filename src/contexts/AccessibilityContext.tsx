@@ -23,7 +23,7 @@ const defaultSettings: AccessibilitySettings = {
   fontSize: 'medium',
   greyscale: false,
   underlineLinks: false,
-  darkMode: false,
+  darkMode: document.documentElement.classList.contains('dark'),
   highContrast: false,
 };
 
@@ -31,8 +31,12 @@ const AccessibilityContext = createContext<AccessibilityContextType | undefined>
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AccessibilitySettings>(() => {
-    const saved = localStorage.getItem('uem-accessibility');
-    return saved ? JSON.parse(saved) : defaultSettings;
+    try {
+      const saved = localStorage.getItem('uem-accessibility');
+      return saved ? JSON.parse(saved) : defaultSettings;
+    } catch {
+      return defaultSettings;
+    }
   });
 
   useEffect(() => {
@@ -94,6 +98,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.9;
       utterance.pitch = 1;

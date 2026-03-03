@@ -1,6 +1,16 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Card,
     CardContent
 } from "@/components/ui/card";
@@ -20,6 +30,8 @@ const Geofences = () => {
     const [geofences, setGeofences] = useState<Geofence[]>(mockGeofences);
     const navigate = useNavigate();
     const { toast } = useToast();
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
     const stats = {
         total: mockGeofences.length,
@@ -28,14 +40,13 @@ const Geofences = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this geofence? (Mock Delete)")) return;
-
         setGeofences(prev => prev.filter(g => g.id !== id));
+        toast({ title: "Success", description: "Geofence deleted successfully (Mock)" });
+    };
 
-        toast({
-            title: "Success",
-            description: "Geofence deleted successfully (Mock)",
-        });
+    const openDeleteDialog = (id: string) => {
+        setTargetDeleteId(id);
+        setShowDeleteDialog(true);
     };
 
     const columns: Column<Geofence>[] = [
@@ -108,7 +119,7 @@ const Geofences = () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem 
                 className="text-destructive"
-                onClick={() => handleDelete(geofence.id!)}
+                onClick={() => openDeleteDialog(geofence.id!)}
             >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
@@ -118,6 +129,25 @@ const Geofences = () => {
 
     return (
         <MainLayout>
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Geofence?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove the geofence. Any device policies using it may be affected.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => targetDeleteId && handleDelete(targetDeleteId)}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>

@@ -1,4 +1,14 @@
 import { PolicyService } from '@/api/services/IOSpolicies';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -29,6 +39,8 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
     const [formData, setFormData] = useState<Partial<NotificationPolicyType>>({});
     const [viewingPolicy, setViewingPolicy] = useState<NotificationPolicyType | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
     const handleViewPolicy = (policy: NotificationPolicyType) => {
         setViewingPolicy(policy);
@@ -107,7 +119,6 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
     };
 
     const handleDelete = async (policyId: string) => {
-        if (!confirm('Are you sure you want to delete this policy?')) return;
         try {
             await PolicyService.deleteNotificationPolicy(platform, profileId, policyId);
             toast({ title: 'Success', description: 'Policy deleted successfully' });
@@ -121,6 +132,16 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
                 variant: 'destructive',
             });
         }
+    };
+
+    const openDeleteDialog = (id: string) => {
+        setTargetDeleteId(id);
+        setShowDeleteDialog(true);
+    };
+
+    const confirmDelete = async () => {
+        if (targetDeleteId) await handleDelete(targetDeleteId);
+        setTargetDeleteId(null);
     };
 
     const FeatureItem = ({ icon: Icon, label, value, enabled }: { icon: any, label: string, value?: string, enabled?: boolean }) => (
@@ -177,7 +198,7 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
                                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleOpenDialog(policy); }}>
                                         <Edit className="w-4 h-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(policy.id!); }}>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); openDeleteDialog(policy.id!); }}>
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </div>
@@ -191,6 +212,27 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
                     )}
                 </div>
             )}
+
+            {/* Edit/Create Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Notification Policy?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove this notification policy from the profile.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={confirmDelete}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Edit/Create Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

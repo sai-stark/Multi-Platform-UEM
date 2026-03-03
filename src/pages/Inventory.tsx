@@ -1,6 +1,16 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Card,
     CardContent
 } from "@/components/ui/card";
@@ -20,6 +30,8 @@ const Inventory = () => {
     const [devices, setDevices] = useState<InventoryDevice[]>(mockInventory);
     const navigate = useNavigate();
     const { toast } = useToast();
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
     const stats = {
         total: mockInventory.length,
@@ -28,14 +40,13 @@ const Inventory = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this device? (Mock Delete)")) return;
-
         setDevices(prev => prev.filter(d => d.id !== id));
+        toast({ title: "Success", description: "Device deleted successfully (Mock)" });
+    };
 
-        toast({
-            title: "Success",
-            description: "Device deleted successfully (Mock)",
-        });
+    const openDeleteDialog = (id: string) => {
+        setTargetDeleteId(id);
+        setShowDeleteDialog(true);
     };
 
     // Extract unique manufacturers for filter
@@ -122,7 +133,7 @@ const Inventory = () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem 
                 className="text-destructive"
-                onClick={() => handleDelete(device.id!)}
+                onClick={() => openDeleteDialog(device.id!)}
             >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
@@ -132,6 +143,25 @@ const Inventory = () => {
 
     return (
         <MainLayout>
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Device?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove the device from inventory. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => targetDeleteId && handleDelete(targetDeleteId)}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>

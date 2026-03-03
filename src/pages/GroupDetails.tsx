@@ -5,6 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -60,6 +70,8 @@ export default function GroupDetails() {
     const [availableDevices, setAvailableDevices] = useState<BriefDeviceInfo[]>([]);
     const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+    const [targetRemoveDeviceId, setTargetRemoveDeviceId] = useState<string | null>(null);
 
     const fetchGroupData = async () => {
         setLoading(true);
@@ -118,23 +130,15 @@ export default function GroupDetails() {
     };
 
     const handleRemoveDevice = async (deviceId: string) => {
-        if (confirm("Remove this device from the group?")) {
-            setDevices(devices.filter(d => d.id !== deviceId));
-            // Add back to available for mock
-            const removed = devices.find(d => d.id === deviceId);
-            if (removed) setAvailableDevices([...availableDevices, removed]);
+        setDevices(devices.filter(d => d.id !== deviceId));
+        const removed = devices.find(d => d.id === deviceId);
+        if (removed) setAvailableDevices([...availableDevices, removed]);
+        toast({ title: "Device Removed", description: "Device has been removed from the group." });
+    };
 
-            toast({
-                title: "Device Removed",
-                description: "Device has been removed from the group.",
-            });
-            /*
-             try {
-                 await GroupService.removeDevicesFromGroup(id!, [deviceId]);
-                 fetchGroupData();
-             } catch (error) { ... }
-             */
-        }
+    const openRemoveDialog = (deviceId: string) => {
+        setTargetRemoveDeviceId(deviceId);
+        setShowRemoveDialog(true);
     };
 
     const getPlatformIcon = (name: string) => {
@@ -174,6 +178,25 @@ export default function GroupDetails() {
 
     return (
         <MainLayout>
+            <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remove device from group?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            The device will be unassigned from this group. It will not be deleted from the system.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => targetRemoveDeviceId && handleRemoveDevice(targetRemoveDeviceId)}
+                        >
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="space-y-6">
                 {/* Header */}
                 <Button variant="ghost" size="sm" onClick={() => navigate('/groups')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
@@ -300,7 +323,7 @@ export default function GroupDetails() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={() => handleRemoveDevice(device.id)}
+                                                    onClick={() => openRemoveDialog(device.id)}
                                                     title="Remove from group"
                                                 >
                                                     <X className="w-4 h-4" />

@@ -3,6 +3,16 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Column, DataTable } from '@/components/ui/data-table';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
@@ -111,6 +121,8 @@ const Devices = () => {
   const [platformFilter, setPlatformFilter] = useState<string>(urlPlatform && platformConfig[urlPlatform] ? urlPlatform : "all");
   const [data, setData] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
+  const [targetUnenrollDevice, setTargetUnenrollDevice] = useState<Device | null>(null);
 
   const [stats, setStats] = useState({
     total: 0,
@@ -242,25 +254,19 @@ const Devices = () => {
   };
 
   const handleUnenroll = async (device: Device) => {
-    if (!confirm(`Are you sure you want to unenroll ${device.name}? This action cannot be undone.`)) {
-      return;
-    }
-
     try {
       await DeviceService.deleteDevice(device.platform as Platform, device.id);
-      toast({
-        title: "Success",
-        description: "Device unenrolled successfully.",
-      });
-      fetchData(); // Refresh list
+      toast({ title: "Success", description: "Device unenrolled successfully." });
+      fetchData();
     } catch (error) {
       console.error("Failed to unenroll device", error);
-      toast({
-        title: "Error",
-        description: "Failed to unenroll device.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to unenroll device.", variant: "destructive" });
     }
+  };
+
+  const openUnenrollDialog = (device: Device) => {
+    setTargetUnenrollDevice(device);
+    setShowUnenrollDialog(true);
   };
 
   const columns: Column<Device>[] = [
@@ -417,7 +423,7 @@ const Devices = () => {
       </DropdownMenuItem>
       <DropdownMenuItem
         className="text-destructive"
-        onClick={() => handleUnenroll(device)}
+        onClick={() => openUnenrollDialog(device)}
       >
         Unenroll Device
       </DropdownMenuItem>
@@ -426,6 +432,25 @@ const Devices = () => {
 
   return (
     <MainLayout>
+      <AlertDialog open={showUnenrollDialog} onOpenChange={setShowUnenrollDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unenroll {targetUnenrollDevice?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The device will be removed from management and all corporate policies will be wiped.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => targetUnenrollDevice && handleUnenroll(targetUnenrollDevice)}
+            >
+              Unenroll
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="space-y-6">
         {/* Page Header */}
         <header className="flex items-center justify-between">

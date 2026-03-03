@@ -1,6 +1,16 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -50,6 +60,8 @@ export default function Groups() {
     const [loading, setLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [newGroup, setNewGroup] = useState({ name: '', description: '' });
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [targetDeleteGroup, setTargetDeleteGroup] = useState<Group | null>(null);
 
     const fetchGroups = async () => {
         setLoading(true);
@@ -86,14 +98,17 @@ export default function Groups() {
     };
 
     const handleDeleteGroup = async (group: Group) => {
-        if (confirm(`Are you sure you want to delete "${group.name}"?`)) {
-            // Mock delete
-            setGroups(groups.filter(g => g.id !== group.id));
-            toast({
-                title: "Group Deleted",
-                description: `Group "${group.name}" has been removed.`,
-            });
-        }
+        // Mock delete
+        setGroups(groups.filter(g => g.id !== group.id));
+        toast({
+            title: "Group Deleted",
+            description: `Group "${group.name}" has been removed.`,
+        });
+    };
+
+    const openDeleteDialog = (group: Group) => {
+        setTargetDeleteGroup(group);
+        setShowDeleteDialog(true);
     };
 
     // Stats
@@ -162,7 +177,7 @@ export default function Groups() {
                 Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteGroup(group)}>
+            <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(group)}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete
             </DropdownMenuItem>
@@ -171,6 +186,25 @@ export default function Groups() {
 
     return (
         <MainLayout>
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete "{targetDeleteGroup?.name}"?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action is irreversible. All devices in this group will be unassigned.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => targetDeleteGroup && handleDeleteGroup(targetDeleteGroup)}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="space-y-6">
                 {/* Page Header */}
                 <header className="flex items-center justify-between">

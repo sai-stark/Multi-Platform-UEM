@@ -114,12 +114,12 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
         const data = new TextEncoder().encode(payload);
         const isReliable = action !== 'MOVE'; // Use reliable UDP for discrete actions, lossy for continuous drags
 
-        console.log(`Sending pointer event: ${payload}`);
+        if (import.meta.env.DEV) { console.log(`Sending pointer event: ${payload}`); }
 
         try {
             localParticipant.publishData(data, { reliable: isReliable });
         } catch (err) {
-            console.error('Failed to send control payload:', err);
+            if (import.meta.env.DEV) { console.error('Failed to send control payload:', err); }
         }
     };
 

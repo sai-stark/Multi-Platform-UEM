@@ -54,48 +54,48 @@ export const exportToPDF = (
       const opacity = 0.12; // Slightly less transparent for better visibility
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      
+
       // Create a diagonal grid pattern
       const spacing = 80; // Distance between watermarks
       const offsetX = 30; // Starting X offset
       const offsetY = 30; // Starting Y offset
-      
+
       // Use GState for opacity if available
       if (typeof pdf.setGState === 'function' && typeof GState === 'function') {
         pdf.setGState(new GState({ opacity })); // Set opacity
         pdf.setTextColor(100, 100, 100); // Gray
         pdf.setFontSize(fontSize);
-        
+
         // Create diagonal pattern from top-left to bottom-right
         for (let y = offsetY; y < pageHeight - 40; y += spacing) {
           for (let x = offsetX; x < pageWidth - 60; x += spacing) {
             pdf.text(watermarkText, x, y, { angle: 45 });
           }
         }
-        
+
         // Create diagonal pattern from top-right to bottom-left (offset)
-        for (let y = offsetY + spacing/2; y < pageHeight - 40; y += spacing) {
-          for (let x = offsetX + spacing/2; x < pageWidth - 60; x += spacing) {
+        for (let y = offsetY + spacing / 2; y < pageHeight - 40; y += spacing) {
+          for (let x = offsetX + spacing / 2; x < pageWidth - 60; x += spacing) {
             pdf.text(watermarkText, x, y, { angle: -45 });
           }
         }
-        
+
         pdf.setGState(new GState({ opacity: 1 })); // Reset opacity
       } else {
         // Fallback: no opacity, just rotated text
         pdf.setTextColor(180, 180, 180);
         pdf.setFontSize(fontSize);
-        
+
         // Create diagonal pattern from top-left to bottom-right
         for (let y = offsetY; y < pageHeight - 40; y += spacing) {
           for (let x = offsetX; x < pageWidth - 60; x += spacing) {
             pdf.text(watermarkText, x, y, { angle: 45 });
           }
         }
-        
+
         // Create diagonal pattern from top-right to bottom-left (offset)
-        for (let y = offsetY + spacing/2; y < pageHeight - 40; y += spacing) {
-          for (let x = offsetX + spacing/2; x < pageWidth - 60; x += spacing) {
+        for (let y = offsetY + spacing / 2; y < pageHeight - 40; y += spacing) {
+          for (let x = offsetX + spacing / 2; x < pageWidth - 60; x += spacing) {
             pdf.text(watermarkText, x, y, { angle: -45 });
           }
         }
@@ -114,7 +114,7 @@ export const exportToCSV = (
 ) => {
   // Create CSV content
   const csvHeaders = headers.join(',');
-  const csvRows = data.map(item => 
+  const csvRows = data.map(item =>
     headers.map(header => {
       let value = '';
       if (dataMapping && dataMapping[header]) {
@@ -126,12 +126,16 @@ export const exportToCSV = (
       if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
         value = `"${value.replace(/"/g, '""')}"`;
       }
+      // Sanitize formula injection (cells starting with =, +, -, @)
+      if (typeof value === 'string' && /^[=+\-@]/.test(value)) {
+        value = `\t${value}`;
+      }
       return value;
     }).join(',')
   );
-  
+
   const csvContent = [csvHeaders, ...csvRows].join('\n');
-  
+
   // Create and download file
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');

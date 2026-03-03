@@ -147,7 +147,8 @@ const GeofenceEditor = () => {
                 payload.radius = 0;
             }
 
-            console.log("Mock Save Payload:", payload);
+            if (import.meta.env.DEV) { console.log("Mock Save Payload:", payload); }
+
 
             toast({
                 title: isEditing ? "Updated (Mock)" : "Created (Mock)",

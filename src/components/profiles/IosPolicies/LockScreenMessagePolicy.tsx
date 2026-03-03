@@ -1,4 +1,14 @@
 import { PolicyService } from '@/api/services/IOSpolicies';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -25,6 +35,7 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [formData, setFormData] = useState<Partial<LockScreenMessagePolicyType>>({});
 
     const fetchPolicy = async () => {
@@ -97,7 +108,6 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
     };
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to remove the lock screen message configuration?')) return;
         try {
             await PolicyService.deleteLockScreenMessage(platform, profileId);
             toast({ title: 'Success', description: 'Lock Screen Message removed successfully' });
@@ -155,9 +165,28 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
                                 <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleOpenDialog(policy); }}>
                                     <Edit className="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(); }}>
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(true); }}>
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Remove Lock Screen Message?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will permanently remove the lock screen message configuration from this profile.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                onClick={handleDelete}
+                                            >
+                                                Remove
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </CardContent>
                     </Card>
