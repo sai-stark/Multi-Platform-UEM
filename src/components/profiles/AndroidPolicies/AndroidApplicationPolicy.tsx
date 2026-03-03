@@ -26,15 +26,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import {
     Tooltip,
     TooltipContent,
@@ -48,13 +41,13 @@ import { Platform } from '@/types/models';
 import { AndroidApplicationPolicy as AndroidApplicationPolicyType } from '@/types/policy';
 import {
     AlertTriangle,
-    ChevronDown,
     ChevronRight,
-    Edit,
     Grid,
     Loader2,
+    Package,
     Plus,
     Save,
+    Search,
     Settings2,
     Shield,
     Trash2,
@@ -126,9 +119,10 @@ export function AndroidApplicationPolicy({
     );
     const [availableApps, setAvailableApps] = useState<Application[]>([]);
     const [changedPolicies, setChangedPolicies] = useState<ExtendedPolicy[]>([]);
-    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [listSearchQuery, setListSearchQuery] = useState('');
 
     // Modal states
     const [openAddModal, setOpenAddModal] = useState(false);
@@ -159,6 +153,13 @@ export function AndroidApplicationPolicy({
         fetchApplications();
         loadExistingPolicies();
     }, [platform, profileId]);
+
+    // Auto-select first policy when policies load
+    useEffect(() => {
+        if (policies.length > 0 && !selectedPolicyId) {
+            setSelectedPolicyId(policies[0].id);
+        }
+    }, [policies]);
 
     const fetchApplications = async () => {
         try {
@@ -225,6 +226,14 @@ export function AndroidApplicationPolicy({
         return { name: 'Unknown', version: 'Unknown', packageName: '' };
     };
 
+    const getAppInfo = (policy: ExtendedPolicy) => ({
+        name: policy.applicationName || policy.displayName || getAppDisplayInfo(policy.applicationVersionId).name,
+        version: policy.applicationVersion || policy.displayVersion || getAppDisplayInfo(policy.applicationVersionId).version,
+        packageName: policy.packageName || getAppDisplayInfo(policy.applicationVersionId).packageName,
+    });
+
+    const selectedPolicy = policies.find((p) => p.id === selectedPolicyId) || null;
+
     // ====================================================================
     // Handlers
     // ====================================================================
@@ -233,14 +242,6 @@ export function AndroidApplicationPolicy({
         setSelectedVersion('');
         setSelectedVersionId('');
         setSelectedInstallType('INSTALL_REMOVABLE');
-    };
-
-    const toggleRowExpansion = (id: string) => {
-        setExpandedRows((prev) => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
     };
 
     const handleFieldChange = (
@@ -294,6 +295,7 @@ export function AndroidApplicationPolicy({
 
         setChangedPolicies((prev) => [...prev, newPolicy]);
         setPolicies((prev) => [...prev, newPolicy]);
+        setSelectedPolicyId(newPolicy.id);
         setOpenAddModal(false);
         resetAddModalState();
     };
@@ -368,6 +370,9 @@ export function AndroidApplicationPolicy({
             }
             setPolicies((prev) => prev.filter((p) => p.id !== appToDelete.id));
             setChangedPolicies((prev) => prev.filter((p) => p.id !== appToDelete.id));
+            if (selectedPolicyId === appToDelete.id) {
+                setSelectedPolicyId(null);
+            }
             toast({ title: 'Success', description: 'Application policy deleted.' });
             if (onSave) onSave();
         } catch (error) {
@@ -430,13 +435,26 @@ export function AndroidApplicationPolicy({
     const availableAppNames = getAvailableAppNames();
     const hasChanges = changedPolicies.length > 0;
 
+    // Filter the list
+    const filteredPolicies = listSearchQuery.trim()
+        ? policies.filter((p) => {
+              const info = getAppInfo(p);
+              const q = listSearchQuery.toLowerCase();
+              return (
+                  info.name.toLowerCase().includes(q) ||
+                  info.packageName.toLowerCase().includes(q) ||
+                  info.version.toLowerCase().includes(q)
+              );
+          })
+        : policies;
+
     // ====================================================================
     // Render
     // ====================================================================
     return (
-        <div className="space-y-6 max-w-5xl mt-6">
+        <div className="flex flex-col h-[78vh]">
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b">
+            <div className="flex items-center justify-between pb-4 border-b shrink-0 pr-8">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-500/10 rounded-full">
                         <Grid className="w-6 h-6 text-blue-500" />
@@ -459,274 +477,151 @@ export function AndroidApplicationPolicy({
 
             {/* No apps warning */}
             {availableAppNames.length === 0 && policies.length === 0 && !isFetching && (
-                <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                        No applications available. Please add applications first.
-                    </AlertDescription>
-                </Alert>
+                <div className="flex-1 flex items-center justify-center">
+                    <Alert className="max-w-md">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            No applications available. Please add applications first.
+                        </AlertDescription>
+                    </Alert>
+                </div>
             )}
 
             {/* Loading state */}
             {isFetching && (
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-10">
+                <div className="flex-1 flex items-center justify-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading existing policies...
                 </div>
             )}
 
-            {/* Policies Table */}
-            {policies.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[40px]" />
-                                <TableHead className="w-[220px]">Application</TableHead>
-                                <TableHead className="w-[160px]">Install Type</TableHead>
-                                <TableHead className="w-[160px]">Auto Update</TableHead>
-                                <TableHead className="w-[140px]">Permission</TableHead>
-                                <TableHead className="w-[100px] text-center">Status</TableHead>
-                                <TableHead className="w-[80px] text-center">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {policies.map((policy) => {
-                                const appInfo = {
-                                    name: policy.applicationName || policy.displayName || getAppDisplayInfo(policy.applicationVersionId).name,
-                                    version: policy.applicationVersion || policy.displayVersion || getAppDisplayInfo(policy.applicationVersionId).version,
-                                    packageName: policy.packageName || getAppDisplayInfo(policy.applicationVersionId).packageName,
-                                };
-                                const isExpanded = expandedRows.has(policy.id);
-                                const installBadge = getInstallTypeBadge(policy.installType || 'AVAILABLE');
+            {/* Master-Detail Layout */}
+            {policies.length > 0 && !isFetching && (
+                <div className="flex flex-1 min-h-0 mt-4 gap-0 border rounded-lg overflow-hidden">
+                    {/* Left Panel — App List */}
+                    <div className="w-[280px] shrink-0 border-r bg-muted/20 flex flex-col">
+                        {/* Search */}
+                        <div className="p-3 border-b">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search apps..."
+                                    value={listSearchQuery}
+                                    onChange={(e) => setListSearchQuery(e.target.value)}
+                                    className="pl-8 h-8 text-xs bg-background"
+                                />
+                            </div>
+                        </div>
+
+                        {/* App List */}
+                        <div className="flex-1 overflow-y-auto">
+                            {filteredPolicies.map((policy) => {
+                                const info = getAppInfo(policy);
+                                const isSelected = selectedPolicyId === policy.id;
+                                const badge = getInstallTypeBadge(policy.installType || 'AVAILABLE');
 
                                 return (
-                                    <React.Fragment key={policy.id}>
-                                        {/* Main Row */}
-                                        <TableRow className={cn(isExpanded && 'bg-muted/30')}>
-                                            <TableCell className="px-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7"
-                                                    onClick={() => toggleRowExpansion(policy.id)}
-                                                >
-                                                    {isExpanded
-                                                        ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                                        : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                                    }
-                                                </Button>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>
-                                                    <p className="font-medium text-sm">{appInfo.name}</p>
-                                                    <p className="text-xs text-muted-foreground">v{appInfo.version}</p>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    value={policy.installType || 'AVAILABLE'}
-                                                    onValueChange={(v) => handleFieldChange(policy.id, 'installType', v)}
-                                                >
-                                                    <SelectTrigger className="h-8 text-xs w-[140px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {INSTALL_TYPES.map((type) => (
-                                                            <SelectItem key={type} value={type} className="text-xs">
-                                                                {formatEnumLabel(type)}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    value={policy.autoUpdateMode || 'POSTPONE'}
-                                                    onValueChange={(v) => handleFieldChange(policy.id, 'autoUpdateMode', v)}
-                                                >
-                                                    <SelectTrigger className="h-8 text-xs w-[140px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {AUTO_UPDATE_MODES.map((mode) => (
-                                                            <SelectItem key={mode} value={mode} className="text-xs">
-                                                                {formatEnumLabel(mode)}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    value={policy.defaultPermission || 'PROMPT'}
-                                                    onValueChange={(v) => handleFieldChange(policy.id, 'defaultPermission', v)}
-                                                >
-                                                    <SelectTrigger className="h-8 text-xs w-[120px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {PERMISSION_GRANTS.map((perm) => (
-                                                            <SelectItem key={perm} value={perm} className="text-xs">
-                                                                {formatEnumLabel(perm)}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {policy.isNew ? (
-                                                    <Badge variant="secondary">New</Badge>
-                                                ) : (
-                                                    <Badge variant="outline">Saved</Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                                                onClick={() => handleDeleteApplication(policy)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>Delete</TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            </TableCell>
-                                        </TableRow>
-
-                                        {/* Expanded Detail Row */}
-                                        {isExpanded && (
-                                            <TableRow className="bg-muted/10 hover:bg-muted/10">
-                                                <TableCell colSpan={7} className="border-t border-dashed p-0">
-                                                    <div className="px-6 py-4 pl-12">
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4">
-                                                            {/* Cross-Profile Communication */}
-                                                            <div className="space-y-1.5">
-                                                                <Label className="text-xs text-muted-foreground">Cross-Profile</Label>
-                                                                <Select
-                                                                    value={policy.communicateWithPersonalApp || 'DENY'}
-                                                                    onValueChange={(v) => handleFieldChange(policy.id, 'communicateWithPersonalApp', v)}
-                                                                >
-                                                                    <SelectTrigger className="h-8 text-xs">
-                                                                        <SelectValue />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {CROSS_PROFILE_OPTIONS.map((opt) => (
-                                                                            <SelectItem key={opt} value={opt} className="text-xs">
-                                                                                {formatEnumLabel(opt)}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </div>
-
-                                                            {/* Minimum Version Code */}
-                                                            <div className="space-y-1.5">
-                                                                <Label className="text-xs text-muted-foreground">Min Version Code</Label>
-                                                                <Input
-                                                                    type="number"
-                                                                    min={0}
-                                                                    placeholder="Any"
-                                                                    value={policy.minimumVersionCode ?? ''}
-                                                                    onChange={(e) =>
-                                                                        handleFieldChange(
-                                                                            policy.id,
-                                                                            'minimumVersionCode',
-                                                                            e.target.value ? Number(e.target.value) : undefined
-                                                                        )
-                                                                    }
-                                                                    className="h-8 text-xs w-24"
-                                                                />
-                                                            </div>
-
-                                                            {/* Security Toggles */}
-                                                            <div className="space-y-2.5 col-span-2">
-                                                                <Label className="text-xs text-muted-foreground block">Security & Capabilities</Label>
-                                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                                    <label className="flex items-center gap-2 text-xs">
-                                                                        <Switch
-                                                                            checked={policy.disabled ?? false}
-                                                                            onCheckedChange={(v) => handleFieldChange(policy.id, 'disabled', v)}
-                                                                            className="scale-90"
-                                                                        />
-                                                                        <span>Disabled</span>
-                                                                    </label>
-                                                                    <label className="flex items-center gap-2 text-xs">
-                                                                        <Switch
-                                                                            checked={policy.isCredentialProvider ?? false}
-                                                                            onCheckedChange={(v) => handleFieldChange(policy.id, 'isCredentialProvider', v)}
-                                                                            className="scale-90"
-                                                                        />
-                                                                        <span>Credential Provider</span>
-                                                                    </label>
-                                                                    <label className="flex items-center gap-2 text-xs">
-                                                                        <Switch
-                                                                            checked={policy.canInstallCertificate ?? false}
-                                                                            onCheckedChange={(v) => handleFieldChange(policy.id, 'canInstallCertificate', v)}
-                                                                            className="scale-90"
-                                                                        />
-                                                                        <span>Install Certificates</span>
-                                                                    </label>
-                                                                    <label className="flex items-center gap-2 text-xs">
-                                                                        <Switch
-                                                                            checked={policy.canAccessSecurityLogs ?? false}
-                                                                            onCheckedChange={(v) => handleFieldChange(policy.id, 'canAccessSecurityLogs', v)}
-                                                                            className="scale-90"
-                                                                        />
-                                                                        <span>Access Security Logs</span>
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Set Permissions button */}
-                                                        <div className="mt-4 flex justify-end">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="secondary"
-                                                                onClick={() => openPermissionDialog(policy)}
-                                                            >
-                                                                <Settings2 className="h-4 w-4 mr-2" />
-                                                                Set Permissions
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
+                                    <div
+                                        key={policy.id}
+                                        className={cn(
+                                            'group flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-border/50 transition-colors',
+                                            isSelected
+                                                ? 'bg-primary/8 border-l-2 border-l-primary'
+                                                : 'hover:bg-muted/50 border-l-2 border-l-transparent'
                                         )}
-                                    </React.Fragment>
+                                        onClick={() => setSelectedPolicyId(policy.id)}
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                                <p className="font-medium text-sm truncate">{info.name}</p>
+                                                {policy.isNew && (
+                                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">New</Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground truncate mt-0.5">v{info.version}</p>
+                                            <Badge variant={badge.variant} className="text-[10px] px-1.5 py-0 mt-1">
+                                                {badge.label}
+                                            </Badge>
+                                        </div>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive shrink-0"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteApplication(policy);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>Delete</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
                                 );
                             })}
-                        </TableBody>
-                    </Table>
+
+                            {filteredPolicies.length === 0 && listSearchQuery.trim() && (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Search className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                                    <p className="text-xs">No apps match "{listSearchQuery}"</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* App count */}
+                        <div className="px-3 py-2 border-t text-[11px] text-muted-foreground bg-muted/30">
+                            {policies.length} application{policies.length !== 1 ? 's' : ''}
+                        </div>
+                    </div>
+
+                    {/* Right Panel — Detail Form */}
+                    <div className="flex-1 flex flex-col min-h-0">
+                        {selectedPolicy ? (
+                            <DetailPanel
+                                policy={selectedPolicy}
+                                appInfo={getAppInfo(selectedPolicy)}
+                                onFieldChange={handleFieldChange}
+                                onOpenPermissions={() => openPermissionDialog(selectedPolicy)}
+                            />
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                                <div className="text-center">
+                                    <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                                    <p className="text-sm font-medium">Select an application</p>
+                                    <p className="text-xs mt-1">Choose an app from the list to view and edit its policy</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
             {/* Empty state - apps exist but none added */}
             {policies.length === 0 && availableAppNames.length > 0 && !isFetching && (
-                <Card className="border-dashed">
-                    <CardContent className="py-10 text-center">
-                        <Grid className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                        <h4 className="font-medium mb-2">No application policies configured</h4>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Add applications to configure install type, updates, and permissions.
-                        </p>
-                        <Button variant="outline" onClick={() => setOpenAddModal(true)}>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Application
-                        </Button>
-                    </CardContent>
-                </Card>
+                <div className="flex-1 flex items-center justify-center">
+                    <Card className="border-dashed max-w-sm">
+                        <CardContent className="py-10 text-center">
+                            <Grid className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                            <h4 className="font-medium mb-2">No application policies configured</h4>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Add applications to configure install type, updates, and permissions.
+                            </p>
+                            <Button variant="outline" onClick={() => setOpenAddModal(true)}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Application
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* Action buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
+            <div className="flex justify-end gap-3 pt-4 border-t shrink-0">
                 <Button variant="outline" onClick={onCancel} disabled={loading}>
                     Cancel
                 </Button>
@@ -902,29 +797,29 @@ export function AndroidApplicationPolicy({
                 open={openPermissionDialogFor !== null}
                 onOpenChange={(open) => !open && setOpenPermissionDialogFor(null)}
             >
-                <DialogContent className="sm:max-w-[700px]">
+                <DialogContent className="max-w-[80vw]">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
+                        <DialogTitle className="flex items-center gap-2 text-lg">
                             <Shield className="h-5 w-5" />
                             Set Application Permissions
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-sm">
                             Select how each permission should be handled for this app
                             (Prompt / Grant / Deny). Only changed entries will be sent on save.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="max-h-[60vh] overflow-auto">
+                    <div className="max-h-[65vh] overflow-auto">
                         {permissionLoading ? (
-                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-6">
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                            <div className="flex items-center justify-center gap-2 text-base text-muted-foreground py-6">
+                                <Loader2 className="w-5 h-5 animate-spin" />
                                 Loading permissions...
                             </div>
                         ) : permissionList.length === 0 ? (
-                            <div className="text-sm text-muted-foreground py-4">
+                            <div className="text-base text-muted-foreground py-4">
                                 No permissions available for this application.
                             </div>
                         ) : (
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                                 {permissionList.map((p) => {
                                     // Format raw permission ID into a readable label
                                     const displayName = p.name || p.permissionId
@@ -937,19 +832,19 @@ export function AndroidApplicationPolicy({
                                     return (
                                         <div
                                             key={p.permissionId}
-                                            className="flex items-center gap-3 border rounded-md px-3 py-2.5"
+                                            className="flex items-center gap-4 border rounded-lg px-4 py-3"
                                         >
                                             <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-medium truncate" title={p.permissionId}>
+                                                <div className="text-base font-medium" title={p.permissionId}>
                                                     {displayName}
                                                 </div>
                                                 {p.description && (
-                                                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                                    <div className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                                         {p.description}
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="w-[140px] shrink-0">
+                                            <div className="w-[160px] shrink-0">
                                                 <Select
                                                     value={permissionSelections[p.permissionId] || ''}
                                                     onValueChange={(v) =>
@@ -959,12 +854,12 @@ export function AndroidApplicationPolicy({
                                                         }))
                                                     }
                                                 >
-                                                    <SelectTrigger className="h-8 text-xs">
+                                                    <SelectTrigger className="h-9 text-sm">
                                                         <SelectValue placeholder="Select" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {PERMISSION_GRANTS.map((perm) => (
-                                                            <SelectItem key={perm} value={perm}>
+                                                            <SelectItem key={perm} value={perm} className="text-sm">
                                                                 {formatEnumLabel(perm)}
                                                             </SelectItem>
                                                         ))}
@@ -990,6 +885,220 @@ export function AndroidApplicationPolicy({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+        </div>
+    );
+}
+
+// ====================================================================
+// Detail Panel Sub-component
+// ====================================================================
+interface DetailPanelProps {
+    policy: ExtendedPolicy;
+    appInfo: { name: string; version: string; packageName: string };
+    onFieldChange: (id: string, field: keyof AndroidApplicationPolicyType, value: boolean | string | number | undefined) => void;
+    onOpenPermissions: () => void;
+}
+
+function DetailPanel({ policy, appInfo, onFieldChange, onOpenPermissions }: DetailPanelProps) {
+    return (
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* App Info Header */}
+            <div className="min-w-0">
+                <h3 className="text-lg font-semibold truncate">{appInfo.name}</h3>
+                <p className="text-sm text-muted-foreground truncate">{appInfo.packageName}</p>
+                <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">v{appInfo.version}</Badge>
+                    {policy.isNew && <Badge variant="secondary" className="text-xs">New</Badge>}
+                </div>
+            </div>
+
+            <Separator />
+
+            {/* Installation Section */}
+            <section className="space-y-4">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Installation</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <Label className="text-sm">Install Type</Label>
+                        <Select
+                            value={policy.installType || 'AVAILABLE'}
+                            onValueChange={(v) => onFieldChange(policy.id, 'installType', v)}
+                        >
+                            <SelectTrigger className="h-9">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {INSTALL_TYPES.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                        {formatEnumLabel(type)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm">Auto Update</Label>
+                        <Select
+                            value={policy.autoUpdateMode || 'POSTPONE'}
+                            onValueChange={(v) => onFieldChange(policy.id, 'autoUpdateMode', v)}
+                        >
+                            <SelectTrigger className="h-9">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {AUTO_UPDATE_MODES.map((mode) => (
+                                    <SelectItem key={mode} value={mode}>
+                                        {formatEnumLabel(mode)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm">Min Version Code</Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            placeholder="Any"
+                            value={policy.minimumVersionCode ?? ''}
+                            onChange={(e) =>
+                                onFieldChange(
+                                    policy.id,
+                                    'minimumVersionCode',
+                                    e.target.value ? Number(e.target.value) : undefined
+                                )
+                            }
+                            className="h-9"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <Separator />
+
+            {/* Permissions Section */}
+            <section className="space-y-4">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Permissions</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label className="text-sm">Default Permission</Label>
+                        <Select
+                            value={policy.defaultPermission || 'PROMPT'}
+                            onValueChange={(v) => onFieldChange(policy.id, 'defaultPermission', v)}
+                        >
+                            <SelectTrigger className="h-9">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {PERMISSION_GRANTS.map((perm) => (
+                                    <SelectItem key={perm} value={perm}>
+                                        {formatEnumLabel(perm)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm">Cross-Profile</Label>
+                        <Select
+                            value={policy.communicateWithPersonalApp || 'DENY'}
+                            onValueChange={(v) => onFieldChange(policy.id, 'communicateWithPersonalApp', v)}
+                        >
+                            <SelectTrigger className="h-9">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {CROSS_PROFILE_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt} value={opt}>
+                                        {formatEnumLabel(opt)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={onOpenPermissions}
+                    className="mt-2"
+                >
+                    <Settings2 className="h-4 w-4 mr-2" />
+                    Set Individual Permissions
+                </Button>
+            </section>
+
+            <Separator />
+
+            {/* Security & Capabilities Section */}
+            <section className="space-y-4">
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Security & Capabilities</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => onFieldChange(policy.id, 'disabled', !(policy.disabled ?? false))}
+                    >
+                        <div>
+                            <span className="text-sm font-medium">Disabled</span>
+                            <p className="text-xs text-muted-foreground">Prevent the app from running</p>
+                        </div>
+                        <Switch
+                            checked={policy.disabled ?? false}
+                            onCheckedChange={(v) => onFieldChange(policy.id, 'disabled', v)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+
+                    <div
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => onFieldChange(policy.id, 'isCredentialProvider', !(policy.isCredentialProvider ?? false))}
+                    >
+                        <div>
+                            <span className="text-sm font-medium">Credential Provider</span>
+                            <p className="text-xs text-muted-foreground">Allow as credential provider</p>
+                        </div>
+                        <Switch
+                            checked={policy.isCredentialProvider ?? false}
+                            onCheckedChange={(v) => onFieldChange(policy.id, 'isCredentialProvider', v)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+
+                    <div
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => onFieldChange(policy.id, 'canInstallCertificate', !(policy.canInstallCertificate ?? false))}
+                    >
+                        <div>
+                            <span className="text-sm font-medium">Install Certificates</span>
+                            <p className="text-xs text-muted-foreground">Allow installing certificates</p>
+                        </div>
+                        <Switch
+                            checked={policy.canInstallCertificate ?? false}
+                            onCheckedChange={(v) => onFieldChange(policy.id, 'canInstallCertificate', v)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+
+                    <div
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => onFieldChange(policy.id, 'canAccessSecurityLogs', !(policy.canAccessSecurityLogs ?? false))}
+                    >
+                        <div>
+                            <span className="text-sm font-medium">Access Security Logs</span>
+                            <p className="text-xs text-muted-foreground">Company-owned devices only</p>
+                        </div>
+                        <Switch
+                            checked={policy.canAccessSecurityLogs ?? false}
+                            onCheckedChange={(v) => onFieldChange(policy.id, 'canAccessSecurityLogs', v)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }

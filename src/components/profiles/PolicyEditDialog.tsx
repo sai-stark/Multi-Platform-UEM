@@ -5,6 +5,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
 import {
     AndroidProfileRestrictions,
@@ -189,7 +190,10 @@ export function PolicyEditDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className={cn(
+                "max-h-[90vh] overflow-y-auto",
+                activePolicyType === "androidApplication" ? "max-w-[80vw]" : "max-w-4xl"
+            )}>
                 <div className="pt-0">
                     {/* Render appropriate policy component based on activePolicyType */}
                     {activePolicyType === "passcode" && (

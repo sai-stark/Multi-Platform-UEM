@@ -783,7 +783,7 @@ const Applications = () => {
       header: 'Package Name',
       accessor: (item) => item.packageName || '-',
       render: (value) => (
-        <span className="font-mono text-xs text-muted-foreground">{value}</span>
+        <span className="text-sm text-muted-foreground">{value}</span>
       ),
     },
     {
