@@ -317,8 +317,8 @@ const WebApplications = () => {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center h-64" aria-busy="true" aria-label="Loading web applications">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" aria-hidden="true" />
         </div>
       </MainLayout>
     );
@@ -361,7 +361,7 @@ const WebApplications = () => {
                 <Globe className="w-5 h-5 text-info" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.total}</p>
+                <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Web Apps</p>
               </div>
             </div>

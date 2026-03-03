@@ -128,7 +128,7 @@ const InventoryEditor = () => {
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground">
                             {isEditing ? "Edit Device" : "Add Device"}
                         </h1>
                         <p className="text-muted-foreground">

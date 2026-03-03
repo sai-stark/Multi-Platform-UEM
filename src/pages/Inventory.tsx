@@ -165,7 +165,7 @@ const Inventory = () => {
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
                             Inventory
                         </h1>
                         <p className="text-muted-foreground mt-2">
@@ -179,45 +179,39 @@ const Inventory = () => {
 
                 {/* Stats Cards */}
                 <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                    <Monitor className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Total Devices</p>
-                                    <h3 className="text-2xl font-bold">{stats.total}</h3>
-                                </div>
+                    <article className="stat-card">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                                <Monitor className="h-5 w-5 text-info" />
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                                    <User className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Assigned</p>
-                                    <h3 className="text-2xl font-bold">{stats.assigned}</h3>
-                                </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Total Devices</p>
+                                <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                                    <Box className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">In Stock</p>
-                                    <h3 className="text-2xl font-bold">{stats.unassigned}</h3>
-                                </div>
+                        </div>
+                    </article>
+                    <article className="stat-card">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                                <User className="h-5 w-5 text-success" />
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Assigned</p>
+                                <p className="stat-card__value text-2xl">{stats.assigned.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </article>
+                    <article className="stat-card">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                                <Box className="h-5 w-5 text-warning" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">In Stock</p>
+                                <p className="stat-card__value text-2xl">{stats.unassigned.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </article>
                 </section>
 
                 {/* Inventory Table */}

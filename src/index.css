@@ -274,11 +274,12 @@
 
   /* Stat Card - Refined */
   .stat-card {
-    @apply bg-card border border-border rounded-lg p-5 transition-shadow hover:shadow-md;
+    @apply bg-card border border-border rounded-lg p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
   }
 
   .stat-card__value {
     @apply text-3xl font-bold text-foreground tracking-tight;
+    font-variant-numeric: tabular-nums;
   }
 
   .stat-card__label {

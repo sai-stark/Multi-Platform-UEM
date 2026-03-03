@@ -88,7 +88,7 @@ const RepositoryDetails = () => {
         <div>
           <a
             href="#"
-            className="font-medium text-blue-500 hover:text-blue-600 hover:underline"
+            className="font-medium text-primary hover:text-primary/80 hover:underline"
             onClick={(e) => {
               e.preventDefault();
               // TODO: Navigate to application details if needed
@@ -153,17 +153,17 @@ const RepositoryDetails = () => {
         };
         const typeColors: Record<string, string> = {
           MobileApplication:
-            "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+            "bg-success/10 text-success",
           WindowsApplication:
-            "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+            "bg-info/10 text-info",
           LinuxApplication:
-            "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+            "bg-warning/10 text-warning",
           FileDetail:
-            "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+            "bg-muted text-muted-foreground",
           AndroidApplication:
-            "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+            "bg-success/10 text-success",
           DmgFileDetail:
-            "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+            "bg-accent/10 text-accent",
         };
         const label = typeLabels[value] || value;
         const colorClass =

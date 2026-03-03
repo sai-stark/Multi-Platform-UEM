@@ -302,7 +302,7 @@ const Repositories = () => {
           const platform = getRepositoryPlatform(item);
           return (
             <p
-              className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
+              className="font-medium text-primary hover:text-primary/80 cursor-pointer hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/repositories/${platform}/${repoId}`);
@@ -323,16 +323,16 @@ const Repositories = () => {
           const type = getRepositoryType(item);
           const typeColors: Record<string, string> = {
             Windows:
-              "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+              "bg-info/10 text-info",
             Android:
-              "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+              "bg-success/10 text-success",
             Ubuntu:
-              "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-            RPM: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+              "bg-warning/10 text-warning",
+            RPM: "bg-accent/10 text-accent",
             "Common File":
-              "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+              "bg-muted text-muted-foreground",
             macOS:
-              "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200",
+              "bg-muted text-muted-foreground",
           };
           const colorClass =
             typeColors[type] || "bg-secondary text-secondary-foreground";
@@ -529,7 +529,7 @@ const Repositories = () => {
 
         {/* Platform Tabs */}
         <section
-          className="grid grid-cols-6 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
           role="tablist"
           aria-label="Filter by platform"
         >
@@ -585,7 +585,7 @@ const Repositories = () => {
                 <Layout className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.total}</p>
+                <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">
                   Total Repositories
                 </p>
@@ -599,7 +599,7 @@ const Repositories = () => {
                 <Monitor className="w-5 h-5 text-info" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.windows}</p>
+                <p className="stat-card__value text-2xl">{stats.windows.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Windows Repos</p>
               </div>
             </div>
@@ -611,7 +611,7 @@ const Repositories = () => {
                 <Monitor className="w-5 h-5 text-info" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.linux}</p>
+                <p className="stat-card__value text-2xl">{stats.linux.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Linux Repos</p>
               </div>
             </div>
@@ -623,7 +623,7 @@ const Repositories = () => {
                 <Monitor className="w-5 h-5 text-info" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.macos}</p>
+                <p className="stat-card__value text-2xl">{stats.macos.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">macOS Repos</p>
               </div>
             </div>

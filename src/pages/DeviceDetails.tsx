@@ -34,7 +34,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { getAssetUrl } from '@/config/env';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 import { cn } from '@/lib/utils';
@@ -228,8 +228,8 @@ export default function DeviceDetails() {
     if (!shouldRender) {
         return (
             <MainLayout>
-                <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] gap-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] gap-4" aria-busy="true" aria-label="Redirecting">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" aria-hidden="true"></div>
                     <p className="text-muted-foreground animate-pulse">Redirecting...</p>
                 </div>
             </MainLayout>
@@ -420,8 +420,8 @@ export default function DeviceDetails() {
     const getBatteryColor = (level?: number) => {
         if (level === undefined || level < 0) return 'text-muted-foreground';
         if (level <= 20) return 'text-destructive';
-        if (level <= 50) return 'text-yellow-500';
-        return 'text-green-500';
+        if (level <= 50) return 'text-warning';
+        return 'text-success';
     };
 
     const InfoRow = ({ label, value, className, icon: Icon, subValue, copyable }: { label: string, value: React.ReactNode, className?: string, icon?: React.ElementType, subValue?: string, copyable?: boolean }) => (
@@ -466,7 +466,7 @@ export default function DeviceDetails() {
                 <span className="text-sm font-medium">{label}</span>
                 <Badge variant={isPositive ? "default" : "secondary"} className={cn(
                     "font-normal",
-                    isPositive ? "bg-green-500/15 text-green-700 hover:bg-green-500/25 border-green-200" : "bg-red-500/15 text-red-700 hover:bg-red-500/25 border-red-200"
+                    isPositive ? "bg-success/15 text-success hover:bg-success/25 border-success/30" : "bg-destructive/15 text-destructive hover:bg-destructive/25 border-destructive/30"
                 )}>
                     {isTrue ? trueLabel : falseLabel}
                 </Badge>
@@ -536,7 +536,7 @@ export default function DeviceDetails() {
                                     </h1>
                                     <Badge variant={device.status === 'ONLINE' || device.connectionStatus === 'online' ? 'default' : 'secondary'} className={cn(
                                         "h-6 gap-1.5",
-                                        (device.status === 'ONLINE' || device.connectionStatus === 'online') ? "bg-green-500 hover:bg-green-600" : "bg-zinc-500"
+                                        (device.status === 'ONLINE' || device.connectionStatus === 'online') ? "bg-success hover:bg-success/90" : "bg-muted-foreground"
                                     )}>
                                         <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                                         {device.connectionStatus === 'online' || device.status === 'ONLINE' ? 'Online' : 'Offline'}
@@ -559,14 +559,14 @@ export default function DeviceDetails() {
                                 <div className="flex gap-2 pt-2">
                                     <Badge variant="outline" className={cn(
                                         "gap-1",
-                                        device.complianceStatus === 'compliant' ? "text-green-600 border-green-200 bg-green-50" : "text-red-600 border-red-200 bg-red-50"
+                                        device.complianceStatus === 'compliant' ? "text-success border-success/30 bg-success/10" : "text-destructive border-destructive/30 bg-destructive/10"
                                     )}>
                                         {device.complianceStatus === 'compliant' ? <Shield className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
                                         {device.complianceStatus === 'compliant' ? 'Compliant' : 'Non-Compliant'}
                                     </Badge>
 
                                     {device.isSupervised && (
-                                        <Badge variant="outline" className="gap-1 text-purple-600 border-purple-200 bg-purple-50">
+                                        <Badge variant="outline" className="gap-1 text-accent border-accent/30 bg-accent/10">
                                             <Layers className="w-3 h-3" /> Supervised
                                         </Badge>
                                     )}
@@ -599,10 +599,10 @@ export default function DeviceDetails() {
                                     <DropdownMenuItem onClick={() => handleAction('logout', 'Logout')}>
                                         <LogOut className="w-4 h-4 mr-2" /> Logout
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-red-600" onClick={() => handleAction('shutdown', 'Shutdown')}>
+                                    <DropdownMenuItem className="text-destructive" onClick={() => handleAction('shutdown', 'Shutdown')}>
                                         <PowerOff className="w-4 h-4 mr-2" /> Shutdown
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-red-600" onClick={() => handleAction('delete_user', 'Delete User')}>
+                                    <DropdownMenuItem className="text-destructive" onClick={() => handleAction('delete_user', 'Delete User')}>
                                         <UserMinus className="w-4 h-4 mr-2" /> Delete User
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleAction('get_location', 'Get Location')}>
@@ -616,7 +616,7 @@ export default function DeviceDetails() {
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-red-600" onClick={() => handleAction('factory_reset', 'Factory Reset')}>
+                                    <DropdownMenuItem className="text-destructive" onClick={() => handleAction('factory_reset', 'Factory Reset')}>
                                         <Trash2 className="w-4 h-4 mr-2" /> Factory Reset
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -819,7 +819,7 @@ export default function DeviceDetails() {
                                                         </div>
                                                         <div className="space-y-1">
                                                             {device.isBatteryCharging && (
-                                                                <Badge variant="outline" className="gap-1 text-green-600 bg-green-50 border-green-200">
+                                                                <Badge variant="outline" className="gap-1 text-success bg-success/10 border-success/30">
                                                                     <BatteryCharging className="w-3 h-3" /> Charging
                                                                 </Badge>
                                                             )}
@@ -1022,10 +1022,10 @@ export default function DeviceDetails() {
                                                     <TableCell>{app.packageName || app.identifier}</TableCell>
                                                     <TableCell>{app.appVersion}</TableCell>
                                                     {platform === 'ios' && (
-                                                        <TableCell>{app.isManaged ? <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Yes</Badge> : 'No'}</TableCell>
+                                                        <TableCell>{app.isManaged ? <Badge variant="outline" className="bg-success/10 text-success border-success/30">Yes</Badge> : 'No'}</TableCell>
                                                     )}
                                                     <TableCell>
-                                                        {app.isInstalled ? <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Installed</Badge> :
+                                                        {app.isInstalled ? <Badge variant="outline" className="bg-info/10 text-info border-info/30">Installed</Badge> :
                                                             app.isBlocked ? <Badge variant="destructive">Blocked</Badge> : <span className="text-muted-foreground">-</span>}
                                                     </TableCell>
                                                 </TableRow>
@@ -1099,7 +1099,7 @@ export default function DeviceDetails() {
                                             certificates.map((cert, idx) => (
                                                 <TableRow key={idx} className="hover:bg-muted/50 transition-colors">
                                                     <TableCell className="font-medium p-4">{cert.CommonName}</TableCell>
-                                                    <TableCell className="p-4">{cert.IsIdentity ? <Badge variant="outline" className="bg-green-50 text-green-700">Yes</Badge> : 'No'}</TableCell>
+                                                    <TableCell className="p-4">{cert.IsIdentity ? <Badge variant="outline" className="bg-success/10 text-success">Yes</Badge> : 'No'}</TableCell>
                                                     <TableCell className="p-4">
                                                         <Button
                                                             variant="secondary"
@@ -1242,7 +1242,7 @@ export default function DeviceDetails() {
 
                     {/* REMOTE CONTROL TAB */}
                     <TabsContent value="remote-control" className="space-y-6">
-                        <Card className="min-h-[500px] border-t-4 border-t-purple-500 overflow-hidden">
+                        <Card className="min-h-[500px] border-t-4 border-t-accent overflow-hidden">
                             <CardHeader className="pb-2">
                                 <SectionHeader title="Remote Access Session" icon={MonitorPlay} />
                             </CardHeader>

@@ -301,7 +301,7 @@ function ConfiguredPolicyCard({
           <CardDescription className="line-clamp-2">{description}</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-end">
-          <Badge className="w-fit mb-2 bg-green-100 text-green-700 hover:bg-green-200 border-green-200">{badgeText}</Badge>
+          <Badge className="w-fit mb-2 bg-success/10 text-success hover:bg-success/20 border-success/30">{badgeText}</Badge>
           <p className="text-sm text-foreground/80 font-medium">{statusText || "Click to edit configuration"}</p>
         </CardContent>
       </Card>
@@ -374,8 +374,8 @@ function PolicyCardGrid({
       statusText: passcodePolicy ? "Minimum length, complexity, and auto-lock settings configured." : undefined,
       icon: <Shield className="w-5 h-5" />,
       isConfigured: !!passcodePolicy,
-      colorClass: "text-emerald-600",
-      borderClass: "border-t-emerald-600",
+      colorClass: "text-success",
+      borderClass: "border-t-success",
     });
     allPolicies.push({
       id: "wifi",
@@ -384,8 +384,8 @@ function PolicyCardGrid({
       statusText: wifiPolicy ? `SSID: ${wifiPolicy.ssid} • ${wifiPolicy.encryptionType}` : undefined,
       icon: <Wifi className="w-5 h-5" />,
       isConfigured: !!wifiPolicy,
-      colorClass: "text-blue-500",
-      borderClass: "border-t-blue-500",
+      colorClass: "text-info",
+      borderClass: "border-t-info",
     });
     allPolicies.push({
       id: "mail",
@@ -394,8 +394,8 @@ function PolicyCardGrid({
       statusText: mailPolicy ? `${mailPolicy.emailAccountName} • ${mailPolicy.emailAddress}` : undefined,
       icon: <Mail className="w-5 h-5" />,
       isConfigured: !!mailPolicy,
-      colorClass: "text-indigo-500",
-      borderClass: "border-t-indigo-500",
+      colorClass: "text-accent",
+      borderClass: "border-t-accent",
     });
     allPolicies.push({
       id: "restrictions",
@@ -404,8 +404,8 @@ function PolicyCardGrid({
       statusText: restrictionsPolicy ? "Camera, iCloud, App Store, and content restrictions configured." : undefined,
       icon: <Ban className="w-5 h-5" />,
       isConfigured: !!restrictionsPolicy,
-      colorClass: "text-purple-600",
-      borderClass: "border-t-purple-600",
+      colorClass: "text-accent",
+      borderClass: "border-t-accent",
     });
     allPolicies.push({
       id: "webApps",
@@ -414,8 +414,8 @@ function PolicyCardGrid({
       statusText: webApplicationPolicy.length > 0 ? `${webApplicationPolicy.length} Web Clips configured.` : undefined,
       icon: <Globe className="w-5 h-5" />,
       isConfigured: webApplicationPolicy.length > 0,
-      colorClass: "text-teal-500",
-      borderClass: "border-t-teal-500",
+      colorClass: "text-success",
+      borderClass: "border-t-success",
       badgeText: `${webApplicationPolicy.length} Active`
     });
     allPolicies.push({
@@ -425,8 +425,8 @@ function PolicyCardGrid({
       statusText: notificationPolicy.length > 0 ? `${notificationPolicy.length} Apps configured.` : undefined,
       icon: <Bell className="w-5 h-5" />,
       isConfigured: notificationPolicy.length > 0,
-      colorClass: "text-sky-500",
-      borderClass: "border-t-sky-500",
+      colorClass: "text-info",
+      borderClass: "border-t-info",
       badgeText: `${notificationPolicy.length} Active`
     });
     allPolicies.push({
@@ -436,8 +436,8 @@ function PolicyCardGrid({
       statusText: lockScreenMessagePolicy ? "Custom text on the lock screen." : undefined,
       icon: <MessageSquare className="w-5 h-5" />,
       isConfigured: !!lockScreenMessagePolicy,
-      colorClass: "text-indigo-500",
-      borderClass: "border-t-indigo-500",
+      colorClass: "text-accent",
+      borderClass: "border-t-accent",
     });
     allPolicies.push({
       id: "webContentFilter",
@@ -446,8 +446,8 @@ function PolicyCardGrid({
       statusText: webContentFilterPolicy ? `Filter: ${webContentFilterPolicy.filterType || 'BuiltIn'}` : undefined,
       icon: <Filter className="w-5 h-5" />,
       isConfigured: !!webContentFilterPolicy,
-      colorClass: "text-orange-500",
-      borderClass: "border-t-orange-500",
+      colorClass: "text-warning",
+      borderClass: "border-t-warning",
     });
     allPolicies.push({
       id: "globalHttpProxy",
@@ -456,8 +456,8 @@ function PolicyCardGrid({
       statusText: globalHttpProxyPolicy ? `Type: ${globalHttpProxyPolicy.proxyType}` : undefined,
       icon: <Globe className="w-5 h-5" />,
       isConfigured: !!globalHttpProxyPolicy,
-      colorClass: "text-cyan-600",
-      borderClass: "border-t-cyan-600",
+      colorClass: "text-info",
+      borderClass: "border-t-info",
     });
     allPolicies.push({
       id: "vpn",
@@ -466,8 +466,8 @@ function PolicyCardGrid({
       statusText: vpnPolicy ? `${vpnPolicy.vpnType} • ${vpnPolicy.remoteAddress}` : undefined,
       icon: <Lock className="w-5 h-5" />,
       isConfigured: !!vpnPolicy,
-      colorClass: "text-violet-600",
-      borderClass: "border-t-violet-600",
+      colorClass: "text-accent",
+      borderClass: "border-t-accent",
     });
     allPolicies.push({
       id: "perAppVpn",
@@ -476,8 +476,8 @@ function PolicyCardGrid({
       statusText: perAppVpnPolicy ? `${perAppVpnPolicy.applicationIds?.length || 0} apps configured` : undefined,
       icon: <Lock className="w-5 h-5" />,
       isConfigured: !!perAppVpnPolicy,
-      colorClass: "text-fuchsia-600",
-      borderClass: "border-t-fuchsia-600",
+      colorClass: "text-accent",
+      borderClass: "border-t-accent",
     });
     allPolicies.push({
       id: "perDomainVpn",
@@ -486,8 +486,8 @@ function PolicyCardGrid({
       statusText: perDomainVpnPolicy ? `${(perDomainVpnPolicy.safariDomains?.length || 0) + (perDomainVpnPolicy.associatedDomains?.length || 0)} domains` : undefined,
       icon: <Lock className="w-5 h-5" />,
       isConfigured: !!perDomainVpnPolicy,
-      colorClass: "text-rose-600",
-      borderClass: "border-t-rose-600",
+      colorClass: "text-destructive",
+      borderClass: "border-t-destructive",
     });
     allPolicies.push({
       id: "relay",
@@ -496,8 +496,8 @@ function PolicyCardGrid({
       statusText: relayPolicy ? `${relayPolicy.matchDomains?.length || 0} match domains` : undefined,
       icon: <Radio className="w-5 h-5" />,
       isConfigured: !!relayPolicy,
-      colorClass: "text-amber-600",
-      borderClass: "border-t-amber-600",
+      colorClass: "text-warning",
+      borderClass: "border-t-warning",
     });
     allPolicies.push({
       id: "homeScreenLayout",
@@ -506,8 +506,8 @@ function PolicyCardGrid({
       statusText: homeScreenLayoutPolicy ? `${homeScreenLayoutPolicy.configuration?.Pages?.length || 0} pages configured` : undefined,
       icon: <Smartphone className="w-5 h-5" />,
       isConfigured: !!homeScreenLayoutPolicy,
-      colorClass: "text-teal-600",
-      borderClass: "border-t-teal-600",
+      colorClass: "text-success",
+      borderClass: "border-t-success",
     });
     if (scepPolicy) {
       allPolicies.push({
@@ -517,8 +517,8 @@ function PolicyCardGrid({
         statusText: "Certificate enrollment configured",
         icon: <FileText className="w-5 h-5" />,
         isConfigured: true,
-        colorClass: "text-slate-500",
-        borderClass: "border-t-slate-500"
+        colorClass: "text-muted-foreground",
+        borderClass: "border-t-muted-foreground"
       });
     }
     if (mdmPolicy) {
@@ -529,8 +529,8 @@ function PolicyCardGrid({
         statusText: `Server: ${mdmPolicy.serverURL?.substring(0, 20)}...`,
         icon: <Server className="w-5 h-5" />,
         isConfigured: true,
-        colorClass: "text-slate-500",
-        borderClass: "border-t-slate-500"
+        colorClass: "text-muted-foreground",
+        borderClass: "border-t-muted-foreground"
       });
     }
   }
@@ -595,8 +595,8 @@ function PolicyCardGrid({
     statusText: applicationPolicy.length > 0 ? `${applicationPolicy.length} Apps configured.` : undefined,
     icon: <Grid className="w-5 h-5" />,
     isConfigured: applicationPolicy.length > 0,
-    colorClass: "text-blue-600",
-    borderClass: "border-t-blue-600",
+    colorClass: "text-info",
+    borderClass: "border-t-info",
     badgeText: `${applicationPolicy.length} Active`,
     category: isAndroid ? 'policy' as const : undefined,
   });
@@ -670,7 +670,7 @@ function PolicyCardGrid({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
         <h2 className="text-xl font-semibold tracking-tight">Configuration Policies</h2>
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
           <Input
             placeholder="Search policies..."
             value={policySearchQuery}
@@ -716,11 +716,11 @@ function PolicyCardGrid({
                 onClick={() => setRestrictionsCollapsed(!restrictionsCollapsed)}
               >
                 {restrictionsCollapsed
-                  ? <ChevronRight className="w-5 h-5 text-orange-500 transition-transform" />
-                  : <ChevronDown className="w-5 h-5 text-orange-500 transition-transform" />
+                  ? <ChevronRight className="w-5 h-5 text-warning transition-transform" />
+                  : <ChevronDown className="w-5 h-5 text-warning transition-transform" />
                 }
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Ban className="w-5 h-5 text-orange-500" />
+                  <Ban className="w-5 h-5 text-warning" />
                   Restrictions
                   <Badge variant="secondary" className="ml-1 text-xs">
                     {restrictionItems.filter(p => p.isConfigured).length}/{restrictionItems.length}
@@ -1092,7 +1092,7 @@ export default function ProfileDetails() {
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Badge variant={profile.status === 'PUBLISHED' ? "secondary" : "outline"} className={cn("ml-1 font-normal", profile.status === 'PUBLISHED' ? "bg-green-100 text-green-700 border-green-200" : "")}>
+                    <Badge variant={profile.status === 'PUBLISHED' ? "secondary" : "outline"} className={cn("ml-1 font-normal", profile.status === 'PUBLISHED' ? "bg-success/10 text-success border-success/30" : "")}>
                       {profile.status}
                     </Badge>
                   </div>
@@ -1144,7 +1144,7 @@ export default function ProfileDetails() {
                 <p className="text-sm font-medium text-muted-foreground">{t('profileDetails.status')}</p>
                 <h3 className="text-2xl font-bold mt-1 capitalize">{profile.status}</h3>
               </div>
-              <CheckCircle className={cn("w-8 h-8 opacity-20", profile.status === 'PUBLISHED' ? "text-green-500" : "text-yellow-500")} />
+              <CheckCircle className={cn("w-8 h-8 opacity-20", profile.status === 'PUBLISHED' ? "text-success" : "text-warning")} />
             </CardContent>
           </Card>
 
@@ -1154,7 +1154,7 @@ export default function ProfileDetails() {
                 <p className="text-sm font-medium text-muted-foreground">{t('profileDetails.deployedDevices')}</p>
                 <h3 className="text-2xl font-bold mt-1">{profile.deployedDevices || 0}</h3>
               </div>
-              <Users className="w-8 h-8 text-blue-500 opacity-20" />
+              <Users className="w-8 h-8 text-info opacity-20" />
             </CardContent>
           </Card>
 
@@ -1164,7 +1164,7 @@ export default function ProfileDetails() {
                 <p className="text-sm font-medium text-muted-foreground">Compliance</p>
                 <h3 className="text-2xl font-bold mt-1">100%</h3>
               </div>
-              <ShieldCheck className="w-8 h-8 text-emerald-500 opacity-20" />
+              <ShieldCheck className="w-8 h-8 text-success opacity-20" />
             </CardContent>
           </Card>
 
@@ -1174,7 +1174,7 @@ export default function ProfileDetails() {
                 <p className="text-sm font-medium text-muted-foreground">Version</p>
                 <h3 className="text-2xl font-bold mt-1">v{profile.version || 1.0}</h3>
               </div>
-              <Clock className="w-8 h-8 text-purple-500 opacity-20" />
+              <Clock className="w-8 h-8 text-accent opacity-20" />
             </CardContent>
           </Card>
         </div>
@@ -1293,7 +1293,7 @@ export default function ProfileDetails() {
         {/* Bottom Audit Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground bg-muted/20 p-4 rounded-lg border border-border/40">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-amber-100/50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+            <div className="p-2 rounded-full bg-warning/10 text-warning">
               <Users className="w-4 h-4" />
             </div>
             <div className="flex flex-col">
@@ -1315,7 +1315,7 @@ export default function ProfileDetails() {
                 <span>{profile.modificationTime ? new Date(profile.modificationTime).toLocaleString() : 'Never'}</span>
               </div>
             </div>
-            <div className="p-2 rounded-full bg-purple-100/50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+            <div className="p-2 rounded-full bg-accent/10 text-accent">
               <Edit className="w-4 h-4" />
             </div>
           </div>

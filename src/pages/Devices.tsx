@@ -21,7 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { getAssetUrl } from '@/config/env';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -468,7 +468,7 @@ const Devices = () => {
 
         {/* Platform Tabs */}
         <section
-          className="grid grid-cols-6 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
           role="tablist"
           aria-label="Filter by platform"
         >
@@ -524,7 +524,7 @@ const Devices = () => {
                 <Monitor className="w-5 h-5 text-info" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.total}</p>
+                <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Devices</p>
               </div>
             </div>
@@ -535,7 +535,7 @@ const Devices = () => {
                 <Wifi className="w-5 h-5 text-success" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.online}</p>
+                <p className="stat-card__value text-2xl">{stats.online.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Online</p>
               </div>
             </div>
@@ -546,7 +546,7 @@ const Devices = () => {
                 <CheckCircle className="w-5 h-5 text-success" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.compliant}</p>
+                <p className="stat-card__value text-2xl">{stats.compliant.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Compliant</p>
               </div>
             </div>
@@ -557,7 +557,7 @@ const Devices = () => {
                 <XCircle className="w-5 h-5 text-destructive" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.nonCompliant}</p>
+                <p className="stat-card__value text-2xl">{stats.nonCompliant.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Non-Compliant</p>
               </div>
             </div>

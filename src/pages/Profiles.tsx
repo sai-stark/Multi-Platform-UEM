@@ -309,7 +309,7 @@ const Profiles = () => {
         filterable: true,
         render: (_, item) => (
           <p
-            className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
+            className="font-medium text-primary hover:text-primary/80 cursor-pointer hover:underline"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/profiles/${item.platform}/${item.id}`);
@@ -396,17 +396,11 @@ const Profiles = () => {
         searchable: true,
         filterable: true,
         filterType: "number",
-        render: (value, item) => {
-          // iOS profiles don't have version field per OpenAPI spec
-          if (item.platform?.toLowerCase() === "ios") {
-            return null;
-          }
-          return (
-            <span className="text-muted-foreground font-mono text-sm">
-              {value || "-"}
-            </span>
-          );
-        },
+        render: (value) => (
+          <span className="text-muted-foreground font-mono text-sm">
+            {value || "-"}
+          </span>
+        ),
       },
       {
         key: "deviceCount",
@@ -416,13 +410,9 @@ const Profiles = () => {
         searchable: true,
         filterable: true,
         filterType: "number",
-        render: (value, item) => {
-          // iOS profiles don't have deviceCount field per OpenAPI spec
-          if (item.platform?.toLowerCase() === "ios") {
-            return null;
-          }
-          return <span className="text-muted-foreground">{value || 0}</span>;
-        },
+        render: (value) => (
+          <span className="text-muted-foreground">{value || 0}</span>
+        ),
       },
       {
         key: "modificationTime",
@@ -480,12 +470,7 @@ const Profiles = () => {
       },
     ];
 
-    // Exclude version and deviceCount columns for iOS profiles per OpenAPI spec
-    if (platformFilter === "ios") {
-      return baseColumns.filter(
-        (col) => col.key !== "version" && col.key !== "deviceCount"
-      );
-    }
+
 
     return baseColumns;
   }, [platformFilter]);
@@ -595,7 +580,7 @@ const Profiles = () => {
 
         {/* Platform Tabs */}
         <section
-          className="grid grid-cols-6 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
           role="tablist"
           aria-label="Filter by platform"
         >
@@ -664,7 +649,7 @@ const Profiles = () => {
                 <Layout className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.total}</p>
+                <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">{t('profiles.totalProfiles')}</p>
               </div>
             </div>
@@ -676,7 +661,7 @@ const Profiles = () => {
                 <CheckCircle className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.published}</p>
+                <p className="stat-card__value text-2xl">{stats.published.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">{t('profiles.published')}</p>
               </div>
             </div>
@@ -688,7 +673,7 @@ const Profiles = () => {
                 <FileText className="w-5 h-5 text-warning" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.draft}</p>
+                <p className="stat-card__value text-2xl">{stats.draft.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">{t('profiles.draft')}</p>
               </div>
             </div>

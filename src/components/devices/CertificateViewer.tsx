@@ -7,7 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { DeviceCertificateItem } from '@/types/models';
 import { CalendarDays, Copy, FileText, Key, Shield, Target, User } from 'lucide-react';
 import * as forge from 'node-forge';

@@ -156,7 +156,7 @@ const getIframeToken = async (
     if (!forceRefresh && !shouldRefreshByTime) {
       const storedToken = localStorage.getItem("iFrameWebToken");
       if (storedToken) {
-        console.log("Using stored iframe token");
+        if (import.meta.env.DEV) console.log("Using stored iframe token");
         return storedToken;
       }
     }
@@ -174,18 +174,18 @@ const getIframeToken = async (
         ? "time-based refresh (60 minutes)"
         : "no stored token";
 
-    console.log(
+    if (import.meta.env.DEV) console.log(
       `Fetching new iframe token from API for enterprise: ${enterpriseName} (${refreshReason})`
     );
 
     // Fetch new token from API
     const response = await EnterpriseService.generateEnterpriseWebToken('android', { parentFrameUrl: enterpriseName });
-    console.log("API response:", response);
+    if (import.meta.env.DEV) console.log("API response:", response);
     if (response?.webToken) {
       // Store the new token and refresh time in localStorage
       localStorage.setItem("iFrameWebToken", response.webToken);
       localStorage.setItem("iFrameWebTokenRefreshTime", now.toString());
-      console.log("New token stored and returned:", response.webToken);
+      if (import.meta.env.DEV) console.log("New token stored and returned:", response.webToken);
       return response.webToken;
     }
 
@@ -257,7 +257,7 @@ const Applications = () => {
 
   // Handle iframe messages for app selection
   const handleIframeMessage = (event: MessageEvent) => {
-    console.log("Received iframe message:", event);
+    if (import.meta.env.DEV) console.log("Received iframe message:", event);
 
     // Check if the message is from Google Play
     if (event.origin.includes("play.google.com")) {
@@ -273,7 +273,7 @@ const Applications = () => {
               : event.data;
         }
 
-        console.log("Parsed iframe data:", data);
+        if (import.meta.env.DEV) console.log("Parsed iframe data:", data);
 
         if (
           data &&
@@ -283,7 +283,7 @@ const Applications = () => {
           data.a.length > 0
         ) {
           const appData = data.a[0];
-          console.log("App selection detected:", appData);
+          if (import.meta.env.DEV) console.log("App selection detected:", appData);
 
           if (appData.packageName) {
             setSelectedApps((prev) => {
@@ -305,7 +305,7 @@ const Applications = () => {
           }
         }
       } catch (error) {
-        console.log("Could not parse iframe message:", error);
+        if (import.meta.env.DEV) console.log("Could not parse iframe message:", error);
       }
     }
   };
@@ -323,13 +323,13 @@ const Applications = () => {
     fallbackIframe.scrolling = "yes";
 
     fallbackIframe.onload = () => {
-      console.log("Fallback iframe loaded successfully");
+      if (import.meta.env.DEV) console.log("Fallback iframe loaded successfully");
       setIsIframeLoading(false);
     };
 
     setTimeout(() => {
       if (isIframeLoading) {
-        console.log("Fallback iframe loading timeout - hiding loading indicator");
+        if (import.meta.env.DEV) console.log("Fallback iframe loading timeout - hiding loading indicator");
         setIsIframeLoading(false);
       }
     }, 8000);
@@ -373,7 +373,7 @@ const Applications = () => {
 
         if (typeof iframe.on === "function") {
           iframe.on("ready", () => {
-            console.log("Google Play for Work iframe loaded successfully");
+            if (import.meta.env.DEV) console.log("Google Play for Work iframe loaded successfully");
             setIsIframeLoading(false);
           });
 
@@ -386,7 +386,7 @@ const Applications = () => {
         // Fallback timeout
         setTimeout(() => {
           if (isIframeLoading) {
-            console.log("Iframe loading timeout - hiding loading indicator");
+            if (import.meta.env.DEV) console.log("Iframe loading timeout - hiding loading indicator");
             setIsIframeLoading(false);
           }
         }, 3000);
@@ -399,7 +399,7 @@ const Applications = () => {
           iframe.register(
             "onproductselect",
             function (event: any) {
-              console.log("Product selected:", event);
+              if (import.meta.env.DEV) console.log("Product selected:", event);
 
               if (event.action === "selected" && event.packageName) {
                 setSelectedApps((prev) => {
@@ -512,7 +512,7 @@ const Applications = () => {
           containerRef.current = container;
 
           if (iframeCreatedRef.current || iframeInstanceRef.current) {
-            console.log("Iframe already created, skipping...");
+            if (import.meta.env.DEV) console.log("Iframe already created, skipping...");
             return;
           }
 
@@ -773,7 +773,7 @@ const Applications = () => {
       searchable: true,
       render: (_, item) => (
         <span
-          className="font-medium text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors"
+          className="font-medium text-primary hover:text-primary/80 hover:underline cursor-pointer transition-colors"
           onClick={() => navigate(`/applications/${platform}/${item.id}`)}
         >
           {item.name}
@@ -906,7 +906,7 @@ const Applications = () => {
             </div>
           )}
           <span
-            className="font-medium text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors"
+            className="font-medium text-primary hover:text-primary/80 hover:underline cursor-pointer transition-colors"
             onClick={() => navigate(`/applications/ios/${item.id}`)}
           >
             {item.trackName || item.name}
@@ -954,7 +954,7 @@ const Applications = () => {
       sortable: true,
       render: (value) => value !== '-' ? (
         <div className="flex items-center gap-1">
-          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+          <Star className="w-3.5 h-3.5 fill-warning text-warning" />
           <span className="text-sm font-medium">{Number(value).toFixed(1)}</span>
         </div>
       ) : <span className="text-muted-foreground">-</span>,
@@ -1110,7 +1110,7 @@ const Applications = () => {
                 <Package className="w-5 h-5 text-info" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.total}</p>
+                <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Total Apps</p>
               </div>
             </div>
@@ -1121,7 +1121,7 @@ const Applications = () => {
                 <CheckCircle className="w-5 h-5 text-success" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.mandatory}</p>
+                <p className="stat-card__value text-2xl">{stats.mandatory.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Mandatory</p>
               </div>
             </div>
@@ -1132,7 +1132,7 @@ const Applications = () => {
                 <Clock className="w-5 h-5 text-warning" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.optional}</p>
+                <p className="stat-card__value text-2xl">{stats.optional.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Optional</p>
               </div>
             </div>
@@ -1143,7 +1143,7 @@ const Applications = () => {
                 <XCircle className="w-5 h-5 text-destructive" aria-hidden="true" />
               </div>
               <div>
-                <p className="stat-card__value text-2xl">{stats.blocked}</p>
+                <p className="stat-card__value text-2xl">{stats.blocked.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">Blocked</p>
               </div>
             </div>
@@ -1300,8 +1300,8 @@ const Applications = () => {
                       {isIframeLoading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-10">
                           <div className="flex flex-col items-center space-y-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            <p className="text-sm text-gray-600">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            <p className="text-sm text-muted-foreground">
                               Loading Google Play Store...
                             </p>
                           </div>
@@ -1313,25 +1313,25 @@ const Applications = () => {
 
                 {/* Selected Apps Display */}
                 {selectedApps.length > 0 && (
-                  <div className="mt-3 p-3 border border-green-200 rounded-lg bg-green-50">
+                  <div className="mt-3 p-3 border border-success/30 rounded-lg bg-success/10">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <h4 className="text-sm font-medium text-green-800">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        <h4 className="text-sm font-medium text-success">
                           Selected ({selectedApps.length})
                         </h4>
                       </div>
-                      <p className="text-xs text-green-600">Ready to add</p>
+                      <p className="text-xs text-success">Ready to add</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                       {selectedApps.map((app, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between bg-white p-2 rounded border border-green-200 text-xs"
+                          className="flex items-center justify-between bg-white p-2 rounded border border-success/30 text-xs"
                         >
                           <span
-                            className="font-mono text-gray-700 truncate flex-1 mr-2"
+                            className="font-mono text-foreground truncate flex-1 mr-2"
                             title={app.packageName}
                           >
                             {app.packageName}
@@ -1340,7 +1340,7 @@ const Applications = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => removeSelectedApp(index)}
-                            className="h-5 w-5 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                            className="h-5 w-5 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -1455,7 +1455,7 @@ const Applications = () => {
                             </div>
                             {result.averageUserRating != null && (
                               <div className="flex items-center gap-1 flex-shrink-0 mr-2">
-                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                <Star className="w-3 h-3 fill-warning text-warning" />
                                 <span className="text-xs font-medium">{result.averageUserRating.toFixed(1)}</span>
                               </div>
                             )}

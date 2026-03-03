@@ -151,7 +151,7 @@ const Geofences = () => {
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
                             Geofences
                         </h1>
                         <p className="text-muted-foreground mt-2">
@@ -165,45 +165,39 @@ const Geofences = () => {
 
                 {/* Stats Cards */}
                 <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                    <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Total Geofences</p>
-                                    <h3 className="text-2xl font-bold">{stats.total}</h3>
-                                </div>
+                    <article className="stat-card">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                                <MapPin className="h-5 w-5 text-info" />
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                                    <Circle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Circles</p>
-                                    <h3 className="text-2xl font-bold">{stats.circle}</h3>
-                                </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Total Geofences</p>
+                                <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                                    <Hexagon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Polygons</p>
-                                    <h3 className="text-2xl font-bold">{stats.polygon}</h3>
-                                </div>
+                        </div>
+                    </article>
+                    <article className="stat-card">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                                <Circle className="h-5 w-5 text-success" />
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Circles</p>
+                                <p className="stat-card__value text-2xl">{stats.circle.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </article>
+                    <article className="stat-card">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                                <Hexagon className="h-5 w-5 text-accent" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Polygons</p>
+                                <p className="stat-card__value text-2xl">{stats.polygon.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </article>
                 </section>
 
                 {/* Geofences Table */}

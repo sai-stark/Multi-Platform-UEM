@@ -344,7 +344,7 @@ export default function Enrollment() {
           {Array.from({ length: 64 }).map((_, i) => (
             <div
               key={i}
-              className={`${Math.random() > 0.5 ? 'bg-gray-200' : 'bg-transparent'}`}
+              className={`${Math.random() > 0.5 ? 'bg-muted' : 'bg-transparent'}`}
             />
           ))}
         </div>

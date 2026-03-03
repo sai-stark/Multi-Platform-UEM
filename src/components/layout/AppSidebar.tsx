@@ -126,7 +126,6 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-sidebar-accent"
-                      aria-expanded="true"
                     >
                       <span className="flex items-center gap-3">
                         <UserPlus className="w-5 h-5" aria-hidden="true" />
@@ -170,7 +169,6 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-sidebar-accent"
-                      aria-expanded="true"
                     >
                       <span className="flex items-center gap-3">
                         <Settings className="w-5 h-5" aria-hidden="true" />

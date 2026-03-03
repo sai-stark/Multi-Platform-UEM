@@ -199,9 +199,9 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
             className={cn(
               'w-4 h-4',
               i < full
-                ? 'fill-yellow-400 text-yellow-400'
+                ? 'fill-warning text-warning'
                 : i === full && half
-                  ? 'fill-yellow-400/50 text-yellow-400'
+                  ? 'fill-warning/50 text-warning'
                   : 'text-muted-foreground/30'
             )}
           />
@@ -214,9 +214,9 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-64" aria-busy="true" aria-label="Loading application details">
           <div className="flex items-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
             <span>Loading iOS application details...</span>
           </div>
         </div>
@@ -279,7 +279,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
                         onClick={() => copyToClipboard(app.bundleId, 'Bundle ID')}
                         className="h-6 w-6 p-0"
                       >
-                        <Copy className={cn('h-3 w-3', copiedField === 'Bundle ID' && 'text-green-500')} />
+                        <Copy className={cn('h-3 w-3', copiedField === 'Bundle ID' && 'text-success')} />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -732,9 +732,9 @@ const ApplicationDetails = () => {
 
   // Get app icon based on type
   const getAppIcon = (app: Application) => {
-    if (app.isEmmApp) return <Shield className="h-6 w-6 text-blue-500" />;
-    if (app.isEmmAgent) return <Settings className="h-6 w-6 text-green-500" />;
-    if (app.isLauncher) return <Smartphone className="h-6 w-6 text-purple-500" />;
+    if (app.isEmmApp) return <Shield className="h-6 w-6 text-info" />;
+    if (app.isEmmAgent) return <Settings className="h-6 w-6 text-success" />;
+    if (app.isLauncher) return <Smartphone className="h-6 w-6 text-accent" />;
     return <Package className="h-6 w-6 text-muted-foreground" />;
   };
 

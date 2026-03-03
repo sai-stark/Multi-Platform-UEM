@@ -197,11 +197,11 @@ export default function PolicyConfigurationPage() {
     // Helper to determine title/icon based on policyType
     const getHeaderInfo = () => {
         switch (policyType) {
-            case "wifi": return { title: "WiFi Configuration", icon: <Wifi className="w-6 h-6 text-blue-500" /> };
-            case "mail": return { title: "Mail Configuration", icon: <Mail className="w-6 h-6 text-indigo-500" /> };
-            case "restrictions": return { title: "Device Restrictions", icon: <Ban className="w-6 h-6 text-red-500" /> };
-            case "applications": return { title: "Application Policy", icon: <Grid className="w-6 h-6 text-orange-500" /> };
-            case "webApps": case "androidWebApp": return { title: "Web Application Policy", icon: <Globe className="w-6 h-6 text-cyan-500" /> };
+            case "wifi": return { title: "WiFi Configuration", icon: <Wifi className="w-6 h-6 text-info" /> };
+            case "mail": return { title: "Mail Configuration", icon: <Mail className="w-6 h-6 text-accent" /> };
+            case "restrictions": return { title: "Device Restrictions", icon: <Ban className="w-6 h-6 text-destructive" /> };
+            case "applications": return { title: "Application Policy", icon: <Grid className="w-6 h-6 text-warning" /> };
+            case "webApps": case "androidWebApp": return { title: "Web Application Policy", icon: <Globe className="w-6 h-6 text-info" /> };
             // Add others as needed
             default: return { title: "Policy Configuration", icon: <Settings className="w-6 h-6" /> };
         }

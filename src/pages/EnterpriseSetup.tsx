@@ -305,7 +305,7 @@ export default function EnterpriseSetup() {
                             ${currentStep === step
                                 ? 'bg-primary text-primary-foreground ring-4 ring-primary/20'
                                 : currentStep > step
-                                    ? 'bg-green-500 text-white'
+                                    ? 'bg-success text-white'
                                     : 'bg-muted text-muted-foreground'
                             }
                         `}
@@ -319,7 +319,7 @@ export default function EnterpriseSetup() {
                     {step < 4 && (
                         <div
                             className={`w-16 h-1 mx-2 transition-colors duration-300 ${
-                                currentStep > step ? 'bg-green-500' : 'bg-muted'
+                                currentStep > step ? 'bg-success' : 'bg-muted'
                             }`}
                         />
                     )}
@@ -429,7 +429,7 @@ export default function EnterpriseSetup() {
 
                 {MOCK_MODE && (
                     <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <p className="text-xs text-warning flex items-center gap-1">
                             <AlertCircle className="w-3 h-3" />
                             Mock Mode: API calls are simulated
                         </p>
@@ -541,14 +541,14 @@ export default function EnterpriseSetup() {
                 <div className={`
                     mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4
                     ${finalizationStatus === 'success'
-                        ? 'bg-green-500/10'
+                        ? 'bg-success/10'
                         : finalizationStatus === 'error'
                             ? 'bg-destructive/10'
                             : 'bg-primary/10'
                     }
                 `}>
                     {finalizationStatus === 'success' ? (
-                        <CheckCircle2 className="w-8 h-8 text-green-500" />
+                        <CheckCircle2 className="w-8 h-8 text-success" />
                     ) : finalizationStatus === 'error' ? (
                         <AlertCircle className="w-8 h-8 text-destructive" />
                     ) : (
@@ -608,8 +608,8 @@ export default function EnterpriseSetup() {
     const renderEnterpriseExists = () => (
         <Card className="max-w-md mx-auto">
             <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                <div className="mx-auto w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle2 className="w-8 h-8 text-success" />
                 </div>
                 <CardTitle>Enterprise Already Configured</CardTitle>
                 <CardDescription>
