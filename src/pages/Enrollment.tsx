@@ -18,12 +18,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getAssetUrl } from '@/config/env';
+import { useAndroidFeaturesEnabled } from '@/contexts/EnterpriseContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
 import { getErrorMessage } from '@/utils/errorUtils';
-import { useAndroidFeaturesEnabled } from '@/contexts/EnterpriseContext';
 import {
   Check,
   Copy,
@@ -42,8 +42,8 @@ import {
   ZoomIn
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import QRCode from 'react-qr-code';
+import { useNavigate } from 'react-router-dom';
 
 const enrollmentSteps: Record<Platform, { en: string; hi: string }[]> = {
   android: [
@@ -153,26 +153,26 @@ export default function Enrollment() {
           // Build config based on platform-specific profile type
           const config = isIos
             ? {
-                wifiSSID: details.wifiPolicy?.ssid || p.config?.wifiSSID || 'Not Configured',
-                vpnEnabled: !!details.mailPolicy?.vpnUUID || !!details.wifiPolicy?.ssid || false,
-                vpnServer: details.mailPolicy?.incomingMailServerHostName || 'N/A',
-                mandatoryApps: details.applicationPolicies?.filter(app => app.action === 'INSTALL').map(app => app.name || 'Unknown App') || [],
-                restrictions: [
-                  details.passCodePolicy?.requirePassCode ? 'Passcode Required' : '',
-                  details.lockScreenPolicy?.lockScreenFootnote ? `Lock Screen: ${details.lockScreenPolicy.lockScreenFootnote}` : '',
-                  details.webClipPolicies?.length ? `${details.webClipPolicies.length} Web Clips` : ''
-                ].filter(Boolean)
-              }
+              wifiSSID: details.wifiPolicy?.ssid || p.config?.wifiSSID || 'Not Configured',
+              vpnEnabled: !!details.mailPolicy?.vpnUUID || !!details.wifiPolicy?.ssid || false,
+              vpnServer: details.mailPolicy?.incomingMailServerHostName || 'N/A',
+              mandatoryApps: details.applicationPolicies?.filter(app => app.action === 'INSTALL').map(app => app.name || 'Unknown App') || [],
+              restrictions: [
+                details.passCodePolicy?.requirePassCode ? 'Passcode Required' : '',
+                details.lockScreenPolicy?.lockScreenFootnote ? `Lock Screen: ${details.lockScreenPolicy.lockScreenFootnote}` : '',
+                details.webClipPolicies?.length ? `${details.webClipPolicies.length} Web Clips` : ''
+              ].filter(Boolean)
+            }
             : {
-                // Android profile config
-                wifiSSID: p.config?.wifiSSID || 'Not Configured',
-                vpnEnabled: false,
-                vpnServer: 'N/A',
-                mandatoryApps: details.applicationPolicies?.filter(app => app.installType === 'INSTALL_NONREMOVABLE').map(app => app.applicationName || app.packageName || 'Unknown App') || [],
-                restrictions: [
-                  details.passcodePolicy?.work?.complexity && details.passcodePolicy.work.complexity !== 'NONE' ? 'Passcode Required' : '',
-                ].filter(Boolean)
-              };
+              // Android profile config
+              wifiSSID: p.config?.wifiSSID || 'Not Configured',
+              vpnEnabled: false,
+              vpnServer: 'N/A',
+              mandatoryApps: details.applicationPolicies?.filter(app => app.installType === 'INSTALL_NONREMOVABLE').map(app => app.applicationName || app.packageName || 'Unknown App') || [],
+              restrictions: [
+                details.passcodePolicy?.work?.complexity && details.passcodePolicy.work.complexity !== 'NONE' ? 'Passcode Required' : '',
+              ].filter(Boolean)
+            };
 
           return {
             ...p,
@@ -459,7 +459,7 @@ export default function Enrollment() {
             <LoadingAnimation message="Loading enrollment profiles..." className="min-h-[400px]" />
           ) : currentProfile ? (
             <div className="space-y-6">
-              {/* Top Row: QR Code & Profile Info */}
+              {/* Row 1: QR Code & Profile Details */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* QR Code Display */}
                 <section className="panel" aria-label="QR Code">
@@ -530,38 +530,142 @@ export default function Enrollment() {
                   </div>
                 </section>
 
-                {/* Profile Configuration */}
-                <section className="panel" aria-label="Profile configuration">
+                {/* Profile Details */}
+                <section className="panel" aria-label="Profile details">
                   <div className="panel__header">
                     <h3 className="panel__title flex items-center gap-2">
                       <Info className="w-5 h-5" aria-hidden="true" />
-                      {t('enrollment.profileInfo')}
+                      Profile Details
                     </h3>
                   </div>
-                  <div className="panel__content">
-                    <p className="text-sm text-muted-foreground mb-4">{currentProfile.description}</p>
-                    <dl className="space-y-3 text-sm">
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <dt className="text-muted-foreground">{t('enrollment.wifiSSID')}</dt>
-                        <dd className="font-mono">{currentProfile.config?.wifiSSID || 'N/A'}</dd>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <dt className="text-muted-foreground">{t('enrollment.vpnStatus')}</dt>
-                        <dd>{currentProfile.config?.vpnEnabled ? t('enrollment.enabled') : t('enrollment.disabled')}</dd>
-                      </div>
-                      {currentProfile.config?.vpnServer && (
-                        <div className="flex justify-between py-2 border-b border-border">
-                          <dt className="text-muted-foreground">{t('enrollment.vpnServer')}</dt>
-                          <dd className="font-mono">{currentProfile.config.vpnServer}</dd>
-                        </div>
-                      )}
-                    </dl>
+                  <div className="overflow-x-auto">
+                    <table className="data-table" role="table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Field</th>
+                          <th scope="col">Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="text-muted-foreground">Name</td>
+                          <td className="font-medium text-foreground">{currentProfile.name}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-muted-foreground">Description</td>
+                          <td className="font-medium text-foreground">{currentProfile.description || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-muted-foreground">Status</td>
+                          <td>
+                            <span className="status-badge status-badge--compliant">
+                              <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                              {(currentProfile as any).status || 'N/A'}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="text-muted-foreground">Version</td>
+                          <td className="font-medium text-foreground">{(currentProfile as any).version ?? 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-muted-foreground">Device Count</td>
+                          <td className="font-medium text-foreground">{(currentProfile as any).deviceCount ?? 0}</td>
+                        </tr>
+                        <tr>
+                          <td className="text-muted-foreground">Profile Type</td>
+                          <td className="font-medium text-foreground">{(currentProfile as any).profileType || 'N/A'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </section>
               </div>
 
-              {/* Middle Row: Apps & Restrictions */}
+              {/* Row 2: Mandatory Apps & Enabled Policies */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Enabled Policies */}
+                <section className="panel" aria-label="Enabled policies">
+                  <div className="panel__header">
+                    <h3 className="panel__title">Enabled Policies</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="data-table" role="table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Policy</th>
+                          <th scope="col">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const policies: { label: string }[] = [];
+                          const p = currentProfile as any;
+
+                          if (p.passCodePolicy && typeof p.passCodePolicy === 'object' && Object.keys(p.passCodePolicy).length > 0)
+                            policies.push({ label: p.passCodePolicy.name || 'Passcode Policy' });
+
+                          if (p.scepPolicy && typeof p.scepPolicy === 'object' && Object.keys(p.scepPolicy).length > 0)
+                            policies.push({ label: p.scepPolicy.scepName || p.scepPolicy.name || 'SCEP Policy' });
+
+                          if (p.mdmPolicy && typeof p.mdmPolicy === 'object' && Object.keys(p.mdmPolicy).length > 0)
+                            policies.push({ label: 'MDM Configuration' });
+
+                          if (Array.isArray(p.applicationPolicies) && p.applicationPolicies.length > 0)
+                            policies.push({ label: `Application Policies (${p.applicationPolicies.length})` });
+
+                          if (Array.isArray(p.webClipPolicies) && p.webClipPolicies.length > 0)
+                            policies.push({ label: `Web Clip Policies (${p.webClipPolicies.length})` });
+
+                          if (Array.isArray(p.notificationPolicies) && p.notificationPolicies.length > 0)
+                            policies.push({ label: `Notification Policies (${p.notificationPolicies.length})` });
+
+                          if (Array.isArray(p.rootCertPolicies) && p.rootCertPolicies.length > 0)
+                            policies.push({ label: `Root Certificate Policies (${p.rootCertPolicies.length})` });
+
+                          if (Array.isArray(p.pkcs12Policies) && p.pkcs12Policies.length > 0)
+                            policies.push({ label: `PKCS12 Policies (${p.pkcs12Policies.length})` });
+
+                          if (Array.isArray(p.pemPolicies) && p.pemPolicies.length > 0)
+                            policies.push({ label: `PEM Policies (${p.pemPolicies.length})` });
+
+                          if (Array.isArray(p.pkcs1Policies) && p.pkcs1Policies.length > 0)
+                            policies.push({ label: `PKCS1 Policies (${p.pkcs1Policies.length})` });
+
+                          if (p.wifiPolicy && typeof p.wifiPolicy === 'object' && Object.keys(p.wifiPolicy).length > 0)
+                            policies.push({ label: p.wifiPolicy.name || 'WiFi Policy' });
+
+                          if (p.mailPolicy && typeof p.mailPolicy === 'object' && Object.keys(p.mailPolicy).length > 0)
+                            policies.push({ label: p.mailPolicy.name || 'Mail Policy' });
+
+                          if (p.lockScreenPolicy && typeof p.lockScreenPolicy === 'object' && Object.keys(p.lockScreenPolicy).length > 0)
+                            policies.push({ label: p.lockScreenPolicy.name || 'Lock Screen Policy' });
+
+                          if (policies.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={2} className="text-muted-foreground italic text-center">No policies enabled</td>
+                              </tr>
+                            );
+                          }
+
+                          return policies.map((pol, i) => (
+                            <tr key={i}>
+                              <td className="font-medium text-foreground">{pol.label}</td>
+                              <td>
+                                <span className="status-badge status-badge--compliant">
+                                  <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                                  Enabled
+                                </span>
+                              </td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
                 {/* Mandatory Apps */}
                 <section className="panel" aria-label="Mandatory applications">
                   <div className="panel__header">
@@ -589,23 +693,6 @@ export default function Enrollment() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                </section>
-
-                {/* Restrictions */}
-                <section className="panel" aria-label="Restrictions">
-                  <div className="panel__header">
-                    <h3 className="panel__title">{t('enrollment.restrictions')}</h3>
-                  </div>
-                  <div className="panel__content">
-                    <ul className="space-y-2">
-                      {currentProfile.config?.restrictions?.map((restriction, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true" />
-                          {restriction}
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </section>
               </div>
