@@ -211,12 +211,13 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
                     </DialogHeader>
                     <form onSubmit={handleSave} className="grid gap-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Policy Name</Label>
+                            <Label htmlFor="name">Policy Name <span className="text-destructive">*</span></Label>
                             <Input
                                 id="name"
                                 value={formData.name || ''}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="e.g. Corporate Device Message"
+                                required
                             />
                         </div>
                         <div className="space-y-2">

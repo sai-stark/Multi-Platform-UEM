@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
 import { IosMailPolicy } from '@/types/models';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Mail, Server, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MailPolicyProps {
     profileId: string;
@@ -91,7 +91,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
 
     const handleDelete = async () => {
         if (!initialData?.id) return;
-        
+
         setLoading(true);
         try {
             await PolicyService.deleteIosMailPolicy(profileId);
@@ -255,12 +255,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Policy Name <span className="text-destructive">*</span></Label>
-                            <Input
-                                id="name"
-                                placeholder="e.g. Corporate Mail"
-                                value={formData.name || ''}
-                                onChange={(e) => handleChange('name', e.target.value)}
-                            />
+                            <Input id="name" value={formData.name || ''} onChange={(e) => handleChange('name', e.target.value)} placeholder="e.g. Corporate Mail" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="emailAccountType">Account Type <span className="text-destructive">*</span></Label>

@@ -36,11 +36,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useLanguage } from '@/contexts/LanguageContext';
 import { AndroidWebApplicationPolicy, IosWebApplicationPolicy, WebApplication } from "@/types/models";
 import { Globe, Layout, Loader2, Pencil, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WebApplicationPolicyProps {
     profileId: string;
@@ -227,7 +227,7 @@ export function WebApplicationPolicyEditor({
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center pr-8">
                 <div>
                     <h3 className="text-lg font-medium">Web Applications</h3>
                     <p className="text-sm text-muted-foreground">
@@ -365,12 +365,13 @@ export function WebApplicationPolicyEditor({
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="name">Internal Name</Label>
+                                    <Label htmlFor="name">Internal Name <span className="text-destructive">*</span></Label>
                                     <Input
                                         id="name"
-                                        value={iosForm.name}
+                                        value={iosForm.name || ''}
                                         onChange={(e) => setIosForm({ ...iosForm, name: e.target.value })}
-                                        placeholder="com.example.webapp"
+                                        placeholder="e.g. Corporate Portal"
+                                        required
                                     />
                                 </div>
                                 <div className="grid gap-2">

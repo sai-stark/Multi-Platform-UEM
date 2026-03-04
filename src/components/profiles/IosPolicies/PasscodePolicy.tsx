@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { IosPasscodeRestrictionPolicy, PasscodeRestrictionPolicy, Platform } from '@/types/models';
 import {
     AlertCircle,
@@ -34,7 +35,6 @@ import {
     User
 } from 'lucide-react';
 import { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PasscodePolicyProps {
     platform: Platform;
@@ -336,8 +336,8 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
     const renderIosEdit = () => (
         <div className="space-y-8">
             <div className="space-y-2">
-                <Label htmlFor="policyName">Policy Name</Label>
-                <Input id="policyName" value={formData.name || ''} onChange={(e) => updateField('name', e.target.value)} placeholder="e.g. Corporate iOS Passcode Policy" />
+                <Label htmlFor="policyName">Policy Name <span className="text-destructive">*</span></Label>
+                <Input id="policyName" value={formData.name || ''} onChange={(e) => updateField('name', e.target.value)} placeholder="e.g. Corporate iOS Passcode Policy" required />
             </div>
 
             {/* Core Settings */}

@@ -1,12 +1,10 @@
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+    DialogTitle
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
+import { IosAppLockPolicy, IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
 import {
     AndroidProfileRestrictions,
     ApplicationPolicy,
@@ -60,6 +58,7 @@ import {
 
 // iOS Policy Imports
 import { ApplicationPolicyEditor } from "@/components/profiles/IosPolicies/ApplicationPolicy";
+import { AppLockPolicy as AppLockPolicyEditor } from "@/components/profiles/IosPolicies/AppLockPolicy";
 import { GlobalHttpProxyPolicy as GlobalHttpProxyPolicyEditor } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
 import { HomeScreenLayoutPolicy as HomeScreenLayoutPolicyEditor } from "@/components/profiles/IosPolicies/HomeScreenLayoutPolicy";
 import { LockScreenMessagePolicy } from "@/components/profiles/IosPolicies/LockScreenMessagePolicy";
@@ -101,6 +100,7 @@ interface PolicyEditDialogProps {
     perDomainVpnPolicy?: IosPerDomainVpnPolicy;
     relayPolicy?: IosRelayPolicy;
     homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
+    appLockPolicy?: IosAppLockPolicy;
     commonSettingsPolicy?: CommonSettingsPolicy;
     deviceThemePolicy?: DeviceThemePolicy;
     enrollmentPolicy?: EnrollmentPolicy;
@@ -131,6 +131,7 @@ export function PolicyEditDialog({
     perDomainVpnPolicy,
     relayPolicy,
     homeScreenLayoutPolicy,
+    appLockPolicy,
     commonSettingsPolicy,
     deviceThemePolicy,
     enrollmentPolicy,
@@ -146,6 +147,8 @@ export function PolicyEditDialog({
             case "passcode":
             case "androidPasscode":
                 return { title: "Passcode Policy", icon: null }; // Passcode policies often have their own headers or don't need one
+            case "appLock":
+                return { title: "App Lock / Kiosk Mode", icon: <Lock className="w-5 h-5 text-indigo-500" /> };
             case "wifi":
                 return { title: "WiFi Configuration", icon: <Wifi className="w-5 h-5 text-info" /> };
             case "mail":
@@ -323,6 +326,14 @@ export function PolicyEditDialog({
                         <HomeScreenLayoutPolicyEditor
                             profileId={profileId}
                             initialData={homeScreenLayoutPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+                    {activePolicyType === "appLock" && (
+                        <AppLockPolicyEditor
+                            profileId={profileId}
+                            initialData={appLockPolicy}
                             onSave={onSave}
                             onCancel={handleCancel}
                         />

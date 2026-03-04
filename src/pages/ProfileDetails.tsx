@@ -16,10 +16,10 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -35,7 +35,7 @@ import { getAssetUrl } from "@/config/env";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePlatformValidation } from "@/hooks/usePlatformValidation";
 import { cn } from "@/lib/utils";
-import { IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
+import { IosAppLockPolicy, IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
 import {
   AndroidFullProfile,
   AndroidProfileRestrictions,
@@ -64,8 +64,6 @@ import {
   Bell,
   Bluetooth,
   CheckCircle,
-  ChevronDown,
-  ChevronRight,
   Clock,
   Database,
   Edit,
@@ -132,6 +130,7 @@ interface AddPolicyDropdownProps {
   perDomainVpnPolicy?: IosPerDomainVpnPolicy;
   relayPolicy?: IosRelayPolicy;
   homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
+  appLockPolicy?: IosAppLockPolicy;
   onSelect: (type: string) => void;
 }
 
@@ -152,6 +151,7 @@ function AddPolicyDropdown({
   perDomainVpnPolicy,
   relayPolicy,
   homeScreenLayoutPolicy,
+  appLockPolicy,
   onSelect,
 }: AddPolicyDropdownProps) {
   const dropdownItems: { label: string; id: string; icon: React.ReactNode }[] = [];
@@ -169,8 +169,9 @@ function AddPolicyDropdown({
   if (platform === "ios" && !vpnPolicy) dropdownItems.push({ id: "vpn", label: "VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
   if (platform === "ios" && !perAppVpnPolicy) dropdownItems.push({ id: "perAppVpn", label: "Per-App VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
   if (platform === "ios" && !perDomainVpnPolicy) dropdownItems.push({ id: "perDomainVpn", label: "Per-Domain VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !relayPolicy) dropdownItems.push({ id: "relay", label: "Relay", icon: <Radio className="w-4 h-4 mr-2" /> });
+  if (platform === "ios" && !relayPolicy) dropdownItems.push({ id: "relay", label: "Relay Configuration", icon: <Wifi className="w-4 h-4 mr-2" /> });
   if (platform === "ios" && !homeScreenLayoutPolicy) dropdownItems.push({ id: "homeScreenLayout", label: "Home Screen Layout", icon: <Smartphone className="w-4 h-4 mr-2" /> });
+  if (platform === "ios" && !appLockPolicy) dropdownItems.push({ id: "appLock", label: "App Lock / Kiosk Mode", icon: <Lock className="w-4 h-4 mr-2" /> });
 
   dropdownItems.sort((a, b) => a.label.localeCompare(b.label));
 
@@ -217,6 +218,7 @@ interface PolicyCardGridProps {
   perDomainVpnPolicy?: IosPerDomainVpnPolicy;
   relayPolicy?: IosRelayPolicy;
   homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
+  appLockPolicy?: IosAppLockPolicy; // Added
   commonSettingsPolicy?: CommonSettingsPolicy;
   deviceThemePolicy?: DeviceThemePolicy;
   enrollmentPolicy?: EnrollmentPolicy;
@@ -330,6 +332,7 @@ function PolicyCardGrid({
   perDomainVpnPolicy,
   relayPolicy,
   homeScreenLayoutPolicy,
+  appLockPolicy, // Added
   commonSettingsPolicy,
   deviceThemePolicy,
   enrollmentPolicy,
@@ -507,6 +510,16 @@ function PolicyCardGrid({
       colorClass: "text-success",
       borderClass: "border-t-success",
     });
+    allPolicies.push({
+      id: "appLock",
+      title: "App Lock / Kiosk Mode",
+      description: "Restrict device to a single application.",
+      statusText: appLockPolicy ? `Locked to ${appLockPolicy.appLock?.App?.Identifier || 'App'}` : undefined,
+      icon: <Lock className="w-5 h-5" />,
+      isConfigured: !!appLockPolicy,
+      colorClass: "text-indigo-500",
+      borderClass: "border-t-indigo-500",
+    });
     if (scepPolicy) {
       allPolicies.push({
         id: "scep",
@@ -596,9 +609,9 @@ function PolicyCardGrid({
 
   const filteredPolicies = policySearchQuery.trim()
     ? allPolicies.filter(p =>
-        p.title.toLowerCase().includes(policySearchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(policySearchQuery.toLowerCase())
-      )
+      p.title.toLowerCase().includes(policySearchQuery.toLowerCase()) ||
+      p.description.toLowerCase().includes(policySearchQuery.toLowerCase())
+    )
     : allPolicies;
 
   const configuredPolicies = filteredPolicies.filter(p => p.isConfigured);
@@ -647,6 +660,7 @@ function PolicyCardGrid({
               perDomainVpnPolicy={perDomainVpnPolicy}
               relayPolicy={relayPolicy}
               homeScreenLayoutPolicy={homeScreenLayoutPolicy}
+              appLockPolicy={appLockPolicy} // Added
               onSelect={onSelectPolicy}
             />
           </div>
@@ -761,6 +775,7 @@ export default function ProfileDetails() {
   const [perDomainVpnPolicy, setPerDomainVpnPolicy] = useState<IosPerDomainVpnPolicy | undefined>(undefined);
   const [relayPolicy, setRelayPolicy] = useState<IosRelayPolicy | undefined>(undefined);
   const [homeScreenLayoutPolicy, setHomeScreenLayoutPolicy] = useState<IosHomeScreenLayoutPolicy | undefined>(undefined);
+  const [appLockPolicy, setAppLockPolicy] = useState<IosAppLockPolicy | undefined>(undefined); // Added
 
   // Animation variants
   const containerVariants = {
@@ -813,13 +828,15 @@ export default function ProfileDetails() {
         setApplicationPolicy((iosData.applicationPolicies as any[]) || []);
 
         // Phase 2 policies
-        setWebContentFilterPolicy((iosData as any).webContentFilterPolicy || undefined);
-        setGlobalHttpProxyPolicy((iosData as any).globalHttpProxyPolicy || undefined);
-        setVpnPolicy((iosData as any).vpnPolicy || undefined);
-        setPerAppVpnPolicy((iosData as any).perAppVpnPolicy || undefined);
-        setPerDomainVpnPolicy((iosData as any).perDomainVpnPolicy || undefined);
-        setRelayPolicy((iosData as any).relayPolicy || undefined);
-        setHomeScreenLayoutPolicy((iosData as any).homeScreenLayoutPolicy || undefined);
+        setWebContentFilterPolicy((iosData as any).iosWebContentFilterPolicy || undefined);
+        setGlobalHttpProxyPolicy((iosData as any).iosGlobalHttpProxyPolicy || undefined);
+        setVpnPolicy((iosData as any).iosVpnPolicy || undefined);
+        setPerAppVpnPolicy((iosData as any).iosPerAppVpnPolicy || undefined);
+        setPerDomainVpnPolicy((iosData as any).iosPerDomainVpnPolicy || undefined);
+        setRelayPolicy((iosData as any).iosRelayPolicy || undefined);
+        setHomeScreenLayoutPolicy((iosData as any).iosHomeScreenLayoutPolicy || undefined);
+        setAppLockPolicy((iosData as any).iosAppLockPolicy || undefined);
+        setRestrictionsPolicy((iosData as any).iosRestrictionsPolicy || undefined);
       }
 
       // Handle Android
@@ -1194,8 +1211,8 @@ export default function ProfileDetails() {
               <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={savingField}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleSaveField} 
+              <Button
+                onClick={handleSaveField}
                 disabled={savingField || !editName.trim() || !editDescription.trim()}
               >
                 {savingField ? 'Saving...' : 'Save Changes'}

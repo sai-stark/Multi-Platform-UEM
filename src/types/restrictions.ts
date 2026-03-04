@@ -174,33 +174,211 @@ export interface NetworkRestriction {
     devicePolicyType?: 'AndroidNetworkRestriction';
 }
 
-// iOS / Generic Restriction interfaces used by the UI editor
-export interface IosSecurityRestriction {
-    allowCamera: boolean;
-    allowScreenCapture: boolean;
+// iOS Restrictions Payload (from OpenAPI IosRestrictionsPayload)
+export interface IosRestrictionsPayload {
+    id?: string;
+    name: string;
+    policyType?: 'IosDeviceRestrictions';
+    restrictions?: RestrictionsPayload;
 }
 
-export interface IosConnectivityRestriction {
-    allowBluetooth: boolean;
+export interface RestrictionsPayload {
+    // --- Security ---
+    allowCamera?: boolean;
+    allowScreenShot?: boolean;
+    allowFingerprintForUnlock?: boolean;
+    allowFingerprintModification?: boolean;
+    allowPasscodeModification?: boolean;
+    allowPasswordAutoFill?: boolean;
+    allowPasswordProximityRequests?: boolean;
+    allowPasswordSharing?: boolean;
+    allowUntrustedTLSPrompt?: boolean;
+    allowUSBRestrictedMode?: boolean;
+    allowUnpairedExternalBootToRecovery?: boolean;
+    forceEncryptedBackup?: boolean;
+    forceAuthenticationBeforeAutoFill?: boolean;
+
+    // --- Apps & App Store ---
+    allowAppInstallation?: boolean;
+    allowAppRemoval?: boolean;
+    allowUIAppInstallation?: boolean;
+    allowAppClips?: boolean;
+    allowAutomaticAppDownloads?: boolean;
+    allowInAppPurchases?: boolean;
+    allowSystemAppRemoval?: boolean;
+    allowMarketplaceAppInstallation?: boolean;
+    allowWebDistributionAppInstallation?: boolean;
+    allowEnterpriseAppTrust?: boolean;
+    allowListedAppBundleIDs?: string[];
+    blockedAppBundleIDs?: string[];
+    allowAppsToBeHidden?: boolean;
+    allowAppsToBeLocked?: boolean;
+
+    // --- iCloud ---
+    allowCloudBackup?: boolean;
+    allowCloudDocumentSync?: boolean;
+    allowCloudKeychainSync?: boolean;
+    allowCloudPhotoLibrary?: boolean;
+    allowCloudPrivateRelay?: boolean;
+    allowCloudAddressBook?: boolean;
+    allowCloudBookmarks?: boolean;
+    allowCloudCalendar?: boolean;
+    allowCloudDesktopAndDocuments?: boolean;
+    allowCloudFreeform?: boolean;
+    allowCloudMail?: boolean;
+    allowCloudNotes?: boolean;
+    allowCloudReminders?: boolean;
+    allowManagedAppsCloudSync?: boolean;
+
+    // --- Safari ---
+    allowSafari?: boolean;
+    allowSafariHistoryClearing?: boolean;
+    allowSafariPrivateBrowsing?: boolean;
+    allowSafariSummary?: boolean;
+    safariAcceptCookies?: number;
+    safariAllowAutoFill?: boolean;
+    safariAllowJavaScript?: boolean;
+    safariAllowPopups?: boolean;
+    safariForceFraudWarning?: boolean;
+
+    // --- Siri & AI ---
+    allowAssistant?: boolean;
+    allowAssistantUserGeneratedContent?: boolean;
+    allowAssistantWhileLocked?: boolean;
+    allowAppleIntelligenceReport?: boolean;
+    allowExternalIntelligenceIntegrations?: boolean;
+    allowExternalIntelligenceIntegrationsSignIn?: boolean;
+    allowGenmoji?: boolean;
+    allowImagePlayground?: boolean;
+    allowImageWand?: boolean;
+    allowWritingTools?: boolean;
+    allowVisualIntelligenceSummary?: boolean;
+    forceAssistantProfanityFilter?: boolean;
+    forceOnDeviceOnlyDictation?: boolean;
+    forceOnDeviceOnlyTranslation?: boolean;
+
+    // --- Communication ---
+    allowAirDrop?: boolean;
+    allowAirPlayIncomingRequests?: boolean;
+    allowAirPrint?: boolean;
+    allowAirPrintCredentialsStorage?: boolean;
+    allowAirPrintiBeaconDiscovery?: boolean;
+    forceAirDropUnmanaged?: boolean;
+    forceAirPlayIncomingRequestsPairingPassword?: boolean;
+    forceAirPlayOutgoingRequestsPairingPassword?: boolean;
+    forceAirPrintTrustedTLSRequirement?: boolean;
+    allowChat?: boolean;
+    allowRCSMessaging?: boolean;
+    allowVideoConferencing?: boolean;
+    allowVideoConferencingRemoteControl?: boolean;
+
+    // --- Content Ratings ---
+    allowExplicitContent?: boolean;
+    ratingApps?: number;
+    ratingMovies?: number;
+    ratingTVShows?: number;
+    ratingRegion?: string;
+    ratingAppsExemptedBundleIDs?: string[];
+    allowBookstore?: boolean;
+    allowBookstoreErotica?: boolean;
+
+    // --- Connectivity ---
+    allowBluetoothModification?: boolean;
+    allowBluetoothSharingModification?: boolean;
+    allowNFC?: boolean;
+    allowPersonalHotspotModification?: boolean;
+    allowCellularPlanModification?: boolean;
+    allowAppCellularDataModification?: boolean;
+    allowESIMModification?: boolean;
+    allowESIMOutgoingTransfers?: boolean;
+    allowGlobalBackgroundFetchWhenRoaming?: boolean;
+    allowVPNCreation?: boolean;
+    forceWiFiPowerOn?: boolean;
+    forceWiFiToAllowedNetworksOnly?: boolean;
+    allowSatelliteConnection?: boolean;
+
+    // --- Device Features ---
+    allowAccountModification?: boolean;
+    allowActivityContinuation?: boolean;
+    allowAutoCorrection?: boolean;
+    allowAutoDim?: boolean;
+    allowAutoUnlock?: boolean;
+    allowContinuousPathKeyboard?: boolean;
+    allowDefinitionLookup?: boolean;
+    allowDeviceNameModification?: boolean;
+    allowDiagnosticSubmission?: boolean;
+    allowDiagnosticSubmissionModification?: boolean;
+    allowDictation?: boolean;
+    allowEnablingRestrictions?: boolean;
+    allowEraseContentAndSettings?: boolean;
+    allowHostPairing?: boolean;
+    allowKeyboardShortcuts?: boolean;
+    allowLockScreenControlCenter?: boolean;
+    allowLockScreenNotificationsView?: boolean;
+    allowLockScreenTodayView?: boolean;
+    allowNotificationsModification?: boolean;
+    allowPairedWatch?: boolean;
+    allowPassbookWhileLocked?: boolean;
+    allowPredictiveKeyboard?: boolean;
+    allowProximitySetupToNewDevice?: boolean;
+    allowRemoteScreenObservation?: boolean;
+    allowSharedStream?: boolean;
+    allowSpellCheck?: boolean;
+    allowSpotlightInternetResults?: boolean;
+    allowWallpaperModification?: boolean;
+    allowFilesNetworkDriveAccess?: boolean;
+    allowFilesUSBDriveAccess?: boolean;
+    allowFindMyDevice?: boolean;
+    allowFindMyFriends?: boolean;
+    allowFindMyFriendsModification?: boolean;
+    forceAutomaticDateAndTime?: boolean;
+    forceWatchWristDetection?: boolean;
+    requireManagedPasteboard?: boolean;
+    allowUIConfigurationProfileInstallation?: boolean;
+    allowCallRecording?: boolean;
+    allowApplePersonalizedAdvertising?: boolean;
+    forceLimitAdTracking?: boolean;
+
+    // --- Media & Entertainment ---
+    allowiTunes?: boolean;
+    allowMusicService?: boolean;
+    allowRadioService?: boolean;
+    allowNews?: boolean;
+    allowPodcasts?: boolean;
+
+    // --- Gaming ---
+    allowGameCenter?: boolean;
+    allowAddingGameCenterFriends?: boolean;
+    allowMultiplayerGaming?: boolean;
+
+    // --- Data Sharing ---
+    allowOpenFromManagedToUnmanaged?: boolean;
+    allowOpenFromUnmanagedToManaged?: boolean;
+    allowManagedToWriteUnmanagedContacts?: boolean;
+    allowUnmanagedToReadManagedContacts?: boolean;
+    allowEnterpriseBookBackup?: boolean;
+    allowEnterpriseBookMetadataSync?: boolean;
+
+    // --- Misc ---
+    allowMailPrivacyProtection?: boolean;
+    allowMailSmartReplies?: boolean;
+    allowMailSummary?: boolean;
+    allowNotesTranscription?: boolean;
+    allowNotesTranscriptionSummary?: boolean;
+    allowPersonalizedHandwritingResults?: boolean;
+    allowLiveVoicemail?: boolean;
+    allowiPhoneMirroring?: boolean;
+    allowiPhoneWidgetsOnMac?: boolean;
+    allowOTAPKIUpdates?: boolean;
+    allowSharedDeviceTemporarySession?: boolean;
+    allowDefaultBrowserModification?: boolean;
+    allowDefaultCallingAppModification?: boolean;
+    allowDefaultMessagingAppModification?: boolean;
+    forcePreserveESIMOnErase?: boolean;
+    autonomousSingleAppModePermittedAppIDs?: string[];
+    [key: string]: boolean | number | string | string[] | undefined;
 }
 
-export interface IosSyncStorageRestriction {
-    allowUsbMassStorage: boolean;
-}
+// Composite interface for the editor (wraps iOS restrictions - DEPRECATED but kept for compat)
+export interface RestrictionsComposite extends IosRestrictionsPayload { }
 
-export interface IosLocationRestriction {
-    forceGps: boolean;
-}
-
-export interface IosMiscellaneousRestriction {
-    allowFactoryReset: boolean;
-}
-
-// Composite interface for the editor (wraps iOS restrictions)
-export interface RestrictionsComposite {
-    security?: IosSecurityRestriction;
-    connectivity?: IosConnectivityRestriction;
-    storage?: IosSyncStorageRestriction;
-    location?: IosLocationRestriction;
-    misc?: IosMiscellaneousRestriction;
-}

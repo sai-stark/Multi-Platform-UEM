@@ -165,7 +165,7 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
 
     return (
         <div className="space-y-6 mt-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pr-8">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-500/10 rounded-full">
                         <Bell className="w-5 h-5 text-blue-500" />
@@ -250,12 +250,13 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
                         {/* ... form content ... */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Policy Name</Label>
+                                <Label htmlFor="name">Policy Name <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="name"
                                     value={formData.name || ''}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="e.g. Mail Settings"
+                                    placeholder="e.g. Corporate Notifications"
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">

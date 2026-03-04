@@ -1,4 +1,14 @@
 import {
+    IosAppLockPolicy,
+    IosGlobalHttpProxyPolicy,
+    IosHomeScreenLayoutPolicy,
+    IosPerAppVpnPolicy,
+    IosPerDomainVpnPolicy,
+    IosRelayPolicy,
+    IosVpnPolicy,
+    IosWebContentFilterPolicy,
+} from '@/types/ios';
+import {
     ApplicationPolicy,
     IosMailPolicy,
     IosWiFiConfiguration,
@@ -9,15 +19,7 @@ import {
     Platform,
     WebApplicationPolicy
 } from '@/types/models';
-import {
-    IosGlobalHttpProxyPolicy,
-    IosHomeScreenLayoutPolicy,
-    IosPerAppVpnPolicy,
-    IosPerDomainVpnPolicy,
-    IosRelayPolicy,
-    IosVpnPolicy,
-    IosWebContentFilterPolicy,
-} from '@/types/ios';
+import { IosRestrictionsPayload } from '@/types/restrictions';
 import apiClient from '../client';
 
 const CORE_PATH = '/profiles';
@@ -284,5 +286,39 @@ export const PolicyService = {
     },
     deleteHomeScreenLayoutPolicy: async (profileId: string) => {
         await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/homeScreenLayout`);
+    },
+
+    // --- iOS App Lock (UEM Phase 2) ---
+    getAppLockPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosAppLockPolicy>(`/ios${CORE_PATH}/${profileId}/policies/app-lock`);
+        return response.data;
+    },
+    createAppLockPolicy: async (profileId: string, policy: IosAppLockPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/app-lock`, policy);
+        return response.data;
+    },
+    updateAppLockPolicy: async (profileId: string, policy: IosAppLockPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/app-lock`, policy);
+        return response.data;
+    },
+    deleteAppLockPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/app-lock`);
+    },
+
+    // --- iOS Restrictions ---
+    getRestrictionsPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosRestrictionsPayload>(`/ios${CORE_PATH}/${profileId}/policies/restrictions`);
+        return response.data;
+    },
+    createRestrictionsPolicy: async (profileId: string, policy: IosRestrictionsPayload) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/restrictions`, policy);
+        return response.data;
+    },
+    updateRestrictionsPolicy: async (profileId: string, policy: IosRestrictionsPayload) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/restrictions`, policy);
+        return response.data;
+    },
+    deleteRestrictionsPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/restrictions`);
     },
 };
