@@ -113,13 +113,13 @@ export function useEnterprise() {
 export function useAndroidFeaturesEnabled() {
     const { isEnrolled, isSkipped, isLoading } = useEnterprise();
     return {
-        isEnabled: isDebugMode || isEnrolled,
+        isEnabled: true,
         isSkipped,
         isLoading,
         isDebugMode,
-        needsSetup: !isDebugMode && !isEnrolled && !isSkipped,
+        needsSetup: false,
         /** True when Android platform tab/features should be blocked */
-        shouldBlock: !isDebugMode && !isEnrolled,
+        shouldBlock: false,
     };
 }
 

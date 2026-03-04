@@ -525,17 +525,6 @@ export function AndroidApplicationPolicy({
                                 const info = getAppInfo(policy);
                                 const isSelected = selectedPolicyId === policy.id;
                                 const badge = getInstallTypeBadge(policy.installType || 'AVAILABLE');
-                                const initial = (info.name || '?')[0].toUpperCase();
-                                const avatarColors = [
-                                    'from-blue-500 to-blue-600',
-                                    'from-violet-500 to-purple-600',
-                                    'from-emerald-500 to-teal-600',
-                                    'from-orange-500 to-amber-600',
-                                    'from-pink-500 to-rose-600',
-                                    'from-cyan-500 to-sky-600',
-                                ];
-                                const colorIdx = info.name.length % avatarColors.length;
-
                                 return (
                                     <div
                                         key={policy.id}
@@ -547,13 +536,6 @@ export function AndroidApplicationPolicy({
                                         )}
                                         onClick={() => setSelectedPolicyId(policy.id)}
                                     >
-                                        {/* App Avatar */}
-                                        <div className={cn(
-                                            'w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-105',
-                                            `bg-gradient-to-br ${avatarColors[colorIdx]}`
-                                        )}>
-                                            {initial}
-                                        </div>
 
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
@@ -945,9 +927,6 @@ function DetailPanel({ policy, appInfo, onFieldChange, onOpenPermissions }: Deta
             <div className="relative overflow-hidden rounded-xl border bg-gradient-to-r from-card to-muted/30 p-5">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
                 <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-blue-500/20 shrink-0">
-                        {(appInfo.name || '?')[0].toUpperCase()}
-                    </div>
                     <div className="min-w-0 flex-1">
                         <h3 className="text-lg font-bold truncate">{appInfo.name}</h3>
                         <p className="text-sm text-muted-foreground truncate mt-0.5 font-mono">{appInfo.packageName}</p>

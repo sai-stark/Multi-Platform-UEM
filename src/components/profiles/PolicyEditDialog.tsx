@@ -190,7 +190,7 @@ export function PolicyEditDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className={cn(
                 "max-h-[90vh] overflow-y-auto",
-                activePolicyType === "androidApplication" ? "max-w-[80vw]" : "max-w-4xl"
+                activePolicyType === "androidApplication" || activePolicyType === "applications" ? "max-w-[80vw]" : "max-w-4xl"
             )}>
                 <DialogTitle className="sr-only">{title}</DialogTitle>
                 <div className="pt-0">

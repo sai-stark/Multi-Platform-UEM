@@ -25,15 +25,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import {
     Tooltip,
     TooltipContent,
@@ -47,12 +40,16 @@ import { Platform } from '@/types/models';
 import { IosApplicationPolicy } from '@/types/policy';
 import {
     AlertTriangle,
-    ChevronDown,
-    ChevronRight,
+    BarChart3,
+    Globe,
     Grid,
     Loader2,
+    Package,
     Plus,
     Save,
+    Search,
+    Settings2,
+    ShoppingCart,
     Trash2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -93,9 +90,10 @@ export const ApplicationPolicyEditor = ({
     const [policies, setPolicies] = useState<ExtendedPolicy[]>([]);
     const [availableApps, setAvailableApps] = useState<Application[]>([]);
     const [changedPolicies, setChangedPolicies] = useState<ExtendedPolicy[]>([]);
-    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [listSearchQuery, setListSearchQuery] = useState('');
 
     // Modal states
     const [openAddModal, setOpenAddModal] = useState(false);
@@ -122,6 +120,14 @@ export const ApplicationPolicyEditor = ({
             loadExistingPolicies();
         }
     }, [platform, profileId]);
+
+    // Auto-select first policy when policies load
+    useEffect(() => {
+        if (policies.length > 0 && !selectedPolicyId) {
+            const key = policies[0].id || policies[0].applicationId;
+            setSelectedPolicyId(key);
+        }
+    }, [policies]);
 
     const fetchApplications = async () => {
         try {
@@ -169,6 +175,15 @@ export const ApplicationPolicyEditor = ({
         return { name: 'Unknown', bundleId: '', iconUrl: '' };
     };
 
+    const getAppInfo = (policy: ExtendedPolicy) => {
+        const info = getAppDisplayInfo(policy.applicationId);
+        return {
+            name: policy.name || policy.displayName || info.name,
+            bundleId: info.bundleId,
+            iconUrl: info.iconUrl,
+        };
+    };
+
     const getPurchaseMethodLabel = (method?: number) => {
         switch (method) {
             case 0: return 'Free / VPP Redemption';
@@ -177,6 +192,10 @@ export const ApplicationPolicyEditor = ({
         }
     };
 
+    const getPolicyKey = (policy: ExtendedPolicy) => policy.id || policy.applicationId;
+
+    const selectedPolicy = policies.find((p) => getPolicyKey(p) === selectedPolicyId) || null;
+
     // ====================================================================
     // Handlers
     // ====================================================================
@@ -184,14 +203,6 @@ export const ApplicationPolicyEditor = ({
         setSelectedAppId('');
         setSelectedPurchaseMethod(1);
         setSelectedEnableAnalytics(false);
-    };
-
-    const toggleRowExpansion = (id: string) => {
-        setExpandedRows((prev) => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
     };
 
     const handleFieldChange = (
@@ -246,6 +257,7 @@ export const ApplicationPolicyEditor = ({
 
         setChangedPolicies((prev) => [...prev, newPolicy]);
         setPolicies((prev) => [...prev, newPolicy]);
+        setSelectedPolicyId(getPolicyKey(newPolicy));
         setOpenAddModal(false);
         resetAddModalState();
     };
@@ -264,6 +276,9 @@ export const ApplicationPolicyEditor = ({
             const key = appToDelete.id || appToDelete.applicationId;
             setPolicies((prev) => prev.filter((p) => (p.id || p.applicationId) !== key));
             setChangedPolicies((prev) => prev.filter((p) => (p.id || p.applicationId) !== key));
+            if (selectedPolicyId === key) {
+                setSelectedPolicyId(null);
+            }
             toast({ title: 'Success', description: 'Application policy deleted.' });
             if (onSave) onSave();
         } catch (error) {
@@ -299,6 +314,7 @@ export const ApplicationPolicyEditor = ({
             await Promise.all(promises);
             setChangedPolicies([]);
             toast({ title: 'Success', description: 'Application policies saved successfully!' });
+            await loadExistingPolicies();
             if (onSave) onSave();
         } catch (error) {
             console.error('Error saving application policies:', error);
@@ -311,282 +327,222 @@ export const ApplicationPolicyEditor = ({
     const availableForAdd = getAvailableAppsForAdd();
     const hasChanges = changedPolicies.length > 0;
 
+    // Filter the list
+    const filteredPolicies = listSearchQuery.trim()
+        ? policies.filter((p) => {
+              const info = getAppInfo(p);
+              const q = listSearchQuery.toLowerCase();
+              return (
+                  info.name.toLowerCase().includes(q) ||
+                  info.bundleId.toLowerCase().includes(q)
+              );
+          })
+        : policies;
+
     // ====================================================================
     // Render
     // ====================================================================
     return (
-        <div className="space-y-6 max-w-5xl mt-6">
+        <div className="flex flex-col h-[78vh]">
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-500/10 rounded-full">
-                        <Grid className="w-6 h-6 text-orange-500" />
+            <div className="flex items-center justify-between pb-4 border-b shrink-0 pr-8">
+                <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20">
+                        <Grid className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-semibold">Application Policies</h3>
-                        <p className="text-sm text-muted-foreground">Manage app installation and configuration for iOS</p>
+                        <h3 className="text-xl font-bold tracking-tight">Application Policies</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">Manage app installation and configuration for iOS</p>
                     </div>
                 </div>
                 <Button
-                    variant="outline"
                     size="sm"
                     onClick={() => setOpenAddModal(true)}
                     disabled={availableForAdd.length === 0 && policies.length === 0}
+                    className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30"
                 >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4" />
                     Add Application
                 </Button>
             </div>
 
             {/* No apps warning */}
             {availableForAdd.length === 0 && policies.length === 0 && !isFetching && (
-                <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                        No iOS applications available. Please register iOS applications first.
-                    </AlertDescription>
-                </Alert>
+                <div className="flex-1 flex items-center justify-center">
+                    <Alert className="max-w-md">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            No iOS applications available. Please register iOS applications first.
+                        </AlertDescription>
+                    </Alert>
+                </div>
             )}
 
             {/* Loading state */}
             {isFetching && (
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-10">
+                <div className="flex-1 flex items-center justify-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading existing policies...
                 </div>
             )}
 
-            {/* Policies Table */}
-            {policies.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[40px]" />
-                                <TableHead className="w-[260px]">Application</TableHead>
-                                <TableHead className="w-[120px]">Action</TableHead>
-                                <TableHead className="w-[180px]">Purchase Method</TableHead>
-                                <TableHead className="w-[100px] text-center">Analytics</TableHead>
-                                <TableHead className="w-[100px] text-center">Status</TableHead>
-                                <TableHead className="w-[80px] text-center">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {policies.map((policy) => {
-                                const policyKey = policy.id || policy.applicationId;
-                                const appInfo = getAppDisplayInfo(policy.applicationId);
-                                const displayName = policy.name || appInfo.name;
-                                const isExpanded = expandedRows.has(policyKey);
+            {/* Master-Detail Layout */}
+            {policies.length > 0 && !isFetching && (
+                <div className="flex flex-1 min-h-0 mt-4 gap-0 border rounded-lg overflow-hidden">
+                    {/* Left Panel — App List */}
+                    <div className="w-[280px] shrink-0 border-r bg-gradient-to-b from-muted/30 to-muted/10 flex flex-col">
+                        {/* Search */}
+                        <div className="p-3 border-b bg-muted/20">
+                            <div className="relative group/search">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground transition-colors group-focus-within/search:text-blue-500" />
+                                <Input
+                                    placeholder="Search apps..."
+                                    value={listSearchQuery}
+                                    onChange={(e) => setListSearchQuery(e.target.value)}
+                                    className="pl-8 h-8 text-xs bg-background/80 border-border/50 focus:border-blue-500/50 focus:bg-background transition-all duration-200"
+                                />
+                            </div>
+                        </div>
 
+                        {/* App List */}
+                        <div className="flex-1 overflow-y-auto">
+                            {filteredPolicies.map((policy) => {
+                                const info = getAppInfo(policy);
+                                const key = getPolicyKey(policy);
+                                const isSelected = selectedPolicyId === key;
                                 return (
-                                    <React.Fragment key={policyKey}>
-                                        {/* Main Row */}
-                                        <TableRow className={cn(isExpanded && 'bg-muted/30')}>
-                                            <TableCell className="px-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7"
-                                                    onClick={() => toggleRowExpansion(policyKey)}
-                                                >
-                                                    {isExpanded
-                                                        ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                                        : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                                    }
-                                                </Button>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    {appInfo.iconUrl && (
-                                                        <img
-                                                            src={appInfo.iconUrl}
-                                                            alt=""
-                                                            className="w-8 h-8 rounded-lg flex-shrink-0"
-                                                            loading="lazy"
-                                                        />
-                                                    )}
-                                                    <div>
-                                                        <p className="font-medium text-sm">{displayName}</p>
-                                                        {appInfo.bundleId && (
-                                                            <p className="text-xs text-muted-foreground">{appInfo.bundleId}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{policy.action}</Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    value={(policy.purchaseMethod ?? 1).toString()}
-                                                    onValueChange={(v) => handleFieldChange(policyKey, 'purchaseMethod', parseInt(v))}
-                                                >
-                                                    <SelectTrigger className="h-8 text-xs w-[160px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="0" className="text-xs">Free / VPP Redemption</SelectItem>
-                                                        <SelectItem value="1" className="text-xs">VPP Assignment</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Switch
-                                                    checked={policy.enableAppAnalytics ?? false}
-                                                    onCheckedChange={(v) => handleFieldChange(policyKey, 'enableAppAnalytics', v)}
-                                                    className="scale-90"
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {policy.isNew ? (
-                                                    <Badge variant="secondary">New</Badge>
-                                                ) : (
-                                                    <Badge variant="outline">Saved</Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                                                onClick={() => handleDeleteApplication(policy)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>Delete</TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            </TableCell>
-                                        </TableRow>
-
-                                        {/* Expanded Detail Row */}
-                                        {isExpanded && (
-                                            <TableRow className="bg-muted/10 hover:bg-muted/10">
-                                                <TableCell colSpan={7} className="border-t border-dashed p-0">
-                                                    <div className="px-6 py-4 pl-12">
-                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
-                                                            {/* Application ID */}
-                                                            <div className="space-y-1.5">
-                                                                <Label className="text-xs text-muted-foreground">Application ID</Label>
-                                                                <Input
-                                                                    value={policy.applicationId || ''}
-                                                                    disabled
-                                                                    className="h-8 text-xs bg-muted"
-                                                                />
-                                                            </div>
-
-                                                            {/* Name */}
-                                                            <div className="space-y-1.5">
-                                                                <Label className="text-xs text-muted-foreground">Name</Label>
-                                                                <Input
-                                                                    value={policy.name || ''}
-                                                                    disabled
-                                                                    className="h-8 text-xs bg-muted"
-                                                                />
-                                                            </div>
-
-                                                            {/* Action */}
-                                                            <div className="space-y-1.5">
-                                                                <Label className="text-xs text-muted-foreground">Action</Label>
-                                                                <Input
-                                                                    value={policy.action || 'INSTALL'}
-                                                                    disabled
-                                                                    className="h-8 text-xs bg-muted"
-                                                                />
-                                                            </div>
-
-                                                            {/* Attribute: Associated Domains */}
-                                                            <div className="space-y-1.5 col-span-2">
-                                                                <Label className="text-xs text-muted-foreground">Associated Domains</Label>
-                                                                <Input
-                                                                    placeholder="Comma-separated domains (e.g. example.com, app.example.com)"
-                                                                    value={policy.attribute?.associatedDomains?.join(', ') || ''}
-                                                                    onChange={(e) => {
-                                                                        const domains = e.target.value
-                                                                            .split(',')
-                                                                            .map((d) => d.trim())
-                                                                            .filter(Boolean);
-                                                                        handleFieldChange(policyKey, 'attribute', {
-                                                                            ...policy.attribute,
-                                                                            associatedDomains: domains,
-                                                                        } as any);
-                                                                    }}
-                                                                    className="h-8 text-xs"
-                                                                />
-                                                            </div>
-
-                                                            {/* Attribute Toggles */}
-                                                            <div className="space-y-2.5 col-span-3">
-                                                                <Label className="text-xs text-muted-foreground block">Attributes</Label>
-                                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                                    <label className="flex items-center gap-2 text-xs">
-                                                                        <Switch
-                                                                            checked={policy.attribute?.associatedDomainsEnableDirectDownloads ?? false}
-                                                                            onCheckedChange={(v) =>
-                                                                                handleFieldChange(policyKey, 'attribute', {
-                                                                                    ...policy.attribute,
-                                                                                    associatedDomainsEnableDirectDownloads: v,
-                                                                                } as any)
-                                                                            }
-                                                                            className="scale-90"
-                                                                        />
-                                                                        <span>Direct Downloads</span>
-                                                                    </label>
-                                                                    <label className="flex items-center gap-2 text-xs">
-                                                                        <Switch
-                                                                            checked={policy.attribute?.tapToPayScreenLock ?? false}
-                                                                            onCheckedChange={(v) =>
-                                                                                handleFieldChange(policyKey, 'attribute', {
-                                                                                    ...policy.attribute,
-                                                                                    tapToPayScreenLock: v,
-                                                                                } as any)
-                                                                            }
-                                                                            className="scale-90"
-                                                                        />
-                                                                        <span>Tap to Pay Screen Lock</span>
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
+                                    <div
+                                        key={key}
+                                        className={cn(
+                                            'group flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-border/30 transition-all duration-200',
+                                            isSelected
+                                                ? 'bg-blue-500/10 dark:bg-blue-500/15 border-l-[3px] border-l-blue-500 shadow-[inset_0_0_20px_-12px_rgba(59,130,246,0.3)]'
+                                                : 'hover:bg-muted/60 border-l-[3px] border-l-transparent hover:border-l-border'
                                         )}
-                                    </React.Fragment>
+                                        onClick={() => setSelectedPolicyId(key)}
+                                    >
+                                        {info.iconUrl && (
+                                            <img
+                                                src={info.iconUrl}
+                                                alt=""
+                                                className="w-9 h-9 rounded-lg shrink-0 shadow-sm"
+                                                loading="lazy"
+                                            />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                                <p className={cn("font-medium text-sm truncate transition-colors", isSelected && "text-blue-600 dark:text-blue-400")}>{info.name}</p>
+                                                {policy.isNew && (
+                                                    <Badge className="text-[10px] px-1.5 py-0 shrink-0 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20">New</Badge>
+                                                )}
+                                            </div>
+                                            {info.bundleId && (
+                                                <p className="text-[11px] text-muted-foreground truncate mt-0.5">{info.bundleId}</p>
+                                            )}
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-1">
+                                                {getPurchaseMethodLabel(policy.purchaseMethod)}
+                                            </Badge>
+                                        </div>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 transition-all duration-200"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteApplication(policy);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>Delete</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
                                 );
                             })}
-                        </TableBody>
-                    </Table>
+
+                            {filteredPolicies.length === 0 && listSearchQuery.trim() && (
+                                <div className="text-center py-10 text-muted-foreground">
+                                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                                        <Search className="w-5 h-5 opacity-50" />
+                                    </div>
+                                    <p className="text-xs font-medium">No apps match "{listSearchQuery}"</p>
+                                    <p className="text-[11px] mt-1 opacity-60">Try a different search term</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* App count */}
+                        <div className="px-3 py-2.5 border-t text-[11px] text-muted-foreground bg-muted/30 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                            {policies.length} application{policies.length !== 1 ? 's' : ''} configured
+                        </div>
+                    </div>
+
+                    {/* Right Panel — Detail Form */}
+                    <div className="flex-1 flex flex-col min-h-0">
+                        {selectedPolicy ? (
+                            <IosDetailPanel
+                                policy={selectedPolicy}
+                                appInfo={getAppInfo(selectedPolicy)}
+                                onFieldChange={handleFieldChange}
+                            />
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                                <div className="text-center">
+                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 flex items-center justify-center mx-auto mb-4 shadow-inner">
+                                        <Package className="w-7 h-7 opacity-40" />
+                                    </div>
+                                    <p className="text-sm font-semibold">Select an application</p>
+                                    <p className="text-xs mt-1.5 max-w-[200px] mx-auto leading-relaxed">Choose an app from the list to view and edit its policy settings</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
             {/* Empty state - apps exist but none added */}
             {policies.length === 0 && availableForAdd.length > 0 && !isFetching && (
-                <Card className="border-dashed">
-                    <CardContent className="py-10 text-center">
-                        <Grid className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                        <h4 className="font-medium mb-2">No application policies configured</h4>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Add iOS applications to configure install and management settings.
-                        </p>
-                        <Button variant="outline" onClick={() => setOpenAddModal(true)}>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Application
-                        </Button>
-                    </CardContent>
-                </Card>
+                <div className="flex-1 flex items-center justify-center">
+                    <Card className="border-dashed max-w-sm border-2 border-blue-500/20">
+                        <CardContent className="py-12 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center mx-auto mb-5">
+                                <Grid className="w-7 h-7 text-blue-500/60" />
+                            </div>
+                            <h4 className="font-semibold text-base mb-2">No application policies configured</h4>
+                            <p className="text-sm text-muted-foreground mb-6 max-w-[260px] mx-auto leading-relaxed">
+                                Add iOS applications to configure install and management settings.
+                            </p>
+                            <Button
+                                onClick={() => setOpenAddModal(true)}
+                                className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Application
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* Action buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={onCancel} disabled={loading}>
+            <div className="flex justify-end gap-3 pt-4 border-t shrink-0">
+                <Button variant="outline" onClick={onCancel} disabled={loading} className="transition-all duration-200">
                     Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={loading || !hasChanges} className="gap-2 min-w-[140px]">
+                <Button
+                    onClick={handleSave}
+                    disabled={loading || !hasChanges}
+                    className={cn(
+                        'gap-2 min-w-[140px] transition-all duration-200',
+                        hasChanges && 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 hover:shadow-lg'
+                    )}
+                >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Changes
                 </Button>
@@ -739,3 +695,190 @@ export const ApplicationPolicyEditor = ({
         </div>
     );
 };
+
+// ====================================================================
+// Detail Panel Sub-component
+// ====================================================================
+interface IosDetailPanelProps {
+    policy: ExtendedPolicy;
+    appInfo: { name: string; bundleId: string; iconUrl: string };
+    onFieldChange: (id: string, field: keyof IosApplicationPolicy, value: boolean | string | number | undefined | Record<string, object>) => void;
+}
+
+function IosDetailPanel({ policy, appInfo, onFieldChange }: IosDetailPanelProps) {
+    const policyKey = policy.id || policy.applicationId;
+
+    return (
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* App Info Header */}
+            <div className="relative overflow-hidden rounded-xl border bg-gradient-to-r from-card to-muted/30 p-5">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+                <div className="flex items-start gap-4">
+                    {appInfo.iconUrl && (
+                        <img
+                            src={appInfo.iconUrl}
+                            alt=""
+                            className="w-12 h-12 rounded-xl shadow-md shrink-0"
+                            loading="lazy"
+                        />
+                    )}
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-bold truncate">{appInfo.name}</h3>
+                        {appInfo.bundleId && (
+                            <p className="text-sm text-muted-foreground truncate mt-0.5 font-mono">{appInfo.bundleId}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline" className="text-xs font-medium">{policy.action}</Badge>
+                            {policy.isNew && <Badge className="text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">New</Badge>}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Configuration Section */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                        <ShoppingCart className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <h4 className="text-sm font-semibold uppercase tracking-wider">Configuration</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors duration-200">
+                        <Label className="text-xs font-medium text-muted-foreground">Purchase Method</Label>
+                        <Select
+                            value={(policy.purchaseMethod ?? 1).toString()}
+                            onValueChange={(v) => onFieldChange(policyKey, 'purchaseMethod', parseInt(v))}
+                        >
+                            <SelectTrigger className="h-9 bg-background/80">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="0">Free / VPP Redemption</SelectItem>
+                                <SelectItem value="1">VPP Assignment</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div
+                        className="flex items-center justify-between p-4 border rounded-xl bg-card/50 hover:bg-card hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                        onClick={() => onFieldChange(policyKey, 'enableAppAnalytics', !(policy.enableAppAnalytics ?? false))}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/15 transition-colors">
+                                <BarChart3 className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <div>
+                                <span className="text-sm font-medium">App Analytics</span>
+                                <p className="text-xs text-muted-foreground">Enable analytics collection</p>
+                            </div>
+                        </div>
+                        <Switch
+                            checked={policy.enableAppAnalytics ?? false}
+                            onCheckedChange={(v) => onFieldChange(policyKey, 'enableAppAnalytics', v)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <Separator className="opacity-50" />
+
+            {/* Attributes Section */}
+            <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                        <Settings2 className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <h4 className="text-sm font-semibold uppercase tracking-wider">Attributes</h4>
+                </div>
+
+                {/* Associated Domains */}
+                <div className="space-y-2 p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors duration-200">
+                    <div className="flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                        <Label className="text-xs font-medium text-muted-foreground">Associated Domains</Label>
+                    </div>
+                    <Input
+                        placeholder="Comma-separated domains (e.g. example.com, app.example.com)"
+                        value={policy.attribute?.associatedDomains?.join(', ') || ''}
+                        onChange={(e) => {
+                            const domains = e.target.value
+                                .split(',')
+                                .map((d) => d.trim())
+                                .filter(Boolean);
+                            onFieldChange(policyKey, 'attribute', {
+                                ...policy.attribute,
+                                associatedDomains: domains,
+                            } as any);
+                        }}
+                        className="h-9 bg-background/80"
+                    />
+                </div>
+
+                {/* Attribute Toggles */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div
+                        className="flex items-center justify-between p-4 border rounded-xl bg-card/50 hover:bg-card hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                        onClick={() =>
+                            onFieldChange(policyKey, 'attribute', {
+                                ...policy.attribute,
+                                associatedDomainsEnableDirectDownloads: !(policy.attribute?.associatedDomainsEnableDirectDownloads ?? false),
+                            } as any)
+                        }
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/15 transition-colors">
+                                <Globe className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <div>
+                                <span className="text-sm font-medium">Direct Downloads</span>
+                                <p className="text-xs text-muted-foreground">Enable for associated domains</p>
+                            </div>
+                        </div>
+                        <Switch
+                            checked={policy.attribute?.associatedDomainsEnableDirectDownloads ?? false}
+                            onCheckedChange={(v) =>
+                                onFieldChange(policyKey, 'attribute', {
+                                    ...policy.attribute,
+                                    associatedDomainsEnableDirectDownloads: v,
+                                } as any)
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+
+                    <div
+                        className="flex items-center justify-between p-4 border rounded-xl bg-card/50 hover:bg-card hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                        onClick={() =>
+                            onFieldChange(policyKey, 'attribute', {
+                                ...policy.attribute,
+                                tapToPayScreenLock: !(policy.attribute?.tapToPayScreenLock ?? false),
+                            } as any)
+                        }
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/15 transition-colors">
+                                <Settings2 className="w-4 h-4 text-blue-500" />
+                            </div>
+                            <div>
+                                <span className="text-sm font-medium">Tap to Pay Screen Lock</span>
+                                <p className="text-xs text-muted-foreground">Require screen lock for Tap to Pay</p>
+                            </div>
+                        </div>
+                        <Switch
+                            checked={policy.attribute?.tapToPayScreenLock ?? false}
+                            onCheckedChange={(v) =>
+                                onFieldChange(policyKey, 'attribute', {
+                                    ...policy.attribute,
+                                    tapToPayScreenLock: v,
+                                } as any)
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+}

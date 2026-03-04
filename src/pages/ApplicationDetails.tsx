@@ -447,7 +447,8 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
             </CardContent>
           </Card>
 
-          {/* App Configurations */}
+          {/* App Configurations & Additional Info — side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -509,20 +510,27 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
               )}
 
               {configs.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                       <tr>
-                        <th className="text-left px-4 py-2 font-medium text-muted-foreground">Key</th>
-                        <th className="text-left px-4 py-2 font-medium text-muted-foreground">Value Type</th>
+                        <th className="text-left px-4 py-2 font-medium text-xs text-muted-foreground uppercase tracking-wider">Key</th>
+                        <th className="text-left px-4 py-2 font-medium text-xs text-muted-foreground uppercase tracking-wider w-[140px]">Value Type</th>
                       </tr>
                     </thead>
                     <tbody>
                       {configs.map((config, i) => (
-                        <tr key={i} className="border-t">
+                        <tr key={i} className="border-t hover:bg-muted/20 transition-colors">
                           <td className="px-4 py-2 font-mono text-sm">{config.key}</td>
                           <td className="px-4 py-2">
-                            <Badge variant="outline" className="text-xs">{config.valueType}</Badge>
+                            <span className={cn(
+                              'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                              config.valueType === 'string' && 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+                              config.valueType === 'integer' && 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+                              config.valueType === 'boolean' && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                            )}>
+                              {config.valueType}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -537,7 +545,6 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
             </CardContent>
           </Card>
 
-          {/* Additional Info */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -546,35 +553,43 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 gap-5">
                 {app.primaryGenreName && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Category</p>
-                    <Badge variant="outline">{app.primaryGenreName}</Badge>
+                    <p className="text-xs text-muted-foreground mb-2">Category</p>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      {app.primaryGenreName}
+                    </span>
                   </div>
                 )}
                 {app.genres && app.genres.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Genres</p>
-                    <div className="flex flex-wrap gap-1">
+                    <p className="text-xs text-muted-foreground mb-2">Genres</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {app.genres.map((g, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">{g}</Badge>
+                        <span key={i} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                          {g}
+                        </span>
                       ))}
                     </div>
                   </div>
                 )}
                 {app.languageCodesISO2A && app.languageCodesISO2A.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">
+                    <p className="text-xs text-muted-foreground mb-2">
                       <Globe className="w-3 h-3 inline mr-1" />
                       Languages ({app.languageCodesISO2A.length})
                     </p>
                     <div className="flex flex-wrap gap-1">
                       {app.languageCodesISO2A.slice(0, 10).map((code, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">{code}</Badge>
+                        <span key={i} className="inline-flex items-center justify-center w-8 h-6 rounded text-[11px] font-semibold bg-muted/80 text-muted-foreground border border-border/50 uppercase tracking-wide">
+                          {code}
+                        </span>
                       ))}
                       {app.languageCodesISO2A.length > 10 && (
-                        <Badge variant="secondary" className="text-xs">+{app.languageCodesISO2A.length - 10}</Badge>
+                        <span className="inline-flex items-center justify-center px-2 h-6 rounded text-[11px] font-semibold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                          +{app.languageCodesISO2A.length - 10}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -624,6 +639,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </TooltipProvider>
     </MainLayout>
