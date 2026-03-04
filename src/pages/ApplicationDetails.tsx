@@ -618,7 +618,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
                 {app.sellerUrl && (
                   <Button variant="outline" size="sm" onClick={() => window.open(app.sellerUrl, '_blank')}>
                     <Globe className="w-3.5 h-3.5 mr-2" />
-                    Seller Website
+                    Company Website
                   </Button>
                 )}
               </div>

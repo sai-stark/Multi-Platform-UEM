@@ -184,8 +184,6 @@ export function PolicyEditDialog({
 
     const { title, icon } = getPolicyHeader();
 
-    // All policy components render their own headers, so always hide the generic dialog header
-    const hideDefaultHeader = true;
 
 
     return (
@@ -194,6 +192,7 @@ export function PolicyEditDialog({
                 "max-h-[90vh] overflow-y-auto",
                 activePolicyType === "androidApplication" ? "max-w-[80vw]" : "max-w-4xl"
             )}>
+                <DialogTitle className="sr-only">{title}</DialogTitle>
                 <div className="pt-0">
                     {/* Render appropriate policy component based on activePolicyType */}
                     {activePolicyType === "passcode" && (

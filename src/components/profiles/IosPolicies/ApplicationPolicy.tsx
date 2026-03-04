@@ -610,24 +610,21 @@ export const ApplicationPolicyEditor = ({
 
                     <div className="space-y-4 py-4">
                         {availableForAdd.length === 0 ? (
-                            <div className="space-y-3">
-                                <Alert>
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertDescription>
-                                        All available iOS applications have already been added, or no apps are registered.
-                                    </AlertDescription>
-                                </Alert>
-                                <span
-                                    className="text-sm text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors inline-flex items-center gap-1"
-                                    onClick={() => {
-                                        setOpenAddModal(false);
-                                        navigate('/applications?platform=ios');
-                                    }}
-                                >
-                                    <Plus className="h-3.5 w-3.5" />
-                                    Add Application
-                                </span>
-                            </div>
+                            <Alert>
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                    All available iOS applications have already been added, or no apps are registered.{' '}
+                                    <span
+                                        className="text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors"
+                                        onClick={() => {
+                                            setOpenAddModal(false);
+                                            navigate('/applications?platform=ios');
+                                        }}
+                                    >
+                                        Add Application.
+                                    </span>
+                                </AlertDescription>
+                            </Alert>
                         ) : (
                             <div className="space-y-4">
                                 {/* Application */}

@@ -227,6 +227,7 @@ const Applications = () => {
   const [itunesSearchResults, setItunesSearchResults] = useState<ITunesSearchResult[]>([]);
   const [itunesSearching, setItunesSearching] = useState(false);
   const [iosAddMode, setIosAddMode] = useState<'url' | 'search'>('search');
+  const [iosConfirmDialog, setIosConfirmDialog] = useState<{ open: boolean; name: string; identifier: string }>({ open: false, name: '', identifier: '' });
 
   // Iframe-related state
   const [isGoogleApiLoaded, setIsGoogleApiLoaded] = useState(false);
@@ -590,41 +591,44 @@ const Applications = () => {
     fetchApplications();
   }, [platform]);
 
-  // iOS: Register app via App Store URL
-  const handleRegisterIosApp = async () => {
+  // iOS: Show confirmation before registering via App Store URL
+  const handleRegisterIosApp = () => {
     if (!iosAppUrl.trim()) {
       toast({ title: 'Error', description: 'Please enter an App Store URL', variant: 'destructive' });
       return;
     }
-    setIosRegistering(true);
-    try {
-      await ApplicationService.registerApplication('ios', { identifier: iosAppUrl.trim() });
-      toast({ title: 'Success', description: 'iOS application registered successfully' });
-      setIosAppUrl('');
-      setAddDialogOpen(false);
-      fetchApplications();
-    } catch (error) {
-      console.error('Failed to register iOS app:', error);
-      toast({ title: 'Error', description: getErrorMessage(error, 'Failed to register iOS application'), variant: 'destructive' });
-    } finally {
-      setIosRegistering(false);
-    }
+    setAddDialogOpen(false);
+    setTimeout(() => setIosConfirmDialog({ open: true, name: iosAppUrl.trim(), identifier: iosAppUrl.trim() }), 200);
   };
 
-  // iOS: Register app from iTunes search result
-  const handleRegisterFromSearch = async (result: ITunesSearchResult) => {
+  // iOS: Show confirmation before registering from iTunes search result
+  const handleRegisterFromSearch = (result: ITunesSearchResult) => {
     const url = `https://apps.apple.com/app/id${result.trackId}`;
+    setAddDialogOpen(false);
+    setTimeout(() => setIosConfirmDialog({ open: true, name: result.trackName, identifier: url }), 200);
+  };
+
+  // iOS: Cancel registration — reopen the add dialog
+  const cancelRegisterIosApp = () => {
+    setIosConfirmDialog({ open: false, name: '', identifier: '' });
+    setTimeout(() => setAddDialogOpen(true), 200);
+  };
+
+  // iOS: Confirm and register the app
+  const confirmRegisterIosApp = async () => {
+    const { name, identifier } = iosConfirmDialog;
+    setIosConfirmDialog({ open: false, name: '', identifier: '' });
     setIosRegistering(true);
     try {
-      await ApplicationService.registerApplication('ios', { identifier: url });
-      toast({ title: 'Success', description: `${result.trackName} registered successfully` });
+      await ApplicationService.registerApplication('ios', { identifier });
+      toast({ title: 'Success', description: `${name} registered successfully` });
+      setIosAppUrl('');
       setItunesSearchTerm('');
       setItunesSearchResults([]);
-      setAddDialogOpen(false);
       fetchApplications();
     } catch (error) {
       console.error('Failed to register iOS app:', error);
-      toast({ title: 'Error', description: getErrorMessage(error, `Failed to register ${result.trackName}`), variant: 'destructive' });
+      toast({ title: 'Error', description: getErrorMessage(error, `Failed to register ${name}`), variant: 'destructive' });
     } finally {
       setIosRegistering(false);
     }
@@ -924,7 +928,7 @@ const Applications = () => {
     },
     {
       key: 'sellerName',
-      header: 'Seller',
+      header: 'Company',
       accessor: (item) => item.sellerName || '-',
     },
     {
@@ -960,7 +964,45 @@ const Applications = () => {
     },
   ];
 
-  // Row actions (Android/generic)
+  // Quick actions (Android) — inline icon buttons
+  const quickActions = (app: Application) => (
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/applications/${platform}/${app.id}`);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>View Details</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteDialog({ open: true, app });
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Delete</TooltipContent>
+      </Tooltip>
+    </>
+  );
+
+  // Row actions (Android) — 3-dot dropdown items
   const rowActions = (app: Application) => (
     <>
       <DropdownMenuItem onClick={() => handleSetAction(app, 'MANDATORY')}>
@@ -975,20 +1017,48 @@ const Applications = () => {
         <AlertTriangle className="w-4 h-4 mr-2 text-destructive" />
         Block App
       </DropdownMenuItem>
-
-      <DropdownMenuItem>Manage Versions</DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem 
-        className="text-destructive"
-        onClick={() => setDeleteDialog({ open: true, app })}
-      >
-        <Trash2 className="w-4 h-4 mr-2" />
-        Delete
-      </DropdownMenuItem>
     </>
   );
 
-  // iOS row actions
+  // Quick actions (iOS) — inline icon buttons
+  const iosQuickActions = (app: IosApplication) => (
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/applications/ios/${app.id}`);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>View Details</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteDialog({ open: true, app: app as any });
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Delete</TooltipContent>
+      </Tooltip>
+    </>
+  );
+
+  // Row actions (iOS) — 3-dot dropdown items
   const iosRowActions = (app: IosApplication) => (
     <>
       {app.trackViewUrl && (
@@ -997,14 +1067,6 @@ const Applications = () => {
           View on App Store
         </DropdownMenuItem>
       )}
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        className="text-destructive"
-        onClick={() => setDeleteDialog({ open: true, app: app as any })}
-      >
-        <Trash2 className="w-4 h-4 mr-2" />
-        Delete
-      </DropdownMenuItem>
     </>
   );
 
@@ -1147,6 +1209,7 @@ const Applications = () => {
               loading={loading}
               globalSearchPlaceholder="Search iOS applications..."
               emptyMessage={loading ? "Loading applications..." : "No iOS applications found. Click 'Add Application' to register apps."}
+              quickActions={iosQuickActions}
               rowActions={iosRowActions}
               defaultPageSize={10}
               showExport={true}
@@ -1161,6 +1224,7 @@ const Applications = () => {
               loading={loading}
               globalSearchPlaceholder="Search applications..."
               emptyMessage={loading ? "Loading applications..." : "No applications found."}
+              quickActions={quickActions}
               rowActions={rowActions}
               defaultPageSize={10}
               showExport={true}
@@ -1183,6 +1247,24 @@ const Applications = () => {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* iOS Registration Confirmation Dialog */}
+        <AlertDialog open={iosConfirmDialog.open} onOpenChange={(open) => { if (!open) setIosConfirmDialog({ open: false, name: '', identifier: '' }); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Register iOS Application</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to register "{iosConfirmDialog.name}"? This will add the application to your managed apps.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelRegisterIosApp}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRegisterIosApp}>
+                Register
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
