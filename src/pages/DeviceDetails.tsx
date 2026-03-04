@@ -34,8 +34,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from '@/hooks/use-toast';
 import { getAssetUrl } from '@/config/env';
+import { useToast } from '@/hooks/use-toast';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 import { cn } from '@/lib/utils';
 import { DeviceApplicationList, DeviceCertificateItem, DeviceInfo, DeviceLocationResponse, DeviceSecurityInfo, FullProfile, Platform } from '@/types/models';
@@ -653,13 +653,17 @@ export default function DeviceDetails() {
                             <Activity className="w-4 h-4" /> Overview
                         </TabsTrigger>
 
-                        <TabsTrigger value="hardware" disabled={isIos} className="gap-2 px-4 py-2 w-full">
-                            <Chip className="w-4 h-4" /> Hardware
-                        </TabsTrigger>
+                        {!isIos && (
+                            <TabsTrigger value="hardware" className="gap-2 px-4 py-2 w-full">
+                                <Chip className="w-4 h-4" /> Hardware
+                            </TabsTrigger>
+                        )}
 
-                        <TabsTrigger value="network" disabled={isIos} className="gap-2 px-4 py-2 w-full">
-                            <Network className="w-4 h-4" /> Network
-                        </TabsTrigger>
+                        {!isIos && (
+                            <TabsTrigger value="network" className="gap-2 px-4 py-2 w-full">
+                                <Network className="w-4 h-4" /> Network
+                            </TabsTrigger>
+                        )}
 
                         <TabsTrigger value="applications" className="gap-2 px-4 py-2 w-full">
                             <AppWindow className="w-4 h-4" /> Applications
@@ -673,20 +677,25 @@ export default function DeviceDetails() {
                             <FileText className="w-4 h-4" /> Certificates
                         </TabsTrigger>
 
-                        <TabsTrigger value="system" disabled={isIos} className="gap-2 px-4 py-2 w-full">
-                            <Cpu className="w-4 h-4" /> System
-                        </TabsTrigger>
+                        {!isIos && (
+                            <TabsTrigger value="system" className="gap-2 px-4 py-2 w-full">
+                                <Cpu className="w-4 h-4" /> System
+                            </TabsTrigger>
+                        )}
 
-                        <TabsTrigger value="settings" disabled={isIos} className="gap-2 px-4 py-2 w-full">
-                            <Settings className="w-4 h-4" /> Settings
-                        </TabsTrigger>
+                        {!isIos && (
+                            <TabsTrigger value="settings" className="gap-2 px-4 py-2 w-full">
+                                <Settings className="w-4 h-4" /> Settings
+                            </TabsTrigger>
+                        )}
 
-                        <TabsTrigger value="user" disabled={isIos} className="gap-2 px-4 py-2 w-full">
-                            <User className="w-4 h-4" /> User
-                        </TabsTrigger>
+                        {!isIos && (
+                            <TabsTrigger value="user" className="gap-2 px-4 py-2 w-full">
+                                <User className="w-4 h-4" /> User
+                            </TabsTrigger>
+                        )}
 
-                        <TabsTrigger value="remote-control" //disabled={isIos} 
-                            className="gap-2 px-4 py-2 w-full">
+                        <TabsTrigger value="remote-control" className="gap-2 px-4 py-2 w-full">
                             <MonitorPlay className="w-4 h-4" /> Remote Control
                         </TabsTrigger>
 
@@ -700,39 +709,67 @@ export default function DeviceDetails() {
                         {(device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') ? (
                             // iOS Specific Overview Layout
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <Card className="col-span-1 border-t-4 border-t-primary">
+                                {/* Device Information & Software */}
+                                <Card className="col-span-1 md:col-span-2 border-t-4 border-t-primary">
                                     <CardHeader>
-                                        <SectionHeader title="Device Information" icon={Smartphone} />
+                                        <SectionHeader title="Device Information & Software" icon={Smartphone} />
                                     </CardHeader>
-                                    <CardContent className="grid gap-2">
-                                        <InfoRow label="Device Name" value={device.deviceName} icon={Smartphone} />
-                                        <InfoRow label="Model Name" value={device.modelName} />
-                                        <InfoRow label="Model Number" value={device.model} />
-                                        <InfoRow label="Product Name" value={device.productName} />
-                                        <InfoRow label="Serial Number" value={device.serialNo} copyable icon={Barcode} />
-                                        <InfoRow label="UDID" value={device.udid} copyable icon={Chip} />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="col-span-1 border-t-4 border-t-info">
-                                    <CardHeader>
-                                        <SectionHeader title="Software" icon={Cpu} />
-                                    </CardHeader>
-                                    <CardContent className="grid gap-2">
-                                        <InfoRow label="OS Version" value={device.osVersion} />
-                                        <InfoRow label="Build Version" value={device.buildVersion} />
-                                        <InfoRow label="Modem Firmware" value={device.modemFirmwareVersion} />
+                                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">Device Name</span>
+                                            <Badge variant="secondary" className="font-normal max-w-[50%] truncate">{device.deviceName || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">Model Name</span>
+                                            <Badge variant="secondary" className="font-normal max-w-[50%] truncate">{device.modelName || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">Model Number</span>
+                                            <Badge variant="secondary" className="font-normal max-w-[50%] truncate">{device.model || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">Product Name</span>
+                                            <Badge variant="secondary" className="font-normal max-w-[50%] truncate">{device.productName || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">Serial Number</span>
+                                            <Badge variant="secondary" className="font-normal font-mono max-w-[50%] truncate">{device.serialNo || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">UDID</span>
+                                            <Badge variant="secondary" className="font-normal font-mono max-w-[50%] truncate" title={device.udid}>{device.udid || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">OS Version</span>
+                                            <Badge variant="secondary" className="font-normal">{device.osVersion || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">Build Version</span>
+                                            <Badge variant="secondary" className="font-normal">{device.buildVersion || '-'}</Badge>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                            <span className="text-sm font-medium">Modem Firmware</span>
+                                            <Badge variant="secondary" className="font-normal">{device.modemFirmwareVersion || '-'}</Badge>
+                                        </div>
                                         <BooleanStatus label="Awaiting Config" value={device.awaitingConfiguration} trueLabel="Yes" falseLabel="No" />
                                         <BooleanStatus label="iTunes Account Active" value={device.iTunesStoreAccountIsActive} trueLabel="Yes" falseLabel="No" />
                                     </CardContent>
                                 </Card>
 
+                                {/* Storage & Battery - combined */}
                                 <Card className="col-span-1 border-t-4 border-t-success">
                                     <CardHeader>
-                                        <SectionHeader title="Storage" icon={Database} />
+                                        <SectionHeader title="Storage & Battery" icon={Database} />
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="flex flex-col gap-4">
+                                    <CardContent className="space-y-6">
+                                        {/* Storage */}
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="p-2 rounded-md bg-primary/10">
+                                                    <Database className="w-5 h-5 text-primary" />
+                                                </div>
+                                                <p className="text-sm font-semibold text-foreground">Storage</p>
+                                            </div>
                                             {(() => {
                                                 const capacity = device.deviceCapacity || 0;
                                                 const available = device.availableDeviceCapacity || 0;
@@ -754,44 +791,49 @@ export default function DeviceDetails() {
                                                 );
                                             })()}
                                         </div>
+
+                                        <div className="border-t" />
+
+                                        {/* Battery */}
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="p-2 rounded-md bg-warning/10">
+                                                    <Battery className="w-5 h-5 text-warning" />
+                                                </div>
+                                                <p className="text-sm font-semibold text-foreground">Battery</p>
+                                            </div>
+                                            {(() => {
+                                                const raw = device.batteryLevel;
+                                                const normalized = (raw !== undefined && raw !== null && raw >= 0)
+                                                    ? (raw <= 1 ? Number((raw * 100).toFixed(2)) : Number(raw.toFixed(2)))
+                                                    : -1;
+                                                return (
+                                                    <>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={cn("text-2xl font-bold", getBatteryColor(normalized))}>
+                                                                {normalized >= 0 ? normalized : '-'}%
+                                                            </div>
+                                                        </div>
+                                                        <Progress value={normalized >= 0 ? normalized : 0} className="mt-2 h-2" />
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
                                     </CardContent>
                                 </Card>
 
+                                {/* Status & Compliance */}
                                 <Card className="col-span-1 md:col-span-2 border-t-4 border-t-warning">
                                     <CardHeader>
                                         <SectionHeader title="Status & Compliance" icon={Shield} />
                                     </CardHeader>
-                                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <BooleanStatus label="Supervised" value={device.isSupervised} />
                                         <BooleanStatus label="Shared Device" value={device.isMultiUser} />
                                         <BooleanStatus label="Device Locator" value={device.isDeviceLocatorServiceEnabled} />
                                         <BooleanStatus label="Do Not Disturb" value={device.isDoNotDisturbInEffect} />
                                         <BooleanStatus label="Cloud Backup" value={device.isCloudBackupEnabled} />
                                         <BooleanStatus label="MDM Lost Mode" value={device.isMDMLostModeEnabled} invertColor />
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="col-span-1 border-t-4 border-t-primary/50">
-                                    <CardHeader>
-                                        <SectionHeader title="Battery" icon={Battery} />
-                                    </CardHeader>
-                                    <CardContent>
-                                        {(() => {
-                                            const raw = device.batteryLevel;
-                                            const normalized = (raw !== undefined && raw !== null && raw >= 0)
-                                                ? (raw <= 1 ? Number((raw * 100).toFixed(2)) : Number(raw.toFixed(2)))
-                                                : -1;
-                                            return (
-                                                <>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={cn("text-4xl font-bold", getBatteryColor(normalized))}>
-                                                            {normalized >= 0 ? normalized : '-'}%
-                                                        </div>
-                                                    </div>
-                                                    <Progress value={normalized >= 0 ? normalized : 0} className="mt-4 h-2" />
-                                                </>
-                                            );
-                                        })()}
                                     </CardContent>
                                 </Card>
                             </div>
