@@ -10,10 +10,17 @@ interface MdmPolicyViewProps {
 
 export function MdmPolicyView({ policy, onClose }: MdmPolicyViewProps) {
     return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-                <Server className="w-6 h-6 text-success" />
-                <h3 className="text-lg font-semibold">MDM Configuration</h3>
+        <div className="space-y-6 max-w-4xl mt-6">
+            <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-500/10 rounded-full">
+                        <Server className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-semibold">MDM Configuration</h3>
+                        <p className="text-sm text-muted-foreground">Mobile device management settings</p>
+                    </div>
+                </div>
                 <Badge variant="secondary">View Only</Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -42,9 +49,9 @@ export function MdmPolicyView({ policy, onClose }: MdmPolicyViewProps) {
                     <p className="font-medium">{policy.checkOutWhenRemoved ? 'Yes' : 'No'}</p>
                 </div>
             </div>
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-4 border-t">
                 <Button variant="outline" onClick={onClose}>
-                    Back to Policies
+                    Close
                 </Button>
             </div>
         </div>

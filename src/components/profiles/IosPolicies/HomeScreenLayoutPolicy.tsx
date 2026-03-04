@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { PolicyService } from "@/api/services/IOSpolicies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IosHomeScreenLayoutPolicy, IconItem, FolderIconItem } from "@/types/ios";
-import { PolicyService } from "@/api/services/IOSpolicies";
-import { Plus, Trash2, GripVertical, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FolderIconItem, IconItem, IosHomeScreenLayoutPolicy } from "@/types/ios";
 import { getErrorMessage } from "@/utils/errorUtils";
+import { Edit, FolderOpen, GripVertical, Layout, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 interface HomeScreenLayoutPolicyProps {
     profileId: string;
@@ -277,10 +277,16 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
     );
 
     return (
-        <div className="space-y-6">
-            <p className="text-sm text-muted-foreground">
-                Configure the home screen layout for managed iOS devices. The layout is locked and users cannot modify it.
-            </p>
+        <div className="space-y-6 max-w-4xl mt-6">
+            <div className="flex items-center gap-3 pb-4 border-b">
+                <div className="p-2 bg-teal-500/10 rounded-full">
+                    {initialData?.id ? <Edit className="w-5 h-5 text-teal-500" /> : <Layout className="w-5 h-5 text-teal-500" />}
+                </div>
+                <div>
+                    <h3 className="text-lg font-medium">{initialData?.id ? 'Edit' : 'Create'} Home Screen Layout</h3>
+                    <p className="text-sm text-muted-foreground">Configure the home screen layout for managed iOS devices</p>
+                </div>
+            </div>
 
             {/* Dock Section */}
             <div className="space-y-3">
@@ -345,17 +351,18 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
                 ))}
             </div>
 
-            {/* Actions */}
             <div className="flex justify-between pt-4 border-t">
                 <div>
                     {initialData?.id && (
-                        <Button variant="destructive" onClick={handleDelete} disabled={saving}>Delete</Button>
+                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={saving}>
+                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                        </Button>
                     )}
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={onCancel} disabled={saving}>Cancel</Button>
                     <Button onClick={handleSave} disabled={saving}>
-                        {saving ? "Saving..." : initialData?.id ? "Update" : "Create"}
+                        {saving ? "Saving..." : "Save Changes"}
                     </Button>
                 </div>
             </div>

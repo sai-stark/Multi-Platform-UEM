@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { CardFooter } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { PolicyService } from '@/api/services/IOSpolicies';
+import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 import { IosRelayPolicy } from '@/types/ios';
-import { Radio, Plus, X, Loader2 } from 'lucide-react';
+import { getErrorMessage } from '@/utils/errorUtils';
+import { Edit, Loader2, Plus, Radio, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
 
 interface RelayPolicyProps {
     profileId: string;
@@ -110,10 +109,25 @@ export function RelayPolicy({ profileId, initialData, onSave, onCancel }: RelayP
 
     if (!isEditing && initialData) {
         return (
-            <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                    <Radio className="w-5 h-5 text-cyan-500" />
-                    <h3 className="text-lg font-semibold">Relay</h3>
+            <div className="space-y-6 max-w-4xl mt-6">
+                <div className="flex items-center justify-between pb-4 border-b">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-500/10 rounded-full">
+                            <Radio className="w-6 h-6 text-amber-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold">Relay</h3>
+                            <p className="text-sm text-muted-foreground">Network relay configuration</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
+                            <Edit className="w-4 h-4 mr-1" /> Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                        </Button>
+                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div><span className="text-muted-foreground text-sm">Name</span><p className="font-medium">{formData.name}</p></div>
@@ -123,20 +137,23 @@ export function RelayPolicy({ profileId, initialData, onSave, onCancel }: RelayP
                     <div><span className="text-muted-foreground text-sm">Excluded Domains</span><p className="font-medium">{formData.excludedDomains?.length || 0} domain(s)</p></div>
                     <div><span className="text-muted-foreground text-sm">HTTP Headers</span><p className="font-medium">{Object.keys(formData.additionalHttpHeaders || {}).length} header(s)</p></div>
                 </div>
-                <CardFooter className="flex justify-end gap-2 px-0">
+                <div className="flex justify-end pt-4 border-t">
                     <Button variant="outline" onClick={onCancel}>Close</Button>
-                    <Button variant="destructive" onClick={handleDelete} disabled={loading}>Delete</Button>
-                    <Button onClick={() => setIsEditing(true)}>Edit</Button>
-                </CardFooter>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-                <Radio className="w-5 h-5 text-cyan-500" />
-                <h3 className="text-lg font-semibold">{initialData?.id ? 'Edit' : 'Create'} Relay</h3>
+        <div className="space-y-6 max-w-4xl mt-6">
+            <div className="flex items-center gap-3 pb-4 border-b">
+                <div className="p-2 bg-amber-500/10 rounded-full">
+                    <Edit className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-medium">{initialData?.id ? 'Edit' : 'Create'} Relay</h3>
+                    <p className="text-sm text-muted-foreground">Configure network relay settings</p>
+                </div>
             </div>
 
             <div className="space-y-4">
@@ -213,12 +230,11 @@ export function RelayPolicy({ profileId, initialData, onSave, onCancel }: RelayP
                 </div>
             </div>
 
-            <CardFooter className="flex justify-end gap-2 px-0">
+            <CardFooter className="flex justify-between px-0 pt-6">
                 <Button variant="outline" onClick={initialData?.id ? () => setIsEditing(false) : onCancel}>Cancel</Button>
-                {initialData?.id && <Button variant="destructive" onClick={handleDelete} disabled={loading}>Delete</Button>}
                 <Button onClick={handleSave} disabled={loading}>
                     {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    {initialData?.id ? 'Update' : 'Create'}
+                    Save Changes
                 </Button>
             </CardFooter>
         </div>

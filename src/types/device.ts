@@ -205,6 +205,8 @@ export interface DeviceApplication {
     identifier?: string; // iOS
     appVersionId?: string;
     appVersion?: string;
+    version?: string; // iOS internal version
+    shortVersion?: string; // iOS user-facing version
     isInstalled?: boolean;
     isExpected?: boolean;
     isBlocked?: boolean;
@@ -212,6 +214,25 @@ export interface DeviceApplication {
     isManaged?: boolean; // iOS
     applicationType?: string;
     externalVersionIdentifier?: number; // iOS
+    bundleSize?: number; // iOS - bytes
+    dynamicSize?: number; // iOS - bytes
+    isValidated?: boolean; // iOS
+    installing?: boolean; // iOS
+    appStoreVendable?: boolean; // iOS
+    deviceBasedVPP?: boolean; // iOS
+    betaApp?: boolean; // iOS
+    adHocCodeSigned?: boolean; // iOS
+    hasUpdateAvailable?: boolean; // iOS
+    isAppClip?: boolean; // iOS
+    applicationStatus?: string; // iOS - e.g. "Installed"
+    applicationConfigurationChecked?: Record<string, unknown>; // iOS
+    iosDeviceApplicationExtraDetails?: {
+        hasConfiguration?: boolean;
+        hasFeedback?: boolean;
+        isValidated?: boolean;
+        managementFlags?: number;
+        status?: string; // e.g. "Managed"
+    };
 }
 
 export type DeviceApplicationList = DeviceApplication[] | { content: DeviceApplication[] };

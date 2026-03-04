@@ -15,12 +15,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
 import { NotificationPolicy as NotificationPolicyType, Platform } from '@/types/models';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { AlertTriangle, Bell, Car, CheckCircle2, Circle, Edit, Eye, Layout, Loader2, Lock, MessageSquare, Plus, Speaker, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NotificationPolicyProps {
     platform: Platform;
@@ -166,9 +166,14 @@ export function NotificationPolicy({ platform, profileId, initialData, onSave }:
     return (
         <div className="space-y-6 mt-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-medium">Notification Settings</h3>
-                    <p className="text-sm text-muted-foreground">Manage notification preferences for specific apps</p>
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-full">
+                        <Bell className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium">Notification Settings</h3>
+                        <p className="text-sm text-muted-foreground">Manage notification preferences for specific apps</p>
+                    </div>
                 </div>
                 <Button onClick={() => handleOpenDialog()}>
                     <Plus className="w-4 h-4 mr-2" />

@@ -14,12 +14,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
 import { LockScreenMessagePolicy as LockScreenMessagePolicyType, Platform } from '@/types/models';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, MessageSquare, Plus, Tag, Text, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LockScreenMessagePolicyProps {
     platform: Platform;
@@ -130,9 +130,14 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
     return (
         <div className="space-y-6 mt-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-medium">Lock Screen Message</h3>
-                    <p className="text-sm text-muted-foreground">Configure asset tag and footnote message on lock screen</p>
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-pink-500/10 rounded-full">
+                        <MessageSquare className="w-5 h-5 text-pink-500" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium">Lock Screen Message</h3>
+                        <p className="text-sm text-muted-foreground">Configure asset tag and footnote message on lock screen</p>
+                    </div>
                 </div>
                 {!policy && !loading && (
                     <Button onClick={() => handleOpenDialog()}>
