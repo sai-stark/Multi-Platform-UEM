@@ -42,16 +42,18 @@ import { DeviceApplicationList, DeviceCertificateItem, DeviceInfo, DeviceLocatio
 import { getErrorMessage } from '@/utils/errorUtils';
 import {
     Activity,
+    AlertCircle,
     AppWindow,
     ArrowLeft,
+    ArrowUpCircle,
     Barcode,
     Battery,
     BatteryCharging,
     Bluetooth,
+    CheckCircle2,
     HardDrive as Chip,
     Cpu,
-    Database,
-    FileText,
+    Database, Download, FileText,
     Gauge,
     Globe,
     Layers,
@@ -60,6 +62,7 @@ import {
     MonitorPlay,
     MoreVertical,
     Network,
+    Package,
     Power, PowerOff, RefreshCw,
     ScanBarcode,
     Settings,
@@ -67,6 +70,7 @@ import {
     ShieldAlert,
     Signal,
     Smartphone,
+    Store,
     Sun,
     Tablet,
     Trash2,
@@ -756,20 +760,14 @@ export default function DeviceDetails() {
                                     </CardContent>
                                 </Card>
 
-                                {/* Storage & Battery - combined */}
-                                <Card className="col-span-1 border-t-4 border-t-success">
-                                    <CardHeader>
-                                        <SectionHeader title="Storage & Battery" icon={Database} />
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        {/* Storage */}
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="p-2 rounded-md bg-primary/10">
-                                                    <Database className="w-5 h-5 text-primary" />
-                                                </div>
-                                                <p className="text-sm font-semibold text-foreground">Storage</p>
-                                            </div>
+                                {/* Storage & Battery stacked in one column */}
+                                <div className="col-span-1 flex flex-col gap-6">
+                                    {/* Storage */}
+                                    <Card className="border-t-4 border-t-success flex-1">
+                                        <CardHeader>
+                                            <SectionHeader title="Storage" icon={Database} />
+                                        </CardHeader>
+                                        <CardContent>
                                             {(() => {
                                                 const capacity = device.deviceCapacity || 0;
                                                 const available = device.availableDeviceCapacity || 0;
@@ -778,30 +776,30 @@ export default function DeviceDetails() {
 
                                                 return (
                                                     <>
-                                                        <div className="flex justify-between items-baseline mb-2">
+                                                        <div className="flex items-center gap-2 mb-4">
+                                                            <div className="p-2 rounded-md bg-primary/10">
+                                                                <Database className="w-5 h-5 text-primary" />
+                                                            </div>
                                                             <span className="text-2xl font-bold">{used.toFixed(2)} GB</span>
-                                                            <span className="text-sm text-muted-foreground">of {capacity.toFixed(2)} GB</span>
+                                                            <span className="text-sm text-muted-foreground">/ {capacity.toFixed(2)} GB</span>
                                                         </div>
-                                                        <Progress value={percent} className="h-2 mb-2" />
+                                                        <Progress value={percent} className="h-2 mb-3" />
                                                         <div className="flex justify-between text-xs text-muted-foreground">
-                                                            <span>Used: {percent.toFixed(2)}%</span>
+                                                            <span>Used: {percent.toFixed(1)}%</span>
                                                             <span>Free: {available.toFixed(2)} GB</span>
                                                         </div>
                                                     </>
                                                 );
                                             })()}
-                                        </div>
+                                        </CardContent>
+                                    </Card>
 
-                                        <div className="border-t" />
-
-                                        {/* Battery */}
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="p-2 rounded-md bg-warning/10">
-                                                    <Battery className="w-5 h-5 text-warning" />
-                                                </div>
-                                                <p className="text-sm font-semibold text-foreground">Battery</p>
-                                            </div>
+                                    {/* Battery */}
+                                    <Card className="border-t-4 border-t-warning flex-1">
+                                        <CardHeader>
+                                            <SectionHeader title="Battery" icon={Battery} />
+                                        </CardHeader>
+                                        <CardContent>
                                             {(() => {
                                                 const raw = device.batteryLevel;
                                                 const normalized = (raw !== undefined && raw !== null && raw >= 0)
@@ -809,18 +807,24 @@ export default function DeviceDetails() {
                                                     : -1;
                                                 return (
                                                     <>
-                                                        <div className="flex items-center gap-4">
+                                                        <div className="flex items-center gap-2 mb-4">
+                                                            <div className="p-2 rounded-md bg-warning/10">
+                                                                <Battery className="w-5 h-5 text-warning" />
+                                                            </div>
                                                             <div className={cn("text-2xl font-bold", getBatteryColor(normalized))}>
                                                                 {normalized >= 0 ? normalized : '-'}%
                                                             </div>
                                                         </div>
-                                                        <Progress value={normalized >= 0 ? normalized : 0} className="mt-2 h-2" />
+                                                        <Progress value={normalized >= 0 ? normalized : 0} className="h-2 mb-3" />
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {normalized >= 0 ? (normalized > 50 ? 'Good' : normalized > 20 ? 'Low' : 'Critical') : 'Unknown'}
+                                                        </div>
                                                     </>
                                                 );
                                             })()}
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                        </CardContent>
+                                    </Card>
+                                </div>
 
                                 {/* Status & Compliance */}
                                 <Card className="col-span-1 md:col-span-2 border-t-4 border-t-warning">
@@ -1035,46 +1039,159 @@ export default function DeviceDetails() {
 
                     {/* APPLICATIONS TAB - Keep for both */}
                     <TabsContent value="applications" className="space-y-6">
+                        {/* Summary Stats */}
+                        {Array.isArray(applications) && applications.length > 0 && (() => {
+                            const managedCount = applications.filter(a => a.isManaged).length;
+                            const updateCount = applications.filter(a => a.hasUpdateAvailable).length;
+                            const totalSize = applications.reduce((sum, a) => sum + (a.bundleSize || 0) + (a.dynamicSize || 0), 0);
+                            const formatSize = (bytes: number) => {
+                                if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+                                if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+                                if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                                return bytes + ' B';
+                            };
+                            return (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <Card className="border-l-4 border-l-primary">
+                                        <CardContent className="p-4 flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-primary/10"><Package className="w-5 h-5 text-primary" /></div>
+                                            <div><p className="text-2xl font-bold">{applications.length}</p><p className="text-xs text-muted-foreground">Total Apps</p></div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="border-l-4 border-l-success">
+                                        <CardContent className="p-4 flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-success/10"><Shield className="w-5 h-5 text-success" /></div>
+                                            <div><p className="text-2xl font-bold">{managedCount}</p><p className="text-xs text-muted-foreground">Managed</p></div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="border-l-4 border-l-warning">
+                                        <CardContent className="p-4 flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-warning/10"><ArrowUpCircle className="w-5 h-5 text-warning" /></div>
+                                            <div><p className="text-2xl font-bold">{updateCount}</p><p className="text-xs text-muted-foreground">Updates Available</p></div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="border-l-4 border-l-info">
+                                        <CardContent className="p-4 flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-info/10"><Database className="w-5 h-5 text-info" /></div>
+                                            <div><p className="text-2xl font-bold">{formatSize(totalSize)}</p><p className="text-xs text-muted-foreground">Total Storage</p></div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Search / Header */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Installed Applications</CardTitle>
+                                <SectionHeader title="Installed Applications" icon={AppWindow} />
                             </CardHeader>
                             <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>App Name</TableHead>
-                                            <TableHead>Identifier / Package</TableHead>
-                                            <TableHead>Version</TableHead>
-                                            {platform === 'ios' && <TableHead>Managed</TableHead>}
-                                            <TableHead>Status</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {!Array.isArray(applications) || applications.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center h-24">
-                                                    {loadingApps ? "Loading applications..." : "No applications found."}
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            applications.map((app, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell className="font-medium">{app.name}</TableCell>
-                                                    <TableCell>{app.packageName || app.identifier}</TableCell>
-                                                    <TableCell>{app.appVersion}</TableCell>
-                                                    {platform === 'ios' && (
-                                                        <TableCell>{app.isManaged ? <Badge variant="outline" className="bg-success/10 text-success border-success/30">Yes</Badge> : 'No'}</TableCell>
-                                                    )}
-                                                    <TableCell>
-                                                        {app.isInstalled ? <Badge variant="outline" className="bg-info/10 text-info border-info/30">Installed</Badge> :
-                                                            app.isBlocked ? <Badge variant="destructive">Blocked</Badge> : <span className="text-muted-foreground">-</span>}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
+                                {loadingApps ? (
+                                    <div className="flex items-center justify-center h-40 text-muted-foreground">
+                                        <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading applications...
+                                    </div>
+                                ) : !Array.isArray(applications) || applications.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                                        <Package className="w-10 h-10 mb-2 opacity-40" />
+                                        <p>No applications found.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        {applications.map((app, index) => {
+                                            const bundleBytes = app.bundleSize || 0;
+                                            const dynamicBytes = app.dynamicSize || 0;
+                                            const formatBytes = (bytes: number) => {
+                                                if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+                                                if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+                                                if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                                                return bytes + ' B';
+                                            };
+                                            const appColors = [
+                                                'from-blue-500/20 to-indigo-500/20 text-blue-600',
+                                                'from-emerald-500/20 to-teal-500/20 text-emerald-600',
+                                                'from-purple-500/20 to-pink-500/20 text-purple-600',
+                                                'from-amber-500/20 to-orange-500/20 text-amber-600',
+                                                'from-rose-500/20 to-red-500/20 text-rose-600',
+                                                'from-cyan-500/20 to-sky-500/20 text-cyan-600',
+                                            ];
+                                            const colorClass = appColors[index % appColors.length];
+                                            const managed = app.isManaged || app.iosDeviceApplicationExtraDetails?.status === 'Managed';
+
+                                            return (
+                                                <div
+                                                    key={app.id || index}
+                                                    className="group relative rounded-xl border bg-card p-4 hover:shadow-lg hover:border-primary/30 transition-all duration-200"
+                                                >
+                                                    {/* Header row */}
+                                                    <div className="flex items-start gap-3 mb-3">
+                                                        <div className={`p-2.5 rounded-xl bg-gradient-to-br ${colorClass} shrink-0`}>
+                                                            <Package className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <h4 className="font-semibold text-sm truncate" title={app.name}>{app.name || 'Unknown App'}</h4>
+                                                            <p className="text-xs text-muted-foreground font-mono truncate" title={app.identifier || app.packageName}>
+                                                                {app.identifier || app.packageName || '-'}
+                                                            </p>
+                                                        </div>
+                                                        {app.hasUpdateAvailable && (
+                                                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px] shrink-0">
+                                                                <ArrowUpCircle className="w-3 h-3 mr-1" /> Update
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Badges row */}
+                                                    <div className="flex flex-wrap gap-1.5 mb-3">
+                                                        <Badge variant="outline" className={managed ? 'bg-success/10 text-success border-success/30' : 'bg-muted text-muted-foreground border-muted-foreground/20'} >
+                                                            {managed ? <><Shield className="w-3 h-3 mr-1" /> Managed</> : 'Unmanaged'}
+                                                        </Badge>
+                                                        {(app.applicationStatus || app.isInstalled) && (
+                                                            <Badge variant="outline" className="bg-info/10 text-info border-info/30">
+                                                                <CheckCircle2 className="w-3 h-3 mr-1" /> {app.applicationStatus || 'Installed'}
+                                                            </Badge>
+                                                        )}
+                                                        {app.isBlocked && (
+                                                            <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> Blocked</Badge>
+                                                        )}
+                                                        {app.betaApp && (
+                                                            <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Beta</Badge>
+                                                        )}
+                                                        {app.isAppClip && (
+                                                            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600 border-cyan-500/30">App Clip</Badge>
+                                                        )}
+                                                        {app.appStoreVendable && (
+                                                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                                                                <Store className="w-3 h-3 mr-1" /> App Store
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Details grid */}
+                                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                                        <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
+                                                            <span className="text-muted-foreground">Version</span>
+                                                            <span className="ml-auto font-medium">{app.shortVersion || app.appVersion || app.version || '-'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
+                                                            <span className="text-muted-foreground">Bundle</span>
+                                                            <span className="ml-auto font-medium">{bundleBytes > 0 ? formatBytes(bundleBytes) : '-'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
+                                                            <span className="text-muted-foreground">Data</span>
+                                                            <span className="ml-auto font-medium">{dynamicBytes > 0 ? formatBytes(dynamicBytes) : '-'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
+                                                            <span className="text-muted-foreground">Validated</span>
+                                                            <span className="ml-auto">
+                                                                {app.isValidated ? <CheckCircle2 className="w-3.5 h-3.5 text-success" /> : <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -1306,81 +1423,257 @@ export default function DeviceDetails() {
                                     <p>No effective profile data available.</p>
                                 </CardContent>
                             </Card>
-                        ) : (
-                            <div className="space-y-6">
-                                {/* Profile Info */}
-                                <Card>
-                                    <CardHeader>
-                                        <SectionHeader title="Profile Summary" icon={FileText} />
-                                    </CardHeader>
-                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <InfoRow label="Profile Name" value={effectiveProfile.name} />
-                                        <InfoRow label="Description" value={effectiveProfile.description} />
-                                        <InfoRow label="Profile ID" value={effectiveProfile.id} copyable />
-                                        <InfoRow label="Version" value={effectiveProfile.version} />
-                                        <InfoRow label="Platform" value={effectiveProfile.platform || effectiveProfile.profileType} />
-                                        <InfoRow label="Status" value={effectiveProfile.status} />
-                                    </CardContent>
-                                </Card>
+                        ) : (() => {
+                            const ep = effectiveProfile as any;
+                            const policyCount = [
+                                ep.passCodePolicy ? 1 : 0,
+                                ep.scepPolicy ? 1 : 0,
+                                ep.mdmPolicy ? 1 : 0,
+                                ep.wifiPolicy ? 1 : 0,
+                                ep.lockScreenPolicy ? 1 : 0,
+                                (ep.applicationPolicies?.length || 0),
+                                (ep.webClipPolicies?.length || 0),
+                                (ep.notificationPolicies?.length || 0),
+                                (ep.rootCertPolicies?.length || 0),
+                                (ep.pkcs12Policies?.length || 0),
+                                (ep.pemPolicies?.length || 0),
+                                (ep.pkcs1Policies?.length || 0),
+                            ].reduce((a, b) => a + b, 0);
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {/* Passcode Policy */}
-                                    {(effectiveProfile as any).passCodePolicy && (
-                                        <Card>
-                                            <CardHeader>
-                                                <SectionHeader title="Passcode Policy" icon={Lock} />
-                                            </CardHeader>
-                                            <CardContent className="space-y-2">
-                                                <BooleanStatus label="Require Passcode" value={(effectiveProfile as any).passCodePolicy.requirePassCode} />
-                                                <BooleanStatus label="Simple Passcode Allowed" value={(effectiveProfile as any).passCodePolicy.allowSimple} />
-                                                <BooleanStatus label="Alphanumeric Required" value={(effectiveProfile as any).passCodePolicy.requireAlphanumericPasscode} />
-                                                <InfoRow label="Min Length" value={(effectiveProfile as any).passCodePolicy.minLength} />
-                                                <InfoRow label="Max Failed Attempts" value={(effectiveProfile as any).passCodePolicy.maximumFailedAttempts} />
-                                                <InfoRow label="Max Passcode Age" value={(effectiveProfile as any).passCodePolicy.maximumPasscodeAgeInDays} subValue="Days" />
-                                                <InfoRow label="Auto-Lock" value={(effectiveProfile as any).passCodePolicy.maximumInactivityInMinutes} subValue="Minutes" />
-                                                <InfoRow label="Grace Period" value={(effectiveProfile as any).passCodePolicy.maximumGracePeriodInMinutes} subValue="Minutes" />
-                                            </CardContent>
-                                        </Card>
-                                    )}
+                            return (
+                                <div className="space-y-6">
+                                    {/* Profile Header Card */}
+                                    <Card className="border-t-4 border-t-primary overflow-hidden">
+                                        <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 rounded-xl bg-primary/10">
+                                                        <FileText className="w-7 h-7 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xl font-bold">{ep.name || 'Unnamed Profile'}</h3>
+                                                        <p className="text-sm text-muted-foreground mt-0.5">{ep.description || 'No description'}</p>
+                                                    </div>
+                                                </div>
+                                                <Badge variant="outline" className={ep.status === 'PUBLISHED' ? 'bg-success/10 text-success border-success/30' : 'bg-warning/10 text-warning border-warning/30'}>
+                                                    <CheckCircle2 className="w-3 h-3 mr-1" /> {ep.status || 'Unknown'}
+                                                </Badge>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                                            <div className="p-3 rounded-lg border bg-card">
+                                                <p className="text-xs text-muted-foreground">Profile Type</p>
+                                                <p className="text-sm font-semibold mt-1">{ep.profileType || '-'}</p>
+                                            </div>
+                                            <div className="p-3 rounded-lg border bg-card">
+                                                <p className="text-xs text-muted-foreground">Version</p>
+                                                <p className="text-sm font-semibold mt-1">{ep.version || '-'}</p>
+                                            </div>
+                                            <div className="p-3 rounded-lg border bg-card">
+                                                <p className="text-xs text-muted-foreground">Device Count</p>
+                                                <p className="text-sm font-semibold mt-1">{ep.deviceCount ?? '-'}</p>
+                                            </div>
+                                            <div className="p-3 rounded-lg border bg-card">
+                                                <p className="text-xs text-muted-foreground">Total Policies</p>
+                                                <p className="text-sm font-semibold mt-1">{policyCount}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
 
-                                    {/* Wi-Fi Policy */}
-                                    {(effectiveProfile as any).wifiPolicy && (
-                                        <Card>
-                                            <CardHeader>
-                                                <SectionHeader title="Wi-Fi Configuration" icon={Wifi} />
-                                            </CardHeader>
-                                            <CardContent className="space-y-2">
-                                                <InfoRow label="SSID" value={(effectiveProfile as any).wifiPolicy.ssid} />
-                                                <InfoRow label="Encryption" value={(effectiveProfile as any).wifiPolicy.encryptionType} />
-                                                <BooleanStatus label="Auto Join" value={(effectiveProfile as any).wifiPolicy.autoJoin} />
-                                                <BooleanStatus label="Hidden Network" value={(effectiveProfile as any).wifiPolicy.hiddenNetwork} />
-                                                <BooleanStatus label="Is Hotspot" value={(effectiveProfile as any).wifiPolicy.isHotspot} />
-                                            </CardContent>
-                                        </Card>
-                                    )}
+                                    {/* Policy Cards Grid */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {/* Passcode Policy */}
+                                        {ep.passCodePolicy && (
+                                            <Card className="border-t-4 border-t-amber-500">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded-lg bg-amber-500/10">
+                                                            <Lock className="w-5 h-5 text-amber-500" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold">Passcode Policy</h4>
+                                                            <p className="text-xs text-muted-foreground">{ep.passCodePolicy.name || ep.passCodePolicy.policyType}</p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2">
+                                                    <BooleanStatus label="Require Passcode" value={ep.passCodePolicy.requirePassCode} />
+                                                    <BooleanStatus label="Simple Passcode Allowed" value={ep.passCodePolicy.allowSimple} />
+                                                    <BooleanStatus label="Alphanumeric Required" value={ep.passCodePolicy.requireAlphanumericPasscode} />
+                                                    <InfoRow label="Min Length" value={ep.passCodePolicy.minLength} />
+                                                    <InfoRow label="Max Failed Attempts" value={ep.passCodePolicy.maximumFailedAttempts} />
+                                                    <InfoRow label="Max Passcode Age" value={ep.passCodePolicy.maximumPasscodeAgeInDays} subValue="Days" />
+                                                    <InfoRow label="Auto-Lock" value={ep.passCodePolicy.maximumInactivityInMinutes} subValue="Minutes" />
+                                                    <InfoRow label="Grace Period" value={ep.passCodePolicy.maximumGracePeriodInMinutes} subValue="Minutes" />
+                                                </CardContent>
+                                            </Card>
+                                        )}
 
-                                    {/* Lock Screen Message */}
-                                    {(effectiveProfile as any).lockScreenPolicy && (
-                                        <Card>
-                                            <CardHeader>
-                                                <SectionHeader title="Lock Screen Message" icon={Smartphone} />
-                                            </CardHeader>
-                                            <CardContent className="space-y-2">
-                                                <InfoRow label="If Lost" value={(effectiveProfile as any).lockScreenPolicy.lockScreenFootnote} />
-                                                <InfoRow label="Asset Tag" value={(effectiveProfile as any).lockScreenPolicy.assetTagInformation} />
-                                            </CardContent>
-                                        </Card>
-                                    )}
+                                        {/* SCEP Policy */}
+                                        {ep.scepPolicy && (
+                                            <Card className="border-t-4 border-t-cyan-500">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded-lg bg-cyan-500/10">
+                                                            <Shield className="w-5 h-5 text-cyan-500" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold">SCEP Configuration</h4>
+                                                            <p className="text-xs text-muted-foreground">{ep.scepPolicy.scepName || ep.scepPolicy.policyType}</p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2">
+                                                    <InfoRow label="URL" value={ep.scepPolicy.url} />
+                                                    <InfoRow label="SCEP Name" value={ep.scepPolicy.scepName} />
+                                                    <InfoRow label="Key Size" value={ep.scepPolicy.keysize} />
+                                                    <InfoRow label="Key Type" value={ep.scepPolicy.keyType} />
+                                                    <InfoRow label="Key Usage" value={ep.scepPolicy.keyUsage} />
+                                                    {ep.scepPolicy.subjectAltName?.dnsName && (
+                                                        <InfoRow label="DNS Name" value={ep.scepPolicy.subjectAltName.dnsName} />
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* MDM Configuration */}
+                                        {ep.mdmPolicy && (
+                                            <Card className="border-t-4 border-t-violet-500">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded-lg bg-violet-500/10">
+                                                            <Settings className="w-5 h-5 text-violet-500" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold">MDM Configuration</h4>
+                                                            <p className="text-xs text-muted-foreground">{ep.mdmPolicy.policyType || 'MDM Policy'}</p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2">
+                                                    <InfoRow label="Server URL" value={ep.mdmPolicy.serverURL} />
+                                                    <InfoRow label="Check-in URL" value={ep.mdmPolicy.checkInURL} />
+                                                    <InfoRow label="Topic" value={ep.mdmPolicy.topic} />
+                                                    <BooleanStatus label="Sign Messages" value={ep.mdmPolicy.signMessage} />
+                                                    <BooleanStatus label="Check Out on Remove" value={ep.mdmPolicy.checkOutWhenRemoved} />
+                                                    <BooleanStatus label="Development APNS" value={ep.mdmPolicy.useDevelopmentAPNS} />
+                                                    <InfoRow label="Access Rights" value={ep.mdmPolicy.accessRights} />
+                                                    {Array.isArray(ep.mdmPolicy.serverCapabilities) && ep.mdmPolicy.serverCapabilities.length > 0 && (
+                                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                                            <span className="text-sm font-medium">Capabilities</span>
+                                                            <div className="flex flex-wrap gap-1 max-w-[60%] justify-end">
+                                                                {ep.mdmPolicy.serverCapabilities.map((cap: string, i: number) => (
+                                                                    <Badge key={i} variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 text-[10px]">
+                                                                        {cap.replace('com.apple.mdm.', '')}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* Wi-Fi Policy */}
+                                        {ep.wifiPolicy && (
+                                            <Card className="border-t-4 border-t-blue-500">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded-lg bg-blue-500/10">
+                                                            <Wifi className="w-5 h-5 text-blue-500" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold">Wi-Fi Configuration</h4>
+                                                            <p className="text-xs text-muted-foreground">{ep.wifiPolicy.ssid || 'Wi-Fi Policy'}</p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2">
+                                                    <InfoRow label="SSID" value={ep.wifiPolicy.ssid} />
+                                                    <InfoRow label="Encryption" value={ep.wifiPolicy.encryptionType} />
+                                                    <BooleanStatus label="Auto Join" value={ep.wifiPolicy.autoJoin} />
+                                                    <BooleanStatus label="Hidden Network" value={ep.wifiPolicy.hiddenNetwork} />
+                                                    <BooleanStatus label="Is Hotspot" value={ep.wifiPolicy.isHotspot} />
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* Lock Screen Message */}
+                                        {ep.lockScreenPolicy && (
+                                            <Card className="border-t-4 border-t-pink-500">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded-lg bg-pink-500/10">
+                                                            <Smartphone className="w-5 h-5 text-pink-500" />
+                                                        </div>
+                                                        <h4 className="font-semibold">Lock Screen Message</h4>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-2">
+                                                    <InfoRow label="If Lost" value={ep.lockScreenPolicy.lockScreenFootnote} />
+                                                    <InfoRow label="Asset Tag" value={ep.lockScreenPolicy.assetTagInformation} />
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* Application Policies */}
+                                        {Array.isArray(ep.applicationPolicies) && ep.applicationPolicies.length > 0 && (
+                                            <Card className="border-t-4 border-t-emerald-500">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded-lg bg-emerald-500/10">
+                                                            <Download className="w-5 h-5 text-emerald-500" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold">Application Policies</h4>
+                                                            <p className="text-xs text-muted-foreground">{ep.applicationPolicies.length} app(s) configured</p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="grid grid-cols-1 gap-3">
+                                                        {ep.applicationPolicies.map((app: any, idx: number) => (
+                                                            <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-md transition-shadow">
+                                                                <div className="p-2 rounded-lg bg-emerald-500/10 shrink-0">
+                                                                    <Package className="w-5 h-5 text-emerald-500" />
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-sm font-semibold truncate">{app.name || 'Unknown App'}</p>
+                                                                    <p className="text-xs text-muted-foreground font-mono truncate">{app.applicationId || '-'}</p>
+                                                                </div>
+                                                                <Badge variant="outline" className={
+                                                                    app.action === 'INSTALL' ? 'bg-success/10 text-success border-success/30' :
+                                                                        app.action === 'REMOVE' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                                                                            'bg-muted text-muted-foreground'
+                                                                }>
+                                                                    {app.action === 'INSTALL' ? <Download className="w-3 h-3 mr-1" /> : null}
+                                                                    {app.action || 'N/A'}
+                                                                </Badge>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </div>
 
                                     {/* Web Clips */}
-                                    {Array.isArray((effectiveProfile as any).webClipPolicies) && (effectiveProfile as any).webClipPolicies.length > 0 && (
-                                        <Card>
+                                    {Array.isArray(ep.webClipPolicies) && ep.webClipPolicies.length > 0 && (
+                                        <Card className="border-t-4 border-t-orange-500">
                                             <CardHeader>
-                                                <SectionHeader title="Web Clips" icon={Globe} />
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-lg bg-orange-500/10">
+                                                        <Globe className="w-5 h-5 text-orange-500" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-semibold">Web Clips</h4>
+                                                        <p className="text-xs text-muted-foreground">{ep.webClipPolicies.length} web clip(s)</p>
+                                                    </div>
+                                                </div>
                                             </CardHeader>
-                                            <CardContent className="space-y-4">
-                                                {(effectiveProfile as any).webClipPolicies.map((clip: any, idx: number) => (
-                                                    <div key={idx} className="p-3 border rounded-lg">
+                                            <CardContent className="space-y-3">
+                                                {ep.webClipPolicies.map((clip: any, idx: number) => (
+                                                    <div key={idx} className="p-3 border rounded-xl bg-card">
                                                         <InfoRow label="Label" value={clip.label} />
                                                         <InfoRow label="URL" value={clip.url} />
                                                         <BooleanStatus label="Removable" value={clip.isRemovable} />
@@ -1391,33 +1684,23 @@ export default function DeviceDetails() {
                                         </Card>
                                     )}
 
-                                    {/* Application Rules */}
-                                    {Array.isArray((effectiveProfile as any).applicationPolicies) && (effectiveProfile as any).applicationPolicies.length > 0 && (
-                                        <Card>
+                                    {/* Notification Policies */}
+                                    {Array.isArray(ep.notificationPolicies) && ep.notificationPolicies.length > 0 && (
+                                        <Card className="border-t-4 border-t-rose-500">
                                             <CardHeader>
-                                                <SectionHeader title="Application Rules" icon={AppWindow} />
-                                            </CardHeader>
-                                            <CardContent className="space-y-4">
-                                                {(effectiveProfile as any).applicationPolicies.map((app: any, idx: number) => (
-                                                    <div key={idx} className="p-3 border rounded-lg">
-                                                        <InfoRow label="Bundle ID" value={app.bundleIdentifier} />
-                                                        <InfoRow label="Install Action" value={app.action} />
-                                                        <BooleanStatus label="Removable" value={app.removable} />
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-lg bg-rose-500/10">
+                                                        <MessagesSquare className="w-5 h-5 text-rose-500" />
                                                     </div>
-                                                ))}
-                                            </CardContent>
-                                        </Card>
-                                    )}
-
-                                    {/* Notifications Policy */}
-                                    {Array.isArray((effectiveProfile as any).notificationPolicies) && (effectiveProfile as any).notificationPolicies.length > 0 && (
-                                        <Card>
-                                            <CardHeader>
-                                                <SectionHeader title="Notification Settings" icon={MessagesSquare} />
+                                                    <div>
+                                                        <h4 className="font-semibold">Notification Settings</h4>
+                                                        <p className="text-xs text-muted-foreground">{ep.notificationPolicies.length} rule(s)</p>
+                                                    </div>
+                                                </div>
                                             </CardHeader>
-                                            <CardContent className="space-y-4">
-                                                {(effectiveProfile as any).notificationPolicies.map((notif: any, idx: number) => (
-                                                    <div key={idx} className="p-3 border rounded-lg">
+                                            <CardContent className="space-y-3">
+                                                {ep.notificationPolicies.map((notif: any, idx: number) => (
+                                                    <div key={idx} className="p-3 border rounded-xl bg-card">
                                                         <InfoRow label="Bundle ID" value={notif.bundleIdentifier} />
                                                         <BooleanStatus label="Enabled" value={notif.enabled} />
                                                         <BooleanStatus label="Lock Screen" value={notif.showInLockScreen} />
@@ -1429,25 +1712,56 @@ export default function DeviceDetails() {
                                         </Card>
                                     )}
 
-                                    {/* Raw JSON Fallback for other policies (optional but good for debug/completeness) */}
-                                    <div className="col-span-1 lg:col-span-2">
-                                        <Card>
-                                            <CardHeader>
-                                                <SectionHeader title="Full Policy Data (Debug)" icon={Database} />
-                                            </CardHeader>
-                                            <CardContent>
-                                                <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto max-h-96">
-                                                    {JSON.stringify(effectiveProfile, (key, value) => {
-                                                        if (key === 'passCodePolicy' || key === 'wifiPolicy' || key === 'lockScreenPolicy' || key === 'webClipPolicies' || key === 'notificationPolicies' || key === 'applicationPolicies') return undefined; // Hide already shown
-                                                        return value;
-                                                    }, 2)}
-                                                </pre>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
+                                    {/* Certificate Policies - Root, PKCS12, PEM, PKCS1 */}
+                                    {(
+                                        (ep.rootCertPolicies?.length > 0) ||
+                                        (ep.pkcs12Policies?.length > 0) ||
+                                        (ep.pemPolicies?.length > 0) ||
+                                        (ep.pkcs1Policies?.length > 0)
+                                    ) && (
+                                            <Card className="border-t-4 border-t-teal-500">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 rounded-lg bg-teal-500/10">
+                                                            <FileText className="w-5 h-5 text-teal-500" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold">Certificate Policies</h4>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {(ep.rootCertPolicies?.length || 0) + (ep.pkcs12Policies?.length || 0) + (ep.pemPolicies?.length || 0) + (ep.pkcs1Policies?.length || 0)} certificate(s)
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {ep.rootCertPolicies?.length > 0 && (
+                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
+                                                                Root Certs: {ep.rootCertPolicies.length}
+                                                            </Badge>
+                                                        )}
+                                                        {ep.pkcs12Policies?.length > 0 && (
+                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
+                                                                PKCS12: {ep.pkcs12Policies.length}
+                                                            </Badge>
+                                                        )}
+                                                        {ep.pemPolicies?.length > 0 && (
+                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
+                                                                PEM: {ep.pemPolicies.length}
+                                                            </Badge>
+                                                        )}
+                                                        {ep.pkcs1Policies?.length > 0 && (
+                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
+                                                                PKCS1: {ep.pkcs1Policies.length}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        )}
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
                     </TabsContent>
                 </Tabs>
             </div>
