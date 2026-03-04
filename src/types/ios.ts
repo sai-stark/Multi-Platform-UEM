@@ -367,6 +367,22 @@ export interface IosPerDomainVpnPolicy extends UserAuditData {
     associatedDomains?: string[];
     excludedDomains?: string[];
     onDemandMatchAppEnabled?: boolean;
+    // Missing IosVpnConfig properties:
+    vpnType: 'L2TP' | 'PPTP' | 'IPSec' | 'IKEv2' | 'AlwaysOn' | 'VPN' | 'TransparentProxy';
+    vpnSubType?: string;
+    providerBundleIdentifier?: string;
+    providerDesignatedRequirement?: string;
+    providerType?: 'packet-tunnel' | 'app-proxy';
+    remoteAddress: string;
+    authName?: string;
+    authPassword?: string;
+    payloadCertificateUUID?: string;
+    ikev2?: IosVpnIKEv2;
+    ipsec?: IosVpnIPSec;
+    ppp?: IosVpnPPP;
+    ipv4?: IosVpnIPv4;
+    dns?: IosVpnDNS;
+    proxies?: IosVpnProxies;
 }
 
 // iOS Relay Policy
@@ -410,4 +426,16 @@ export interface IosHomeScreenLayoutPolicy extends UserAuditData {
     name: string;
     policyType?: 'HomeScreenlayout';
     configuration: HomeScreenLayoutConfiguration;
+}
+
+// iOS App Lock Policy
+export interface IosAppLockPolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType?: 'IosAppLockPolicy';
+    appLock?: {
+        App?: {
+            Identifier?: string;
+        };
+    };
 }
