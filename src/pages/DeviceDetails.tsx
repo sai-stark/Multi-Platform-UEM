@@ -102,6 +102,7 @@ export default function DeviceDetails() {
     const [certificates, setCertificates] = useState<DeviceCertificateItem[]>([]);
     const [selectedCertificate, setSelectedCertificate] = useState<DeviceCertificateItem | null>(null);
     const [showProfileDialog, setShowProfileDialog] = useState(false);
+    const [selectedEffectivePolicy, setSelectedEffectivePolicy] = useState<{ type: string; data: any } | null>(null);
     const [loadingApps, setLoadingApps] = useState(false);
 
     // Lost Mode State
@@ -1198,36 +1199,171 @@ export default function DeviceDetails() {
 
                     {/* SECURITY TAB */}
                     <TabsContent value="security" className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <SectionHeader title="Security Information" icon={Shield} />
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <h4 className="font-semibold mb-2">Passcode & Authentication</h4>
-                                    <BooleanStatus label="Passcode Present" value={securityInfo?.passcodePresent} />
-                                    <BooleanStatus label="Passcode Compliant" value={securityInfo?.passcodeCompliant} />
-                                    <BooleanStatus label="Compliant with Profiles" value={securityInfo?.passcodeCompliantWithProfiles} />
-                                    <InfoRow label="Lock Grace Period (Min)" value={securityInfo?.passcodeLockGracePeriod} />
-                                    <InfoRow label="Grace Period Enforced" value={securityInfo?.passcodeLockGracePeriodEnforced} />
-                                </div>
-                                <div className="space-y-4">
-                                    <h4 className="font-semibold mb-2">Device Security Measures</h4>
-                                    <InfoRow label="Hardware Encryption Level" value={securityInfo?.hardwareEncryptionCaps} />
-                                    <BooleanStatus label="Is User Enrollment" value={securityInfo?.IsUserEnrollment} />
+                        {/* Security Overview Header */}
+                        <Card className="border-t-4 border-t-emerald-500 overflow-hidden">
+                            <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                                                <Shield className="w-7 h-7 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold">Security Overview</h3>
+                                                <p className="text-sm text-muted-foreground mt-0.5">Device security posture and compliance status</p>
+                                            </div>
+                                        </div>
+                                        {securityInfo && (
+                                            <Badge className={cn(
+                                                "text-sm px-3 py-1",
+                                                securityInfo.passcodePresent && securityInfo.passcodeCompliant
+                                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-200 hover:bg-emerald-500/20"
+                                                    : "bg-amber-500/10 text-amber-600 border-amber-200 hover:bg-amber-500/20"
+                                            )}>
+                                                {securityInfo.passcodePresent && securityInfo.passcodeCompliant ? (
+                                                    <><CheckCircle2 className="w-4 h-4 mr-1.5" /> Compliant</>
+                                                ) : (
+                                                    <><ShieldAlert className="w-4 h-4 mr-1.5" /> Needs Attention</>
+                                                )}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </CardHeader>
+                            </div>
 
-                                    {/* Fallbacks for older MacOS-specific schema if they exist */}
-                                    {securityInfo?.FDE_Enabled !== undefined && (
-                                        <>
-                                            <h4 className="font-semibold mt-6 mb-2">MacOS Encryption</h4>
-                                            <BooleanStatus label="FileVault Enabled" value={securityInfo?.FDE_Enabled} />
-                                            <BooleanStatus label="Institutional Recovery Key" value={securityInfo?.FDE_HasInstitutionalRecoveryKey} />
-                                            <BooleanStatus label="Personal Recovery Key" value={securityInfo?.FDE_HasPersonalRecoveryKey} />
-                                        </>
-                                    )}
+                            {/* Quick Stats Row */}
+                            <CardContent className="pt-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="p-3 rounded-xl border bg-gradient-to-br from-emerald-50/50 to-emerald-100/30 dark:from-emerald-950/20 dark:to-emerald-900/10">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Lock className="w-4 h-4 text-emerald-500" />
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600/70">Passcode</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                                            {securityInfo?.passcodePresent ? 'Set' : 'Not Set'}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-xl border bg-gradient-to-br from-blue-50/50 to-blue-100/30 dark:from-blue-950/20 dark:to-blue-900/10">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600/70">Compliance</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                                            {securityInfo?.passcodeCompliant ? 'Compliant' : 'Non-Compliant'}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-xl border bg-gradient-to-br from-violet-50/50 to-violet-100/30 dark:from-violet-950/20 dark:to-violet-900/10">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Chip className="w-4 h-4 text-violet-500" />
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-600/70">Encryption</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-violet-900 dark:text-violet-100">
+                                            Level {securityInfo?.hardwareEncryptionCaps ?? '-'}
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-xl border bg-gradient-to-br from-amber-50/50 to-amber-100/30 dark:from-amber-950/20 dark:to-amber-900/10">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <User className="w-4 h-4 text-amber-500" />
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600/70">Enrollment</span>
+                                        </div>
+                                        <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                                            {securityInfo?.IsUserEnrollment ? 'User' : 'Device'}
+                                        </p>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Passcode & Authentication */}
+                        <Card className="border-t-4 border-t-blue-500">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-blue-500/10">
+                                        <Lock className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold">Passcode & Authentication</h4>
+                                        <p className="text-xs text-muted-foreground">Passcode policies and compliance status</p>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <BooleanStatus label="Passcode Present" value={securityInfo?.passcodePresent} />
+                                <BooleanStatus label="Passcode Compliant" value={securityInfo?.passcodeCompliant} />
+                                <BooleanStatus label="Compliant with Profiles" value={securityInfo?.passcodeCompliantWithProfiles} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                                        <div className="p-2 rounded-lg bg-blue-500/10">
+                                            <Activity className="w-4 h-4 text-blue-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Lock Grace Period</p>
+                                            <p className="text-sm font-semibold">{securityInfo?.passcodeLockGracePeriod ?? '-'} min</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                                        <div className="p-2 rounded-lg bg-blue-500/10">
+                                            <Shield className="w-4 h-4 text-blue-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Grace Period Enforced</p>
+                                            <p className="text-sm font-semibold">{securityInfo?.passcodeLockGracePeriodEnforced ?? '-'} min</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Device Security Measures */}
+                        <Card className="border-t-4 border-t-violet-500">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-violet-500/10">
+                                        <Chip className="w-5 h-5 text-violet-500" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold">Device Security Measures</h4>
+                                        <p className="text-xs text-muted-foreground">Hardware encryption and enrollment type</p>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-violet-500/10">
+                                            <Chip className="w-4 h-4 text-violet-500" />
+                                        </div>
+                                        <span className="text-sm font-medium">Hardware Encryption</span>
+                                    </div>
+                                    <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30">
+                                        Level {securityInfo?.hardwareEncryptionCaps ?? '-'}
+                                    </Badge>
+                                </div>
+                                <BooleanStatus label="Is User Enrollment" value={securityInfo?.IsUserEnrollment} />
+                            </CardContent>
+                        </Card>
+
+                        {/* MacOS Encryption (conditional) */}
+                        {securityInfo?.FDE_Enabled !== undefined && (
+                            <Card className="border-t-4 border-t-cyan-500">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-cyan-500/10">
+                                            <Lock className="w-5 h-5 text-cyan-500" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold">MacOS Encryption</h4>
+                                            <p className="text-xs text-muted-foreground">FileVault disk encryption status</p>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <BooleanStatus label="FileVault Enabled" value={securityInfo?.FDE_Enabled} />
+                                    <BooleanStatus label="Institutional Recovery Key" value={securityInfo?.FDE_HasInstitutionalRecoveryKey} />
+                                    <BooleanStatus label="Personal Recovery Key" value={securityInfo?.FDE_HasPersonalRecoveryKey} />
+                                </CardContent>
+                            </Card>
+                        )}
                     </TabsContent>
 
                     {/* CERTIFICATES TAB */}
@@ -1481,284 +1617,380 @@ export default function DeviceDetails() {
                                     </Card>
 
                                     {/* Policy Cards Grid */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {/* Passcode Policy */}
                                         {ep.passCodePolicy && (
-                                            <Card className="border-t-4 border-t-amber-500">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-amber-500/10">
-                                                            <Lock className="w-5 h-5 text-amber-500" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-semibold">Passcode Policy</h4>
-                                                            <p className="text-xs text-muted-foreground">{ep.passCodePolicy.name || ep.passCodePolicy.policyType}</p>
-                                                        </div>
-                                                    </div>
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-amber-500" onClick={() => setSelectedEffectivePolicy({ type: 'passcode', data: ep.passCodePolicy })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-amber-600">
+                                                        <div className="p-1.5 rounded-lg bg-amber-500/10"><Lock className="w-4 h-4 text-amber-500" /></div>
+                                                        Passcode Policy
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">{ep.passCodePolicy.name || ep.passCodePolicy.policyType}</p>
                                                 </CardHeader>
-                                                <CardContent className="space-y-2">
-                                                    <BooleanStatus label="Require Passcode" value={ep.passCodePolicy.requirePassCode} />
-                                                    <BooleanStatus label="Simple Passcode Allowed" value={ep.passCodePolicy.allowSimple} />
-                                                    <BooleanStatus label="Alphanumeric Required" value={ep.passCodePolicy.requireAlphanumericPasscode} />
-                                                    <InfoRow label="Min Length" value={ep.passCodePolicy.minLength} />
-                                                    <InfoRow label="Max Failed Attempts" value={ep.passCodePolicy.maximumFailedAttempts} />
-                                                    <InfoRow label="Max Passcode Age" value={ep.passCodePolicy.maximumPasscodeAgeInDays} subValue="Days" />
-                                                    <InfoRow label="Auto-Lock" value={ep.passCodePolicy.maximumInactivityInMinutes} subValue="Minutes" />
-                                                    <InfoRow label="Grace Period" value={ep.passCodePolicy.maximumGracePeriodInMinutes} subValue="Minutes" />
+                                                <CardContent>
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">Active</Badge>
+                                                        <p className="text-xs text-muted-foreground">Min length: {ep.passCodePolicy.minLength || '-'}</p>
+                                                    </div>
                                                 </CardContent>
                                             </Card>
                                         )}
 
                                         {/* SCEP Policy */}
                                         {ep.scepPolicy && (
-                                            <Card className="border-t-4 border-t-cyan-500">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-cyan-500/10">
-                                                            <Shield className="w-5 h-5 text-cyan-500" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-semibold">SCEP Configuration</h4>
-                                                            <p className="text-xs text-muted-foreground">{ep.scepPolicy.scepName || ep.scepPolicy.policyType}</p>
-                                                        </div>
-                                                    </div>
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-cyan-500" onClick={() => setSelectedEffectivePolicy({ type: 'scep', data: ep.scepPolicy })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-cyan-600">
+                                                        <div className="p-1.5 rounded-lg bg-cyan-500/10"><Shield className="w-4 h-4 text-cyan-500" /></div>
+                                                        SCEP Configuration
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">{ep.scepPolicy.scepName || ep.scepPolicy.policyType}</p>
                                                 </CardHeader>
-                                                <CardContent className="space-y-2">
-                                                    <InfoRow label="URL" value={ep.scepPolicy.url} />
-                                                    <InfoRow label="SCEP Name" value={ep.scepPolicy.scepName} />
-                                                    <InfoRow label="Key Size" value={ep.scepPolicy.keysize} />
-                                                    <InfoRow label="Key Type" value={ep.scepPolicy.keyType} />
-                                                    <InfoRow label="Key Usage" value={ep.scepPolicy.keyUsage} />
-                                                    {ep.scepPolicy.subjectAltName?.dnsName && (
-                                                        <InfoRow label="DNS Name" value={ep.scepPolicy.subjectAltName.dnsName} />
-                                                    )}
+                                                <CardContent>
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">Active</Badge>
+                                                        <p className="text-xs text-muted-foreground truncate max-w-[120px]">{ep.scepPolicy.url || '-'}</p>
+                                                    </div>
                                                 </CardContent>
                                             </Card>
                                         )}
 
                                         {/* MDM Configuration */}
                                         {ep.mdmPolicy && (
-                                            <Card className="border-t-4 border-t-violet-500">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-violet-500/10">
-                                                            <Settings className="w-5 h-5 text-violet-500" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-semibold">MDM Configuration</h4>
-                                                            <p className="text-xs text-muted-foreground">{ep.mdmPolicy.policyType || 'MDM Policy'}</p>
-                                                        </div>
-                                                    </div>
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-violet-500" onClick={() => setSelectedEffectivePolicy({ type: 'mdm', data: ep.mdmPolicy })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-violet-600">
+                                                        <div className="p-1.5 rounded-lg bg-violet-500/10"><Settings className="w-4 h-4 text-violet-500" /></div>
+                                                        MDM Configuration
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">{ep.mdmPolicy.policyType || 'MDM Policy'}</p>
                                                 </CardHeader>
-                                                <CardContent className="space-y-2">
-                                                    <InfoRow label="Server URL" value={ep.mdmPolicy.serverURL} />
-                                                    <InfoRow label="Check-in URL" value={ep.mdmPolicy.checkInURL} />
-                                                    <InfoRow label="Topic" value={ep.mdmPolicy.topic} />
-                                                    <BooleanStatus label="Sign Messages" value={ep.mdmPolicy.signMessage} />
-                                                    <BooleanStatus label="Check Out on Remove" value={ep.mdmPolicy.checkOutWhenRemoved} />
-                                                    <BooleanStatus label="Development APNS" value={ep.mdmPolicy.useDevelopmentAPNS} />
-                                                    <InfoRow label="Access Rights" value={ep.mdmPolicy.accessRights} />
-                                                    {Array.isArray(ep.mdmPolicy.serverCapabilities) && ep.mdmPolicy.serverCapabilities.length > 0 && (
-                                                        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                                                            <span className="text-sm font-medium">Capabilities</span>
-                                                            <div className="flex flex-wrap gap-1 max-w-[60%] justify-end">
-                                                                {ep.mdmPolicy.serverCapabilities.map((cap: string, i: number) => (
-                                                                    <Badge key={i} variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 text-[10px]">
-                                                                        {cap.replace('com.apple.mdm.', '')}
-                                                                    </Badge>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                <CardContent>
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">Active</Badge>
+                                                        <p className="text-xs text-muted-foreground truncate max-w-[120px]">{ep.mdmPolicy.serverURL || '-'}</p>
+                                                    </div>
                                                 </CardContent>
                                             </Card>
                                         )}
 
                                         {/* Wi-Fi Policy */}
                                         {ep.wifiPolicy && (
-                                            <Card className="border-t-4 border-t-blue-500">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-blue-500/10">
-                                                            <Wifi className="w-5 h-5 text-blue-500" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-semibold">Wi-Fi Configuration</h4>
-                                                            <p className="text-xs text-muted-foreground">{ep.wifiPolicy.ssid || 'Wi-Fi Policy'}</p>
-                                                        </div>
-                                                    </div>
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-blue-500" onClick={() => setSelectedEffectivePolicy({ type: 'wifi', data: ep.wifiPolicy })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-blue-600">
+                                                        <div className="p-1.5 rounded-lg bg-blue-500/10"><Wifi className="w-4 h-4 text-blue-500" /></div>
+                                                        Wi-Fi Configuration
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">{ep.wifiPolicy.ssid || 'Wi-Fi Policy'}</p>
                                                 </CardHeader>
-                                                <CardContent className="space-y-2">
-                                                    <InfoRow label="SSID" value={ep.wifiPolicy.ssid} />
-                                                    <InfoRow label="Encryption" value={ep.wifiPolicy.encryptionType} />
-                                                    <BooleanStatus label="Auto Join" value={ep.wifiPolicy.autoJoin} />
-                                                    <BooleanStatus label="Hidden Network" value={ep.wifiPolicy.hiddenNetwork} />
-                                                    <BooleanStatus label="Is Hotspot" value={ep.wifiPolicy.isHotspot} />
+                                                <CardContent>
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">Active</Badge>
+                                                        <p className="text-xs text-muted-foreground">{ep.wifiPolicy.encryptionType || '-'}</p>
+                                                    </div>
                                                 </CardContent>
                                             </Card>
                                         )}
 
                                         {/* Lock Screen Message */}
                                         {ep.lockScreenPolicy && (
-                                            <Card className="border-t-4 border-t-pink-500">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-pink-500/10">
-                                                            <Smartphone className="w-5 h-5 text-pink-500" />
-                                                        </div>
-                                                        <h4 className="font-semibold">Lock Screen Message</h4>
-                                                    </div>
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-pink-500" onClick={() => setSelectedEffectivePolicy({ type: 'lockscreen', data: ep.lockScreenPolicy })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-pink-600">
+                                                        <div className="p-1.5 rounded-lg bg-pink-500/10"><Smartphone className="w-4 h-4 text-pink-500" /></div>
+                                                        Lock Screen Message
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">Lock screen customization</p>
                                                 </CardHeader>
-                                                <CardContent className="space-y-2">
-                                                    <InfoRow label="If Lost" value={ep.lockScreenPolicy.lockScreenFootnote} />
-                                                    <InfoRow label="Asset Tag" value={ep.lockScreenPolicy.assetTagInformation} />
+                                                <CardContent>
+                                                    <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">Active</Badge>
                                                 </CardContent>
                                             </Card>
                                         )}
 
                                         {/* Application Policies */}
                                         {Array.isArray(ep.applicationPolicies) && ep.applicationPolicies.length > 0 && (
-                                            <Card className="border-t-4 border-t-emerald-500">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-emerald-500/10">
-                                                            <Download className="w-5 h-5 text-emerald-500" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-semibold">Application Policies</h4>
-                                                            <p className="text-xs text-muted-foreground">{ep.applicationPolicies.length} app(s) configured</p>
-                                                        </div>
-                                                    </div>
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-emerald-500" onClick={() => setSelectedEffectivePolicy({ type: 'applications', data: ep.applicationPolicies })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-emerald-600">
+                                                        <div className="p-1.5 rounded-lg bg-emerald-500/10"><Download className="w-4 h-4 text-emerald-500" /></div>
+                                                        Application Policies
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">{ep.applicationPolicies.length} app(s) configured</p>
                                                 </CardHeader>
                                                 <CardContent>
-                                                    <div className="grid grid-cols-1 gap-3">
-                                                        {ep.applicationPolicies.map((app: any, idx: number) => (
-                                                            <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-md transition-shadow">
-                                                                <div className="p-2 rounded-lg bg-emerald-500/10 shrink-0">
-                                                                    <Package className="w-5 h-5 text-emerald-500" />
-                                                                </div>
-                                                                <div className="min-w-0 flex-1">
-                                                                    <p className="text-sm font-semibold truncate">{app.name || 'Unknown App'}</p>
-                                                                    <p className="text-xs text-muted-foreground font-mono truncate">{app.applicationId || '-'}</p>
-                                                                </div>
-                                                                <Badge variant="outline" className={
-                                                                    app.action === 'INSTALL' ? 'bg-success/10 text-success border-success/30' :
-                                                                        app.action === 'REMOVE' ? 'bg-destructive/10 text-destructive border-destructive/30' :
-                                                                            'bg-muted text-muted-foreground'
-                                                                }>
-                                                                    {app.action === 'INSTALL' ? <Download className="w-3 h-3 mr-1" /> : null}
-                                                                    {app.action || 'N/A'}
-                                                                </Badge>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                    <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">{ep.applicationPolicies.length} Active</Badge>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* Web Clips */}
+                                        {Array.isArray(ep.webClipPolicies) && ep.webClipPolicies.length > 0 && (
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-orange-500" onClick={() => setSelectedEffectivePolicy({ type: 'webclips', data: ep.webClipPolicies })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-orange-600">
+                                                        <div className="p-1.5 rounded-lg bg-orange-500/10"><Globe className="w-4 h-4 text-orange-500" /></div>
+                                                        Web Clips
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">{ep.webClipPolicies.length} web clip(s)</p>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">{ep.webClipPolicies.length} Active</Badge>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* Notification Policies */}
+                                        {Array.isArray(ep.notificationPolicies) && ep.notificationPolicies.length > 0 && (
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-rose-500" onClick={() => setSelectedEffectivePolicy({ type: 'notifications', data: ep.notificationPolicies })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-rose-600">
+                                                        <div className="p-1.5 rounded-lg bg-rose-500/10"><MessagesSquare className="w-4 h-4 text-rose-500" /></div>
+                                                        Notification Settings
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">{ep.notificationPolicies.length} rule(s)</p>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">{ep.notificationPolicies.length} Active</Badge>
+                                                </CardContent>
+                                            </Card>
+                                        )}
+
+                                        {/* Certificate Policies */}
+                                        {((ep.rootCertPolicies?.length > 0) || (ep.pkcs12Policies?.length > 0) || (ep.pemPolicies?.length > 0) || (ep.pkcs1Policies?.length > 0)) && (
+                                            <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-teal-500" onClick={() => setSelectedEffectivePolicy({ type: 'certificates', data: { rootCertPolicies: ep.rootCertPolicies, pkcs12Policies: ep.pkcs12Policies, pemPolicies: ep.pemPolicies, pkcs1Policies: ep.pkcs1Policies } })}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex items-center gap-2 text-teal-600">
+                                                        <div className="p-1.5 rounded-lg bg-teal-500/10"><FileText className="w-4 h-4 text-teal-500" /></div>
+                                                        Certificate Policies
+                                                    </CardTitle>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {(ep.rootCertPolicies?.length || 0) + (ep.pkcs12Policies?.length || 0) + (ep.pemPolicies?.length || 0) + (ep.pkcs1Policies?.length || 0)} certificate(s)
+                                                    </p>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">Active</Badge>
                                                 </CardContent>
                                             </Card>
                                         )}
                                     </div>
 
-                                    {/* Web Clips */}
-                                    {Array.isArray(ep.webClipPolicies) && ep.webClipPolicies.length > 0 && (
-                                        <Card className="border-t-4 border-t-orange-500">
-                                            <CardHeader>
+                                    {/* View-Only Policy Dialog */}
+                                    <Dialog open={!!selectedEffectivePolicy} onOpenChange={(open) => !open && setSelectedEffectivePolicy(null)}>
+                                        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                                            <DialogHeader>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="p-2 rounded-lg bg-orange-500/10">
-                                                        <Globe className="w-5 h-5 text-orange-500" />
+                                                    <div className={cn("p-2 rounded-xl",
+                                                        selectedEffectivePolicy?.type === 'passcode' ? 'bg-amber-500/10' :
+                                                            selectedEffectivePolicy?.type === 'scep' ? 'bg-cyan-500/10' :
+                                                                selectedEffectivePolicy?.type === 'mdm' ? 'bg-violet-500/10' :
+                                                                    selectedEffectivePolicy?.type === 'wifi' ? 'bg-blue-500/10' :
+                                                                        selectedEffectivePolicy?.type === 'lockscreen' ? 'bg-pink-500/10' :
+                                                                            selectedEffectivePolicy?.type === 'applications' ? 'bg-emerald-500/10' :
+                                                                                selectedEffectivePolicy?.type === 'webclips' ? 'bg-orange-500/10' :
+                                                                                    selectedEffectivePolicy?.type === 'notifications' ? 'bg-rose-500/10' :
+                                                                                        selectedEffectivePolicy?.type === 'certificates' ? 'bg-teal-500/10' :
+                                                                                            'bg-primary/10'
+                                                    )}>
+                                                        {selectedEffectivePolicy?.type === 'passcode' && <Lock className="w-5 h-5 text-amber-500" />}
+                                                        {selectedEffectivePolicy?.type === 'scep' && <Shield className="w-5 h-5 text-cyan-500" />}
+                                                        {selectedEffectivePolicy?.type === 'mdm' && <Settings className="w-5 h-5 text-violet-500" />}
+                                                        {selectedEffectivePolicy?.type === 'wifi' && <Wifi className="w-5 h-5 text-blue-500" />}
+                                                        {selectedEffectivePolicy?.type === 'lockscreen' && <Smartphone className="w-5 h-5 text-pink-500" />}
+                                                        {selectedEffectivePolicy?.type === 'applications' && <Download className="w-5 h-5 text-emerald-500" />}
+                                                        {selectedEffectivePolicy?.type === 'webclips' && <Globe className="w-5 h-5 text-orange-500" />}
+                                                        {selectedEffectivePolicy?.type === 'notifications' && <MessagesSquare className="w-5 h-5 text-rose-500" />}
+                                                        {selectedEffectivePolicy?.type === 'certificates' && <FileText className="w-5 h-5 text-teal-500" />}
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-semibold">Web Clips</h4>
-                                                        <p className="text-xs text-muted-foreground">{ep.webClipPolicies.length} web clip(s)</p>
+                                                        <DialogTitle className="text-lg">
+                                                            {selectedEffectivePolicy?.type === 'passcode' && 'Passcode Policy'}
+                                                            {selectedEffectivePolicy?.type === 'scep' && 'SCEP Configuration'}
+                                                            {selectedEffectivePolicy?.type === 'mdm' && 'MDM Configuration'}
+                                                            {selectedEffectivePolicy?.type === 'wifi' && 'Wi-Fi Configuration'}
+                                                            {selectedEffectivePolicy?.type === 'lockscreen' && 'Lock Screen Message'}
+                                                            {selectedEffectivePolicy?.type === 'applications' && 'Application Policies'}
+                                                            {selectedEffectivePolicy?.type === 'webclips' && 'Web Clips'}
+                                                            {selectedEffectivePolicy?.type === 'notifications' && 'Notification Settings'}
+                                                            {selectedEffectivePolicy?.type === 'certificates' && 'Certificate Policies'}
+                                                        </DialogTitle>
+                                                        <DialogDescription>View-only policy configuration from effective profile</DialogDescription>
                                                     </div>
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent className="space-y-3">
-                                                {ep.webClipPolicies.map((clip: any, idx: number) => (
-                                                    <div key={idx} className="p-3 border rounded-xl bg-card">
-                                                        <InfoRow label="Label" value={clip.label} />
-                                                        <InfoRow label="URL" value={clip.url} />
-                                                        <BooleanStatus label="Removable" value={clip.isRemovable} />
-                                                        <BooleanStatus label="Full Screen" value={clip.fullScreen} />
-                                                    </div>
-                                                ))}
-                                            </CardContent>
-                                        </Card>
-                                    )}
+                                            </DialogHeader>
 
-                                    {/* Notification Policies */}
-                                    {Array.isArray(ep.notificationPolicies) && ep.notificationPolicies.length > 0 && (
-                                        <Card className="border-t-4 border-t-rose-500">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 rounded-lg bg-rose-500/10">
-                                                        <MessagesSquare className="w-5 h-5 text-rose-500" />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-semibold">Notification Settings</h4>
-                                                        <p className="text-xs text-muted-foreground">{ep.notificationPolicies.length} rule(s)</p>
-                                                    </div>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="space-y-3">
-                                                {ep.notificationPolicies.map((notif: any, idx: number) => (
-                                                    <div key={idx} className="p-3 border rounded-xl bg-card">
-                                                        <InfoRow label="Bundle ID" value={notif.bundleIdentifier} />
-                                                        <BooleanStatus label="Enabled" value={notif.enabled} />
-                                                        <BooleanStatus label="Lock Screen" value={notif.showInLockScreen} />
-                                                        <BooleanStatus label="Notification Center" value={notif.showInNotificationCenter} />
-                                                        <BooleanStatus label="Alert Style" value={notif.alertStyle !== 'NONE'} trueLabel={notif.alertStyle || 'BANNER'} />
-                                                    </div>
-                                                ))}
-                                            </CardContent>
-                                        </Card>
-                                    )}
+                                            <div className="mt-4 space-y-3">
+                                                {/* Passcode */}
+                                                {selectedEffectivePolicy?.type === 'passcode' && (() => {
+                                                    const p = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <BooleanStatus label="Require Passcode" value={p.requirePassCode} />
+                                                            <BooleanStatus label="Simple Passcode Allowed" value={p.allowSimple} />
+                                                            <BooleanStatus label="Alphanumeric Required" value={p.requireAlphanumericPasscode} />
+                                                            <InfoRow label="Min Length" value={p.minLength} />
+                                                            <InfoRow label="Max Failed Attempts" value={p.maximumFailedAttempts} />
+                                                            <InfoRow label="Max Passcode Age" value={p.maximumPasscodeAgeInDays} subValue="Days" />
+                                                            <InfoRow label="Auto-Lock" value={p.maximumInactivityInMinutes} subValue="Minutes" />
+                                                            <InfoRow label="Grace Period" value={p.maximumGracePeriodInMinutes} subValue="Minutes" />
+                                                        </div>
+                                                    );
+                                                })()}
 
-                                    {/* Certificate Policies - Root, PKCS12, PEM, PKCS1 */}
-                                    {(
-                                        (ep.rootCertPolicies?.length > 0) ||
-                                        (ep.pkcs12Policies?.length > 0) ||
-                                        (ep.pemPolicies?.length > 0) ||
-                                        (ep.pkcs1Policies?.length > 0)
-                                    ) && (
-                                            <Card className="border-t-4 border-t-teal-500">
-                                                <CardHeader>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 rounded-lg bg-teal-500/10">
-                                                            <FileText className="w-5 h-5 text-teal-500" />
+                                                {/* SCEP */}
+                                                {selectedEffectivePolicy?.type === 'scep' && (() => {
+                                                    const p = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <InfoRow label="URL" value={p.url} />
+                                                            <InfoRow label="SCEP Name" value={p.scepName} />
+                                                            <InfoRow label="Key Size" value={p.keysize} />
+                                                            <InfoRow label="Key Type" value={p.keyType} />
+                                                            <InfoRow label="Key Usage" value={p.keyUsage} />
+                                                            {p.subjectAltName?.dnsName && <InfoRow label="DNS Name" value={p.subjectAltName.dnsName} />}
                                                         </div>
-                                                        <div>
-                                                            <h4 className="font-semibold">Certificate Policies</h4>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {(ep.rootCertPolicies?.length || 0) + (ep.pkcs12Policies?.length || 0) + (ep.pemPolicies?.length || 0) + (ep.pkcs1Policies?.length || 0)} certificate(s)
-                                                            </p>
+                                                    );
+                                                })()}
+
+                                                {/* MDM */}
+                                                {selectedEffectivePolicy?.type === 'mdm' && (() => {
+                                                    const p = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <InfoRow label="Server URL" value={p.serverURL} />
+                                                            <InfoRow label="Check-in URL" value={p.checkInURL} />
+                                                            <InfoRow label="Topic" value={p.topic} />
+                                                            <BooleanStatus label="Sign Messages" value={p.signMessage} />
+                                                            <BooleanStatus label="Check Out on Remove" value={p.checkOutWhenRemoved} />
+                                                            <BooleanStatus label="Development APNS" value={p.useDevelopmentAPNS} />
+                                                            <InfoRow label="Access Rights" value={p.accessRights} />
+                                                            {Array.isArray(p.serverCapabilities) && p.serverCapabilities.length > 0 && (
+                                                                <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                                                                    <span className="text-sm font-medium">Capabilities</span>
+                                                                    <div className="flex flex-wrap gap-1 max-w-[60%] justify-end">
+                                                                        {p.serverCapabilities.map((cap: string, i: number) => (
+                                                                            <Badge key={i} variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 text-[10px]">
+                                                                                {cap.replace('com.apple.mdm.', '')}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {ep.rootCertPolicies?.length > 0 && (
-                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
-                                                                Root Certs: {ep.rootCertPolicies.length}
-                                                            </Badge>
-                                                        )}
-                                                        {ep.pkcs12Policies?.length > 0 && (
-                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
-                                                                PKCS12: {ep.pkcs12Policies.length}
-                                                            </Badge>
-                                                        )}
-                                                        {ep.pemPolicies?.length > 0 && (
-                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
-                                                                PEM: {ep.pemPolicies.length}
-                                                            </Badge>
-                                                        )}
-                                                        {ep.pkcs1Policies?.length > 0 && (
-                                                            <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">
-                                                                PKCS1: {ep.pkcs1Policies.length}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        )}
+                                                    );
+                                                })()}
+
+                                                {/* Wi-Fi */}
+                                                {selectedEffectivePolicy?.type === 'wifi' && (() => {
+                                                    const p = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <InfoRow label="SSID" value={p.ssid} />
+                                                            <InfoRow label="Encryption" value={p.encryptionType} />
+                                                            <BooleanStatus label="Auto Join" value={p.autoJoin} />
+                                                            <BooleanStatus label="Hidden Network" value={p.hiddenNetwork} />
+                                                            <BooleanStatus label="Is Hotspot" value={p.isHotspot} />
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {/* Lock Screen */}
+                                                {selectedEffectivePolicy?.type === 'lockscreen' && (() => {
+                                                    const p = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-2">
+                                                            <InfoRow label="If Lost" value={p.lockScreenFootnote} />
+                                                            <InfoRow label="Asset Tag" value={p.assetTagInformation} />
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {/* Applications */}
+                                                {selectedEffectivePolicy?.type === 'applications' && (() => {
+                                                    const apps = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-3">
+                                                            {apps.map((app: any, idx: number) => (
+                                                                <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border bg-card">
+                                                                    <div className="p-2 rounded-lg bg-emerald-500/10 shrink-0">
+                                                                        <Package className="w-5 h-5 text-emerald-500" />
+                                                                    </div>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <p className="text-sm font-semibold truncate">{app.name || 'Unknown App'}</p>
+                                                                        <p className="text-xs text-muted-foreground font-mono truncate">{app.applicationId || '-'}</p>
+                                                                    </div>
+                                                                    <Badge variant="outline" className={
+                                                                        app.action === 'INSTALL' ? 'bg-success/10 text-success border-success/30' :
+                                                                            app.action === 'REMOVE' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                                                                                'bg-muted text-muted-foreground'
+                                                                    }>
+                                                                        {app.action === 'INSTALL' ? <Download className="w-3 h-3 mr-1" /> : null}
+                                                                        {app.action || 'N/A'}
+                                                                    </Badge>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {/* Web Clips */}
+                                                {selectedEffectivePolicy?.type === 'webclips' && (() => {
+                                                    const clips = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-3">
+                                                            {clips.map((clip: any, idx: number) => (
+                                                                <div key={idx} className="p-3 border rounded-xl bg-card space-y-2">
+                                                                    <InfoRow label="Label" value={clip.label} />
+                                                                    <InfoRow label="URL" value={clip.url} />
+                                                                    <BooleanStatus label="Removable" value={clip.isRemovable} />
+                                                                    <BooleanStatus label="Full Screen" value={clip.fullScreen} />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {/* Notifications */}
+                                                {selectedEffectivePolicy?.type === 'notifications' && (() => {
+                                                    const notifs = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-3">
+                                                            {notifs.map((notif: any, idx: number) => (
+                                                                <div key={idx} className="p-3 border rounded-xl bg-card space-y-2">
+                                                                    <InfoRow label="Bundle ID" value={notif.bundleIdentifier} />
+                                                                    <BooleanStatus label="Enabled" value={notif.enabled} />
+                                                                    <BooleanStatus label="Lock Screen" value={notif.showInLockScreen} />
+                                                                    <BooleanStatus label="Notification Center" value={notif.showInNotificationCenter} />
+                                                                    <BooleanStatus label="Alert Style" value={notif.alertStyle !== 'NONE'} trueLabel={notif.alertStyle || 'BANNER'} />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {/* Certificates */}
+                                                {selectedEffectivePolicy?.type === 'certificates' && (() => {
+                                                    const d = selectedEffectivePolicy.data;
+                                                    return (
+                                                        <div className="space-y-3">
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {d.rootCertPolicies?.length > 0 && <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">Root Certs: {d.rootCertPolicies.length}</Badge>}
+                                                                {d.pkcs12Policies?.length > 0 && <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">PKCS12: {d.pkcs12Policies.length}</Badge>}
+                                                                {d.pemPolicies?.length > 0 && <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">PEM: {d.pemPolicies.length}</Badge>}
+                                                                {d.pkcs1Policies?.length > 0 && <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">PKCS1: {d.pkcs1Policies.length}</Badge>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+
+                                            <div className="flex justify-end mt-4 pt-4 border-t">
+                                                <Button variant="outline" onClick={() => setSelectedEffectivePolicy(null)}>Close</Button>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
                                 </div>
                             );
                         })()}
