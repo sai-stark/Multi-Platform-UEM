@@ -7,6 +7,7 @@ import { EnrollmentGuard, EnterpriseProvider } from "@/contexts/EnterpriseContex
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BreadcrumbProvider } from "@/contexts/BreadcrumbContext";
 import ApplicationDetails from "./pages/ApplicationDetails";
 import Applications from "./pages/Applications";
 import DeviceDetails from "./pages/DeviceDetails";
@@ -84,9 +85,11 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter basename={deploymentPrefixPath}>
-            <EnterpriseProvider>
-              <AppRoutes />
-            </EnterpriseProvider>
+            <BreadcrumbProvider>
+              <EnterpriseProvider>
+                <AppRoutes />
+              </EnterpriseProvider>
+            </BreadcrumbProvider>
           </BrowserRouter>
         </TooltipProvider>
       </LanguageProvider>

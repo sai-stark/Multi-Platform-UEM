@@ -25,7 +25,7 @@ import { useEffect, useState, useMemo } from "react";
 import { RepositoryService } from "@/api/services/repository";
 import { PaginatedCustomRepoList } from "@/types/models";
 import { AddRepositoryDialog } from "@/components/repositories/AddRepositoryDialog";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const platformConfig: Record<
   string,
@@ -77,7 +77,22 @@ const platformConfig: Record<
 
 const Repositories = () => {
   const navigate = useNavigate();
-  const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const getInitialPlatform = (): string => {
+    const urlPlatform = searchParams.get('platform');
+    if (urlPlatform && platformConfig[urlPlatform]) return urlPlatform;
+    return 'all';
+  };
+  const [platformFilter, setPlatformFilter] = useState<string>(getInitialPlatform());
+
+  // Sync URL search params when platform tab changes
+  useEffect(() => {
+    if (platformFilter === 'all') {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ platform: platformFilter }, { replace: true });
+    }
+  }, [platformFilter, setSearchParams]);
   const [repositories, setRepositories] = useState<CustomRepository[]>([]);
   const [loading, setLoading] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);

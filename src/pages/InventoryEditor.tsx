@@ -24,6 +24,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 import * as z from "zod";
 
 const formSchema = z.object({
@@ -42,6 +43,13 @@ const InventoryEditor = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [submitting, setSubmitting] = useState(false);
+    const { setEntityName } = useBreadcrumb();
+
+    // Set breadcrumb entity name
+    useEffect(() => {
+        const serial = form.getValues('serialNumber');
+        setEntityName(isEditing ? (serial || 'Edit Device') : 'New Device');
+    }, [isEditing, setEntityName]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),

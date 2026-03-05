@@ -79,14 +79,23 @@ import {
     Wifi
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 
 export default function DeviceDetails() {
     const { platform, id } = useParams<{ platform: string; id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
+    const fromPlatform = (location.state as any)?.fromPlatform;
     const { toast } = useToast();
     const [device, setDevice] = useState<DeviceInfo | null>(null);
     const [loading, setLoading] = useState(true);
+    const { setEntityName } = useBreadcrumb();
+
+    // Set breadcrumb entity name when device loads
+    useEffect(() => {
+        if (device?.deviceName || device?.model) setEntityName(device?.deviceName || device?.model || '');
+    }, [device?.deviceName, device?.model, setEntityName]);
 
     const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; action: string | null; label: string; requiredText: string }>({
         isOpen: false,
@@ -505,7 +514,7 @@ export default function DeviceDetails() {
                         <Smartphone className="w-12 h-12 text-muted-foreground" />
                     </div>
                     <h2 className="text-xl font-semibold">Device Not Found</h2>
-                    <Button onClick={() => navigate('/devices')}>Back to Devices</Button>
+                    <Button onClick={() => navigate(`/devices${fromPlatform ? `?platform=${fromPlatform}` : ''}`)}>Back to Devices</Button>
                 </div>
             </MainLayout>
         );
@@ -521,7 +530,7 @@ export default function DeviceDetails() {
         <MainLayout>
             <div className="space-y-6 pb-20">
                 {/* Navigation */}
-                <Button variant="ghost" size="sm" onClick={() => navigate('/devices')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="sm" onClick={() => navigate(`/devices${fromPlatform ? `?platform=${fromPlatform}` : ''}`)} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Devices
                 </Button>

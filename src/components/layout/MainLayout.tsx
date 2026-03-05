@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
+import { AppBreadcrumb } from './AppBreadcrumb';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -20,6 +21,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         
         <div className="flex-1 flex flex-col min-w-0">
           <AppHeader />
+          <AppBreadcrumb />
           
           <main 
             id="main-content"
@@ -34,3 +36,4 @@ export function MainLayout({ children }: MainLayoutProps) {
     </SidebarProvider>
   );
 }
+

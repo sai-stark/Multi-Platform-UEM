@@ -41,7 +41,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface Device {
   id: string;
@@ -116,9 +116,18 @@ const Devices = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
-  // We can still support URL init but we focus on local state
-  const { platform: urlPlatform } = useParams<{ platform?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlPlatform = searchParams.get('platform');
   const [platformFilter, setPlatformFilter] = useState<string>(urlPlatform && platformConfig[urlPlatform] ? urlPlatform : "all");
+
+  // Sync URL search params when platform tab changes
+  useEffect(() => {
+    if (platformFilter === 'all') {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ platform: platformFilter }, { replace: true });
+    }
+  }, [platformFilter, setSearchParams]);
   const [data, setData] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
@@ -281,7 +290,7 @@ const Devices = () => {
               className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/devices/${item.platform}/${item.id}`);
+                navigate(`/devices/${item.platform}/${item.id}`, { state: { fromPlatform: platformFilter } });
               }}
             >
               {item.name}
@@ -403,7 +412,7 @@ const Devices = () => {
 
   const rowActions = (device: Device) => (
     <>
-      <DropdownMenuItem onClick={() => navigate(`/devices/${device.platform}/${device.id}`)}>
+      <DropdownMenuItem onClick={() => navigate(`/devices/${device.platform}/${device.id}`, { state: { fromPlatform: platformFilter } })}>
         View Details
       </DropdownMenuItem>
       <DropdownMenuSeparator />

@@ -33,7 +33,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ProfileService } from "@/api/services/profiles";
 import { Platform } from "@/types/models";
 import { useAndroidFeaturesEnabled } from "@/contexts/EnterpriseContext";
@@ -94,7 +94,22 @@ const Profiles = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { shouldBlock: shouldBlockAndroid, isDebugMode } = useAndroidFeaturesEnabled();
-  const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const getInitialPlatform = (): string => {
+    const urlPlatform = searchParams.get('platform');
+    if (urlPlatform && platformConfig[urlPlatform]) return urlPlatform;
+    return 'all';
+  };
+  const [platformFilter, setPlatformFilter] = useState<string>(getInitialPlatform());
+
+  // Sync URL search params when platform tab changes
+  useEffect(() => {
+    if (platformFilter === 'all') {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ platform: platformFilter }, { replace: true });
+    }
+  }, [platformFilter, setSearchParams]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -309,7 +324,7 @@ const Profiles = () => {
             className="font-medium text-blue-500 hover:text-blue-600 cursor-pointer hover:underline"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/profiles/${item.platform}/${item.id}`);
+              navigate(`/profiles/${item.platform}/${item.id}`, { state: { fromPlatform: platformFilter } });
             }}
           >
             {item.name}
@@ -524,7 +539,7 @@ const Profiles = () => {
             className="h-8 w-8"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/profiles/${profile.platform}/${profile.id}`);
+              navigate(`/profiles/${profile.platform}/${profile.id}`, { state: { fromPlatform: platformFilter } });
             }}
           >
             <Edit className="h-4 w-4" />

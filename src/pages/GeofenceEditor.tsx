@@ -15,6 +15,7 @@ import { ArrowLeft, Loader2, Save, Trash, Undo } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Circle, MapContainer, Marker, Polygon, TileLayer, useMapEvents } from "react-leaflet";
 import { useNavigate, useParams } from "react-router-dom";
+import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 
 // Fix Leaflet marker icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -60,6 +61,12 @@ const GeofenceEditor = () => {
 
     // Polygon State
     const [polygonPoints, setPolygonPoints] = useState<Array<{ lat: number, lng: number }>>([]);
+    const { setEntityName } = useBreadcrumb();
+
+    // Set breadcrumb entity name
+    useEffect(() => {
+        setEntityName(isEditing ? (name || 'Edit Geofence') : 'New Geofence');
+    }, [name, isEditing, setEntityName]);
 
     useEffect(() => {
         if (isEditing) {

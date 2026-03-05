@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 
 // Mock Data
 const mockGroup: Group = {
@@ -72,6 +73,12 @@ export default function GroupDetails() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
     const [targetRemoveDeviceId, setTargetRemoveDeviceId] = useState<string | null>(null);
+    const { setEntityName } = useBreadcrumb();
+
+    // Set breadcrumb entity name when group loads
+    useEffect(() => {
+        if (group?.name) setEntityName(group.name);
+    }, [group?.name, setEntityName]);
 
     const fetchGroupData = async () => {
         setLoading(true);

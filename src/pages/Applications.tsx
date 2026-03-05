@@ -200,7 +200,7 @@ const getIframeToken = async (
 const Applications = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { shouldBlock: shouldBlockAndroid } = useAndroidFeaturesEnabled();
 
   // Read platform from URL search params (e.g., ?platform=ios)
@@ -211,6 +211,11 @@ const Applications = () => {
   };
 
   const [platform, setPlatform] = useState<Platform>(getInitialPlatform());
+
+  // Sync URL search params when platform tab changes
+  useEffect(() => {
+    setSearchParams({ platform }, { replace: true });
+  }, [platform, setSearchParams]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);

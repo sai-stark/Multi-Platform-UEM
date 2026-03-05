@@ -94,7 +94,8 @@ import {
   WifiOff
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 
 // Extended type for UI display
 type ProfileDetailsData = FullProfile & {
@@ -716,12 +717,20 @@ function PolicyCardGrid({
 export default function ProfileDetails() {
   const { platform, id } = useParams<{ platform: string; id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPlatform = (location.state as any)?.fromPlatform;
   const { t } = useLanguage();
   const [profile, setProfile] = useState<ProfileDetailsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [activePolicyType, setActivePolicyType] = useState<string | null>(null);
+  const { setEntityName } = useBreadcrumb();
+
+  // Set breadcrumb entity name when profile loads
+  useEffect(() => {
+    if (profile?.name) setEntityName(profile.name);
+  }, [profile?.name, setEntityName]);
 
   // Profile edit state (name + description together)
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -971,7 +980,7 @@ export default function ProfileDetails() {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Navigation & Header */}
         <div className="flex flex-col gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/profiles')} className="w-fit -ml-2 text-muted-foreground hover:text-foreground gap-1">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/profiles${fromPlatform ? `?platform=${fromPlatform}` : ''}`)} className="w-fit -ml-2 text-muted-foreground hover:text-foreground gap-1">
             <ArrowLeft className="w-4 h-4" /> {t('profiles.actions.backToProfiles')}
           </Button>
 

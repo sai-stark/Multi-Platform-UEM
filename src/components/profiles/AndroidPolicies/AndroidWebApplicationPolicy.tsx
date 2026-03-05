@@ -258,7 +258,7 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
     return (
         <div className="space-y-6 max-w-5xl mt-6">
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b">
+            <div className="flex items-center justify-between pb-4 border-b pr-8">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-500/10 rounded-full">
                         <Globe className="w-6 h-6 text-purple-500" />

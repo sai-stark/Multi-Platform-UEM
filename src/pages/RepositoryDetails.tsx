@@ -4,6 +4,7 @@ import { DataTable, Column } from "@/components/ui/data-table";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 import { RepositoryService } from "@/api/services/repository";
 import { Platform, ApplicationUnion } from "@/types/models";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,12 @@ const RepositoryDetails = () => {
   const [applications, setApplications] = useState<RepositoryApplication[]>([]);
   const [loading, setLoading] = useState(false);
   const [repositoryName, setRepositoryName] = useState<string>("");
+  const { setEntityName } = useBreadcrumb();
+
+  // Set breadcrumb entity name when repository name loads
+  useEffect(() => {
+    if (repositoryName) setEntityName(repositoryName);
+  }, [repositoryName, setEntityName]);
 
   useEffect(() => {
     if (platform && repoId) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { 
   Application, 
@@ -111,14 +112,20 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
           setConfigs(data.applicationConfigurations);
         }
       } catch (err) {
-        console.error('Failed to fetch iOS application:', err);
+        console.error('Failed to fetch iOS app:', err);
         setError('Failed to load application details');
       } finally {
         setLoading(false);
       }
     };
     fetchApp();
-  }, [id]);
+  }, [id, toast]);
+
+  // Set breadcrumb entity name
+  const { setEntityName } = useBreadcrumb();
+  useEffect(() => {
+    if (app?.trackName || app?.name) setEntityName(app?.trackName || app?.name || '');
+  }, [app?.trackName, app?.name, setEntityName]);
 
   // Fetch configurations separately
   const fetchConfigs = async () => {
@@ -656,6 +663,12 @@ const ApplicationDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<ApplicationPermission[]>([]);
+
+  // Set breadcrumb entity name
+  const { setEntityName } = useBreadcrumb();
+  useEffect(() => {
+    if (application?.name) setEntityName(application.name);
+  }, [application?.name, setEntityName]);
 
 
   // Fetch application details

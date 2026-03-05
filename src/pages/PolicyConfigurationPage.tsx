@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 
 export default function PolicyConfigurationPage() {
     const { platform, id, policyType } = useParams<{ platform: string; id: string; policyType: string }>();
@@ -208,6 +209,12 @@ export default function PolicyConfigurationPage() {
     };
 
     const { title, icon } = getHeaderInfo();
+
+    // Set breadcrumb entity name to policy title
+    const { setEntityName } = useBreadcrumb();
+    useEffect(() => {
+        if (title) setEntityName(title);
+    }, [title, setEntityName]);
 
     return (
         <MainLayout>
