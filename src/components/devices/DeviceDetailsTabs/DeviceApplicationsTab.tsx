@@ -1,6 +1,14 @@
 import { DeviceService } from '@/api/services/devices';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import { DeviceApplicationList, Platform } from '@/types/models';
 import { getErrorMessage } from '@/utils/errorUtils';
@@ -9,14 +17,13 @@ import {
     AppWindow,
     ArrowUpCircle,
     CheckCircle2,
-    Database,
     Package,
     RefreshCw,
     Shield,
     Store
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { SectionHeader, formatBytes } from './DeviceOverviewTab';
+import { SectionHeader } from './DeviceOverviewTab';
 
 interface DeviceApplicationsTabProps {
     platform: string;
@@ -74,7 +81,7 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
                 const totalSize = applications.reduce((sum, a) => sum + (a.bundleSize || 0) + (a.dynamicSize || 0), 0);
 
                 return (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Card className="border-l-4 border-l-primary">
                             <CardContent className="p-4 flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-primary/10"><Package className="w-5 h-5 text-primary" /></div>
@@ -91,12 +98,6 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
                             <CardContent className="p-4 flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-warning/10"><ArrowUpCircle className="w-5 h-5 text-warning" /></div>
                                 <div><p className="text-2xl font-bold">{updateCount}</p><p className="text-xs text-muted-foreground">Updates Available</p></div>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-l-4 border-l-info">
-                            <CardContent className="p-4 flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-info/10"><Database className="w-5 h-5 text-info" /></div>
-                                <div><p className="text-2xl font-bold">{formatSize(totalSize)}</p><p className="text-xs text-muted-foreground">Total Storage</p></div>
                             </CardContent>
                         </Card>
                     </div>
@@ -119,94 +120,88 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
                             <p>No applications found.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {applications.map((app, index) => {
-                                const bundleBytes = app.bundleSize || 0;
-                                const dynamicBytes = app.dynamicSize || 0;
-                                const appColors = [
-                                    'from-blue-500/20 to-indigo-500/20 text-blue-600',
-                                    'from-emerald-500/20 to-teal-500/20 text-emerald-600',
-                                    'from-purple-500/20 to-pink-500/20 text-purple-600',
-                                    'from-amber-500/20 to-orange-500/20 text-amber-600',
-                                    'from-rose-500/20 to-red-500/20 text-rose-600',
-                                    'from-cyan-500/20 to-sky-500/20 text-cyan-600',
-                                ];
-                                const colorClass = appColors[index % appColors.length];
-                                const managed = app.isManaged || app.iosDeviceApplicationExtraDetails?.status === 'Managed';
+                        <div className="rounded-md border overflow-x-auto min-w-full">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/50">
+                                        <TableHead className="w-[300px]">App Name</TableHead>
+                                        <TableHead>Identifier</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Management</TableHead>
+                                        <TableHead className="text-right">Version</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {applications.map((app, index) => {
+                                        const appColors = [
+                                            'bg-blue-500/10 text-blue-600',
+                                            'bg-emerald-500/10 text-emerald-600',
+                                            'bg-purple-500/10 text-purple-600',
+                                            'bg-amber-500/10 text-amber-600',
+                                            'bg-rose-500/10 text-rose-600',
+                                            'bg-cyan-500/10 text-cyan-600',
+                                        ];
+                                        const colorClass = appColors[index % appColors.length];
+                                        const managed = app.isManaged || app.iosDeviceApplicationExtraDetails?.status === 'Managed';
 
-                                return (
-                                    <div
-                                        key={app.id || index}
-                                        className="group relative rounded-xl border bg-card p-4 hover:shadow-lg hover:border-primary/30 transition-all duration-200"
-                                    >
-                                        {/* Header row */}
-                                        <div className="flex items-start gap-3 mb-3">
-                                            <div className={`p-2.5 rounded-xl bg-gradient-to-br ${colorClass} shrink-0`}>
-                                                <Package className="w-5 h-5" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h4 className="font-semibold text-sm truncate" title={app.name}>{app.name || 'Unknown App'}</h4>
-                                                <p className="text-xs text-muted-foreground font-mono truncate" title={app.identifier || app.packageName}>
-                                                    {app.identifier || app.packageName || '-'}
-                                                </p>
-                                            </div>
-                                            {app.hasUpdateAvailable && (
-                                                <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px] shrink-0">
-                                                    <ArrowUpCircle className="w-3 h-3 mr-1" /> Update
-                                                </Badge>
-                                            )}
-                                        </div>
-
-                                        {/* Badges row */}
-                                        <div className="flex flex-wrap gap-1.5 mb-3">
-                                            <Badge variant="outline" className={managed ? 'bg-success/10 text-success border-success/30' : 'bg-muted text-muted-foreground border-muted-foreground/20'} >
-                                                {managed ? <><Shield className="w-3 h-3 mr-1" /> Managed</> : 'Unmanaged'}
-                                            </Badge>
-                                            {(app.applicationStatus || app.isInstalled) && (
-                                                <Badge variant="outline" className="bg-info/10 text-info border-info/30">
-                                                    <CheckCircle2 className="w-3 h-3 mr-1" /> {app.applicationStatus || 'Installed'}
-                                                </Badge>
-                                            )}
-                                            {app.isBlocked && (
-                                                <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" /> Blocked</Badge>
-                                            )}
-                                            {app.betaApp && (
-                                                <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">Beta</Badge>
-                                            )}
-                                            {app.isAppClip && (
-                                                <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600 border-cyan-500/30">App Clip</Badge>
-                                            )}
-                                            {app.appStoreVendable && (
-                                                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
-                                                    <Store className="w-3 h-3 mr-1" /> App Store
-                                                </Badge>
-                                            )}
-                                        </div>
-
-                                        {/* Details grid */}
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                            <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Version</span>
-                                                <span className="ml-auto font-medium">{app.shortVersion || app.appVersion || app.version || '-'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Bundle</span>
-                                                <span className="ml-auto font-medium">{bundleBytes > 0 ? formatBytes(bundleBytes) : '-'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Data</span>
-                                                <span className="ml-auto font-medium">{dynamicBytes > 0 ? formatBytes(dynamicBytes) : '-'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 p-2 rounded-md bg-muted/50">
-                                                <span className="text-muted-foreground">Validated</span>
-                                                <span className="ml-auto">
-                                                    {app.isValidated ? <CheckCircle2 className="w-3.5 h-3.5 text-success" /> : <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                        return (
+                                            <TableRow key={app.id || index} className="hover:bg-muted/30 transition-colors">
+                                                <TableCell className="font-medium">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`p-2 rounded-lg ${colorClass} shrink-0`}>
+                                                            <Package className="w-4 h-4" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <span className="truncate block max-w-[200px]" title={app.name}>{app.name || 'Unknown App'}</span>
+                                                            {app.hasUpdateAvailable && (
+                                                                <span className="flex items-center text-[10px] text-warning mt-0.5">
+                                                                    <ArrowUpCircle className="w-3 h-3 mr-1" /> Update Available
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="font-mono text-xs text-muted-foreground truncate max-w-[200px] block" title={app.identifier || app.packageName}>
+                                                        {app.identifier || app.packageName || '-'}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {(app.applicationStatus || app.isInstalled) && (
+                                                            <Badge variant="outline" className="bg-info/10 text-info border-info/30 font-normal">
+                                                                <CheckCircle2 className="w-3 h-3 mr-1" /> {app.applicationStatus || 'Installed'}
+                                                            </Badge>
+                                                        )}
+                                                        {app.isBlocked && (
+                                                            <Badge variant="destructive" className="font-normal"><AlertCircle className="w-3 h-3 mr-1" /> Blocked</Badge>
+                                                        )}
+                                                        {app.betaApp && (
+                                                            <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 font-normal">Beta</Badge>
+                                                        )}
+                                                        {app.isAppClip && (
+                                                            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600 border-cyan-500/30 font-normal">App Clip</Badge>
+                                                        )}
+                                                        {app.appStoreVendable && (
+                                                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 font-normal">
+                                                                <Store className="w-3 h-3 mr-1" /> App Store
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={`font-normal ${managed ? 'bg-success/10 text-success border-success/30' : 'bg-muted text-muted-foreground border-muted-foreground/20'}`} >
+                                                        {managed ? <><Shield className="w-3 h-3 mr-1" /> Managed</> : 'Unmanaged'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right font-medium">
+                                                    {app.shortVersion || app.appVersion || app.version || '-'}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
                         </div>
                     )}
                 </CardContent>
