@@ -1,5 +1,5 @@
 
-import { LoadingAnimation } from "@/components/common/LoadingAnimation";
+import { FormEditorSkeleton } from "@/components/skeletons";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -190,7 +190,7 @@ const GeofenceEditor = () => {
     if (loading) {
         return (
             <MainLayout>
-                <LoadingAnimation message="Loading geofence data..." />
+                <FormEditorSkeleton />
             </MainLayout>
         );
     }
@@ -198,18 +198,13 @@ const GeofenceEditor = () => {
     return (
         <MainLayout>
             <div className="space-y-6 max-w-6xl mx-auto">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate("/geofences")}>
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
-                            {isEditing ? "Edit Geofence" : "Create Geofence"}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {isEditing ? `Updating ${name}` : "Define a new geographical boundary"}
-                        </p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        {isEditing ? "Edit Geofence" : "Create Geofence"}
+                    </h1>
+                    <p className="text-muted-foreground">
+                        {isEditing ? `Updating ${name}` : "Define a new geographical boundary"}
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

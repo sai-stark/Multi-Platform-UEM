@@ -127,22 +127,13 @@ const InventoryEditor = () => {
     return (
         <MainLayout>
             <div className="space-y-6 max-w-2xl mx-auto">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigate("/inventory")}
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                            {isEditing ? "Edit Device" : "Add Device"}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {isEditing ? "Update device details and assignment." : "Register a new hardware device."}
-                        </p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        {isEditing ? "Edit Device" : "Add Device"}
+                    </h1>
+                    <p className="text-muted-foreground">
+                        {isEditing ? "Update device details and assignment." : "Register a new hardware device."}
+                    </p>
                 </div>
 
                 <Card>

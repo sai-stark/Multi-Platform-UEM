@@ -1,5 +1,5 @@
 import { ProfileService } from "@/api/services/profiles";
-import { LoadingAnimation } from "@/components/common/LoadingAnimation";
+import { PolicyConfigSkeleton } from "@/components/skeletons";
 import { MainLayout } from "@/components/layout/MainLayout";
 import {
     AndroidApplicationPolicy,
@@ -177,9 +177,7 @@ export default function PolicyConfigurationPage() {
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex h-full items-center justify-center">
-                    <LoadingAnimation message="Loading policy configuration..." />
-                </div>
+                <PolicyConfigSkeleton />
             </MainLayout>
         );
     }
@@ -188,9 +186,6 @@ export default function PolicyConfigurationPage() {
         return (
             <MainLayout>
                 <div className="p-8 text-center text-muted-foreground">{error}</div>
-                <div className="flex justify-center">
-                    <Button variant="outline" onClick={handleCancel}>Back to Profile</Button>
-                </div>
             </MainLayout>
         );
     }
@@ -222,9 +217,6 @@ export default function PolicyConfigurationPage() {
 
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
-                    <Button variant="ghost" size="sm" onClick={handleCancel} className="gap-1 pl-0 text-muted-foreground hover:text-foreground">
-                        <ArrowLeft className="w-4 h-4" /> Back
-                    </Button>
                     <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
                 </div>
 

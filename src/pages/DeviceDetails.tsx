@@ -3,6 +3,7 @@ import { DeviceService } from '@/api/services/devices';
 import { CertificateViewer } from '@/components/devices/CertificateViewer';
 import { RemoteControlTab } from '@/components/devices/RemoteControlTab';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { DetailPageSkeleton } from '@/components/skeletons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -498,10 +499,7 @@ export default function DeviceDetails() {
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] gap-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    <p className="text-muted-foreground animate-pulse">Loading device details...</p>
-                </div>
+                <DetailPageSkeleton />
             </MainLayout>
         );
     }
@@ -514,7 +512,6 @@ export default function DeviceDetails() {
                         <Smartphone className="w-12 h-12 text-muted-foreground" />
                     </div>
                     <h2 className="text-xl font-semibold">Device Not Found</h2>
-                    <Button onClick={() => navigate(`/devices${fromPlatform ? `?platform=${fromPlatform}` : ''}`)}>Back to Devices</Button>
                 </div>
             </MainLayout>
         );
@@ -529,11 +526,6 @@ export default function DeviceDetails() {
     return (
         <MainLayout>
             <div className="space-y-6 pb-20">
-                {/* Navigation */}
-                <Button variant="ghost" size="sm" onClick={() => navigate(`/devices${fromPlatform ? `?platform=${fromPlatform}` : ''}`)} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Devices
-                </Button>
 
                 {/* Header Card */}
                 <div className="bg-card rounded-xl border shadow-sm p-6">

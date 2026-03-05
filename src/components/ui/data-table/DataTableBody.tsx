@@ -1,5 +1,6 @@
 import React from "react";
 import { MoreHorizontal } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -31,6 +32,7 @@ export function DataTableBody<T extends Record<string, any>>({
   quickActions,
 }: DataTableBodyProps<T>) {
   const { paginatedData, visibleColumnsList } = table;
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <TableBody>
@@ -47,9 +49,16 @@ export function DataTableBody<T extends Record<string, any>>({
         </TableRow>
       ) : (
         paginatedData.map((item, index) => (
-          <TableRow
+          <motion.tr
             key={item.id || `row-${index}`}
-            className={`hover:bg-muted/50 ${
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.25,
+              ease: "easeOut",
+              delay: Math.min(index, 10) * 0.03,
+            }}
+            className={`border-b transition-colors data-[state=selected]:bg-muted hover:bg-muted/50 ${
               onRowClick ? "cursor-pointer" : ""
             }`}
             onClick={() => onRowClick?.(item)}
@@ -118,7 +127,7 @@ export function DataTableBody<T extends Record<string, any>>({
                 </div>
               </TableCell>
             )}
-          </TableRow>
+          </motion.tr>
         ))
       )}
     </TableBody>

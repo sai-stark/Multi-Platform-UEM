@@ -98,7 +98,7 @@ interface BreadcrumbItemData {
 export function AppBreadcrumb() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { entityName } = useBreadcrumb();
+  const { entityName, entityIcon } = useBreadcrumb();
   const prevItemsLength = useRef(0);
 
   const pathname = location.pathname;
@@ -158,8 +158,11 @@ export function AppBreadcrumb() {
       }
     }
 
-    // Attach section icon only for top-level known sections
-    const sectionIcon = (i === 0 && sectionIcons[segment]) ? sectionIcons[segment] : undefined;
+    // Attach section icon only for top-level known sections, or use entityIcon for entity segments
+    let resolvedSectionIcon = (i === 0 && sectionIcons[segment]) ? sectionIcons[segment] : undefined;
+    if (isId && entityIcon) {
+      resolvedSectionIcon = entityIcon;
+    }
 
     items.push({
       label,
@@ -168,7 +171,7 @@ export function AppBreadcrumb() {
       isPlatform,
       platformImage: isPlatform ? getAssetUrl(platformImages[segment]) : undefined,
       isEntityId: isId,
-      sectionIcon,
+      sectionIcon: resolvedSectionIcon,
     });
   }
 

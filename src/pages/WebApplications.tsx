@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { TablePageSkeleton } from '@/components/skeletons';
 import { WebApplicationService } from '@/api/services/webApps';
 import { WebApplication } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
@@ -312,9 +313,7 @@ const WebApplications = () => {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64" aria-busy="true" aria-label="Loading web applications">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" aria-hidden="true" />
-        </div>
+        <TablePageSkeleton />
       </MainLayout>
     );
   }

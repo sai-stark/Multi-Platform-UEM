@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AppDetailSkeleton, DetailPageSkeleton } from '@/components/skeletons';
 import { 
   Application, 
   ApplicationService, 
@@ -221,12 +222,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64" aria-busy="true" aria-label="Loading application details">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
-            <span>Loading iOS application details...</span>
-          </div>
-        </div>
+        <AppDetailSkeleton />
       </MainLayout>
     );
   }
@@ -239,7 +235,6 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Error loading application</h3>
             <p className="text-muted-foreground mb-4">{error || 'Application not found'}</p>
-            <Button onClick={() => navigate('/applications?platform=ios')}>Back to Applications</Button>
           </div>
         </div>
       </MainLayout>
@@ -252,10 +247,6 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
         <div className="space-y-6">
           {/* Header */}
           <header className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/applications?platform=ios')} className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Applications
-            </Button>
             <div className="flex items-center gap-4">
               {(app.artworkUrl100 || app.artworkUrl60) && (
                 <img
@@ -848,12 +839,7 @@ const ApplicationDetails = () => {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading application details...</span>
-          </div>
-        </div>
+        <DetailPageSkeleton />
       </MainLayout>
     );
   }
@@ -869,9 +855,6 @@ const ApplicationDetails = () => {
             <p className="text-muted-foreground mb-4">
               {error || 'Application not found'}
             </p>
-            <Button onClick={() => navigate(`/applications?platform=${platform}`)}>
-              Back to Applications
-            </Button>
           </div>
         </div>
       </MainLayout>
@@ -890,15 +873,6 @@ const ApplicationDetails = () => {
         <div className="space-y-6">
           {/* Header */}
           <header className="space-y-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/applications?platform=${platform}`)}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Applications
-            </Button>
             <div className="flex items-center gap-4">
               {application.iconUrl && (
                 <img 

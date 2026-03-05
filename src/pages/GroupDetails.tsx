@@ -1,5 +1,6 @@
 
 import { MainLayout } from '@/components/layout/MainLayout';
+import { GroupDetailSkeleton } from '@/components/skeletons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,7 +168,7 @@ export default function GroupDetails() {
     if (loading) {
         return (
             <MainLayout>
-                <div className="flex h-full items-center justify-center">Loading...</div>
+                <GroupDetailSkeleton />
             </MainLayout>
         );
     }
@@ -177,7 +178,6 @@ export default function GroupDetails() {
             <MainLayout>
                 <div className="flex bg-muted/30 h-full flex-col items-center justify-center gap-4">
                     <h2 className="text-xl font-semibold">Group Not Found</h2>
-                    <Button onClick={() => navigate('/groups')}>Back to Groups</Button>
                 </div>
             </MainLayout>
         );
@@ -206,10 +206,6 @@ export default function GroupDetails() {
             </AlertDialog>
             <div className="space-y-6">
                 {/* Header */}
-                <Button variant="ghost" size="sm" onClick={() => navigate('/groups')} className="gap-2 -ml-2 text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Groups
-                </Button>
 
                 <div className="flex items-center gap-4">
                     <div className="flex-1">

@@ -33,7 +33,18 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AccessibilitySettings>(() => {
     try {
       const saved = localStorage.getItem('uem-accessibility');
-      return saved ? JSON.parse(saved) : defaultSettings;
+      const parsed: AccessibilitySettings = saved ? JSON.parse(saved) : defaultSettings;
+
+      // Sync the dark class on <html> immediately during initialization,
+      // before the first paint, to prevent dark→light→dark flash.
+      const root = document.documentElement;
+      if (parsed.darkMode) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+
+      return parsed;
     } catch {
       return defaultSettings;
     }

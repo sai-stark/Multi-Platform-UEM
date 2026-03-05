@@ -1,5 +1,5 @@
 import { ProfileService } from "@/api/services/profiles";
-import { LoadingAnimation } from "@/components/common/LoadingAnimation";
+import { ProfileDetailSkeleton } from "@/components/skeletons";
 import { MainLayout } from "@/components/layout/MainLayout";
 
 import { PolicyEditDialog } from "@/components/profiles/PolicyEditDialog";
@@ -900,9 +900,7 @@ export default function ProfileDetails() {
   if (!shouldRender || loading) {
     return (
       <MainLayout>
-        <div className="flex h-full items-center justify-center">
-          <LoadingAnimation message={loading ? t('profiles.loadingDetails') : "Redirecting..."} />
-        </div>
+        <ProfileDetailSkeleton />
       </MainLayout>
     );
   }
@@ -980,10 +978,6 @@ export default function ProfileDetails() {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Navigation & Header */}
         <div className="flex flex-col gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/profiles${fromPlatform ? `?platform=${fromPlatform}` : ''}`)} className="w-fit -ml-2 text-muted-foreground hover:text-foreground gap-1">
-            <ArrowLeft className="w-4 h-4" /> {t('profiles.actions.backToProfiles')}
-          </Button>
-
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-6">
 

@@ -1,5 +1,5 @@
 import { EnrollmentProfile, EnrollmentService } from '@/api/services/enrollmentService';
-import { LoadingAnimation } from '@/components/common/LoadingAnimation';
+import { TablePageSkeleton } from '@/components/skeletons';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -456,7 +456,7 @@ export default function Enrollment() {
 
         <div className="mt-6">
           {loading ? (
-            <LoadingAnimation message="Loading enrollment profiles..." className="min-h-[400px]" />
+            <TablePageSkeleton />
           ) : currentProfile ? (
             <div className="space-y-6">
               {/* Row 1: QR Code & Profile Details */}
