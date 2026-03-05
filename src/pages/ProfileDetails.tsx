@@ -836,7 +836,7 @@ export default function ProfileDetails() {
         setRelayPolicy((iosData as any).iosRelayPolicy || undefined);
         setHomeScreenLayoutPolicy((iosData as any).iosHomeScreenLayoutPolicy || undefined);
         setAppLockPolicy((iosData as any).iosAppLockPolicy || undefined);
-        setRestrictionsPolicy((iosData as any).iosRestrictionsPolicy || undefined);
+        setRestrictionsPolicy((iosData as any).iosDeviceRestrictionsPolicy || undefined);
       }
 
       // Handle Android
@@ -1092,6 +1092,7 @@ export default function ProfileDetails() {
           perDomainVpnPolicy={perDomainVpnPolicy}
           relayPolicy={relayPolicy}
           homeScreenLayoutPolicy={homeScreenLayoutPolicy}
+          appLockPolicy={appLockPolicy}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}
@@ -1122,6 +1123,7 @@ export default function ProfileDetails() {
           perDomainVpnPolicy={perDomainVpnPolicy}
           relayPolicy={relayPolicy}
           homeScreenLayoutPolicy={homeScreenLayoutPolicy}
+          appLockPolicy={appLockPolicy}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}

@@ -254,6 +254,7 @@ export function PolicyEditDialog({
                             platform={platform}
                             profileId={profileId}
                             initialData={notificationPolicy}
+                            applicationPolicy={applicationPolicy}
                             onSave={onSave}
                         />
                     )}

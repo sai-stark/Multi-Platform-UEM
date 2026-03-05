@@ -265,80 +265,114 @@ export function WebApplicationPolicyEditor({
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {policies.map((policy) => (
-                        <Card key={policy.id} className="relative group overflow-hidden transition-all hover:shadow-md">
-                            <CardHeader className="pb-2">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-md bg-primary/10 text-primary">
-                                            <Globe className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <CardTitle className="text-base font-semibold">
-                                                {platform === 'ios' ? (policy as IosWebApplicationPolicy).label : (policy as AndroidWebApplicationPolicy).webAppName || 'Web App'}
-                                            </CardTitle>
-                                            {platform === 'ios' && (
-                                                <CardDescription className="line-clamp-1" title={(policy as IosWebApplicationPolicy).url}>
-                                                    {(policy as IosWebApplicationPolicy).url}
-                                                </CardDescription>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {!readonly && (
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                onClick={() => handleOpenDialog(policy)}
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                                onClick={() => setDeleteId(policy.id!)}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-2">
-                                    {platform === 'ios' ? (
-                                        <>
-                                            <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded">
-                                                <Layout className="w-3.5 h-3.5" />
-                                                <span>{(policy as IosWebApplicationPolicy).fullScreen ? 'Full Screen' : 'Browser'}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {policies.map((policy) => {
+                        const isIos = platform === 'ios';
+                        const iosPolicy = isIos ? (policy as IosWebApplicationPolicy) : null;
+                        const androidPolicy = !isIos ? (policy as AndroidWebApplicationPolicy) : null;
+
+                        return (
+                            <Card key={policy.id} className="relative group overflow-hidden transition-all hover:shadow-md border-l-4 border-l-primary/60">
+                                <CardHeader className="pb-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="p-2.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                                <Globe className="w-5 h-5" />
                                             </div>
-                                            {(policy as IosWebApplicationPolicy).precomposed && (
-                                                <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded">
-                                                    <Smartphone className="w-3.5 h-3.5" />
-                                                    <span>Precomposed</span>
+                                            <div className="min-w-0">
+                                                <CardTitle className="text-base font-semibold truncate">
+                                                    {iosPolicy ? (iosPolicy.label || iosPolicy.name || 'Web Clip') : (androidPolicy?.webAppName || 'Web App')}
+                                                </CardTitle>
+                                                {iosPolicy?.url && (
+                                                    <CardDescription className="truncate text-xs mt-0.5" title={iosPolicy.url}>
+                                                        🔗 {iosPolicy.url}
+                                                    </CardDescription>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {!readonly && (
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => handleOpenDialog(policy)}
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                    onClick={() => setDeleteId(policy.id!)}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    {iosPolicy && (
+                                        <div className="space-y-2 text-sm">
+                                            {iosPolicy.name && iosPolicy.name !== iosPolicy.label && (
+                                                <div className="flex items-center justify-between py-1.5 border-b border-dashed">
+                                                    <span className="text-muted-foreground text-xs">Internal Name</span>
+                                                    <span className="font-medium text-xs">{iosPolicy.name}</span>
                                                 </div>
                                             )}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {(policy as AndroidWebApplicationPolicy).screenBottom ? (
-                                                <div className="col-span-2 bg-muted/50 px-2 py-1 rounded text-center">
-                                                    Docked at Bottom
-                                                </div>
-                                            ) : (
-                                                <div className="col-span-2 bg-muted/50 px-2 py-1 rounded text-center">
-                                                    Order: {(policy as AndroidWebApplicationPolicy).screenOrder}
+                                            <div className="flex items-center justify-between py-1.5 border-b border-dashed">
+                                                <span className="text-muted-foreground text-xs flex items-center gap-1">
+                                                    <Layout className="w-3 h-3" /> Display Mode
+                                                </span>
+                                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${iosPolicy.fullScreen ? 'bg-blue-500/10 text-blue-600' : 'bg-muted text-muted-foreground'}`}>
+                                                    {iosPolicy.fullScreen ? '⛶ Full Screen' : '🌐 Browser'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between py-1.5 border-b border-dashed">
+                                                <span className="text-muted-foreground text-xs flex items-center gap-1">
+                                                    <Trash2 className="w-3 h-3" /> Removable
+                                                </span>
+                                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${iosPolicy.isRemovable ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
+                                                    {iosPolicy.isRemovable ? '✓ Yes' : '✗ Locked'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between py-1.5 border-b border-dashed">
+                                                <span className="text-muted-foreground text-xs flex items-center gap-1">
+                                                    <Smartphone className="w-3 h-3" /> Precomposed Icon
+                                                </span>
+                                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${iosPolicy.precomposed ? 'bg-amber-500/10 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
+                                                    {iosPolicy.precomposed ? '✓ Yes' : '✗ No'}
+                                                </span>
+                                            </div>
+                                            {iosPolicy.ignoreManifestScope !== undefined && (
+                                                <div className="flex items-center justify-between py-1.5">
+                                                    <span className="text-muted-foreground text-xs">Ignore Manifest Scope</span>
+                                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${iosPolicy.ignoreManifestScope ? 'bg-purple-500/10 text-purple-600' : 'bg-muted text-muted-foreground'}`}>
+                                                        {iosPolicy.ignoreManifestScope ? '✓ Yes' : '✗ No'}
+                                                    </span>
                                                 </div>
                                             )}
-                                        </>
+                                        </div>
                                     )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                    {androidPolicy && (
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex items-center justify-between py-1.5 border-b border-dashed">
+                                                <span className="text-muted-foreground text-xs">Key Code</span>
+                                                <span className="font-medium text-xs font-mono">{androidPolicy.keyCode ?? '—'}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between py-1.5">
+                                                <span className="text-muted-foreground text-xs">Position</span>
+                                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${androidPolicy.screenBottom ? 'bg-blue-500/10 text-blue-600' : 'bg-muted text-muted-foreground'}`}>
+                                                    {androidPolicy.screenBottom ? '📌 Docked at Bottom' : `#${androidPolicy.screenOrder ?? 0} Screen Order`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
             )}
 

@@ -237,15 +237,16 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
 
     const handleSave = async () => {
         setSaving(true);
+        const payload: IosRestrictionsPayload = { ...formData, policyType: 'IosDeviceRestrictions' };
         try {
             if (initialData?.id) {
-                await PolicyService.updateRestrictionsPolicy(profileId, formData);
+                await PolicyService.updateRestrictionsPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Restrictions policy updated' });
             } else {
-                await PolicyService.createRestrictionsPolicy(profileId, formData);
+                await PolicyService.createRestrictionsPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Restrictions policy created' });
             }
-            onSave(formData);
+            onSave(payload);
         } catch (error) {
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save restrictions'), variant: 'destructive' });
         } finally {

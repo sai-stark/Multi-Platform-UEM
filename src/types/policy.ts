@@ -322,7 +322,8 @@ export interface NotificationPolicy {
     id?: string;
     name?: string;
     policyType?: string; // 'IosNotificationSettings'
-    bundleIdentifier: string;
+    applicationId?: string; // UUID - references an app policy in the profile (required for create)
+    bundleIdentifier?: string; // Deprecated: use applicationId instead
     notificationsEnabled?: boolean;
     showInNotificationCenter?: boolean;
     showInLockScreen?: boolean;

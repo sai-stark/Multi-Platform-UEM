@@ -424,7 +424,7 @@ export interface HomeScreenLayoutConfiguration {
 export interface IosHomeScreenLayoutPolicy extends UserAuditData {
     id?: string;
     name: string;
-    policyType?: 'HomeScreenlayout';
+    policyType?: 'IosHomeScreenLayoutPolicy';
     configuration: HomeScreenLayoutConfiguration;
 }
 
