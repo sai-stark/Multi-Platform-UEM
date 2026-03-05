@@ -10,6 +10,7 @@ interface StatCardProps {
     isPositive: boolean;
   };
   variant?: 'default' | 'success' | 'warning' | 'destructive' | 'info';
+  glass?: boolean;
   description?: string;
 }
 
@@ -21,6 +22,14 @@ const variantStyles = {
   info: 'border-l-4 border-l-info',
 };
 
+const glassVariantStyles = {
+  default: 'stat-card--glass',
+  success: 'stat-card--glass stat-card--glass-success',
+  warning: 'stat-card--glass stat-card--glass-warning',
+  destructive: 'stat-card--glass stat-card--glass-destructive',
+  info: 'stat-card--glass stat-card--glass-info',
+};
+
 const iconVariantStyles = {
   default: 'bg-muted text-foreground',
   success: 'bg-success/10 text-success',
@@ -29,17 +38,18 @@ const iconVariantStyles = {
   info: 'bg-info/10 text-info',
 };
 
-export function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  trend, 
+export function StatCard({
+  title,
+  value,
+  icon: Icon,
+  trend,
   variant = 'default',
-  description 
+  glass = false,
+  description
 }: StatCardProps) {
   return (
-    <article 
-      className={cn('stat-card', variantStyles[variant])}
+    <article
+      className={cn('stat-card', glass ? glassVariantStyles[variant] : variantStyles[variant])}
       aria-label={`${title}: ${value}`}
     >
       <div className="flex items-start justify-between">

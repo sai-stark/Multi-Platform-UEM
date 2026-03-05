@@ -1,4 +1,5 @@
-import { Menu, Bell, User, Globe, Accessibility } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, User, Globe, Accessibility, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -15,17 +16,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { CommandPalette } from './CommandPalette';
 
 export function AppHeader() {
   const { language, setLanguage, t } = useLanguage();
+  const [commandOpen, setCommandOpen] = useState(false);
 
   return (
-    <header 
-      className="sticky top-0 z-40 h-14 bg-card border-b border-border flex items-center justify-between px-4"
+    <>
+    <header
+      className="sticky top-0 z-40 h-14 bg-card/70 backdrop-blur-sm border-b border-border/50 flex items-center justify-between px-4"
       role="banner"
     >
       <div className="flex items-center gap-3">
-        <SidebarTrigger 
+        <SidebarTrigger
           className="text-foreground hover:bg-muted p-2 rounded"
           aria-label="Toggle sidebar navigation"
         />
@@ -33,6 +37,19 @@ export function AppHeader() {
           {t('dashboard.title')}
         </h2>
       </div>
+
+      {/* Global search trigger */}
+      <button
+        onClick={() => setCommandOpen(true)}
+        className="hidden md:flex items-center gap-2 h-8 px-3 rounded-md border border-border/60 bg-muted/40 text-sm text-muted-foreground hover:bg-muted hover:border-border transition-colors w-56 lg:w-72"
+        aria-label="Open command palette (Ctrl+K)"
+      >
+        <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="flex-1 text-left">Search pages…</span>
+        <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border/50 bg-background/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </button>
 
       <nav className="flex items-center gap-2" aria-label="Header actions">
         {/* Language Selector */}
@@ -124,5 +141,8 @@ export function AppHeader() {
         </DropdownMenu>
       </nav>
     </header>
+
+    <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+    </>
   );
 }

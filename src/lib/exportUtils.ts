@@ -122,13 +122,13 @@ export const exportToCSV = (
       } else {
         value = item[header] !== undefined && item[header] !== null ? item[header] : '';
       }
+      // Sanitize formula injection (cells starting with =, +, -, @, |) before CSV escaping
+      if (typeof value === 'string' && /^[=+\-@|]/.test(value)) {
+        value = `\t${value}`;
+      }
       // Escape commas and quotes in CSV
       if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
         value = `"${value.replace(/"/g, '""')}"`;
-      }
-      // Sanitize formula injection (cells starting with =, +, -, @)
-      if (typeof value === 'string' && /^[=+\-@]/.test(value)) {
-        value = `\t${value}`;
       }
       return value;
     }).join(',')
