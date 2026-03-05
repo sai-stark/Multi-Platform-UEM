@@ -34,6 +34,7 @@ import {
   Shield,
   UserPlus
 } from "lucide-react";
+import { useState } from "react";
 
 // MAIN NAVIGATION items
 const mainNavItems = [
@@ -62,6 +63,8 @@ export function AppSidebar() {
   const { t } = useLanguage();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const [enrollmentOpen, setEnrollmentOpen] = useState(true);
+  const [configurationOpen, setConfigurationOpen] = useState(true);
 
   return (
     <Sidebar className="border-r border-sidebar-border" collapsible="icon">
@@ -122,7 +125,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {/* Enrollment */}
               <SidebarMenuItem>
-                <Collapsible defaultOpen className="w-full">
+                <Collapsible open={enrollmentOpen} onOpenChange={setEnrollmentOpen} className="w-full">
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-sidebar-accent"
@@ -165,7 +168,7 @@ export function AppSidebar() {
 
               {/* Configuration */}
               <SidebarMenuItem>
-                <Collapsible defaultOpen className="w-full">
+                <Collapsible open={configurationOpen} onOpenChange={setConfigurationOpen} className="w-full">
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-sidebar-accent"

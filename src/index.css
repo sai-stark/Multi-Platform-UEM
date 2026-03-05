@@ -194,8 +194,8 @@
   /* Focus Indicators - WCAG 2.4.7 */
   *:focus-visible {
     @apply outline-none ring-2 ring-offset-2;
-    ring-color: hsl(var(--focus-ring));
-    ring-offset-color: hsl(var(--background));
+    --tw-ring-color: hsl(var(--focus-ring));
+    --tw-ring-offset-color: hsl(var(--background));
   }
 
   /* Skip Link - WCAG 2.4.1 */
