@@ -41,24 +41,24 @@ import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 // MAIN NAVIGATION items
 const mainNavItems = [
   { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
-  { titleKey: "Profiles", url: "/profiles", icon: Layout },
-  { titleKey: "Applications", url: "/applications", icon: Package },
+  { titleKey: "nav.profiles", url: "/profiles", icon: Layout },
+  { titleKey: "nav.applications", url: "/applications", icon: Package },
   { titleKey: "nav.webApplications", url: "/web-applications", icon: Globe },
   { titleKey: "nav.devices", url: "/devices", icon: Monitor },
-  { titleKey: "Inventory", url: "/inventory", icon: Box },
-  { titleKey: "Groups", url: "/groups", icon: Folder },
-  { titleKey: "Geofences", url: "/geofences", icon: MapPin },
-  { titleKey: "Repositories", url: "/repositories", icon: Server },
+  { titleKey: "nav.inventory", url: "/inventory", icon: Box },
+  { titleKey: "nav.groups", url: "/groups", icon: Folder },
+  { titleKey: "nav.geofences", url: "/geofences", icon: MapPin },
+  { titleKey: "nav.repositories", url: "/repositories", icon: Server },
 ];
 
 
 // SETUP & CONFIGURATION items
 const enrollmentSubItems = [
-  { title: "QR Enrollment", url: "/enrollment", icon: QrCode },
+  { titleKey: "nav.qrEnrollment", url: "/enrollment", icon: QrCode },
 ];
 
 const configurationSubItems = [
-  { title: "Geo Fence Policy", url: "/geofences/policy", icon: MapPin },
+  { titleKey: "nav.geoFencePolicy", url: "/geofences/policy", icon: MapPin },
 ];
 
 function isNavActive(itemUrl: string, pathname: string): boolean {
@@ -102,7 +102,7 @@ export function AppSidebar() {
         {/* MAIN NAVIGATION */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs text-sidebar-foreground/60 uppercase tracking-wider px-3 mb-2">
-            {!collapsed && "Main Navigation"}
+            {!collapsed && t("nav.mainNavigation")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -147,7 +147,7 @@ export function AppSidebar() {
         {/* SETUP & CONFIGURATION */}
         <SidebarGroup className="mt-4">
           <SidebarGroupLabel className="text-xs text-sidebar-foreground/60 uppercase tracking-wider px-3 mb-2">
-            {!collapsed && "Setup & Configuration"}
+            {!collapsed && t("nav.setupAndConfig")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -202,7 +202,7 @@ export function AppSidebar() {
                                   className="relative z-10 w-4 h-4"
                                   aria-hidden="true"
                                 />
-                                {!collapsed && <span className="relative z-10">{subItem.title}</span>}
+                                {!collapsed && <span className="relative z-10">{t((subItem as any).titleKey)}</span>}
                               </NavLink>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
@@ -222,7 +222,7 @@ export function AppSidebar() {
                     >
                       <span className="flex items-center gap-3">
                         <Settings className="w-5 h-5" aria-hidden="true" />
-                        {!collapsed && <span>Configuration</span>}
+                        {!collapsed && <span>{t("nav.configuration")}</span>}
                       </span>
                       {!collapsed && (
                         <ChevronDown
@@ -264,7 +264,7 @@ export function AppSidebar() {
                                   className="relative z-10 w-4 h-4"
                                   aria-hidden="true"
                                 />
-                                {!collapsed && <span className="relative z-10">{subItem.title}</span>}
+                                {!collapsed && <span className="relative z-10">{t((subItem as any).titleKey)}</span>}
                               </NavLink>
                             </SidebarMenuButton>
                           </SidebarMenuItem>

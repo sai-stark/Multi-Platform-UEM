@@ -5,6 +5,13 @@ import { dashboard } from './dashboard';
 import { profiles } from './profiles';
 import { policies } from './policies';
 import { validation } from './validation';
+import { groups } from './groups';
+import { geofences } from './geofences';
+import { webApps } from './webApps';
+import { notFound } from './notFound';
+import { inventory } from './inventory';
+import { enrollment } from './enrollment';
+import { repositories } from './repositories';
 
 export const hi = {
     ...common,
@@ -13,4 +20,11 @@ export const hi = {
     ...profiles,
     ...policies,
     ...validation,
+    ...groups,
+    ...geofences,
+    ...webApps,
+    ...notFound,
+    ...inventory,
+    ...enrollment,
+    ...repositories,
 };

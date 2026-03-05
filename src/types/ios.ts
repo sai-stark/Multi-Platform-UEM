@@ -439,3 +439,38 @@ export interface IosAppLockPolicy extends UserAuditData {
         };
     };
 }
+
+// --- Certificates ---
+export interface CertificatePayload {
+    PayloadCertificateFileName?: string;
+    PayloadContent: string; // Base64
+}
+
+export interface Pkcs12CertificatePayload {
+    PayloadCertificateFileName?: string;
+    PayloadContent: string; // Base64
+    Password?: string;
+    AllowAllAppsAccess?: boolean;
+    KeyIsExtractable?: boolean;
+}
+
+export interface IosPemCertificatePolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType: 'CertificatePEM';
+    certificatePayload: CertificatePayload;
+}
+
+export interface IosPkcsCertificatePolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType: 'CertificatePKCS';
+    certificatePayload: CertificatePayload;
+}
+
+export interface IosPkcs12CertificatePolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    policyType: 'CertificatePKCS12';
+    certificatePayload: Pkcs12CertificatePayload;
+}

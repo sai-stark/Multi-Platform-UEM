@@ -29,6 +29,7 @@ import {
     Mail,
     MessageSquare,
     Radio,
+    Shield,
     Smartphone,
     Wifi,
 } from "lucide-react";
@@ -101,6 +102,8 @@ interface PolicyEditDialogProps {
     relayPolicy?: IosRelayPolicy;
     homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
     appLockPolicy?: IosAppLockPolicy;
+    certificatesConfigured?: boolean;
+    certificatesCount?: number;
     commonSettingsPolicy?: CommonSettingsPolicy;
     deviceThemePolicy?: DeviceThemePolicy;
     enrollmentPolicy?: EnrollmentPolicy;
@@ -132,6 +135,8 @@ export function PolicyEditDialog({
     relayPolicy,
     homeScreenLayoutPolicy,
     appLockPolicy,
+    certificatesConfigured,
+    certificatesCount,
     commonSettingsPolicy,
     deviceThemePolicy,
     enrollmentPolicy,
@@ -147,6 +152,13 @@ export function PolicyEditDialog({
             case "passcode":
             case "androidPasscode":
                 return { title: "Passcode Policy", icon: null }; // Passcode policies often have their own headers or don't need one
+
+            case "certificates":
+                return {
+                    title: certificatesConfigured ? "Edit Certificates Policy" : "Configure Certificates Policy",
+                    icon: <Shield className={cn("w-6 h-6", certificatesConfigured ? "text-primary" : "text-muted-foreground")} />,
+                    description: "Manage PEM, PKCS, and PKCS12 identities."
+                };
             case "appLock":
                 return { title: "App Lock / Kiosk Mode", icon: <Lock className="w-5 h-5 text-indigo-500" /> };
             case "wifi":

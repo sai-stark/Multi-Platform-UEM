@@ -205,8 +205,8 @@ export default function Enrollment() {
   const handlePlatformChange = (platform: string) => {
     if (platform === 'android' && shouldBlockAndroid) {
       toast({
-        title: 'Enterprise Setup Required',
-        description: 'Android Enterprise must be configured before using Android features.',
+        title: t('enrollment.toasts.enterpriseRequired'),
+        description: t('enrollment.toasts.enterpriseDesc'),
         variant: 'destructive',
       });
       navigate('/android/enterprise/setup?returnTo=/enrollment');
@@ -301,7 +301,7 @@ export default function Enrollment() {
 
           toast({
             title: "Success",
-            description: "QR Code downloaded successfully",
+            description: t('enrollment.toasts.downloadSuccess'),
           });
         }
       };
@@ -436,10 +436,10 @@ export default function Enrollment() {
         <div className="mt-6 flex flex-col md:flex-row gap-4 justify-between items-center">
           {/* Profile Selection */}
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <span className="text-sm font-medium text-foreground whitespace-nowrap">Select Profile:</span>
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">{t('enrollment.filter.selectProfile')}</span>
             <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
               <SelectTrigger id="profile-filter" className="w-full md:w-[300px] bg-background" disabled={loading || profiles.length === 0}>
-                <SelectValue placeholder={loading ? "Loading..." : "Select Profile"} />
+                <SelectValue placeholder={loading ? t('enrollment.filter.loading') : t('enrollment.filter.placeholder')} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
                 {profiles.map((profile) => (
@@ -451,7 +451,7 @@ export default function Enrollment() {
             </Select>
           </div>
 
-          {loading && <span className="text-sm text-muted-foreground animate-pulse">Fetching profiles...</span>}
+          {loading && <span className="text-sm text-muted-foreground animate-pulse">{t('enrollment.filter.fetching')}</span>}
         </div>
 
         <div className="mt-6">
@@ -485,7 +485,7 @@ export default function Enrollment() {
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-lg">
                           <DialogHeader>
-                            <DialogTitle>Enrollment QR Code</DialogTitle>
+                            <DialogTitle>{t('enrollment.dialog.qrTitle')}</DialogTitle>
                           </DialogHeader>
                           <div className="flex items-center justify-center p-4">
                             <div className="w-96 h-96 bg-white">
@@ -542,39 +542,39 @@ export default function Enrollment() {
                     <table className="data-table" role="table">
                       <thead>
                         <tr>
-                          <th scope="col">Field</th>
-                          <th scope="col">Value</th>
+                          <th scope="col">{t("enrollment.profile.field")}</th>
+                          <th scope="col">{t("enrollment.profile.value")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td className="text-muted-foreground">Name</td>
+                          <td className="text-muted-foreground">{t("enrollment.profile.name")}</td>
                           <td className="font-medium text-foreground">{currentProfile.name}</td>
                         </tr>
                         <tr>
-                          <td className="text-muted-foreground">Description</td>
-                          <td className="font-medium text-foreground">{currentProfile.description || 'N/A'}</td>
+                          <td className="text-muted-foreground">{t("enrollment.profile.description")}</td>
+                          <td className="font-medium text-foreground">{currentProfile.description || t('enrollment.profile.na')}</td>
                         </tr>
                         <tr>
-                          <td className="text-muted-foreground">Status</td>
+                          <td className="text-muted-foreground">{t("enrollment.profile.status")}</td>
                           <td>
                             <span className="status-badge status-badge--compliant">
                               <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                              {(currentProfile as any).status || 'N/A'}
+                              {(currentProfile as any).status || t('enrollment.profile.na')}
                             </span>
                           </td>
                         </tr>
                         <tr>
-                          <td className="text-muted-foreground">Version</td>
-                          <td className="font-medium text-foreground">{(currentProfile as any).version ?? 'N/A'}</td>
+                          <td className="text-muted-foreground">{t("enrollment.profile.version")}</td>
+                          <td className="font-medium text-foreground">{(currentProfile as any).version ?? t('enrollment.profile.na')}</td>
                         </tr>
                         <tr>
-                          <td className="text-muted-foreground">Device Count</td>
+                          <td className="text-muted-foreground">{t("enrollment.profile.deviceCount")}</td>
                           <td className="font-medium text-foreground">{(currentProfile as any).deviceCount ?? 0}</td>
                         </tr>
                         <tr>
-                          <td className="text-muted-foreground">Profile Type</td>
-                          <td className="font-medium text-foreground">{(currentProfile as any).profileType || 'N/A'}</td>
+                          <td className="text-muted-foreground">{t("enrollment.profile.type")}</td>
+                          <td className="font-medium text-foreground">{(currentProfile as any).profileType || t('enrollment.profile.na')}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -587,14 +587,14 @@ export default function Enrollment() {
                 {/* Enabled Policies */}
                 <section className="panel" aria-label="Enabled policies">
                   <div className="panel__header">
-                    <h3 className="panel__title">Enabled Policies</h3>
+                    <h3 className="panel__title">{t("enrollment.policies.enabled")}</h3>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="data-table" role="table">
                       <thead>
                         <tr>
-                          <th scope="col">Policy</th>
-                          <th scope="col">Status</th>
+                          <th scope="col">{t("enrollment.policies.policy")}</th>
+                          <th scope="col">{t("enrollment.policies.status")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -644,7 +644,7 @@ export default function Enrollment() {
                           if (policies.length === 0) {
                             return (
                               <tr>
-                                <td colSpan={2} className="text-muted-foreground italic text-center">No policies enabled</td>
+                                <td colSpan={2} className="text-muted-foreground italic text-center">{t("enrollment.policies.none")}</td>
                               </tr>
                             );
                           }
@@ -655,7 +655,7 @@ export default function Enrollment() {
                               <td>
                                 <span className="status-badge status-badge--compliant">
                                   <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                                  Enabled
+                                  {t("enrollment.policies.statusEnabled")}
                                 </span>
                               </td>
                             </tr>
@@ -675,8 +675,8 @@ export default function Enrollment() {
                     <table className="data-table" role="table">
                       <thead>
                         <tr>
-                          <th scope="col">Application</th>
-                          <th scope="col">Status</th>
+                          <th scope="col">{t("enrollment.apps.application")}</th>
+                          <th scope="col">{t("enrollment.policies.status")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -686,7 +686,7 @@ export default function Enrollment() {
                             <td>
                               <span className="status-badge status-badge--compliant">
                                 <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                                Required
+                                {t("enrollment.apps.required")}
                               </span>
                             </td>
                           </tr>
@@ -732,9 +732,9 @@ export default function Enrollment() {
               <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                 <MousePointer2 className="w-12 h-12 text-primary opacity-80" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Select a Profile</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t("enrollment.empty.selectTitle")}</h3>
               <p className="mb-6 max-w-md mx-auto leading-relaxed">
-                Please select an enrollment profile from the dropdown menu above to view its details and configuration options.
+                {t("enrollment.empty.selectDesc")}
               </p>
             </div>
           ) : (
@@ -742,10 +742,10 @@ export default function Enrollment() {
               <div className="w-24 h-24 rounded-full bg-muted/20 flex items-center justify-center mb-6">
                 <FileSearch className="w-12 h-12 opacity-50" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Profiles Found</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t("enrollment.empty.noProfilesTitle")}</h3>
               <p className="mb-6 max-w-md mx-auto leading-relaxed">
-                There are currently no published enrollment profiles available for <span className="font-medium text-foreground">{platformConfig[selectedPlatform].label}</span>.
-                Contact your administrator or create a new profile in the dashboard.
+                {t("enrollment.empty.noProfilesDesc1")}<span className="font-medium text-foreground">{platformConfig[selectedPlatform].label}</span>.
+                {t("enrollment.empty.noProfilesDesc2")}
               </p>
               <Button
                 variant="outline"
@@ -753,7 +753,7 @@ export default function Enrollment() {
                 className="gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Refresh List
+                {t("enrollment.empty.refreshList")}
               </Button>
             </div>
           )}

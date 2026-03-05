@@ -4,6 +4,7 @@ import { TablePageSkeleton } from '@/components/skeletons';
 import { WebApplicationService } from '@/api/services/webApps';
 import { WebApplication } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { 
   Globe, 
@@ -37,6 +38,7 @@ import { DataTable, Column } from '@/components/ui/data-table';
 
 const WebApplications = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [webApps, setWebApps] = useState<WebApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,8 +72,8 @@ const WebApplications = () => {
     } catch (error) {
       console.error('Failed to fetch web applications:', error);
       toast({
-        title: 'Error',
-        description: getErrorMessage(error, 'Failed to fetch web applications'),
+        title: t('webApps.toasts.error'),
+        description: getErrorMessage(error, t('webApps.toasts.errorFetch')),
         variant: 'destructive',
       });
     } finally {
@@ -134,32 +136,32 @@ const WebApplications = () => {
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'Name is required',
+        title: t('webApps.toasts.validation.title'),
+        description: t('webApps.toasts.validation.name'),
         variant: 'destructive',
       });
       return;
     }
     if (!formData.pageUrl.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'URL is required',
+        title: t('webApps.toasts.validation.title'),
+        description: t('webApps.toasts.validation.url'),
         variant: 'destructive',
       });
       return;
     }
     if (!formData.iconText.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'Icon text is required',
+        title: t('webApps.toasts.validation.title'),
+        description: t('webApps.toasts.validation.iconText'),
         variant: 'destructive',
       });
       return;
     }
     if (!formData.icon.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'Icon is required',
+        title: t('webApps.toasts.validation.title'),
+        description: t('webApps.toasts.validation.icon'),
         variant: 'destructive',
       });
       return;
@@ -171,15 +173,15 @@ const WebApplications = () => {
         // Update existing app
         await WebApplicationService.updateWebApplication(editingApp.id, formData);
         toast({
-          title: 'Success',
-          description: 'Web application updated successfully',
+          title: t('webApps.toasts.success'),
+          description: t('webApps.toasts.updated'),
         });
       } else {
         // Create new app
         await WebApplicationService.createWebApplication(formData);
         toast({
-          title: 'Success',
-          description: 'Web application created successfully',
+          title: t('webApps.toasts.success'),
+          description: t('webApps.toasts.created'),
         });
       }
       handleCloseModal();
@@ -187,8 +189,8 @@ const WebApplications = () => {
     } catch (error) {
       console.error('Failed to save web application:', error);
       toast({
-        title: 'Error',
-        description: getErrorMessage(error, editingApp ? 'Failed to update web application' : 'Failed to create web application'),
+        title: t('webApps.toasts.error'),
+        description: getErrorMessage(error, editingApp ? t('webApps.toasts.errorUpdate') : t('webApps.toasts.errorCreate')),
         variant: 'destructive',
       });
     } finally {
@@ -208,8 +210,8 @@ const WebApplications = () => {
     try {
       await WebApplicationService.deleteWebApplication(appToDelete.id);
       toast({
-        title: 'Success',
-        description: 'Web application deleted successfully',
+        title: t('webApps.toasts.success'),
+        description: t('webApps.toasts.deleted'),
       });
       setOpenDeleteModal(false);
       setAppToDelete(null);
@@ -217,8 +219,8 @@ const WebApplications = () => {
     } catch (error) {
       console.error('Failed to delete web application:', error);
       toast({
-        title: 'Error',
-        description: getErrorMessage(error, 'Failed to delete web application'),
+        title: t('webApps.toasts.error'),
+        description: getErrorMessage(error, t('webApps.toasts.errorDelete')),
         variant: 'destructive',
       });
     } finally {
@@ -234,7 +236,7 @@ const WebApplications = () => {
   const columns: Column<WebApplication>[] = [
     {
       key: 'name',
-      header: 'Web Application',
+      header: t('webApps.table.name'),
       accessor: (item) => item.name,
       render: (_, item) => (
         <div className="flex items-center gap-3">
@@ -267,20 +269,20 @@ const WebApplications = () => {
     },
     {
       key: 'iconText',
-      header: 'Icon Text',
+      header: t('webApps.table.iconText'),
       accessor: (item) => item.iconText,
       render: (value) => <span className="text-muted-foreground">{value}</span>,
     },
     {
       key: 'deviceCount',
-      header: 'Deployed Devices',
+      header: t('webApps.table.deviceCount'),
       accessor: (item) => item.deviceCount,
       align: 'right',
       render: (value) => <span className="font-mono">{(value || 0).toLocaleString()}</span>,
     },
     {
       key: 'modificationTime',
-      header: 'Last Modified',
+      header: t('webApps.table.modified'),
       accessor: (item) => item.modificationTime || '',
       render: (value) => (
         <span className="text-muted-foreground">
@@ -294,18 +296,18 @@ const WebApplications = () => {
     <>
       <DropdownMenuItem onClick={() => window.open(app.pageUrl, '_blank')}>
         <ExternalLink className="w-4 h-4 mr-2" />
-        Open URL
+        {t('webApps.actions.open')}
       </DropdownMenuItem>
       <DropdownMenuItem onClick={() => handleOpenEditModal(app)}>
         <Edit className="w-4 h-4 mr-2" />
-        Edit Web App
+        {t('webApps.actions.edit')}
       </DropdownMenuItem>
       <DropdownMenuItem 
         className="text-destructive"
         onClick={() => handleDeleteClick(app)}
       >
         <Trash2 className="w-4 h-4 mr-2" />
-        Delete
+        {t('webApps.actions.delete')}
       </DropdownMenuItem>
     </>
   );
@@ -325,10 +327,10 @@ const WebApplications = () => {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Web Applications
+              {t('webApps.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Manage web apps and bookmarks for your device fleet
+              {t('webApps.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -342,7 +344,7 @@ const WebApplications = () => {
             </Button>
             <Button className="gap-2" onClick={handleOpenAddModal}>
               <Plus className="w-4 h-4" aria-hidden="true" />
-              Add Web App
+              {t('webApps.addWebApp')}
             </Button>
           </div>
         </header>
@@ -356,7 +358,7 @@ const WebApplications = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Total Web Apps</p>
+                <p className="text-sm text-muted-foreground">{t('webApps.stats.total')}</p>
               </div>
             </div>
           </article>
@@ -367,7 +369,7 @@ const WebApplications = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.totalDevices.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Total Deployments</p>
+                <p className="text-sm text-muted-foreground">{t('webApps.stats.deployments')}</p>
               </div>
             </div>
           </article>
@@ -378,12 +380,12 @@ const WebApplications = () => {
           <DataTable
             data={webApps}
             columns={columns}
-            globalSearchPlaceholder="Search web apps..."
-            emptyMessage="No web applications found. Click 'Add Web App' to create one."
+            globalSearchPlaceholder={t('webApps.table.searchPlaceholder')}
+            emptyMessage={t('webApps.table.emptyMessage')}
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}
-            exportTitle="Web Applications Report"
+            exportTitle={t('webApps.table.exportTitle')}
             exportFilename="web-applications"
           />
         </div>
@@ -398,52 +400,52 @@ const WebApplications = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {editingApp ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              {editingApp ? 'Edit Web Application' : 'Add Web Application'}
+              {editingApp ? t('webApps.addDialog.editTitle') : t('webApps.addDialog.addTitle')}
             </DialogTitle>
             <DialogDescription>
               {editingApp 
-                ? 'Update the web application details below.' 
-                : 'Create a new web application shortcut for deployment.'}
+                ? t('webApps.addDialog.editDesc') 
+                : t('webApps.addDialog.addDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t('webApps.addDialog.nameLabel')}</Label>
               <Input
                 id="name"
-                placeholder="My Web App"
+                placeholder={t('webApps.addDialog.namePlaceholder')}
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pageUrl">URL *</Label>
+              <Label htmlFor="pageUrl">{t('webApps.addDialog.urlLabel')}</Label>
               <Input
                 id="pageUrl"
                 type="url"
-                placeholder="https://example.com"
+                placeholder={t('webApps.addDialog.urlPlaceholder')}
                 value={formData.pageUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, pageUrl: e.target.value }))}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="iconText">Icon Text *</Label>
+              <Label htmlFor="iconText">{t('webApps.addDialog.iconTextLabel')}</Label>
               <Input
                 id="iconText"
-                placeholder="App shortcut label"
+                placeholder={t('webApps.addDialog.iconTextPlaceholder')}
                 value={formData.iconText}
                 onChange={(e) => setFormData(prev => ({ ...prev, iconText: e.target.value }))}
               />
               <p className="text-xs text-muted-foreground">
-                Text shown below the icon on device
+                {t('webApps.addDialog.iconTextDesc')}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="icon">Icon *</Label>
+              <Label htmlFor="icon">{t('webApps.addDialog.iconLabel')}</Label>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden">
                   {iconPreview ? (
@@ -465,7 +467,7 @@ const WebApplications = () => {
                     className="cursor-pointer"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    PNG or JPG, max 512x512px recommended
+                    {t('webApps.addDialog.iconDesc')}
                   </p>
                 </div>
               </div>
@@ -474,17 +476,17 @@ const WebApplications = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseModal} disabled={formLoading}>
-              Cancel
+              {t('webApps.addDialog.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={formLoading}>
               {formLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {editingApp ? 'Updating...' : 'Creating...'}
+                  {editingApp ? t('webApps.addDialog.updating') : t('webApps.addDialog.creating')}
                 </>
               ) : (
                 <>
-                  {editingApp ? 'Update' : 'Create'} Web App
+                  {editingApp ? t('webApps.addDialog.updateBtn') : t('webApps.addDialog.createBtn')} {t('webApps.addDialog.webAppText')}
                 </>
               )}
             </Button>
@@ -501,7 +503,7 @@ const WebApplications = () => {
               Delete Web Application
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{appToDelete?.name}"? This action cannot be undone.
+              {t('webApps.deleteDialog.desc').replace('{name}', appToDelete?.name || '')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -510,7 +512,7 @@ const WebApplications = () => {
               onClick={() => setOpenDeleteModal(false)} 
               disabled={deleteLoading}
             >
-              Cancel
+              {t('webApps.addDialog.cancel')}
             </Button>
             <Button 
               variant="destructive" 
@@ -520,12 +522,12 @@ const WebApplications = () => {
               {deleteLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Deleting...
+                  {t('webApps.deleteDialog.deleting')}
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  {t('webApps.actions.delete')}
                 </>
               )}
             </Button>

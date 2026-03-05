@@ -78,6 +78,7 @@ const platformConfig: Record<
 const Repositories = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useLanguage();
   const getInitialPlatform = (): string => {
     const urlPlatform = searchParams.get('platform');
     if (urlPlatform && platformConfig[urlPlatform]) return urlPlatform;
@@ -212,18 +213,18 @@ const Repositories = () => {
     if (repo.customRpmRepo) {
       return repo.customRpmRepo.name;
     }
-    return repo.name || "Unnamed Repository";
+    return repo.name || t('repositories.unnamed');
   };
 
   const getRepositoryType = (repo: CustomRepository): string => {
     // Map repoType to display name
     const typeMap: Record<string, string> = {
-      CustomWindowsRepo: "Windows",
-      CustomAndroidFileRepo: "Android",
-      CustomUbuntuRepo: "Ubuntu",
-      CustomRpmRepo: "RPM",
-      CustomCommonFileRepo: "Common File",
-      CustomMacOsFileRepo: "macOS",
+      CustomWindowsRepo: t("repositories.types.windows"),
+      CustomAndroidFileRepo: t("repositories.types.android"),
+      CustomUbuntuRepo: t("repositories.types.ubuntu"),
+      CustomRpmRepo: t("repositories.types.rpm"),
+      CustomCommonFileRepo: t("repositories.types.commonFile"),
+      CustomMacOsFileRepo: t("repositories.types.macos"),
     };
     return typeMap[repo.repoType] || repo.repoType;
   };
@@ -251,7 +252,7 @@ const Repositories = () => {
       return `Components: ${components} | Architectures: ${archs}`;
     }
     if (repo.customRpmRepo) {
-      return "RPM Repository";
+      return t('repositories.rpmRepository');
     }
     return "-";
   };
@@ -308,7 +309,7 @@ const Repositories = () => {
     const baseColumns: Column<CustomRepository>[] = [
       {
         key: "name",
-        header: "Repository Name",
+        header: t("repositories.table.name"),
         accessor: (item) => getRepositoryName(item),
         render: (_, item) => {
           const repoId = getRepositoryId(item);
@@ -328,7 +329,7 @@ const Repositories = () => {
       },
       {
         key: "repoType",
-        header: "Repository Type",
+        header: t("repositories.table.type"),
         accessor: (item) => item.repoType,
         render: (_, item) => {
           const type = getRepositoryType(item);
@@ -341,6 +342,8 @@ const Repositories = () => {
               "bg-warning/10 text-warning",
             RPM: "bg-accent/10 text-accent",
             "Common File":
+              "bg-muted text-muted-foreground",
+            [t('repositories.types.commonFile')]:
               "bg-muted text-muted-foreground",
             macOS:
               "bg-muted text-muted-foreground",
@@ -364,7 +367,7 @@ const Repositories = () => {
         ? [
             {
               key: "components",
-              header: "Components",
+              header: t("repositories.table.components"),
               accessor: (item: CustomRepository) =>
                 getRepositoryComponents(item).join(", "),
               sortable: false,
@@ -388,7 +391,7 @@ const Repositories = () => {
             },
             {
               key: "architectures",
-              header: "Architectures",
+              header: t("repositories.table.architectures"),
               accessor: (item: CustomRepository) =>
                 getRepositoryArchitectures(item).join(", "),
               sortable: false,
@@ -414,7 +417,7 @@ const Repositories = () => {
         : []),
       {
         key: "creationTime",
-        header: "Created",
+        header: t("repositories.table.created"),
         accessor: (item) => {
           if (item.customUbuntuRepo) {
             return item.customUbuntuRepo.creationTime || "";
@@ -434,7 +437,7 @@ const Repositories = () => {
               </span>
               {createdBy && (
                 <span className="text-xs text-muted-foreground/70 font-mono truncate max-w-[100px]">
-                  by {createdBy.substring(0, 8)}...
+                  {t("repositories.by")} {createdBy.substring(0, 8)}...
                 </span>
               )}
             </div>
@@ -443,7 +446,7 @@ const Repositories = () => {
       },
       {
         key: "modificationTime",
-        header: "Last Modified",
+        header: t("repositories.table.lastModified"),
         accessor: (item) => {
           if (item.customUbuntuRepo) {
             return item.customUbuntuRepo.modificationTime || "";
@@ -463,7 +466,7 @@ const Repositories = () => {
               </span>
               {modifiedBy && (
                 <span className="text-xs text-muted-foreground/70 font-mono truncate max-w-[100px]">
-                  by {modifiedBy.substring(0, 8)}...
+                  {t("repositories.by")} {modifiedBy.substring(0, 8)}...
                 </span>
               )}
             </div>
@@ -472,7 +475,7 @@ const Repositories = () => {
       },
       {
         key: "createdBy",
-        header: "Created By",
+        header: t("repositories.table.createdBy"),
         accessor: (item) => getCreatedBy(item),
         hidden: true,
         render: (value) => (
@@ -483,7 +486,7 @@ const Repositories = () => {
       },
       {
         key: "lastModifiedBy",
-        header: "Last Modified By",
+        header: t("repositories.table.lastModifiedBy"),
         accessor: (item) => getLastModifiedBy(item),
         hidden: true,
         render: (value) => (
@@ -502,14 +505,14 @@ const Repositories = () => {
       <>
         <DropdownMenuItem onClick={() => console.log("Edit", repo)}>
           <Pencil className="w-4 h-4 mr-2" />
-          Edit Repository
+          {t("repositories.actions.edit")}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => console.log("Delete", repo)}
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="w-4 h-4 mr-2" />
-          Delete Repository
+          {t("repositories.actions.delete")}
         </DropdownMenuItem>
       </>
     );
@@ -521,14 +524,14 @@ const Repositories = () => {
         {/* Page Header */}
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Repositories</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t("repositories.title")}</h1>
             <p className="text-muted-foreground mt-1">
-              Manage custom software repositories for your devices
+              {t("repositories.subtitle")}
             </p>
           </div>
           <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
             <Plus className="w-4 h-4" />
-            Add Repository
+            {t("repositories.addRepo")}
           </Button>
         </header>
 
@@ -565,7 +568,7 @@ const Repositories = () => {
                 {config.image ? (
                   <img
                     src={config.image}
-                    alt={config.label}
+                    alt={t(`repositories.platform.${platform}`)}
                     className={cn(
                       "w-5 h-5 object-contain",
                       isDisabled && "opacity-50"
@@ -576,7 +579,7 @@ const Repositories = () => {
                     className={cn("w-4 h-4", isActive ? config.color : "")}
                   />
                 )}
-                {config.label}
+                {t(`repositories.platform.${platform}`)}
               </button>
             );
           })}
@@ -592,7 +595,7 @@ const Repositories = () => {
               <div>
                 <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">
-                  Total Repositories
+                  {t("repositories.stats.total")}
                 </p>
               </div>
             </div>
@@ -605,7 +608,7 @@ const Repositories = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.windows.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Windows Repos</p>
+                <p className="text-sm text-muted-foreground">{t("repositories.stats.windows")}</p>
               </div>
             </div>
           </article>
@@ -617,7 +620,7 @@ const Repositories = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.linux.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Linux Repos</p>
+                <p className="text-sm text-muted-foreground">{t("repositories.stats.linux")}</p>
               </div>
             </div>
           </article>
@@ -629,7 +632,7 @@ const Repositories = () => {
               </div>
               <div>
                 <p className="stat-card__value text-2xl">{stats.macos.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">macOS Repos</p>
+                <p className="text-sm text-muted-foreground">{t("repositories.stats.macos")}</p>
               </div>
             </div>
           </article>
@@ -641,12 +644,12 @@ const Repositories = () => {
             data={repositories}
             columns={columns}
             loading={loading}
-            globalSearchPlaceholder="Search repositories..."
-            emptyMessage="No repositories found. Click 'Add Repository' to create one."
+            globalSearchPlaceholder={t("repositories.table.searchPlaceholder")}
+            emptyMessage={t("repositories.table.emptyMessage")}
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}
-            exportTitle="Repositories Report"
+            exportTitle={t("repositories.table.exportTitle")}
             exportFilename="repositories"
           />
         </div>

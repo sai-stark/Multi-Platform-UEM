@@ -15,4 +15,9 @@ export const navigation = {
     'nav.geofences': 'Geofences',
     'nav.inventory': 'Inventory',
     'nav.repositories': 'Repositories',
+    'nav.qrEnrollment': 'QR Enrollment',
+    'nav.geoFencePolicy': 'Geo Fence Policy',
+    'nav.setupAndConfig': 'Setup & Configuration',
+    'nav.mainNavigation': 'Main Navigation',
+    'nav.configuration': 'Configuration',
 };

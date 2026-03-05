@@ -92,8 +92,8 @@ export default function Groups() {
         setNewGroup({ name: '', description: '' });
 
         toast({
-            title: "Group Created",
-            description: `Group "${created.name}" has been created successfully.`,
+            title: t('groups.toasts.created'),
+            description: t('groups.toasts.createdDesc').replace('{name}', created.name),
         });
     };
 
@@ -101,8 +101,8 @@ export default function Groups() {
         // Mock delete
         setGroups(groups.filter(g => g.id !== group.id));
         toast({
-            title: "Group Deleted",
-            description: `Group "${group.name}" has been removed.`,
+            title: t('groups.toasts.deleted'),
+            description: t('groups.toasts.deletedDesc').replace('{name}', group.name),
         });
     };
 
@@ -122,7 +122,7 @@ export default function Groups() {
     const columns: Column<Group>[] = [
         {
             key: 'name',
-            header: 'Name',
+            header: t('groups.table.name'),
             accessor: (item) => item.name,
             render: (_, item) => (
                 <div className="flex items-center gap-3">
@@ -143,13 +143,13 @@ export default function Groups() {
         },
         {
             key: 'description',
-            header: 'Description',
+            header: t('groups.table.description'),
             accessor: (item) => item.description || '-',
             render: (value) => <span className="text-muted-foreground">{value}</span>,
         },
         {
             key: 'deviceCount',
-            header: 'Devices',
+            header: t('groups.table.devices'),
             accessor: (item) => item.deviceCount || 0,
             align: 'center',
             render: (value) => (
@@ -163,18 +163,18 @@ export default function Groups() {
 
     const rowActions = (group: Group) => (
         <>
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('groups.actions.actions')}</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigate(`/groups/${group.id}`)}>
-                View Details
+                {t('groups.actions.viewDetails')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { }}>
                 <Edit className="w-4 h-4 mr-2" />
-                Edit
+                {t('groups.actions.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(group)}>
                 <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+                {t('groups.actions.delete')}
             </DropdownMenuItem>
         </>
     );
@@ -184,18 +184,18 @@ export default function Groups() {
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete "{targetDeleteGroup?.name}"?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('groups.deleteDialog.title').replace('{name}', targetDeleteGroup?.name || '')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action is irreversible. All devices in this group will be unassigned.
+                            {t('groups.deleteDialog.desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('groups.deleteDialog.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => targetDeleteGroup && handleDeleteGroup(targetDeleteGroup)}
                         >
-                            Delete
+                            {t('groups.actions.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -204,48 +204,48 @@ export default function Groups() {
                 {/* Page Header */}
                 <header className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-foreground">Device Groups</h1>
+                        <h1 className="text-2xl font-bold text-foreground">{t('groups.title')}</h1>
                         <p className="text-muted-foreground mt-1">
-                            Organize devices into groups for bulk management
+                            {t('groups.subtitle')}
                         </p>
                     </div>
                     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                         <DialogTrigger asChild>
                             <Button className="gap-2">
                                 <Plus className="w-4 h-4" />
-                                Create Group
+                                {t('groups.createGroup')}
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Create New Group</DialogTitle>
+                                <DialogTitle>{t('groups.createDialog.title')}</DialogTitle>
                                 <DialogDescription>
-                                    Create a group to organize your devices and apply policies.
+                                    {t('groups.createDialog.desc')}
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name">Group Name</Label>
+                                    <Label htmlFor="name">{t('groups.createDialog.nameLabel')}</Label>
                                     <Input
                                         id="name"
-                                        placeholder="e.g., Sales Team"
+                                        placeholder={t('groups.createDialog.namePlaceholder')}
                                         value={newGroup.name}
                                         onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">Description</Label>
+                                    <Label htmlFor="description">{t('groups.createDialog.descLabel')}</Label>
                                     <Textarea
                                         id="description"
-                                        placeholder="Optional description"
+                                        placeholder={t('groups.createDialog.descPlaceholder')}
                                         value={newGroup.description}
                                         onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
                                     />
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
-                                <Button onClick={handleCreateGroup} disabled={!newGroup.name.trim()}>Create Group</Button>
+                                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t('groups.createDialog.cancel')}</Button>
+                                <Button onClick={handleCreateGroup} disabled={!newGroup.name.trim()}>{t('groups.createGroup')}</Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -260,7 +260,7 @@ export default function Groups() {
                             </div>
                             <div>
                                 <p className="stat-card__value text-2xl">{stats.total}</p>
-                                <p className="text-sm text-muted-foreground">Total Groups</p>
+                                <p className="text-sm text-muted-foreground">{t('groups.stats.total')}</p>
                             </div>
                         </div>
                     </article>
@@ -271,7 +271,7 @@ export default function Groups() {
                             </div>
                             <div>
                                 <p className="stat-card__value text-2xl">{stats.devices}</p>
-                                <p className="text-sm text-muted-foreground">Total Devices</p>
+                                <p className="text-sm text-muted-foreground">{t('groups.stats.devices')}</p>
                             </div>
                         </div>
                     </article>
@@ -282,7 +282,7 @@ export default function Groups() {
                             </div>
                             <div>
                                 <p className="stat-card__value text-2xl">{stats.active}</p>
-                                <p className="text-sm text-muted-foreground">Active Groups</p>
+                                <p className="text-sm text-muted-foreground">{t('groups.stats.active')}</p>
                             </div>
                         </div>
                     </article>
@@ -293,7 +293,7 @@ export default function Groups() {
                             </div>
                             <div>
                                 <p className="stat-card__value text-2xl">{stats.empty}</p>
-                                <p className="text-sm text-muted-foreground">Empty Groups</p>
+                                <p className="text-sm text-muted-foreground">{t('groups.stats.empty')}</p>
                             </div>
                         </div>
                     </article>
@@ -305,12 +305,12 @@ export default function Groups() {
                         data={groups}
                         columns={columns}
                         loading={loading}
-                        globalSearchPlaceholder="Search groups..."
-                        emptyMessage="No groups found."
+                        globalSearchPlaceholder={t('groups.table.searchPlaceholder')}
+                        emptyMessage={t('groups.table.emptyMessage')}
                         rowActions={rowActions}
                         defaultPageSize={10}
                         showExport={true}
-                        exportTitle="Groups Report"
+                        exportTitle={t('groups.table.exportTitle')}
                         exportFilename="groups"
                     />
                 </div>

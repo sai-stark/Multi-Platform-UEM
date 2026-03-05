@@ -7,6 +7,9 @@ import {
     IosRelayPolicy,
     IosVpnPolicy,
     IosWebContentFilterPolicy,
+    IosPemCertificatePolicy,
+    IosPkcsCertificatePolicy,
+    IosPkcs12CertificatePolicy,
 } from '@/types/ios';
 import {
     ApplicationPolicy,
@@ -265,11 +268,64 @@ export const PolicyService = {
         await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/relay`);
     },
 
-    // --- iOS PKCS12 Certificates ---
-    getCertificatesPkcs12: async (profileId: string) => {
-        const response = await apiClient.get<{ content: Array<{ id: string; name: string; policyType?: string }> }>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12`);
+
+    // --- iOS PEM Certificate ---
+    getCertPemPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosPemCertificatePolicy>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`);
         return response.data;
     },
+    createCertPemPolicy: async (profileId: string, policy: IosPemCertificatePolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`, policy);
+        return response.data;
+    },
+    updateCertPemPolicy: async (profileId: string, policy: IosPemCertificatePolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`, policy);
+        return response.data;
+    },
+    deleteCertPemPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`);
+    },
+
+    // --- iOS PKCS Certificate ---
+    getCertPkcsPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosPkcsCertificatePolicy>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`);
+        return response.data;
+    },
+    createCertPkcsPolicy: async (profileId: string, policy: IosPkcsCertificatePolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`, policy);
+        return response.data;
+    },
+    updateCertPkcsPolicy: async (profileId: string, policy: IosPkcsCertificatePolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`, policy);
+        return response.data;
+    },
+    deleteCertPkcsPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`);
+    },
+
+    // --- iOS PKCS12 Certificate ---
+    getCertPkcs12PolicyList: async (profileId: string) => {
+        const response = await apiClient.get<PagedResponse<IosPkcs12CertificatePolicy>>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12`);
+        return response.data;
+    },
+    getCertPkcs12PolicyById: async (profileId: string, certificateId: string) => {
+        const response = await apiClient.get<IosPkcs12CertificatePolicy>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12/${certificateId}`);
+        return response.data;
+    },
+    createCertPkcs12Policy: async (profileId: string, policy: IosPkcs12CertificatePolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12`, policy);
+        return response.data;
+    },
+    updateCertPkcs12Policy: async (profileId: string, policy: IosPkcs12CertificatePolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12`, policy);
+        return response.data;
+    },
+    deleteCertPkcs12Policy: async (profileId: string, certificateId: string) => {
+        // According to OpenAPI: delete has no {certificateId} in the path? Yes it does? 
+        // Wait, the spec says: '/{platform}/profiles/{profileId}/policies/certificate-pkcs12/{certificateId}' has DELETE.
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12/${certificateId}`);
+    },
+
 
     // --- iOS Home Screen Layout (UEM Phase 2) ---
     getHomeScreenLayoutPolicy: async (profileId: string) => {

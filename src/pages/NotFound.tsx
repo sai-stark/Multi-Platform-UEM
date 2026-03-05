@@ -4,13 +4,15 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Home, AlertTriangle } from "lucide-react";
 import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const NotFound = () => {
   const location = useLocation();
   const { setEntityName, setEntityIcon } = useBreadcrumb();
+  const { t } = useLanguage();
 
   useEffect(() => {
-    setEntityName("Not Found");
+    setEntityName(t('notFound.subtitle'));
     setEntityIcon(AlertTriangle);
   }, [setEntityName, setEntityIcon]);
 
@@ -62,19 +64,19 @@ const NotFound = () => {
 
           {/* 404 Heading */}
           <div>
-            <h1 className="text-6xl font-extrabold tracking-tight text-foreground">404</h1>
+            <h1 className="text-6xl font-extrabold tracking-tight text-foreground">{t('notFound.title')}</h1>
             <p className="mt-2 text-lg font-medium text-muted-foreground">
-              Page not found
+              {t('notFound.subtitle')}
             </p>
           </div>
 
           {/* Contextual message */}
           <p className="text-sm text-muted-foreground/80">
-            The page at{" "}
+            {t('notFound.description').split('{path}')[0]}
             <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground/70">
               {location.pathname}
-            </code>{" "}
-            doesn't exist or may have been moved.
+            </code>
+            {t('notFound.description').split('{path}')[1]}
           </p>
 
           {/* Return home button */}
@@ -82,7 +84,7 @@ const NotFound = () => {
             <Button asChild variant="default" size="default">
               <Link to="/">
                 <Home className="mr-2 h-4 w-4" />
-                Back to Dashboard
+                {t('notFound.backToDashboard')}
               </Link>
             </Button>
           </div>

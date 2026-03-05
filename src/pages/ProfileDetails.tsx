@@ -1,7 +1,8 @@
 import { ProfileService } from "@/api/services/profiles";
-import { ProfileDetailSkeleton } from "@/components/skeletons";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { ProfileDetailSkeleton } from "@/components/skeletons";
 
+import { PolicyService } from "@/api/services/IOSpolicies";
 import { PolicyEditDialog } from "@/components/profiles/PolicyEditDialog";
 import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { getAssetUrl } from "@/config/env";
+import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePlatformValidation } from "@/hooks/usePlatformValidation";
 import { cn } from "@/lib/utils";
@@ -59,7 +61,6 @@ import {
 } from "@/types/models";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   Ban,
   Bell,
   Bluetooth,
@@ -94,8 +95,7 @@ import {
   WifiOff
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 // Extended type for UI display
 type ProfileDetailsData = FullProfile & {
@@ -132,6 +132,8 @@ interface AddPolicyDropdownProps {
   relayPolicy?: IosRelayPolicy;
   homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
   appLockPolicy?: IosAppLockPolicy;
+  certificatesConfigured?: boolean;
+  certificatesCount?: number;
   onSelect: (type: string) => void;
 }
 
@@ -153,6 +155,8 @@ function AddPolicyDropdown({
   relayPolicy,
   homeScreenLayoutPolicy,
   appLockPolicy,
+  certificatesConfigured,
+  certificatesCount,
   onSelect,
 }: AddPolicyDropdownProps) {
   const dropdownItems: { label: string; id: string; icon: React.ReactNode }[] = [];
@@ -173,6 +177,7 @@ function AddPolicyDropdown({
   if (platform === "ios" && !relayPolicy) dropdownItems.push({ id: "relay", label: "Relay Configuration", icon: <Wifi className="w-4 h-4 mr-2" /> });
   if (platform === "ios" && !homeScreenLayoutPolicy) dropdownItems.push({ id: "homeScreenLayout", label: "Home Screen Layout", icon: <Smartphone className="w-4 h-4 mr-2" /> });
   if (platform === "ios" && !appLockPolicy) dropdownItems.push({ id: "appLock", label: "App Lock / Kiosk Mode", icon: <Lock className="w-4 h-4 mr-2" /> });
+  if (platform === "ios") dropdownItems.push({ id: "certificates", label: "Certificates", icon: <Shield className="w-4 h-4 mr-2" /> });
 
   dropdownItems.sort((a, b) => a.label.localeCompare(b.label));
 
@@ -219,7 +224,9 @@ interface PolicyCardGridProps {
   perDomainVpnPolicy?: IosPerDomainVpnPolicy;
   relayPolicy?: IosRelayPolicy;
   homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
-  appLockPolicy?: IosAppLockPolicy; // Added
+  appLockPolicy?: IosAppLockPolicy;
+  certificatesConfigured?: boolean;
+  certificatesCount?: number; // Added
   commonSettingsPolicy?: CommonSettingsPolicy;
   deviceThemePolicy?: DeviceThemePolicy;
   enrollmentPolicy?: EnrollmentPolicy;
@@ -334,6 +341,8 @@ function PolicyCardGrid({
   relayPolicy,
   homeScreenLayoutPolicy,
   appLockPolicy, // Added
+  certificatesConfigured,
+  certificatesCount,
   commonSettingsPolicy,
   deviceThemePolicy,
   enrollmentPolicy,
@@ -369,8 +378,22 @@ function PolicyCardGrid({
   const allPolicies: PolicyItem[] = [];
 
   if (isIos) {
+
+    allPolicies.push({
+      id: "certificates",
+      title: "Certificates",
+      description: "Manage PEM, PKCS, and PKCS12 identities securely.",
+      statusText: certificatesConfigured ? `${certificatesCount} identity profile(s) active.` : undefined,
+      icon: <Shield className="w-5 h-5" />,
+      isConfigured: !!certificatesConfigured,
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
+      badgeText: certificatesCount ? `${certificatesCount} Active` : undefined
+    });
+
     allPolicies.push({
       id: "passcode",
+
       title: "Passcode Policy",
       description: "Enforce password requirements and device locking.",
       statusText: passcodePolicy ? "Minimum length, complexity, and auto-lock settings configured." : undefined,
@@ -661,7 +684,9 @@ function PolicyCardGrid({
               perDomainVpnPolicy={perDomainVpnPolicy}
               relayPolicy={relayPolicy}
               homeScreenLayoutPolicy={homeScreenLayoutPolicy}
-              appLockPolicy={appLockPolicy} // Added
+              appLockPolicy={appLockPolicy}
+              certificatesConfigured={certificatesConfigured}
+              certificatesCount={certificatesCount} // Added
               onSelect={onSelectPolicy}
             />
           </div>
@@ -784,7 +809,9 @@ export default function ProfileDetails() {
   const [perDomainVpnPolicy, setPerDomainVpnPolicy] = useState<IosPerDomainVpnPolicy | undefined>(undefined);
   const [relayPolicy, setRelayPolicy] = useState<IosRelayPolicy | undefined>(undefined);
   const [homeScreenLayoutPolicy, setHomeScreenLayoutPolicy] = useState<IosHomeScreenLayoutPolicy | undefined>(undefined);
-  const [appLockPolicy, setAppLockPolicy] = useState<IosAppLockPolicy | undefined>(undefined); // Added
+  const [appLockPolicy, setAppLockPolicy] = useState<IosAppLockPolicy | undefined>(undefined);
+  const [certificatesConfigured, setCertificatesConfigured] = useState<boolean>(false);
+  const [certificatesCount, setCertificatesCount] = useState<number>(0); // Added
 
   // Animation variants
   const containerVariants = {
@@ -836,6 +863,7 @@ export default function ProfileDetails() {
         setWebApplicationPolicy((iosData.webClipPolicies as any[]) || []);
         setApplicationPolicy((iosData.applicationPolicies as any[]) || []);
 
+
         // Phase 2 policies
         setWebContentFilterPolicy((iosData as any).iosWebContentFilterPolicy || undefined);
         setGlobalHttpProxyPolicy((iosData as any).iosGlobalHttpProxyPolicy || undefined);
@@ -846,6 +874,27 @@ export default function ProfileDetails() {
         setHomeScreenLayoutPolicy((iosData as any).iosHomeScreenLayoutPolicy || undefined);
         setAppLockPolicy((iosData as any).iosAppLockPolicy || undefined);
         setRestrictionsPolicy((iosData as any).iosDeviceRestrictionsPolicy || undefined);
+
+        // Fetch Certificates to check configuration status
+        try {
+          let configCount = 0;
+          const pem = await PolicyService.getCertPemPolicy(id);
+          if (pem && pem.id) configCount++;
+
+          const pkcs = await PolicyService.getCertPkcsPolicy(id);
+          if (pkcs && pkcs.id) configCount++;
+
+          const p12Resp = await PolicyService.getCertPkcs12PolicyList(id);
+          if (p12Resp && p12Resp.content && p12Resp.content.length > 0) configCount += p12Resp.content.length;
+
+          setCertificatesCount(configCount);
+          setCertificatesConfigured(configCount > 0);
+        } catch (e) {
+          // Ignore if 404
+          setCertificatesConfigured(false);
+          setCertificatesCount(0);
+        }
+
       }
 
       // Handle Android
@@ -1096,6 +1145,8 @@ export default function ProfileDetails() {
           relayPolicy={relayPolicy}
           homeScreenLayoutPolicy={homeScreenLayoutPolicy}
           appLockPolicy={appLockPolicy}
+          certificatesConfigured={certificatesConfigured}
+          certificatesCount={certificatesCount}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}
@@ -1127,6 +1178,8 @@ export default function ProfileDetails() {
           relayPolicy={relayPolicy}
           homeScreenLayoutPolicy={homeScreenLayoutPolicy}
           appLockPolicy={appLockPolicy}
+          certificatesConfigured={certificatesConfigured}
+          certificatesCount={certificatesCount}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}

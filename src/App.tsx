@@ -1,25 +1,27 @@
+import { ErrorFallback } from "@/components/ErrorFallback";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { deploymentPrefixPath } from "@/config/env";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
+import { BreadcrumbProvider } from "@/contexts/BreadcrumbContext";
 import { EnrollmentGuard, EnterpriseProvider } from "@/contexts/EnterpriseContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "react-error-boundary";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { BreadcrumbProvider } from "@/contexts/BreadcrumbContext";
 import ApplicationDetails from "./pages/ApplicationDetails";
 import Applications from "./pages/Applications";
 import DeviceDetails from "./pages/DeviceDetails";
 import Devices from "./pages/Devices";
 
+import Dashboard from "./pages/Dashboard";
 import Enrollment from "./pages/Enrollment";
 import EnterpriseSetup from "./pages/EnterpriseSetup";
 import GeofenceEditor from "./pages/GeofenceEditor";
 import Geofences from "./pages/Geofences";
 import GroupDetails from "./pages/GroupDetails";
 import Groups from "./pages/Groups";
-import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import InventoryEditor from "./pages/InventoryEditor";
 import NotFound from "./pages/NotFound";
@@ -78,23 +80,30 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AccessibilityProvider>
-      <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter basename={deploymentPrefixPath}>
-            <BreadcrumbProvider>
-              <EnterpriseProvider>
-                <AppRoutes />
-              </EnterpriseProvider>
-            </BreadcrumbProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </LanguageProvider>
-    </AccessibilityProvider>
-  </QueryClientProvider>
+  <ErrorBoundary
+    FallbackComponent={ErrorFallback}
+    onReset={() => {
+      window.location.href = '/';
+    }}
+  >
+    <QueryClientProvider client={queryClient}>
+      <AccessibilityProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter basename={deploymentPrefixPath}>
+              <BreadcrumbProvider>
+                <EnterpriseProvider>
+                  <AppRoutes />
+                </EnterpriseProvider>
+              </BreadcrumbProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </LanguageProvider>
+      </AccessibilityProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

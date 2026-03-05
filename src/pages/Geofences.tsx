@@ -19,6 +19,7 @@ import {
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { mockGeofences } from "@/data/mockGeofences";
 import { Geofence } from "@/types/models";
 import { DataTable, Column } from "@/components/ui/data-table";
@@ -29,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 const Geofences = () => {
     const [geofences, setGeofences] = useState<Geofence[]>(mockGeofences);
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const { toast } = useToast();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
@@ -41,7 +43,7 @@ const Geofences = () => {
 
     const handleDelete = async (id: string) => {
         setGeofences(prev => prev.filter(g => g.id !== id));
-        toast({ title: "Success", description: "Geofence deleted successfully (Mock)" });
+        toast({ title: t('geofences.toasts.success'), description: t('geofences.toasts.deleted') });
     };
 
     const openDeleteDialog = (id: string) => {
@@ -52,7 +54,7 @@ const Geofences = () => {
     const columns: Column<Geofence>[] = [
         {
             key: 'name',
-            header: 'Name',
+            header: t('geofences.table.name'),
             accessor: (item) => item.name,
             render: (value, item) => (
                 <div
@@ -69,33 +71,33 @@ const Geofences = () => {
         },
         {
             key: 'type',
-            header: 'Type',
+            header: t('geofences.table.type'),
             accessor: (item) => item.type,
             render: (value) => (
                 <div className="flex items-center gap-2">
                     {value === 'POLYGON' ? (
-                        <><Hexagon className="h-3 w-3" /> Polygon</>
+                        <><Hexagon className="h-3 w-3" />{t('geofences.table.polygon')}</>
                     ) : (
-                        <><Circle className="h-3 w-3" /> Circle</>
+                        <><Circle className="h-3 w-3" />{t('geofences.table.circle')}</>
                     )}
                 </div>
             ),
         },
         {
             key: 'description',
-            header: 'Description',
+            header: t('geofences.table.description'),
             accessor: (item) => item.description || '-',
         },
         {
             key: 'details',
-            header: 'Details',
-            accessor: (item) => item.type === 'POLYGON' ? `${item.coordinates?.length || 0} Points` : `${item.radius}m`,
+            header: t('geofences.table.details'),
+            accessor: (item) => item.type === 'POLYGON' ? `${item.coordinates?.length || 0} ${t('geofences.table.points')}` : `${item.radius}m`,
             render: (_, item) => (
                 item.type === 'POLYGON' ? (
-                    <span className="text-xs text-muted-foreground">{item.coordinates?.length || 0} Points</span>
+                    <span className="text-xs text-muted-foreground">{item.coordinates?.length || 0} {t('geofences.table.points')}</span>
                 ) : (
                     <span className="text-xs text-muted-foreground">
-                        Rad: {item.radius}m <br />
+                        {t('geofences.table.rad')}: {item.radius}m <br />
                         ({item.latitude?.toFixed(4)}, {item.longitude?.toFixed(4)})
                     </span>
                 )
@@ -107,7 +109,7 @@ const Geofences = () => {
         <>
             <DropdownMenuItem onClick={() => navigate(`/geofences/${geofence.id}`)}>
                 <Pencil className="h-4 w-4 mr-2" />
-                Edit
+                {t('geofences.actions.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
@@ -115,7 +117,7 @@ const Geofences = () => {
                 onClick={() => openDeleteDialog(geofence.id!)}
             >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {t('geofences.actions.delete')}
             </DropdownMenuItem>
         </>
     );
@@ -125,18 +127,18 @@ const Geofences = () => {
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Geofence?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('geofences.deleteDialog.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently remove the geofence. Any device policies using it may be affected.
+                            {t('geofences.deleteDialog.desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('geofences.deleteDialog.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => targetDeleteId && handleDelete(targetDeleteId)}
                         >
-                            Delete
+                            {t('geofences.actions.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -145,14 +147,14 @@ const Geofences = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Geofences
+                            {t('geofences.title')}
                         </h1>
                         <p className="text-muted-foreground mt-2">
-                            Manage geographic boundaries for device policies and alerts.
+                            {t('geofences.subtitle')}
                         </p>
                     </div>
                     <Button onClick={() => navigate("/geofences/new")} className="gap-2">
-                        <Plus className="h-4 w-4" /> Add Geofence
+                        <Plus className="h-4 w-4" /> {t('geofences.addGeofence')}
                     </Button>
                 </div>
 
@@ -164,7 +166,7 @@ const Geofences = () => {
                                 <MapPin className="h-5 w-5 text-info" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Total Geofences</p>
+                                <p className="text-sm font-medium text-muted-foreground">{t('geofences.stats.total')}</p>
                                 <p className="stat-card__value text-2xl">{stats.total.toLocaleString()}</p>
                             </div>
                         </div>
@@ -175,7 +177,7 @@ const Geofences = () => {
                                 <Circle className="h-5 w-5 text-success" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Circles</p>
+                                <p className="text-sm font-medium text-muted-foreground">{t('geofences.stats.circle')}</p>
                                 <p className="stat-card__value text-2xl">{stats.circle.toLocaleString()}</p>
                             </div>
                         </div>
@@ -186,7 +188,7 @@ const Geofences = () => {
                                 <Hexagon className="h-5 w-5 text-accent" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Polygons</p>
+                                <p className="text-sm font-medium text-muted-foreground">{t('geofences.stats.polygon')}</p>
                                 <p className="stat-card__value text-2xl">{stats.polygon.toLocaleString()}</p>
                             </div>
                         </div>
@@ -198,12 +200,12 @@ const Geofences = () => {
                     <DataTable
                         data={geofences}
                         columns={columns}
-                        globalSearchPlaceholder="Search geofences..."
-                        emptyMessage="No geofences found"
+                        globalSearchPlaceholder={t('geofences.table.searchPlaceholder')}
+                        emptyMessage={t('geofences.table.emptyMessage')}
                         rowActions={rowActions}
                         defaultPageSize={10}
                         showExport={true}
-                        exportTitle="Geofences Report"
+                        exportTitle={t('geofences.table.exportTitle')}
                         exportFilename="geofences"
                     />
                 </div>

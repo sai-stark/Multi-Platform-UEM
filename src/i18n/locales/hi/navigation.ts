@@ -15,4 +15,9 @@ export const navigation = {
     'nav.geofences': 'जियोफेंस',
     'nav.inventory': 'इन्वेंट्री',
     'nav.repositories': 'रिपॉजिटरी',
+    'nav.qrEnrollment': 'QR एनरोलमेंट',
+    'nav.geoFencePolicy': 'जियो फेंस पॉलिसी',
+    'nav.setupAndConfig': 'सेटअप और कॉन्फ़िगरेशन',
+    'nav.mainNavigation': 'मुख्य नेविगेशन',
+    'nav.configuration': 'कॉन्फ़िगरेशन',
 };
