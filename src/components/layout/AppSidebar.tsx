@@ -35,6 +35,8 @@ import {
   UserPlus
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 
 // MAIN NAVIGATION items
 const mainNavItems = [
@@ -59,12 +61,19 @@ const configurationSubItems = [
   { title: "Geo Fence Policy", url: "/geofences/policy", icon: MapPin },
 ];
 
+function isNavActive(itemUrl: string, pathname: string): boolean {
+  if (itemUrl === "/") return pathname === "/";
+  return pathname === itemUrl || pathname.startsWith(itemUrl + "/");
+}
+
 export function AppSidebar() {
   const { t } = useLanguage();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [enrollmentOpen, setEnrollmentOpen] = useState(true);
   const [configurationOpen, setConfigurationOpen] = useState(true);
+  const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <Sidebar className="border-r border-sidebar-border" collapsible="icon">
@@ -97,21 +106,40 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.titleKey}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="flex items-center gap-3 py-2.5 px-3 text-sidebar-foreground hover:bg-sidebar-accent rounded transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="w-5 h-5" aria-hidden="true" />
-                      {!collapsed && <span>{t(item.titleKey)}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {mainNavItems.map((item) => {
+                const isActive = isNavActive(item.url, location.pathname);
+                return (
+                  <SidebarMenuItem key={item.titleKey}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className="relative flex items-center gap-3 py-2.5 px-3 text-sidebar-foreground hover:bg-sidebar-accent rounded transition-colors"
+                        activeClassName="text-sidebar-primary font-medium"
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="sidebar-active-indicator"
+                            className="absolute inset-0 rounded bg-sidebar-accent"
+                            transition={
+                              prefersReducedMotion
+                                ? { duration: 0 }
+                                : {
+                                    type: "spring",
+                                    stiffness: 350,
+                                    damping: 30,
+                                  }
+                            }
+                            aria-hidden="true"
+                          />
+                        )}
+                        <item.icon className="relative z-10 w-5 h-5" aria-hidden="true" />
+                        {!collapsed && <span className="relative z-10">{t(item.titleKey)}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -144,23 +172,42 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenu className="ml-4 mt-1 border-l border-sidebar-border pl-3">
-                      {enrollmentSubItems.map((subItem) => (
-                        <SidebarMenuItem key={subItem.url}>
-                          <SidebarMenuButton asChild>
-                            <NavLink
-                              to={subItem.url}
-                              className="flex items-center gap-3 py-2 px-3 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent rounded transition-colors"
-                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                            >
-                              <subItem.icon
-                                className="w-4 h-4"
-                                aria-hidden="true"
-                              />
-                              {!collapsed && <span>{subItem.title}</span>}
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
+                      {enrollmentSubItems.map((subItem) => {
+                        const isActive = isNavActive(subItem.url, location.pathname);
+                        return (
+                          <SidebarMenuItem key={subItem.url}>
+                            <SidebarMenuButton asChild>
+                              <NavLink
+                                to={subItem.url}
+                                className="relative flex items-center gap-3 py-2 px-3 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent rounded transition-colors"
+                                activeClassName="text-sidebar-primary font-medium"
+                              >
+                                {isActive && (
+                                  <motion.div
+                                    layoutId="sidebar-sub-active-indicator"
+                                    className="absolute inset-0 rounded bg-sidebar-accent"
+                                    transition={
+                                      prefersReducedMotion
+                                        ? { duration: 0 }
+                                        : {
+                                            type: "spring",
+                                            stiffness: 350,
+                                            damping: 30,
+                                          }
+                                    }
+                                    aria-hidden="true"
+                                  />
+                                )}
+                                <subItem.icon
+                                  className="relative z-10 w-4 h-4"
+                                  aria-hidden="true"
+                                />
+                                {!collapsed && <span className="relative z-10">{subItem.title}</span>}
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
                     </SidebarMenu>
                   </CollapsibleContent>
                 </Collapsible>
@@ -187,23 +234,42 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenu className="ml-4 mt-1 border-l border-sidebar-border pl-3">
-                      {configurationSubItems.map((subItem) => (
-                        <SidebarMenuItem key={subItem.url}>
-                          <SidebarMenuButton asChild>
-                            <NavLink
-                              to={subItem.url}
-                              className="flex items-center gap-3 py-2 px-3 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent rounded transition-colors"
-                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                            >
-                              <subItem.icon
-                                className="w-4 h-4"
-                                aria-hidden="true"
-                              />
-                              {!collapsed && <span>{subItem.title}</span>}
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
+                      {configurationSubItems.map((subItem) => {
+                        const isActive = isNavActive(subItem.url, location.pathname);
+                        return (
+                          <SidebarMenuItem key={subItem.url}>
+                            <SidebarMenuButton asChild>
+                              <NavLink
+                                to={subItem.url}
+                                className="relative flex items-center gap-3 py-2 px-3 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent rounded transition-colors"
+                                activeClassName="text-sidebar-primary font-medium"
+                              >
+                                {isActive && (
+                                  <motion.div
+                                    layoutId="sidebar-sub-active-indicator"
+                                    className="absolute inset-0 rounded bg-sidebar-accent"
+                                    transition={
+                                      prefersReducedMotion
+                                        ? { duration: 0 }
+                                        : {
+                                            type: "spring",
+                                            stiffness: 350,
+                                            damping: 30,
+                                          }
+                                    }
+                                    aria-hidden="true"
+                                  />
+                                )}
+                                <subItem.icon
+                                  className="relative z-10 w-4 h-4"
+                                  aria-hidden="true"
+                                />
+                                {!collapsed && <span className="relative z-10">{subItem.title}</span>}
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
                     </SidebarMenu>
                   </CollapsibleContent>
                 </Collapsible>
@@ -219,11 +285,27 @@ export function AppSidebar() {
             <SidebarMenuButton asChild>
               <NavLink
                 to="/settings"
-                className="flex items-center gap-3 py-2.5 px-3 text-sidebar-foreground hover:bg-sidebar-accent rounded transition-colors"
-                activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                className="relative flex items-center gap-3 py-2.5 px-3 text-sidebar-foreground hover:bg-sidebar-accent rounded transition-colors"
+                activeClassName="text-sidebar-primary font-medium"
               >
-                <Settings className="w-5 h-5" aria-hidden="true" />
-                {!collapsed && <span>{t("nav.settings")}</span>}
+                {isNavActive("/settings", location.pathname) && (
+                  <motion.div
+                    layoutId="sidebar-footer-active-indicator"
+                    className="absolute inset-0 rounded bg-sidebar-accent"
+                    transition={
+                      prefersReducedMotion
+                        ? { duration: 0 }
+                        : {
+                            type: "spring",
+                            stiffness: 350,
+                            damping: 30,
+                          }
+                    }
+                    aria-hidden="true"
+                  />
+                )}
+                <Settings className="relative z-10 w-5 h-5" aria-hidden="true" />
+                {!collapsed && <span className="relative z-10">{t("nav.settings")}</span>}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
