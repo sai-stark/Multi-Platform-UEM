@@ -397,7 +397,7 @@ export default function Enrollment() {
 
         {/* Platform Tabs */}
         <section
-          className="grid grid-cols-5 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
+          className="flex flex-wrap w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm gap-1"
           role="tablist"
           aria-label="Filter by platform"
         >
@@ -412,7 +412,7 @@ export default function Enrollment() {
                 aria-selected={isActive}
                 onClick={() => handlePlatformChange(platform)}
                 className={cn(
-                  "relative inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                  "flex-1 min-w-fit relative inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isActive && "bg-background text-foreground shadow-md border border-border/50 backdrop-blur-md",
                   !isActive &&

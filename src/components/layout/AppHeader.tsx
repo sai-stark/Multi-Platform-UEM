@@ -21,7 +21,7 @@ export function AppHeader() {
 
   return (
     <header 
-      className="h-14 bg-card border-b border-border flex items-center justify-between px-4"
+      className="sticky top-0 z-40 h-14 bg-card border-b border-border flex items-center justify-between px-4"
       role="banner"
     >
       <div className="flex items-center gap-3">

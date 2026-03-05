@@ -25,7 +25,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           
           <main 
             id="main-content"
-            className="flex-1 p-6 overflow-auto"
+            className="flex-1 p-6 overflow-auto max-w-screen-2xl mx-auto w-full"
             role="main"
             tabIndex={-1}
           >
