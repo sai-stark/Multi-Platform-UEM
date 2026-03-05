@@ -136,8 +136,6 @@ interface AddPolicyDropdownProps {
   appLockPolicy?: IosAppLockPolicy;
   certificatesConfigured?: boolean;
   certificatesCount?: number;
-  rootCertificatesConfigured?: boolean;
-  rootCertificatesCount?: number;
   onSelect: (type: string) => void;
 }
 
@@ -161,8 +159,6 @@ function AddPolicyDropdown({
   appLockPolicy,
   certificatesConfigured,
   certificatesCount,
-  rootCertificatesConfigured,
-  rootCertificatesCount,
   onSelect,
 }: AddPolicyDropdownProps) {
   const dropdownItems: { label: string; id: string; icon: React.ReactNode }[] = [];
@@ -184,7 +180,6 @@ function AddPolicyDropdown({
   if (platform === "ios" && !homeScreenLayoutPolicy) dropdownItems.push({ id: "homeScreenLayout", label: "Home Screen Layout", icon: <Smartphone className="w-4 h-4 mr-2" /> });
   if (platform === "ios" && !appLockPolicy) dropdownItems.push({ id: "appLock", label: "App Lock / Kiosk Mode", icon: <Lock className="w-4 h-4 mr-2" /> });
   if (platform === "ios") dropdownItems.push({ id: "certificates", label: "Certificates", icon: <Shield className="w-4 h-4 mr-2" /> });
-  if (platform === "ios") dropdownItems.push({ id: "rootCertificates", label: "Root Certificates", icon: <ShieldCheck className="w-4 h-4 mr-2" /> });
 
   dropdownItems.sort((a, b) => a.label.localeCompare(b.label));
 
@@ -234,8 +229,6 @@ interface PolicyCardGridProps {
   appLockPolicy?: IosAppLockPolicy;
   certificatesConfigured?: boolean;
   certificatesCount?: number; // Added
-  rootCertificatesConfigured?: boolean;
-  rootCertificatesCount?: number;
   commonSettingsPolicy?: CommonSettingsPolicy;
   deviceThemePolicy?: DeviceThemePolicy;
   enrollmentPolicy?: EnrollmentPolicy;
@@ -352,8 +345,6 @@ function PolicyCardGrid({
   appLockPolicy, // Added
   certificatesConfigured,
   certificatesCount,
-  rootCertificatesConfigured,
-  rootCertificatesCount,
   commonSettingsPolicy,
   deviceThemePolicy,
   enrollmentPolicy,
@@ -400,18 +391,6 @@ function PolicyCardGrid({
       colorClass: "text-blue-500",
       borderClass: "border-t-blue-500",
       badgeText: certificatesCount ? `${certificatesCount} Active` : undefined
-    });
-
-    allPolicies.push({
-      id: "rootCertificates",
-      title: "Root Certificates",
-      description: "Manage root certificate authorities for the device.",
-      statusText: rootCertificatesConfigured ? `${rootCertificatesCount} root certificate(s) active.` : undefined,
-      icon: <ShieldCheck className="w-5 h-5" />,
-      isConfigured: !!rootCertificatesConfigured,
-      colorClass: "text-teal-500",
-      borderClass: "border-t-teal-500",
-      badgeText: rootCertificatesCount ? `${rootCertificatesCount} Active` : undefined
     });
 
     allPolicies.push({
@@ -718,8 +697,6 @@ function PolicyCardGrid({
               appLockPolicy={appLockPolicy}
               certificatesConfigured={certificatesConfigured}
               certificatesCount={certificatesCount} // Added
-              rootCertificatesConfigured={rootCertificatesConfigured}
-              rootCertificatesCount={rootCertificatesCount}
               onSelect={onSelectPolicy}
             />
           </div>
@@ -845,8 +822,8 @@ export default function ProfileDetails() {
   const [appLockPolicy, setAppLockPolicy] = useState<IosAppLockPolicy | undefined>(undefined);
   const [certificatesConfigured, setCertificatesConfigured] = useState<boolean>(false);
   const [certificatesCount, setCertificatesCount] = useState<number>(0); // Added
-  const [rootCertificatesConfigured, setRootCertificatesConfigured] = useState<boolean>(false);
-  const [rootCertificatesCount, setRootCertificatesCount] = useState<number>(0);
+  const [ setRootCertificatesConfigured] = useState<boolean>(false);
+  const [ setRootCertificatesCount] = useState<number>(0);
 
   // Animation variants
   const containerVariants = {
@@ -932,21 +909,6 @@ export default function ProfileDetails() {
 
         setCertificatesCount(configCount);
         setCertificatesConfigured(configCount > 0);
-
-        // Fetch Root Certificates to check configuration status
-        try {
-          const rootCertsResp = await PolicyService.getRootCertificatesPolicyList(id);
-          if (rootCertsResp && rootCertsResp.content && rootCertsResp.content.length > 0) {
-            setRootCertificatesCount(rootCertsResp.content.length);
-            setRootCertificatesConfigured(true);
-          } else {
-            setRootCertificatesCount(0);
-            setRootCertificatesConfigured(false);
-          }
-        } catch (e) {
-          setRootCertificatesConfigured(false);
-          setRootCertificatesCount(0);
-        }
 
       }
 
@@ -1200,8 +1162,6 @@ export default function ProfileDetails() {
           appLockPolicy={appLockPolicy}
           certificatesConfigured={certificatesConfigured}
           certificatesCount={certificatesCount}
-          rootCertificatesConfigured={rootCertificatesConfigured}
-          rootCertificatesCount={rootCertificatesCount}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}
@@ -1235,8 +1195,6 @@ export default function ProfileDetails() {
           appLockPolicy={appLockPolicy}
           certificatesConfigured={certificatesConfigured}
           certificatesCount={certificatesCount}
-          rootCertificatesConfigured={rootCertificatesConfigured}
-          rootCertificatesCount={rootCertificatesCount}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}

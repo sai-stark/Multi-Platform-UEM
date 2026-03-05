@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 import { IosPemCertificatePolicy, IosPkcs12CertificatePolicy, IosPkcsCertificatePolicy, IosRootCertificatePolicy } from "@/types/ios";
-import { Info, Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { FileKey, FileText, Info, KeyRound, Loader2, Plus, Shield, ShieldCheck, Trash2, Upload } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 interface CertificatesPolicyProps {
@@ -41,6 +41,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
     const [p12File, setP12File] = useState<File | null>(null);
     const [p12Base64, setP12Base64] = useState<string>("");
     const [p12Password, setP12Password] = useState("");
+    const [p12AllowAccess, setP12AllowAccess] = useState(false);
     const [p12Extractable, setP12Extractable] = useState(true);
 
     // Root Certificate State
@@ -295,18 +296,31 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
     }
 
     return (
-        <div className="space-y-6">
-            <Accordion type="single" collapsible className="w-full" defaultValue={defaultTab}>
+        <div className="space-y-6 max-w-4xl mt-6">
+            <div className="flex items-center justify-between pb-4 border-b">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                        <Shield className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-semibold">Certificates Policy</h3>
+                        <p className="text-sm text-muted-foreground">Manage PEM, PKCS, PKCS12, and Root Certificates for the device.</p>
+                    </div>
+                </div>
+            </div>
+
+            <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultTab}>
 
                 {/* PEM Certificate */}
-                <AccordionItem value="pem">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+                <AccordionItem value="pem" className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                    <AccordionTrigger className="px-4 text-sm font-semibold hover:no-underline [&[data-state=open]]:border-b">
                         <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-muted-foreground" />
                             <span>PEM Certificate</span>
                             {pemPolicy?.id && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Configured</span>}
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-4 space-y-4 bg-muted/30 border border-t-0 rounded-b-md">
+                    <AccordionContent className="p-4 space-y-4 bg-muted/30">
                         <div className="grid gap-2">
                             <Label>Upload .pem file <span className="text-destructive">*</span></Label>
                             <Input
@@ -336,14 +350,15 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                 </AccordionItem>
 
                 {/* PKCS Certificate */}
-                <AccordionItem value="pkcs">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+                <AccordionItem value="pkcs" className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                    <AccordionTrigger className="px-4 text-sm font-semibold hover:no-underline [&[data-state=open]]:border-b">
                         <div className="flex items-center gap-2">
+                            <FileKey className="w-4 h-4 text-muted-foreground" />
                             <span>PKCS Certificate</span>
                             {pkcsPolicy?.id && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Configured</span>}
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-4 space-y-4 bg-muted/30 border border-t-0 rounded-b-md">
+                    <AccordionContent className="p-4 space-y-4 bg-muted/30">
                         <div className="grid gap-2">
                             <Label>Upload PKCS file (DER/CER) <span className="text-destructive">*</span></Label>
                             <Input
@@ -373,16 +388,17 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                 </AccordionItem>
 
                 {/* PKCS12 Certificate */}
-                <AccordionItem value="pkcs12">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+                <AccordionItem value="pkcs12" className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                    <AccordionTrigger className="px-4 text-sm font-semibold hover:no-underline [&[data-state=open]]:border-b">
                         <div className="flex items-center justify-between w-full pr-4">
                             <div className="flex items-center gap-2">
+                                <KeyRound className="w-4 h-4 text-muted-foreground" />
                                 <span>PKCS12 Certificates</span>
                                 {pkcs12List.length > 0 && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">{pkcs12List.length} Active</span>}
                             </div>
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-4 space-y-6 bg-muted/30 border border-t-0 rounded-b-md">
+                    <AccordionContent className="p-4 space-y-6 bg-muted/30">
 
                         {/* PKCS12 List */}
                         {pkcs12List.length > 0 ? (
@@ -462,16 +478,17 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                 </AccordionItem>
 
                 {/* Root Certificate */}
-                <AccordionItem value="root">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+                <AccordionItem value="root" className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                    <AccordionTrigger className="px-4 text-sm font-semibold hover:no-underline [&[data-state=open]]:border-b">
                         <div className="flex items-center justify-between w-full pr-4">
                             <div className="flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-muted-foreground" />
                                 <span>Root Certificates</span>
                                 {rootCertsList.length > 0 && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">{rootCertsList.length} Active</span>}
                             </div>
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-4 space-y-6 bg-muted/30 border border-t-0 rounded-b-md">
+                    <AccordionContent className="p-4 space-y-6 bg-muted/30">
                         {/* Root Certs List */}
                         {rootCertsList.length > 0 ? (
                             <div className="space-y-3">
