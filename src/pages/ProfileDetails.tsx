@@ -376,8 +376,8 @@ function PolicyCardGrid({
       statusText: passcodePolicy ? "Minimum length, complexity, and auto-lock settings configured." : undefined,
       icon: <Shield className="w-5 h-5" />,
       isConfigured: !!passcodePolicy,
-      colorClass: "text-success",
-      borderClass: "border-t-success",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "wifi",
@@ -386,8 +386,8 @@ function PolicyCardGrid({
       statusText: wifiPolicy ? `SSID: ${wifiPolicy.ssid} • ${wifiPolicy.encryptionType}` : undefined,
       icon: <Wifi className="w-5 h-5" />,
       isConfigured: !!wifiPolicy,
-      colorClass: "text-info",
-      borderClass: "border-t-info",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "mail",
@@ -396,8 +396,8 @@ function PolicyCardGrid({
       statusText: mailPolicy ? `${mailPolicy.emailAccountName} • ${mailPolicy.emailAddress}` : undefined,
       icon: <Mail className="w-5 h-5" />,
       isConfigured: !!mailPolicy,
-      colorClass: "text-accent",
-      borderClass: "border-t-accent",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "restrictions",
@@ -406,8 +406,8 @@ function PolicyCardGrid({
       statusText: restrictionsPolicy ? "Camera, iCloud, App Store, and content restrictions configured." : undefined,
       icon: <Ban className="w-5 h-5" />,
       isConfigured: !!restrictionsPolicy,
-      colorClass: "text-accent",
-      borderClass: "border-t-accent",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "webApps",
@@ -416,8 +416,8 @@ function PolicyCardGrid({
       statusText: webApplicationPolicy.length > 0 ? `${webApplicationPolicy.length} Web Clips configured.` : undefined,
       icon: <Globe className="w-5 h-5" />,
       isConfigured: webApplicationPolicy.length > 0,
-      colorClass: "text-success",
-      borderClass: "border-t-success",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
       badgeText: `${webApplicationPolicy.length} Active`
     });
     allPolicies.push({
@@ -427,8 +427,8 @@ function PolicyCardGrid({
       statusText: notificationPolicy.length > 0 ? `${notificationPolicy.length} Apps configured.` : undefined,
       icon: <Bell className="w-5 h-5" />,
       isConfigured: notificationPolicy.length > 0,
-      colorClass: "text-info",
-      borderClass: "border-t-info",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
       badgeText: `${notificationPolicy.length} Active`
     });
     allPolicies.push({
@@ -438,8 +438,8 @@ function PolicyCardGrid({
       statusText: lockScreenMessagePolicy ? "Custom text on the lock screen." : undefined,
       icon: <MessageSquare className="w-5 h-5" />,
       isConfigured: !!lockScreenMessagePolicy,
-      colorClass: "text-accent",
-      borderClass: "border-t-accent",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "webContentFilter",
@@ -448,8 +448,8 @@ function PolicyCardGrid({
       statusText: webContentFilterPolicy ? `Filter: ${webContentFilterPolicy.filterType || 'BuiltIn'}` : undefined,
       icon: <Filter className="w-5 h-5" />,
       isConfigured: !!webContentFilterPolicy,
-      colorClass: "text-warning",
-      borderClass: "border-t-warning",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "globalHttpProxy",
@@ -458,8 +458,8 @@ function PolicyCardGrid({
       statusText: globalHttpProxyPolicy ? `Type: ${globalHttpProxyPolicy.proxyType}` : undefined,
       icon: <Globe className="w-5 h-5" />,
       isConfigured: !!globalHttpProxyPolicy,
-      colorClass: "text-info",
-      borderClass: "border-t-info",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "vpn",
@@ -468,8 +468,8 @@ function PolicyCardGrid({
       statusText: vpnPolicy ? `${vpnPolicy.vpnType} • ${vpnPolicy.remoteAddress}` : undefined,
       icon: <Lock className="w-5 h-5" />,
       isConfigured: !!vpnPolicy,
-      colorClass: "text-accent",
-      borderClass: "border-t-accent",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "perAppVpn",
@@ -478,8 +478,8 @@ function PolicyCardGrid({
       statusText: perAppVpnPolicy ? `${perAppVpnPolicy.applicationIds?.length || 0} apps configured` : undefined,
       icon: <Lock className="w-5 h-5" />,
       isConfigured: !!perAppVpnPolicy,
-      colorClass: "text-accent",
-      borderClass: "border-t-accent",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "perDomainVpn",
@@ -488,8 +488,8 @@ function PolicyCardGrid({
       statusText: perDomainVpnPolicy ? `${(perDomainVpnPolicy.safariDomains?.length || 0) + (perDomainVpnPolicy.associatedDomains?.length || 0)} domains` : undefined,
       icon: <Lock className="w-5 h-5" />,
       isConfigured: !!perDomainVpnPolicy,
-      colorClass: "text-destructive",
-      borderClass: "border-t-destructive",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "relay",
@@ -498,8 +498,8 @@ function PolicyCardGrid({
       statusText: relayPolicy ? `${relayPolicy.matchDomains?.length || 0} match domains` : undefined,
       icon: <Radio className="w-5 h-5" />,
       isConfigured: !!relayPolicy,
-      colorClass: "text-warning",
-      borderClass: "border-t-warning",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "homeScreenLayout",
@@ -508,8 +508,8 @@ function PolicyCardGrid({
       statusText: homeScreenLayoutPolicy ? `${homeScreenLayoutPolicy.configuration?.Pages?.length || 0} pages configured` : undefined,
       icon: <Smartphone className="w-5 h-5" />,
       isConfigured: !!homeScreenLayoutPolicy,
-      colorClass: "text-success",
-      borderClass: "border-t-success",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     allPolicies.push({
       id: "appLock",
@@ -518,8 +518,8 @@ function PolicyCardGrid({
       statusText: appLockPolicy ? `Locked to ${appLockPolicy.appLock?.App?.Identifier || 'App'}` : undefined,
       icon: <Lock className="w-5 h-5" />,
       isConfigured: !!appLockPolicy,
-      colorClass: "text-indigo-500",
-      borderClass: "border-t-indigo-500",
+      colorClass: "text-primary",
+      borderClass: "border-t-primary",
     });
     if (scepPolicy) {
       allPolicies.push({
@@ -529,8 +529,8 @@ function PolicyCardGrid({
         statusText: "Certificate enrollment configured",
         icon: <FileText className="w-5 h-5" />,
         isConfigured: true,
-        colorClass: "text-muted-foreground",
-        borderClass: "border-t-muted-foreground"
+        colorClass: "text-primary",
+        borderClass: "border-t-primary"
       });
     }
     if (mdmPolicy) {
@@ -599,8 +599,8 @@ function PolicyCardGrid({
     statusText: applicationPolicy.length > 0 ? `${applicationPolicy.length} Apps configured.` : undefined,
     icon: <Grid className="w-5 h-5" />,
     isConfigured: applicationPolicy.length > 0,
-    colorClass: "text-info",
-    borderClass: "border-t-info",
+    colorClass: "text-primary",
+    borderClass: "border-t-primary",
     badgeText: `${applicationPolicy.length} Active`,
   });
 

@@ -65,11 +65,11 @@ export function NotificationPolicy({ platform, profileId, initialData, applicati
     // Get iOS apps from applicationPolicy for the dropdown
     const iosApps = applicationPolicy
         .filter((app): app is IosApplicationPolicy => 'devicePolicyType' in app && app.devicePolicyType === 'IosApplicationPolicy')
-        .filter(app => app.id); // Only apps with IDs
+        .filter(app => app.applicationId); // Only apps with applicationIds
 
     const getAppNameById = (appId?: string): string => {
         if (!appId) return 'Unknown App';
-        const app = iosApps.find(a => a.id === appId);
+        const app = iosApps.find(a => a.applicationId === appId);
         return app?.name || appId;
     };
 
@@ -362,7 +362,7 @@ export function NotificationPolicy({ platform, profileId, initialData, applicati
                                 </SelectTrigger>
                                 <SelectContent>
                                     {iosApps.map((app) => (
-                                        <SelectItem key={app.id} value={app.id!}>
+                                        <SelectItem key={app.applicationId} value={app.applicationId!}>
                                             <div className="flex items-center gap-2">
                                                 <span className="font-medium">{app.name}</span>
                                                 <span className="text-xs text-muted-foreground font-mono">{app.applicationId}</span>
