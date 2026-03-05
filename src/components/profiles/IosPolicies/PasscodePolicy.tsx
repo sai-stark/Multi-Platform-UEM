@@ -360,7 +360,10 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                             </div>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/40">
-                            <span className="text-sm font-medium">Simple Passcodes</span>
+                            <div className="space-y-0.5">
+                                <Label className="text-sm font-medium">Simple Passcodes</Label>
+                                <p className="text-xs text-muted-foreground">Allow repeated or sequential characters</p>
+                            </div>
                             <Switch checked={formData.allowSimple} onCheckedChange={(c) => updateField('allowSimple', c)} />
                         </div>
                     </div>

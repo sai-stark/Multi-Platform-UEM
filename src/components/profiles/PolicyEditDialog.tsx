@@ -61,6 +61,7 @@ import {
 import { ApplicationPolicyEditor } from "@/components/profiles/IosPolicies/ApplicationPolicy";
 import { AppLockPolicy as AppLockPolicyEditor } from "@/components/profiles/IosPolicies/AppLockPolicy";
 import { GlobalHttpProxyPolicy as GlobalHttpProxyPolicyEditor } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
+import { CertificatesPolicy } from "@/components/profiles/IosPolicies/CertificatesPolicy";
 import { HomeScreenLayoutPolicy as HomeScreenLayoutPolicyEditor } from "@/components/profiles/IosPolicies/HomeScreenLayoutPolicy";
 import { LockScreenMessagePolicy } from "@/components/profiles/IosPolicies/LockScreenMessagePolicy";
 import { MailPolicy } from "@/components/profiles/IosPolicies/MailPolicy";
@@ -104,6 +105,8 @@ interface PolicyEditDialogProps {
     appLockPolicy?: IosAppLockPolicy;
     certificatesConfigured?: boolean;
     certificatesCount?: number;
+    rootCertificatesConfigured?: boolean;
+    rootCertificatesCount?: number;
     commonSettingsPolicy?: CommonSettingsPolicy;
     deviceThemePolicy?: DeviceThemePolicy;
     enrollmentPolicy?: EnrollmentPolicy;
@@ -137,6 +140,8 @@ export function PolicyEditDialog({
     appLockPolicy,
     certificatesConfigured,
     certificatesCount,
+    rootCertificatesConfigured,
+    rootCertificatesCount,
     commonSettingsPolicy,
     deviceThemePolicy,
     enrollmentPolicy,
@@ -158,6 +163,12 @@ export function PolicyEditDialog({
                     title: certificatesConfigured ? "Edit Certificates Policy" : "Configure Certificates Policy",
                     icon: <Shield className={cn("w-6 h-6", certificatesConfigured ? "text-primary" : "text-muted-foreground")} />,
                     description: "Manage PEM, PKCS, and PKCS12 identities."
+                };
+            case "rootCertificates":
+                return {
+                    title: rootCertificatesConfigured ? "Edit Root Certificates" : "Configure Root Certificates",
+                    icon: <Shield className={cn("w-6 h-6", rootCertificatesConfigured ? "text-primary" : "text-muted-foreground")} />,
+                    description: "Manage Root Certificate authorities for the device."
                 };
             case "appLock":
                 return { title: "App Lock / Kiosk Mode", icon: <Lock className="w-5 h-5 text-indigo-500" /> };
@@ -283,6 +294,22 @@ export function PolicyEditDialog({
                     )}
                     {activePolicyType === "mdm" && mdmPolicy && (
                         <MdmPolicyView policy={mdmPolicy} onClose={handleCancel} />
+                    )}
+                    {activePolicyType === "certificates" && (
+                        <CertificatesPolicy
+                            profileId={profileId}
+                            onCancel={handleCancel}
+                            onSaveSuccess={onSave}
+                            defaultTab="pem"
+                        />
+                    )}
+                    {activePolicyType === "rootCertificates" && (
+                        <CertificatesPolicy
+                            profileId={profileId}
+                            onCancel={handleCancel}
+                            onSaveSuccess={onSave}
+                            defaultTab="root"
+                        />
                     )}
 
                     {/* Phase 2 iOS policy editors */}

@@ -10,6 +10,7 @@ import {
     IosPemCertificatePolicy,
     IosPkcsCertificatePolicy,
     IosPkcs12CertificatePolicy,
+    IosRootCertificatePolicy,
 } from '@/types/ios';
 import {
     ApplicationPolicy,
@@ -326,6 +327,26 @@ export const PolicyService = {
         await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs12/${certificateId}`);
     },
 
+    // --- iOS Root Certificate ---
+    getRootCertificatesPolicyList: async (profileId: string) => {
+        const response = await apiClient.get<PagedResponse<IosRootCertificatePolicy>>(`/ios${CORE_PATH}/${profileId}/policies/rootCertificates`);
+        return response.data;
+    },
+    getRootCertificatePolicyById: async (profileId: string, certificateId: string) => {
+        const response = await apiClient.get<IosRootCertificatePolicy>(`/ios${CORE_PATH}/${profileId}/policies/rootCertificate/${certificateId}`);
+        return response.data;
+    },
+    createRootCertificatePolicy: async (profileId: string, policy: IosRootCertificatePolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/rootCertificates`, policy);
+        return response.data;
+    },
+    updateRootCertificatePolicy: async (profileId: string, policy: IosRootCertificatePolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/rootCertificate/${policy.id}`, policy);
+        return response.data;
+    },
+    deleteRootCertificatePolicy: async (profileId: string, certificateId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/rootCertificate/${certificateId}`);
+    },
 
     // --- iOS Home Screen Layout (UEM Phase 2) ---
     getHomeScreenLayoutPolicy: async (profileId: string) => {

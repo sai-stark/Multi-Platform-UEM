@@ -92,7 +92,9 @@ import {
   TabletSmartphone,
   Users,
   Wifi,
-  WifiOff
+  WifiOff,
+  KeyRound,
+  X
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -134,6 +136,8 @@ interface AddPolicyDropdownProps {
   appLockPolicy?: IosAppLockPolicy;
   certificatesConfigured?: boolean;
   certificatesCount?: number;
+  rootCertificatesConfigured?: boolean;
+  rootCertificatesCount?: number;
   onSelect: (type: string) => void;
 }
 
@@ -157,6 +161,8 @@ function AddPolicyDropdown({
   appLockPolicy,
   certificatesConfigured,
   certificatesCount,
+  rootCertificatesConfigured,
+  rootCertificatesCount,
   onSelect,
 }: AddPolicyDropdownProps) {
   const dropdownItems: { label: string; id: string; icon: React.ReactNode }[] = [];
@@ -178,6 +184,7 @@ function AddPolicyDropdown({
   if (platform === "ios" && !homeScreenLayoutPolicy) dropdownItems.push({ id: "homeScreenLayout", label: "Home Screen Layout", icon: <Smartphone className="w-4 h-4 mr-2" /> });
   if (platform === "ios" && !appLockPolicy) dropdownItems.push({ id: "appLock", label: "App Lock / Kiosk Mode", icon: <Lock className="w-4 h-4 mr-2" /> });
   if (platform === "ios") dropdownItems.push({ id: "certificates", label: "Certificates", icon: <Shield className="w-4 h-4 mr-2" /> });
+  if (platform === "ios") dropdownItems.push({ id: "rootCertificates", label: "Root Certificates", icon: <ShieldCheck className="w-4 h-4 mr-2" /> });
 
   dropdownItems.sort((a, b) => a.label.localeCompare(b.label));
 
@@ -227,6 +234,8 @@ interface PolicyCardGridProps {
   appLockPolicy?: IosAppLockPolicy;
   certificatesConfigured?: boolean;
   certificatesCount?: number; // Added
+  rootCertificatesConfigured?: boolean;
+  rootCertificatesCount?: number;
   commonSettingsPolicy?: CommonSettingsPolicy;
   deviceThemePolicy?: DeviceThemePolicy;
   enrollmentPolicy?: EnrollmentPolicy;
@@ -343,6 +352,8 @@ function PolicyCardGrid({
   appLockPolicy, // Added
   certificatesConfigured,
   certificatesCount,
+  rootCertificatesConfigured,
+  rootCertificatesCount,
   commonSettingsPolicy,
   deviceThemePolicy,
   enrollmentPolicy,
@@ -384,11 +395,23 @@ function PolicyCardGrid({
       title: "Certificates",
       description: "Manage PEM, PKCS, and PKCS12 identities securely.",
       statusText: certificatesConfigured ? `${certificatesCount} identity profile(s) active.` : undefined,
-      icon: <Shield className="w-5 h-5" />,
+      icon: <KeyRound className="w-5 h-5" />,
       isConfigured: !!certificatesConfigured,
-      colorClass: "text-primary",
-      borderClass: "border-t-primary",
+      colorClass: "text-blue-500",
+      borderClass: "border-t-blue-500",
       badgeText: certificatesCount ? `${certificatesCount} Active` : undefined
+    });
+
+    allPolicies.push({
+      id: "rootCertificates",
+      title: "Root Certificates",
+      description: "Manage root certificate authorities for the device.",
+      statusText: rootCertificatesConfigured ? `${rootCertificatesCount} root certificate(s) active.` : undefined,
+      icon: <ShieldCheck className="w-5 h-5" />,
+      isConfigured: !!rootCertificatesConfigured,
+      colorClass: "text-teal-500",
+      borderClass: "border-t-teal-500",
+      badgeText: rootCertificatesCount ? `${rootCertificatesCount} Active` : undefined
     });
 
     allPolicies.push({
@@ -656,8 +679,16 @@ function PolicyCardGrid({
             placeholder="Search policies..."
             value={policySearchQuery}
             onChange={(e) => setPolicySearchQuery(e.target.value)}
-            className="pl-9 h-9 border-2 border-primary/40 bg-muted/40 focus-visible:border-primary/60"
+            className="pl-9 pr-9 h-9 border-2 border-primary/40 bg-muted/40 focus-visible:border-primary/60"
           />
+          {policySearchQuery && (
+            <button
+              onClick={() => setPolicySearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -687,6 +718,8 @@ function PolicyCardGrid({
               appLockPolicy={appLockPolicy}
               certificatesConfigured={certificatesConfigured}
               certificatesCount={certificatesCount} // Added
+              rootCertificatesConfigured={rootCertificatesConfigured}
+              rootCertificatesCount={rootCertificatesCount}
               onSelect={onSelectPolicy}
             />
           </div>
@@ -812,6 +845,8 @@ export default function ProfileDetails() {
   const [appLockPolicy, setAppLockPolicy] = useState<IosAppLockPolicy | undefined>(undefined);
   const [certificatesConfigured, setCertificatesConfigured] = useState<boolean>(false);
   const [certificatesCount, setCertificatesCount] = useState<number>(0); // Added
+  const [rootCertificatesConfigured, setRootCertificatesConfigured] = useState<boolean>(false);
+  const [rootCertificatesCount, setRootCertificatesCount] = useState<number>(0);
 
   // Animation variants
   const containerVariants = {
@@ -876,23 +911,41 @@ export default function ProfileDetails() {
         setRestrictionsPolicy((iosData as any).iosDeviceRestrictionsPolicy || undefined);
 
         // Fetch Certificates to check configuration status
+        let configCount = 0;
+        
         try {
-          let configCount = 0;
           const pem = await PolicyService.getCertPemPolicy(id);
           if (pem && pem.id) configCount++;
+        } catch (e) { /* ignore 404 */ }
 
+        try {
           const pkcs = await PolicyService.getCertPkcsPolicy(id);
           if (pkcs && pkcs.id) configCount++;
+        } catch (e) { /* ignore 404 */ }
 
+        try {
           const p12Resp = await PolicyService.getCertPkcs12PolicyList(id);
-          if (p12Resp && p12Resp.content && p12Resp.content.length > 0) configCount += p12Resp.content.length;
+          if (p12Resp && p12Resp.content && p12Resp.content.length > 0) {
+            configCount += p12Resp.content.length;
+          }
+        } catch (e) { /* ignore 404 */ }
 
-          setCertificatesCount(configCount);
-          setCertificatesConfigured(configCount > 0);
+        setCertificatesCount(configCount);
+        setCertificatesConfigured(configCount > 0);
+
+        // Fetch Root Certificates to check configuration status
+        try {
+          const rootCertsResp = await PolicyService.getRootCertificatesPolicyList(id);
+          if (rootCertsResp && rootCertsResp.content && rootCertsResp.content.length > 0) {
+            setRootCertificatesCount(rootCertsResp.content.length);
+            setRootCertificatesConfigured(true);
+          } else {
+            setRootCertificatesCount(0);
+            setRootCertificatesConfigured(false);
+          }
         } catch (e) {
-          // Ignore if 404
-          setCertificatesConfigured(false);
-          setCertificatesCount(0);
+          setRootCertificatesConfigured(false);
+          setRootCertificatesCount(0);
         }
 
       }
@@ -1147,6 +1200,8 @@ export default function ProfileDetails() {
           appLockPolicy={appLockPolicy}
           certificatesConfigured={certificatesConfigured}
           certificatesCount={certificatesCount}
+          rootCertificatesConfigured={rootCertificatesConfigured}
+          rootCertificatesCount={rootCertificatesCount}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}
@@ -1180,6 +1235,8 @@ export default function ProfileDetails() {
           appLockPolicy={appLockPolicy}
           certificatesConfigured={certificatesConfigured}
           certificatesCount={certificatesCount}
+          rootCertificatesConfigured={rootCertificatesConfigured}
+          rootCertificatesCount={rootCertificatesCount}
           commonSettingsPolicy={commonSettingsPolicy}
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}

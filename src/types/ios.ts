@@ -474,3 +474,10 @@ export interface IosPkcs12CertificatePolicy extends UserAuditData {
     policyType: 'CertificatePKCS12';
     certificatePayload: Pkcs12CertificatePayload;
 }
+
+export interface IosRootCertificatePolicy extends UserAuditData {
+    id?: string;
+    name: string;
+    payloadCertificateFileName?: string;
+    payloadContent?: string;
+}

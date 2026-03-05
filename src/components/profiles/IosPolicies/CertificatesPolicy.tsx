@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
-import { IosPemCertificatePolicy, IosPkcs12CertificatePolicy, IosPkcsCertificatePolicy } from "@/types/ios";
+import { IosPemCertificatePolicy, IosPkcs12CertificatePolicy, IosPkcsCertificatePolicy, IosRootCertificatePolicy } from "@/types/ios";
 import { Info, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
@@ -15,9 +15,10 @@ interface CertificatesPolicyProps {
     profileId: string;
     onSaveSuccess?: () => void;
     onCancel?: () => void;
+    defaultTab?: string;
 }
 
-export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel }: CertificatesPolicyProps) {
+export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, defaultTab }: CertificatesPolicyProps) {
     const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -40,8 +41,13 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel }: Certi
     const [p12File, setP12File] = useState<File | null>(null);
     const [p12Base64, setP12Base64] = useState<string>("");
     const [p12Password, setP12Password] = useState("");
-    const [p12AllowAccess, setP12AllowAccess] = useState(false);
     const [p12Extractable, setP12Extractable] = useState(true);
+
+    // Root Certificate State
+    const [rootCertsList, setRootCertsList] = useState<IosRootCertificatePolicy[]>([]);
+    const [showRootForm, setShowRootForm] = useState(false);
+    const [rootFile, setRootFile] = useState<File | null>(null);
+    const [rootBase64, setRootBase64] = useState<string>("");
 
     useEffect(() => {
         const fetchPolicies = async () => {
@@ -64,6 +70,14 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel }: Certi
                     const p12Resp = await PolicyService.getCertPkcs12PolicyList(profileId);
                     if (p12Resp && p12Resp.content) {
                         setPkcs12List(p12Resp.content);
+                    }
+                } catch (e) { /* ignore */ }
+
+                // Fetch Root Certificates
+                try {
+                    const rootResp = await PolicyService.getRootCertificatesPolicyList(profileId);
+                    if (rootResp && rootResp.content) {
+                        setRootCertsList(rootResp.content);
                     }
                 } catch (e) { /* ignore */ }
 
@@ -231,6 +245,46 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel }: Certi
         }
     };
 
+    const handleSaveRootCert = async () => {
+        if (!rootBase64) {
+            toast({ title: "Error", description: "Please upload a Root Certificate file.", variant: "destructive" });
+            return;
+        }
+        setSaving(true);
+        try {
+            const payload = {
+                name: "ios",
+                payloadCertificateFileName: rootFile?.name,
+                payloadContent: rootBase64,
+            } as IosRootCertificatePolicy;
+
+            const res = await PolicyService.createRootCertificatePolicy(profileId, payload);
+            setRootCertsList([...rootCertsList, res]);
+            // Reset form
+            setShowRootForm(false);
+            setRootFile(null);
+            setRootBase64("");
+            toast({ title: "Success", description: "Root Certificate added." });
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to add Root certificate.", variant: "destructive" });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteRootCert = async (certId: string) => {
+        setSaving(true);
+        try {
+            await PolicyService.deleteRootCertificatePolicy(profileId, certId);
+            setRootCertsList(rootCertsList.filter(c => c.id !== certId));
+            toast({ title: "Success", description: "Root Certificate deleted." });
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to delete Root certificate.", variant: "destructive" });
+        } finally {
+            setSaving(false);
+        }
+    };
+
 
     if (loading) {
         return (
@@ -242,7 +296,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel }: Certi
 
     return (
         <div className="space-y-6">
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="single" collapsible className="w-full" defaultValue={defaultTab}>
 
                 {/* PEM Certificate */}
                 <AccordionItem value="pem">
@@ -404,6 +458,70 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel }: Certi
                             </Card>
                         )}
 
+                    </AccordionContent>
+                </AccordionItem>
+
+                {/* Root Certificate */}
+                <AccordionItem value="root">
+                    <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                            <div className="flex items-center gap-2">
+                                <span>Root Certificates</span>
+                                {rootCertsList.length > 0 && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">{rootCertsList.length} Active</span>}
+                            </div>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-4 space-y-6 bg-muted/30 border border-t-0 rounded-b-md">
+                        {/* Root Certs List */}
+                        {rootCertsList.length > 0 ? (
+                            <div className="space-y-3">
+                                {rootCertsList.map(cert => (
+                                    <Card key={cert.id} className="bg-background">
+                                        <div className="flex items-center justify-between p-3">
+                                            <div>
+                                                <p className="font-medium text-sm">{cert.payloadCertificateFileName || 'Unnamed Certificate'}</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">ID: {cert.id}</p>
+                                            </div>
+                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeleteRootCert(cert.id!)} disabled={saving}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic text-center py-4">No Root certificates uploaded.</p>
+                        )}
+
+                        {/* Add New Root Cert */}
+                        {!showRootForm ? (
+                            <Button variant="outline" className="w-full border-dashed" onClick={() => setShowRootForm(true)}>
+                                <Plus className="w-4 h-4 mr-2" /> Add Root Certificate
+                            </Button>
+                        ) : (
+                            <Card className="border-primary/20 bg-background shadow-sm">
+                                <CardContent className="p-4 space-y-4">
+                                    <div className="flex items-center justify-between mb-2 pb-2 border-b">
+                                        <h4 className="font-medium text-sm text-foreground">New Root Certificate</h4>
+                                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowRootForm(false)}>Cancel</Button>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label>Upload .pem, .cer, or .crt file <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            type="file"
+                                            accept=".pem,.cer,.crt"
+                                            onChange={(e) => handleFileUpload(e, setRootFile, setRootBase64)}
+                                        />
+                                    </div>
+
+                                    <Button className="w-full mt-2" onClick={handleSaveRootCert} disabled={saving || !rootBase64}>
+                                        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                                        Upload & Save
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
                     </AccordionContent>
                 </AccordionItem>
 
