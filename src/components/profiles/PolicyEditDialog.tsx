@@ -205,11 +205,11 @@ export function PolicyEditDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className={cn(
-                "max-h-[90vh] overflow-y-auto",
+                "max-h-[90vh] overflow-hidden flex flex-col p-0",
                 activePolicyType === "androidApplication" || activePolicyType === "applications" ? "max-w-[80vw]" : "max-w-4xl"
             )}>
                 <DialogTitle className="sr-only">{title}</DialogTitle>
-                <div className="pt-0">
+                <div className="flex-1 overflow-y-auto min-h-0 p-6 pt-0 pb-0">
                     {/* Render appropriate policy component based on activePolicyType */}
                     {activePolicyType === "passcode" && (
                         <PasscodePolicy

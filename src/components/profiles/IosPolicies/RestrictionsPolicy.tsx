@@ -425,7 +425,7 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
                 ))}
             </div>
 
-            <div className="flex justify-between pt-6 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky bottom-0 z-10 py-4 -mx-1 px-1">
+            <div className="flex justify-between pt-4 pb-4 mt-6 border-t bg-background sticky bottom-0 z-10 -mx-6 px-6">
                 <Button variant="outline" onClick={initialData?.id ? () => setIsEditing(false) : onCancel}>
                     Cancel
                 </Button>

@@ -272,8 +272,8 @@ export const PolicyService = {
 
     // --- iOS PEM Certificate ---
     getCertPemPolicy: async (profileId: string) => {
-        const response = await apiClient.get<IosPemCertificatePolicy>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`);
-        return response.data;
+        const response = await apiClient.get<PagedResponse<IosPemCertificatePolicy>>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`);
+        return response.data?.content?.[0] ?? null;
     },
     createCertPemPolicy: async (profileId: string, policy: IosPemCertificatePolicy) => {
         const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`, policy);
@@ -289,8 +289,8 @@ export const PolicyService = {
 
     // --- iOS PKCS Certificate ---
     getCertPkcsPolicy: async (profileId: string) => {
-        const response = await apiClient.get<IosPkcsCertificatePolicy>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`);
-        return response.data;
+        const response = await apiClient.get<PagedResponse<IosPkcsCertificatePolicy>>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`);
+        return response.data?.content?.[0] ?? null;
     },
     createCertPkcsPolicy: async (profileId: string, policy: IosPkcsCertificatePolicy) => {
         const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`, policy);
