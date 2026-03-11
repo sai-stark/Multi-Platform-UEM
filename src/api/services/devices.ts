@@ -50,7 +50,8 @@ export const DeviceService = {
     },
 
     deleteDevice: async (platform: Platform, deviceId: string) => {
-        await apiClient.delete(`/${platform}/devices/${deviceId}`);
+        const response = await apiClient.delete(`/${platform}/devices/${deviceId}`);
+        return response;
     },
 
     // Corrected: Uses /{platform}/devices/{deviceId}/effective-profile per OpenAPI spec

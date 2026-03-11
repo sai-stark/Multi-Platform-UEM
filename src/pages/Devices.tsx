@@ -1,7 +1,5 @@
 import { DeviceService } from '@/api/services/devices';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/button';
-import { Column, DataTable } from '@/components/ui/data-table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,6 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Column, DataTable } from '@/components/ui/data-table';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -21,9 +21,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
 import { getAssetUrl } from '@/config/env';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
 import {
@@ -264,9 +264,18 @@ const Devices = () => {
 
   const handleUnenroll = async (device: Device) => {
     try {
-      await DeviceService.deleteDevice(device.platform as Platform, device.id);
-      toast({ title: "Success", description: "Device unenrolled successfully." });
-      fetchData();
+      const response = await DeviceService.deleteDevice(device.platform as Platform, device.id);
+      if (response && response.status >= 200 && response.status < 300) {
+        toast({ title: "Success", description: "Device unenrolled successfully." });
+        setData((prevData) => prevData.filter((d) => d.id !== device.id));
+        setStats((prev) => ({
+          ...prev,
+          total: Math.max(0, prev.total - 1),
+          online: device.connectionStatus === 'online' ? Math.max(0, prev.online - 1) : prev.online,
+          compliant: device.complianceStatus === 'compliant' ? Math.max(0, prev.compliant - 1) : prev.compliant,
+          nonCompliant: device.complianceStatus === 'non-compliant' ? Math.max(0, prev.nonCompliant - 1) : prev.nonCompliant,
+        }));
+      }
     } catch (error) {
       console.error("Failed to unenroll device", error);
       toast({ title: "Error", description: "Failed to unenroll device.", variant: "destructive" });

@@ -1,21 +1,21 @@
 
-import { FormEditorSkeleton } from "@/components/skeletons";
+import { GeofenceService } from "@/api/services/geofence";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { FormEditorSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
-import { mockGeofences } from "@/data/mockGeofences";
+import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 import { Geofence } from "@/types/models";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ArrowLeft, Loader2, Save, Trash, Undo } from "lucide-react";
+import { Loader2, Save, Trash, Undo } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Circle, MapContainer, Marker, Polygon, TileLayer, useMapEvents } from "react-leaflet";
 import { useNavigate, useParams } from "react-router-dom";
-import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 
 // Fix Leaflet marker icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -69,31 +69,34 @@ const GeofenceEditor = () => {
     }, [name, isEditing, setEntityName]);
 
     useEffect(() => {
-        if (isEditing) {
-            // Mock fetch logic
-            const mockData = mockGeofences.find(g => g.id === id);
-            if (mockData) {
-                setGeofenceData(mockData);
-                toast({
-                    title: "Demo Mode",
-                    description: "Loaded mock data for demonstration.",
-                });
+        const loadInstance = async () => {
+            if (isEditing) {
+                try {
+                    setLoading(true);
+                    const realData = await GeofenceService.getGeofence(id);
+                    setGeofenceData(realData);
+                } catch (error) {
+                    console.error("Failed to fetch Geofence:", error);
+                    toast({
+                        title: "Not Found",
+                        description: "Failed to load geofence data.",
+                        variant: "destructive",
+                    });
+                } finally {
+                    setLoading(false);
+                }
             } else {
-                toast({
-                    title: "Not Found",
-                    description: "Geofence not found in mock data.",
-                    variant: "destructive",
-                });
+                // Get current location if creating new
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        setLatitude(position.coords.latitude);
+                        setLongitude(position.coords.longitude);
+                    });
+                }
             }
-        } else {
-            // Get current location if creating new
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    setLatitude(position.coords.latitude);
-                    setLongitude(position.coords.longitude);
-                });
-            }
-        }
+        };
+
+        loadInstance();
     }, [id]);
 
     const setGeofenceData = (data: Geofence) => {
@@ -129,10 +132,6 @@ const GeofenceEditor = () => {
 
         try {
             setSubmitting(true);
-            // Simulate network delay
-            await new Promise(resolve => setTimeout(resolve, 800));
-
-            // Log payload for demo
             const payload: Geofence = {
                 name,
                 description,
@@ -146,7 +145,6 @@ const GeofenceEditor = () => {
                 payload.radius = radius;
             } else {
                 payload.coordinates = polygonPoints;
-                // Set lat/long to first point or centroid for reference
                 if (polygonPoints.length > 0) {
                     payload.latitude = polygonPoints[0].lat;
                     payload.longitude = polygonPoints[0].lng;
@@ -154,17 +152,24 @@ const GeofenceEditor = () => {
                 payload.radius = 0;
             }
 
-            if (import.meta.env.DEV) { console.log("Mock Save Payload:", payload); }
-
+            if (isEditing) {
+                await GeofenceService.updateGeofence(id, payload);
+            } else {
+                await GeofenceService.createGeofence(payload);
+            }
 
             toast({
-                title: isEditing ? "Updated (Mock)" : "Created (Mock)",
-                description: "Geofence data saved successfully (Simulation)",
+                title: isEditing ? "Geofence Updated" : "Geofence Created",
+                description: "Geofence data saved successfully",
             });
             navigate("/geofences");
         } catch (error) {
-            // Should not happen in mock mode
-            console.error(error);
+            console.error("Failed to save geofence:", error);
+            toast({
+                title: "Error",
+                description: "Failed to save geofence configuration.",
+                variant: "destructive",
+            });
         } finally {
             setSubmitting(false);
         }

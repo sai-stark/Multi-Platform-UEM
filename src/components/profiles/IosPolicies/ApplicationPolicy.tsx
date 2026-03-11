@@ -34,10 +34,10 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
-import { IosApplicationPolicy } from '@/types/policy';
+import { ApplicationPolicy as ApplicationPolicyType, IosApplicationPolicy } from '@/types/policy';
+import { getErrorMessage } from '@/utils/errorUtils';
 import {
     AlertTriangle,
     BarChart3,
@@ -52,9 +52,8 @@ import {
     ShoppingCart,
     Trash2,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApplicationPolicy as ApplicationPolicyType } from '@/types/policy';
 
 // ====================================================================
 // Props
@@ -258,7 +257,6 @@ export const ApplicationPolicyEditor = ({
         setChangedPolicies((prev) => [...prev, newPolicy]);
         setPolicies((prev) => [...prev, newPolicy]);
         setSelectedPolicyId(getPolicyKey(newPolicy));
-        setOpenAddModal(false);
         resetAddModalState();
     };
 
@@ -280,7 +278,6 @@ export const ApplicationPolicyEditor = ({
                 setSelectedPolicyId(null);
             }
             toast({ title: 'Success', description: 'Application policy deleted.' });
-            if (onSave) onSave();
         } catch (error) {
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete application policy'), variant: 'destructive' });
         }
@@ -315,7 +312,6 @@ export const ApplicationPolicyEditor = ({
             setChangedPolicies([]);
             toast({ title: 'Success', description: 'Application policies saved successfully!' });
             await loadExistingPolicies();
-            if (onSave) onSave();
         } catch (error) {
             console.error('Error saving application policies:', error);
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save application policies'), variant: 'destructive' });
@@ -330,13 +326,13 @@ export const ApplicationPolicyEditor = ({
     // Filter the list
     const filteredPolicies = listSearchQuery.trim()
         ? policies.filter((p) => {
-              const info = getAppInfo(p);
-              const q = listSearchQuery.toLowerCase();
-              return (
-                  info.name.toLowerCase().includes(q) ||
-                  info.bundleId.toLowerCase().includes(q)
-              );
-          })
+            const info = getAppInfo(p);
+            const q = listSearchQuery.toLowerCase();
+            return (
+                info.name.toLowerCase().includes(q) ||
+                info.bundleId.toLowerCase().includes(q)
+            );
+        })
         : policies;
 
     // ====================================================================

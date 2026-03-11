@@ -1,10 +1,6 @@
 
 import { MainLayout } from '@/components/layout/MainLayout';
 import { GroupDetailSkeleton } from '@/components/skeletons';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -15,6 +11,10 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -25,10 +25,10 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 import { useToast } from '@/hooks/use-toast';
 import { BriefDeviceInfo, Group } from '@/types/models';
 import {
-    ArrowLeft,
     Laptop,
     Monitor,
     Plus,
@@ -39,27 +39,9 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 
-// Mock Data
-const mockGroup: Group = {
-    id: '1',
-    name: 'Corporate Devices',
-    description: 'All company owned devices',
-    deviceCount: 3
-};
-
-const mockGroupDevices: BriefDeviceInfo[] = [
-    { id: '1', name: 'Pixel 7 Pro', model: 'Pixel 7 Pro', osVersion: 'Android 14', status: 'active' },
-    { id: '3', name: 'iPhone 15 Pro', model: 'iPhone 15 Pro', osVersion: 'iOS 17', status: 'active' },
-    { id: '6', name: 'HP EliteBook', model: 'HP EliteBook 840', osVersion: 'Windows 11', status: 'active' },
-];
-
-const mockAvailableDevices: BriefDeviceInfo[] = [
-    { id: '2', name: 'Pixel 8', model: 'Pixel 8', osVersion: 'Android 14', status: 'active' },
-    { id: '4', name: 'iPad Pro', model: 'iPad Pro', osVersion: 'iPadOS 17', status: 'inactive' },
-    { id: '5', name: 'Dell Latitude', model: 'Dell Latitude', osVersion: 'Windows 11', status: 'active' },
-];
+import { DeviceService } from '@/api/services/devices';
+import { GroupService } from '@/api/services/groups';
 
 export default function GroupDetails() {
     const { id } = useParams<{ id: string }>();
@@ -83,31 +65,30 @@ export default function GroupDetails() {
 
     const fetchGroupData = async () => {
         setLoading(true);
-        // Simulate API
-        setTimeout(() => {
-            setGroup(mockGroup);
-            setDevices(mockGroupDevices);
-            setAvailableDevices(mockAvailableDevices);
-            setLoading(false);
-        }, 500);
-
-        /*
         try {
-             if(id) {
+            if (id) {
                 const groupData = await GroupService.getGroup(id);
                 setGroup(groupData);
-                const devicesData = await GroupService.getGroupDevices(id);
-                setDevices(devicesData.content);
-                
-                // For available devices, usually a separate call filtering out existing ones
-                // OR searching via the dialog
-             }
+
+                const devicesData = await GroupService.getGroupDevices(id, { page: 0, size: 50 });
+                const groupDevs = devicesData.content || [];
+                setDevices(groupDevs);
+
+                // Fetch all devices for "available devices" list
+                const allDevsRes = await DeviceService.getDevices('all' as any, { page: 0, size: 100 });
+                const allDevs = allDevsRes.content || [];
+
+                // Filter out devices already in the group
+                const groupDevIds = new Set(groupDevs.map((d: any) => d.id));
+                const available = allDevs.filter((d: any) => !groupDevIds.has(d.id));
+                setAvailableDevices(available as any);
+            }
         } catch (error) {
-             // Handle error
+            console.error("Failed to fetch group details", error);
+            toast({ title: "Error", description: "Failed to fetch group details.", variant: "destructive" });
         } finally {
             setLoading(false);
         }
-        */
     };
 
     useEffect(() => {
@@ -117,31 +98,37 @@ export default function GroupDetails() {
     const handleAddDevices = async () => {
         if (selectedDevices.length === 0) return;
 
-        // Mock add
-        const devicesToAdd = availableDevices.filter(d => selectedDevices.includes(d.id));
-        setDevices([...devices, ...devicesToAdd]);
-        setAvailableDevices(availableDevices.filter(d => !selectedDevices.includes(d.id)));
-        setIsAddDeviceOpen(false);
-        setSelectedDevices([]);
-
-        toast({
-            title: "Devices Added",
-            description: `Successfully added ${devicesToAdd.length} devices to the group.`,
-        });
-
-        /*
         try {
-             await GroupService.addDevicesToGroup(id!, selectedDevices);
-             fetchGroupData();
-        } catch (error) { ... }
-        */
+            await GroupService.addDevicesToGroup(id!, selectedDevices);
+
+            const devicesToAdd = availableDevices.filter(d => selectedDevices.includes(d.id));
+            setDevices([...devices, ...devicesToAdd]);
+            setAvailableDevices(availableDevices.filter(d => !selectedDevices.includes(d.id)));
+            setIsAddDeviceOpen(false);
+            setSelectedDevices([]);
+
+            toast({
+                title: "Devices Added",
+                description: `Successfully added ${devicesToAdd.length} devices to the group.`,
+            });
+        } catch (error) {
+            console.error("Failed to add devices", error);
+            toast({ title: "Error", description: "Failed to add devices to group.", variant: "destructive" });
+        }
     };
 
     const handleRemoveDevice = async (deviceId: string) => {
-        setDevices(devices.filter(d => d.id !== deviceId));
-        const removed = devices.find(d => d.id === deviceId);
-        if (removed) setAvailableDevices([...availableDevices, removed]);
-        toast({ title: "Device Removed", description: "Device has been removed from the group." });
+        try {
+            await GroupService.removeDevicesFromGroup(id!, [deviceId]);
+
+            setDevices(devices.filter(d => d.id !== deviceId));
+            const removed = devices.find(d => d.id === deviceId);
+            if (removed) setAvailableDevices([...availableDevices, removed]);
+            toast({ title: "Device Removed", description: "Device has been removed from the group." });
+        } catch (error) {
+            console.error("Failed to remove device", error);
+            toast({ title: "Error", description: "Failed to remove device from group.", variant: "destructive" });
+        }
     };
 
     const openRemoveDialog = (deviceId: string) => {

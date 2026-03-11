@@ -1,5 +1,5 @@
+import { GroupService } from '@/api/services/groups';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,6 +10,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Column, DataTable } from '@/components/ui/data-table';
 import {
     Dialog,
     DialogContent,
@@ -27,10 +29,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 import { Group } from '@/types/models';
-import { DataTable, Column } from '@/components/ui/data-table';
 import {
     AlertTriangle,
     CheckCircle,
@@ -43,14 +44,6 @@ import {
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Mock data
-const mockGroups: Group[] = [
-    { id: '1', name: 'Corporate Devices', description: 'All company owned devices', deviceCount: 156 },
-    { id: '2', name: 'BYOD Users', description: 'Personal devices with limited access', deviceCount: 42 },
-    { id: '3', name: 'Kiosk Terminals', description: 'Public facing display units', deviceCount: 12 },
-    { id: '4', name: 'Executive Team', description: 'Devices assigned to C-level execs', deviceCount: 8 },
-    { id: '5', name: 'Sales Department', description: 'Field sales tablets and phones', deviceCount: 85 },
-];
 
 export default function Groups() {
     const { t } = useLanguage();
@@ -65,11 +58,15 @@ export default function Groups() {
 
     const fetchGroups = async () => {
         setLoading(true);
-        // Simulate API
-        setTimeout(() => {
-            setGroups(mockGroups);
+        try {
+            const res = await GroupService.getGroups({ page: 0, size: 100 });
+            setGroups(res.content || []);
+        } catch (error) {
+            console.error('Failed to fetch groups', error);
+            toast({ title: 'Error', description: 'Failed to fetch groups', variant: 'destructive' });
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
     useEffect(() => {
@@ -79,31 +76,39 @@ export default function Groups() {
     const handleCreateGroup = async () => {
         if (!newGroup.name) return;
 
-        // Mock creation
-        const created: Group = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: newGroup.name,
-            description: newGroup.description,
-            deviceCount: 0
-        };
+        try {
+            const created = await GroupService.createGroup({
+                name: newGroup.name,
+                description: newGroup.description,
+            } as any);
 
-        setGroups([...groups, created]);
-        setIsCreateDialogOpen(false);
-        setNewGroup({ name: '', description: '' });
+            setGroups([...groups, created]);
+            setIsCreateDialogOpen(false);
+            setNewGroup({ name: '', description: '' });
 
-        toast({
-            title: t('groups.toasts.created'),
-            description: t('groups.toasts.createdDesc').replace('{name}', created.name),
-        });
+            toast({
+                title: t('groups.toasts.created'),
+                description: t('groups.toasts.createdDesc').replace('{name}', created.name),
+            });
+        } catch (error) {
+            console.error('Failed to create group', error);
+            toast({ title: 'Error', description: 'Failed to create group', variant: 'destructive' });
+        }
     };
 
     const handleDeleteGroup = async (group: Group) => {
-        // Mock delete
-        setGroups(groups.filter(g => g.id !== group.id));
-        toast({
-            title: t('groups.toasts.deleted'),
-            description: t('groups.toasts.deletedDesc').replace('{name}', group.name),
-        });
+        if (!group.id) return;
+        try {
+            await GroupService.deleteGroup(group.id);
+            setGroups(groups.filter(g => g.id !== group.id));
+            toast({
+                title: t('groups.toasts.deleted'),
+                description: t('groups.toasts.deletedDesc').replace('{name}', group.name),
+            });
+        } catch (error) {
+            console.error('Failed to delete group', error);
+            toast({ title: 'Error', description: 'Failed to delete group', variant: 'destructive' });
+        }
     };
 
     const openDeleteDialog = (group: Group) => {

@@ -359,10 +359,10 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                                 <Input type="number" className="pl-9" min={0} value={formData.minLength} onChange={(e) => updateField('minLength', Number(e.target.value))} />
                             </div>
                         </div>
-                        <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/40">
+                        <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                                <Label className="text-sm font-medium">Simple Passcodes</Label>
-                                <p className="text-xs text-muted-foreground">Allow repeated or sequential characters</p>
+                                <Label className="text-base">Simple Passcodes</Label>
+                                <p className="text-sm text-muted-foreground">Allow repeated or sequential characters (e.g. 1111 or 1234)</p>
                             </div>
                             <Switch checked={formData.allowSimple} onCheckedChange={(c) => updateField('allowSimple', c)} />
                         </div>

@@ -8,18 +8,27 @@ import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
 import { getErrorMessage } from '@/utils/errorUtils';
 import {
+    AppWindow,
+    Building2,
     CheckCircle2,
+    Cpu,
     Download,
-    FileText,
-    Globe,
+    Eye,
+    FileText, Globe,
+    Key,
+    LayoutDashboard,
+    Link2,
+    ListChecks,
     Lock,
+    Mail,
     MessagesSquare,
+    Network,
     Package,
-    RefreshCw,
-    Settings,
-    Shield,
-    Smartphone,
-    Wifi
+    Palette,
+    RefreshCw, Settings, Shield,
+    ShieldAlert,
+    Sliders,
+    Smartphone, Wifi
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BooleanStatus, InfoRow } from './DeviceOverviewTab';
@@ -32,7 +41,7 @@ interface DeviceEffectiveProfileTabProps {
 export function DeviceEffectiveProfileTab({ platform, id }: DeviceEffectiveProfileTabProps) {
     const { toast } = useToast();
     const [effectiveProfile, setEffectiveProfile] = useState<any>(null);
-    const [selectedEffectivePolicy, setSelectedEffectivePolicy] = useState<{ type: string, data: any } | null>(null);
+    const [selectedEffectivePolicy, setSelectedEffectivePolicy] = useState<{ type: string, data: any, displayInfo?: any } | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -82,19 +91,52 @@ export function DeviceEffectiveProfileTab({ platform, id }: DeviceEffectiveProfi
 
     const ep = effectiveProfile;
     const policyCount = [
-        ep.passCodePolicy ? 1 : 0,
-        ep.scepPolicy ? 1 : 0,
-        ep.mdmPolicy ? 1 : 0,
-        ep.wifiPolicy ? 1 : 0,
-        ep.lockScreenPolicy ? 1 : 0,
-        (ep.applicationPolicies?.length || 0),
-        (ep.webClipPolicies?.length || 0),
-        (ep.notificationPolicies?.length || 0),
-        (ep.rootCertPolicies?.length || 0),
-        (ep.pkcs12Policies?.length || 0),
-        (ep.pemPolicies?.length || 0),
+        ep.passCodePolicy ? 1 : 0, ep.scepPolicy ? 1 : 0, ep.mdmPolicy ? 1 : 0,
+        ep.wifiPolicy ? 1 : 0, ep.lockScreenPolicy ? 1 : 0,
+        (ep.applicationPolicies?.length || 0), (ep.webClipPolicies?.length || 0),
+        (ep.notificationPolicies?.length || 0), (ep.rootCertPolicies?.length || 0),
+        (ep.pkcs12Policies?.length || 0), (ep.pemPolicies?.length || 0),
         (ep.pkcs1Policies?.length || 0),
+        ep.mailPolicy ? 1 : 0, ep.acmePolicy ? 1 : 0, ep.iosRelayPolicy ? 1 : 0,
+        ep.iosGlobalHttpProxyPolicy ? 1 : 0, ep.iosWebContentFilterPolicy ? 1 : 0,
+        ep.iosVpnPolicy ? 1 : 0, ep.iosPerDomainVpnPolicy ? 1 : 0,
+        ep.iosPerAppVpnPolicy ? 1 : 0, ep.iosHomeScreenLayoutPolicy ? 1 : 0,
+        ep.iosAppLockPolicy ? 1 : 0, ep.iosDeviceRestrictionsPolicy ? 1 : 0,
+        ep.iosManagedDomainsPolicy ? 1 : 0, ep.iosCertificateTransparencyPolicy ? 1 : 0,
+        ep.iosCertificatePreferencePolicy ? 1 : 0, ep.iosDeviceSettingsPolicy ? 1 : 0,
+        ep.commonSettingsPolicy ? 1 : 0, ep.deviceThemePolicy ? 1 : 0,
+        ep.enrollmentPolicy ? 1 : 0, (ep.webApplicationPolicies?.length || 0),
+        ep.restrictions ? 1 : 0,
     ].reduce((a, b) => a + b, 0);
+
+    const genericPolicies = [
+        { key: 'mailPolicy', title: 'Mail Policy', icon: Mail, color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-t-rose-500' },
+        { key: 'acmePolicy', title: 'ACME Configuration', icon: Key, color: 'text-yellow-600', bg: 'bg-yellow-500/10', border: 'border-t-yellow-600' },
+        { key: 'iosRelayPolicy', title: 'Relay Policy', icon: Link2, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-t-blue-400' },
+        { key: 'iosGlobalHttpProxyPolicy', title: 'Global HTTP Proxy', icon: Globe, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-t-indigo-500' },
+        { key: 'iosWebContentFilterPolicy', title: 'Web Content Filter', icon: FileText, color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-t-orange-400' },
+        { key: 'iosVpnPolicy', title: 'VPN Policy', icon: Network, color: 'text-violet-500', bg: 'bg-violet-500/10', border: 'border-t-violet-500' },
+        { key: 'iosPerDomainVpnPolicy', title: 'Per-Domain VPN', icon: Network, color: 'text-violet-600', bg: 'bg-violet-600/10', border: 'border-t-violet-600' },
+        { key: 'iosPerAppVpnPolicy', title: 'Per-App VPN', icon: Network, color: 'text-violet-700', bg: 'bg-violet-700/10', border: 'border-t-violet-700' },
+        { key: 'iosHomeScreenLayoutPolicy', title: 'Home Screen Layout', icon: LayoutDashboard, color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-t-emerald-500' },
+        { key: 'iosAppLockPolicy', title: 'App Lock Policy', icon: AppWindow, color: 'text-pink-500', bg: 'bg-pink-500/10', border: 'border-t-pink-500' },
+        { key: 'iosDeviceRestrictionsPolicy', title: 'Device Restrictions', icon: Sliders, color: 'text-slate-600', bg: 'bg-slate-600/10', border: 'border-t-slate-600' },
+        { key: 'iosManagedDomainsPolicy', title: 'Managed Domains', icon: Building2, color: 'text-blue-600', bg: 'bg-blue-600/10', border: 'border-t-blue-600' },
+        { key: 'iosCertificateTransparencyPolicy', title: 'Certificate Transparency', icon: Eye, color: 'text-teal-500', bg: 'bg-teal-500/10', border: 'border-t-teal-500' },
+        { key: 'iosCertificatePreferencePolicy', title: 'Certificate Preference', icon: FileText, color: 'text-teal-600', bg: 'bg-teal-600/10', border: 'border-t-teal-600' },
+        { key: 'iosDeviceSettingsPolicy', title: 'Device Settings', icon: Cpu, color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-t-slate-500' },
+        { key: 'commonSettingsPolicy', title: 'Common Settings', icon: Sliders, color: 'text-zinc-600', bg: 'bg-zinc-600/10', border: 'border-t-zinc-600' },
+        { key: 'deviceThemePolicy', title: 'Device Theme', icon: Palette, color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10', border: 'border-t-fuchsia-500' },
+        { key: 'enrollmentPolicy', title: 'Enrollment Policy', icon: ListChecks, color: 'text-sky-500', bg: 'bg-sky-500/10', border: 'border-t-sky-500' },
+        { key: 'restrictions', title: 'Android Restrictions', icon: ShieldAlert, color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-t-red-500' }
+    ];
+
+    const renderGenericValue = (val: any): React.ReactNode => {
+        if (typeof val === 'boolean') return val ? 'Enabled' : 'Disabled';
+        if (Array.isArray(val)) return `Array (${val.length} items)`;
+        if (typeof val === 'object' && val !== null) return '{...}';
+        return String(val);
+    };
 
     return (
         <div className="space-y-6">
@@ -295,6 +337,43 @@ export function DeviceEffectiveProfileTab({ platform, id }: DeviceEffectiveProfi
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Web Application Policies */}
+                {Array.isArray(ep.webApplicationPolicies) && ep.webApplicationPolicies.length > 0 && (
+                    <Card className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-orange-600" onClick={() => setSelectedEffectivePolicy({ type: 'webApplicationPolicies', data: ep.webApplicationPolicies })}>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex items-center gap-2 text-orange-600">
+                                <div className="p-1.5 rounded-lg bg-orange-600/10"><Globe className="w-4 h-4 text-orange-600" /></div>
+                                Web App Policies
+                            </CardTitle>
+                            <p className="text-xs text-muted-foreground">{ep.webApplicationPolicies.length} web app(s)</p>
+                        </CardHeader>
+                        <CardContent>
+                            <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">{ep.webApplicationPolicies.length} Active</Badge>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Generic Cards Implementation */}
+                {genericPolicies.map(gp => {
+                    const data = ep[gp.key];
+                    if (!data) return null;
+                    const Icon = gp.icon;
+                    return (
+                        <Card key={gp.key} className={`cursor-pointer hover:shadow-lg transition-all border-t-4 ${gp.border}`} onClick={() => setSelectedEffectivePolicy({ type: gp.key, data, displayInfo: gp })}>
+                            <CardHeader className="pb-2">
+                                <CardTitle className={`text-base flex items-center gap-2 ${gp.color}`}>
+                                    <div className={`p-1.5 rounded-lg ${gp.bg}`}><Icon className={`w-4 h-4 ${gp.color}`} /></div>
+                                    {gp.title}
+                                </CardTitle>
+                                <p className="text-xs text-muted-foreground">Configured</p>
+                            </CardHeader>
+                            <CardContent>
+                                <Badge className="bg-success/10 text-success hover:bg-success/20 border-success/30">Active</Badge>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </div>
 
             {/* View-Only Policy Dialog */}
@@ -310,9 +389,10 @@ export function DeviceEffectiveProfileTab({ platform, id }: DeviceEffectiveProfi
                                                 selectedEffectivePolicy?.type === 'lockscreen' ? 'bg-pink-500/10' :
                                                     selectedEffectivePolicy?.type === 'applications' ? 'bg-emerald-500/10' :
                                                         selectedEffectivePolicy?.type === 'webclips' ? 'bg-orange-500/10' :
-                                                            selectedEffectivePolicy?.type === 'notifications' ? 'bg-rose-500/10' :
-                                                                selectedEffectivePolicy?.type === 'certificates' ? 'bg-teal-500/10' :
-                                                                    'bg-primary/10'
+                                                            selectedEffectivePolicy?.type === 'webApplicationPolicies' ? 'bg-orange-600/10' :
+                                                                selectedEffectivePolicy?.type === 'notifications' ? 'bg-rose-500/10' :
+                                                                    selectedEffectivePolicy?.type === 'certificates' ? 'bg-teal-500/10' :
+                                                                        (selectedEffectivePolicy as any)?.displayInfo?.bg || 'bg-primary/10'
                             )}>
                                 {selectedEffectivePolicy?.type === 'passcode' && <Lock className="w-5 h-5 text-amber-500" />}
                                 {selectedEffectivePolicy?.type === 'scep' && <Shield className="w-5 h-5 text-cyan-500" />}
@@ -321,8 +401,13 @@ export function DeviceEffectiveProfileTab({ platform, id }: DeviceEffectiveProfi
                                 {selectedEffectivePolicy?.type === 'lockscreen' && <Smartphone className="w-5 h-5 text-pink-500" />}
                                 {selectedEffectivePolicy?.type === 'applications' && <Download className="w-5 h-5 text-emerald-500" />}
                                 {selectedEffectivePolicy?.type === 'webclips' && <Globe className="w-5 h-5 text-orange-500" />}
+                                {selectedEffectivePolicy?.type === 'webApplicationPolicies' && <Globe className="w-5 h-5 text-orange-600" />}
                                 {selectedEffectivePolicy?.type === 'notifications' && <MessagesSquare className="w-5 h-5 text-rose-500" />}
                                 {selectedEffectivePolicy?.type === 'certificates' && <FileText className="w-5 h-5 text-teal-500" />}
+                                {(selectedEffectivePolicy as any)?.displayInfo && (() => {
+                                    const IconInfo = (selectedEffectivePolicy as any).displayInfo.icon;
+                                    return <IconInfo className={`w-5 h-5 ${(selectedEffectivePolicy as any).displayInfo.color}`} />;
+                                })()}
                             </div>
                             <div>
                                 <DialogTitle className="text-lg">
@@ -333,8 +418,10 @@ export function DeviceEffectiveProfileTab({ platform, id }: DeviceEffectiveProfi
                                     {selectedEffectivePolicy?.type === 'lockscreen' && 'Lock Screen Message'}
                                     {selectedEffectivePolicy?.type === 'applications' && 'Application Policies'}
                                     {selectedEffectivePolicy?.type === 'webclips' && 'Web Clips'}
+                                    {selectedEffectivePolicy?.type === 'webApplicationPolicies' && 'Web Application Policies'}
                                     {selectedEffectivePolicy?.type === 'notifications' && 'Notification Settings'}
                                     {selectedEffectivePolicy?.type === 'certificates' && 'Certificate Policies'}
+                                    {(selectedEffectivePolicy as any)?.displayInfo && (selectedEffectivePolicy as any).displayInfo.title}
                                 </DialogTitle>
                                 <DialogDescription>View-only policy configuration from effective profile</DialogDescription>
                             </div>
@@ -501,6 +588,52 @@ export function DeviceEffectiveProfileTab({ platform, id }: DeviceEffectiveProfi
                                         {d.pemPolicies?.length > 0 && <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">PEM: {d.pemPolicies.length}</Badge>}
                                         {d.pkcs1Policies?.length > 0 && <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">PKCS1: {d.pkcs1Policies.length}</Badge>}
                                     </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Android Web Applications */}
+                        {selectedEffectivePolicy?.type === 'webApplicationPolicies' && (() => {
+                            const apps = selectedEffectivePolicy.data;
+                            return (
+                                <div className="space-y-3">
+                                    {apps.map((app: any, idx: number) => (
+                                        <div key={idx} className="p-3 border rounded-xl bg-card space-y-2">
+                                            <InfoRow label="App Name" value={app.webAppName} />
+                                            <InfoRow label="App ID" value={app.webAppId} />
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+
+                        {/* Generic Policies Viewer */}
+                        {(selectedEffectivePolicy as any)?.displayInfo && (() => {
+                            const d = selectedEffectivePolicy.data;
+                            return (
+                                <div className="space-y-3">
+                                    {Object.entries(d).map(([key, value]) => {
+                                        if (key === 'policyType' || key === 'id' || value === undefined || value === null) return null;
+                                        if (typeof value === 'boolean') {
+                                            return <BooleanStatus key={key} label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} value={value} />;
+                                        } else if (typeof value === 'object') {
+                                            return (
+                                                <div key={key} className="p-3 border rounded-xl bg-card space-y-2 mb-2">
+                                                    <span className="text-sm font-semibold">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</span>
+                                                    <div className="pl-3 border-l-2 mt-2 space-y-1">
+                                                        {Object.entries(value).map(([subKey, subVal]) => (
+                                                            <div key={subKey} className="text-xs flex items-center justify-between py-1">
+                                                                <span className="text-muted-foreground mr-2">{subKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</span>
+                                                                <span className="font-medium">{renderGenericValue(subVal)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        } else {
+                                            return <InfoRow key={key} label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} value={String(value)} />;
+                                        }
+                                    })}
                                 </div>
                             );
                         })()}

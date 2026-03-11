@@ -1,5 +1,5 @@
+import { GeofenceService } from "@/api/services/geofence";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Button } from "@/components/ui/button";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,40 +10,60 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Card,
-    CardContent
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Column, DataTable } from "@/components/ui/data-table";
 import {
     DropdownMenuItem,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { mockGeofences } from "@/data/mockGeofences";
 import { Geofence } from "@/types/models";
-import { DataTable, Column } from "@/components/ui/data-table";
-import { Circle, Hexagon, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Circle, Hexagon, MapPin, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Geofences = () => {
-    const [geofences, setGeofences] = useState<Geofence[]>(mockGeofences);
+    const [geofences, setGeofences] = useState<Geofence[]>([]);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const { t } = useLanguage();
     const { toast } = useToast();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
+    const fetchGeofences = async () => {
+        setLoading(true);
+        try {
+            const res = await GeofenceService.getGeofences({ page: 0, size: 100 });
+            setGeofences(res.content || []);
+        } catch (error) {
+            console.error("Failed to fetch geofences", error);
+            toast({ title: "Error", description: "Failed to fetch geofences", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchGeofences();
+    }, []);
+
     const stats = {
-        total: mockGeofences.length,
-        circle: mockGeofences.filter(g => g.type === 'CIRCLE').length,
-        polygon: mockGeofences.filter(g => g.type === 'POLYGON').length,
+        total: geofences.length,
+        circle: geofences.filter(g => g.type === 'CIRCLE').length,
+        polygon: geofences.filter(g => g.type === 'POLYGON').length,
     };
 
     const handleDelete = async (id: string) => {
-        setGeofences(prev => prev.filter(g => g.id !== id));
-        toast({ title: t('geofences.toasts.success'), description: t('geofences.toasts.deleted') });
+        try {
+            await GeofenceService.deleteGeofence(id);
+            setGeofences(prev => prev.filter(g => g.id !== id));
+            toast({ title: t('geofences.toasts.success'), description: t('geofences.toasts.deleted') });
+        } catch (error) {
+            console.error("Failed to delete geofence", error);
+            toast({ title: "Error", description: "Failed to delete geofence", variant: "destructive" });
+        }
     };
 
     const openDeleteDialog = (id: string) => {
@@ -112,7 +132,7 @@ const Geofences = () => {
                 {t('geofences.actions.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
                 className="text-destructive"
                 onClick={() => openDeleteDialog(geofence.id!)}
             >
@@ -153,9 +173,15 @@ const Geofences = () => {
                             {t('geofences.subtitle')}
                         </p>
                     </div>
-                    <Button onClick={() => navigate("/geofences/new")} className="gap-2">
-                        <Plus className="h-4 w-4" /> {t('geofences.addGeofence')}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" className="gap-2" onClick={fetchGeofences} disabled={loading}>
+                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            Sync
+                        </Button>
+                        <Button onClick={() => navigate("/geofences/new")} className="gap-2">
+                            <Plus className="h-4 w-4" /> {t('geofences.addGeofence')}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Stats Cards */}
@@ -200,8 +226,9 @@ const Geofences = () => {
                     <DataTable
                         data={geofences}
                         columns={columns}
+                        loading={loading}
                         globalSearchPlaceholder={t('geofences.table.searchPlaceholder')}
-                        emptyMessage={t('geofences.table.emptyMessage')}
+                        emptyMessage={loading ? "Loading geofences..." : t('geofences.table.emptyMessage')}
                         rowActions={rowActions}
                         defaultPageSize={10}
                         showExport={true}

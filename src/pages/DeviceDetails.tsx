@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAssetUrl } from '@/config/env';
+import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 import { useToast } from '@/hooks/use-toast';
 import { usePlatformValidation } from '@/hooks/usePlatformValidation';
 import { cn } from '@/lib/utils';
@@ -44,7 +45,6 @@ import { getErrorMessage } from '@/utils/errorUtils';
 import {
     Activity,
     AppWindow,
-    ArrowLeft,
     HardDrive as Chip,
     Cpu,
     FileText,
@@ -63,8 +63,7 @@ import {
     User, UserMinus, Volume2
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 export default function DeviceDetails() {
     const { platform, id } = useParams<{ platform: string; id: string }>();
@@ -477,58 +476,58 @@ export default function DeviceDetails() {
 
                 {/* Tabs for detailed info */}
                 <Tabs defaultValue="overview" className="space-y-6">
-                    <TabsList className="bg-card border w-full h-auto p-1 flex flex-nowrap overflow-x-auto gap-2">
-                        <TabsTrigger value="overview" className="gap-2 px-4 py-2 w-full">
+                    <TabsList className="flex flex-wrap w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm gap-1 h-auto justify-start">
+                        <TabsTrigger value="overview" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                             <Activity className="w-4 h-4" /> Overview
                         </TabsTrigger>
 
                         {!isIos && (
-                            <TabsTrigger value="hardware" className="gap-2 px-4 py-2 w-full">
+                            <TabsTrigger value="hardware" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Chip className="w-4 h-4" /> Hardware
                             </TabsTrigger>
                         )}
 
                         {!isIos && (
-                            <TabsTrigger value="network" className="gap-2 px-4 py-2 w-full">
+                            <TabsTrigger value="network" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Network className="w-4 h-4" /> Network
                             </TabsTrigger>
                         )}
 
-                        <TabsTrigger value="applications" className="gap-2 px-4 py-2 w-full">
+                        <TabsTrigger value="applications" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                             <AppWindow className="w-4 h-4" /> Applications
                         </TabsTrigger>
 
-                        <TabsTrigger value="security" className="gap-2 px-4 py-2 w-full">
+                        <TabsTrigger value="security" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                             <Shield className="w-4 h-4" /> Security
                         </TabsTrigger>
 
-                        <TabsTrigger value="certificates" className="gap-2 px-4 py-2 w-full">
+                        <TabsTrigger value="certificates" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                             <FileText className="w-4 h-4" /> Certificates
                         </TabsTrigger>
 
                         {!isIos && (
-                            <TabsTrigger value="system" className="gap-2 px-4 py-2 w-full">
+                            <TabsTrigger value="system" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Cpu className="w-4 h-4" /> System
                             </TabsTrigger>
                         )}
 
                         {!isIos && (
-                            <TabsTrigger value="settings" className="gap-2 px-4 py-2 w-full">
+                            <TabsTrigger value="settings" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Settings className="w-4 h-4" /> Settings
                             </TabsTrigger>
                         )}
 
                         {!isIos && (
-                            <TabsTrigger value="user" className="gap-2 px-4 py-2 w-full">
+                            <TabsTrigger value="user" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <User className="w-4 h-4" /> User
                             </TabsTrigger>
                         )}
 
-                        <TabsTrigger value="remote-control" className="gap-2 px-4 py-2 w-full">
+                        <TabsTrigger value="remote-control" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                             <MonitorPlay className="w-4 h-4" /> Remote Control
                         </TabsTrigger>
 
-                        <TabsTrigger value="effective-profile" className="gap-2 px-4 py-2 w-full">
+                        <TabsTrigger value="effective-profile" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                             <FileText className="w-4 h-4" /> Effective Profile
                         </TabsTrigger>
                     </TabsList>
@@ -594,7 +593,7 @@ export default function DeviceDetails() {
                             </CardHeader>
                             <CardContent className="p-0 sm:p-2 sm:px-6 h-[800px]">
                                 <RemoteControlTab
-                                    roomToken="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzMwNDQ2MTAsImlkZW50aXR5IjoidXNlcjE4IiwiaXNzIjoiZGV2a2V5IiwibmFtZSI6InVzZXIxOCIsIm5iZiI6MTc3MjE4MDYxMCwic3ViIjoidXNlcjE4IiwidmlkZW8iOnsicm9vbSI6InRlc3Qtcm9vbSIsInJvb21Kb2luIjp0cnVlfX0.7ws79G-VwrvnlhhqfwH8VBRrjrIXq3zfYLXIKxISXAg"
+                                    roomToken="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODE3NzAwNTgsImlkZW50aXR5IjoidXNlcjIxIiwiaXNzIjoiZGV2a2V5IiwibmFtZSI6InVzZXIyMSIsIm5iZiI6MTc3MzEzMDA1OCwic3ViIjoidXNlcjIxIiwidmlkZW8iOnsicm9vbSI6InRlc3Qtcm9vbSIsInJvb21Kb2luIjp0cnVlfX0.ElGklZSSIK7mCi5VGFpTgjDtLDMj8DNnjqWWTT6Hgd8"
                                     serverUrl="wss://192.168.75.231/livekit/sfu/"
                                 />
                             </CardContent>
