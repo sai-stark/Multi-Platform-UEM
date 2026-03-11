@@ -1,11 +1,17 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Progress } from '@/components/ui/progress';
 
-const complianceData = [
-  { status: 'Compliant', count: 4820, percentage: 73.5, variant: 'success' as const },
-  { status: 'Non-Compliant', count: 1240, percentage: 18.9, variant: 'destructive' as const },
-  { status: 'Pending', count: 500, percentage: 7.6, variant: 'warning' as const },
-];
+interface ComplianceData {
+  status: string;
+  count: number;
+  percentage: number;
+  variant: 'success' | 'destructive' | 'warning';
+}
+
+interface ComplianceOverviewProps {
+  data: ComplianceData[];
+  totalCount: number;
+}
 
 const variantColors = {
   success: 'bg-success',
@@ -13,49 +19,57 @@ const variantColors = {
   warning: 'bg-warning',
 };
 
-export function ComplianceOverview() {
+export function ComplianceOverview({ data, totalCount }: ComplianceOverviewProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="panel">
+    <div className="panel flex flex-col h-[320px]">
       <div className="panel__header">
         <h3 className="panel__title">{t('dashboard.complianceOverview')}</h3>
       </div>
-      <div className="panel__content">
-        <div className="space-y-5" role="list" aria-label="Compliance status breakdown">
-          {complianceData.map((item) => (
-            <div key={item.status} role="listitem">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-foreground">
-                  {item.status}
-                </span>
-                <span className="text-sm text-muted-foreground font-mono">
-                  {item.count.toLocaleString()} ({item.percentage}%)
-                </span>
-              </div>
-              <div className="relative">
-                <Progress 
-                  value={item.percentage} 
-                  className="h-3"
-                  aria-label={`${item.status}: ${item.percentage}%`}
-                />
-                {/* Custom colored indicator overlay */}
-                <div 
-                  className={`absolute top-0 left-0 h-3 rounded-full transition-all ${variantColors[item.variant]}`}
-                  style={{ width: `${item.percentage}%` }}
-                  aria-hidden="true"
-                />
-              </div>
+      <div className="panel__content flex-1 flex flex-col justify-center">
+        {totalCount === 0 ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground pb-8">
+            No compliance data available.
+          </div>
+        ) : (
+          <>
+            <div className="space-y-5 flex-1" role="list" aria-label="Compliance status breakdown">
+              {data.map((item) => (
+                <div key={item.status} role="listitem">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {item.status}
+                    </span>
+                    <span className="text-sm text-muted-foreground font-mono">
+                      {item.count.toLocaleString()} ({item.percentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Progress 
+                      value={item.percentage} 
+                      className="h-3"
+                      aria-label={`${item.status}: ${item.percentage.toFixed(1)}%`}
+                    />
+                    {/* Custom colored indicator overlay */}
+                    <div 
+                      className={`absolute top-0 left-0 h-3 rounded-full transition-all ${variantColors[item.variant]}`}
+                      style={{ width: `${item.percentage}%` }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Summary */}
-        <div className="mt-4 pt-3 border-t border-border">
-          <p className="text-sm text-muted-foreground">
-            Total devices: <span className="font-semibold text-foreground">6,560</span>
-          </p>
-        </div>
+            {/* Summary */}
+            <div className="mt-4 pt-3 border-t border-border shrink-0">
+              <p className="text-sm text-muted-foreground">
+                Total devices: <span className="font-semibold text-foreground">{totalCount.toLocaleString()}</span>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

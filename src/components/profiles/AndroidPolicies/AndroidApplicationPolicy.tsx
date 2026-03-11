@@ -302,7 +302,6 @@ export function AndroidApplicationPolicy({
         setChangedPolicies((prev) => [...prev, newPolicy]);
         setPolicies((prev) => [...prev, newPolicy]);
         setSelectedPolicyId(newPolicy.id);
-        setOpenAddModal(false);
         resetAddModalState();
     };
 

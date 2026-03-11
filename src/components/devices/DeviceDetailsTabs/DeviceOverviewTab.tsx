@@ -110,6 +110,68 @@ export const getBatteryColor = (level?: number) => {
     return 'text-success';
 };
 
+/** Returns gradient class + accent color for storage based on usage percent */
+const getStorageGradient = (percent: number) => {
+    if (percent >= 90) return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--warning))] via-[hsl(var(--destructive)/0.85)] to-[hsl(var(--destructive))]',
+        border: 'border-t-destructive',
+        text: 'text-destructive',
+        label: 'Critical',
+    };
+    if (percent >= 75) return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--warning)/0.7)] via-[hsl(var(--warning))] to-[hsl(var(--warning))]',
+        border: 'border-t-warning',
+        text: 'text-warning',
+        label: 'High',
+    };
+    if (percent >= 50) return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--success))] via-[hsl(var(--success)/0.8)] to-[hsl(var(--warning)/0.7)]',
+        border: 'border-t-warning',
+        text: 'text-warning',
+        label: 'Moderate',
+    };
+    return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--success)/0.7)] to-[hsl(var(--success))]',
+        border: 'border-t-success',
+        text: 'text-success',
+        label: 'Good',
+    };
+};
+
+/** Returns gradient class + accent color for battery based on charge level */
+const getBatteryGradient = (level: number) => {
+    if (level < 0) return {
+        indicator: '',
+        border: 'border-t-muted-foreground',
+        text: 'text-muted-foreground',
+        label: 'Unknown',
+    };
+    if (level <= 20) return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--destructive))] to-[hsl(var(--destructive)/0.8)]',
+        border: 'border-t-destructive',
+        text: 'text-destructive',
+        label: 'Critical',
+    };
+    if (level <= 50) return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--warning)/0.7)] via-[hsl(var(--warning))] to-[hsl(var(--warning))]',
+        border: 'border-t-warning',
+        text: 'text-warning',
+        label: 'Low',
+    };
+    if (level <= 75) return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--success)/0.6)] via-[hsl(var(--success)/0.8)] to-[hsl(var(--success))]',
+        border: 'border-t-success',
+        text: 'text-success',
+        label: 'Good',
+    };
+    return {
+        indicator: 'bg-gradient-to-r from-[hsl(var(--success)/0.8)] to-[hsl(var(--success))]',
+        border: 'border-t-success',
+        text: 'text-success',
+        label: 'Excellent',
+    };
+};
+
 interface DeviceOverviewTabProps {
     device: DeviceInfo;
 }
@@ -186,67 +248,66 @@ export function DeviceOverviewTab({ device }: DeviceOverviewTabProps) {
                 {/* Storage & Battery stacked in one column */}
                 <div className="col-span-1 flex flex-col gap-6">
                     {/* Storage */}
-                    <Card className="border-t-4 border-t-success flex-1">
-                        <CardHeader>
-                            <SectionHeader title="Storage" icon={Database} />
-                        </CardHeader>
-                        <CardContent>
-                            {(() => {
-                                const capacity = device.deviceCapacity || 0;
-                                const available = device.availableDeviceCapacity || 0;
-                                const used = capacity > 0 ? capacity - available : 0;
-                                const percent = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 0;
+                    {(() => {
+                        const capacity = device.deviceCapacity || 0;
+                        const available = device.availableDeviceCapacity || 0;
+                        const used = capacity > 0 ? capacity - available : 0;
+                        const percent = capacity > 0 ? Math.min(100, (used / capacity) * 100) : 0;
+                        const sg = getStorageGradient(percent);
 
-                                return (
-                                    <>
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 rounded-md bg-primary/10">
-                                                <Database className="w-5 h-5 text-primary" />
-                                            </div>
-                                            <span className="text-2xl font-bold">{used.toFixed(2)} GB</span>
-                                            <span className="text-sm text-muted-foreground">/ {capacity.toFixed(2)} GB</span>
+                        return (
+                            <Card className={cn("border-t-4 flex-1", sg.border)}>
+                                <CardHeader>
+                                    <SectionHeader title="Storage" icon={Database} />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="p-2 rounded-md bg-primary/10">
+                                            <Database className="w-5 h-5 text-primary" />
                                         </div>
-                                        <Progress value={percent} className="h-2 mb-3" />
-                                        <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>Used: {percent.toFixed(1)}%</span>
-                                            <span>Free: {available.toFixed(2)} GB</span>
-                                        </div>
-                                    </>
-                                );
-                            })()}
-                        </CardContent>
-                    </Card>
+                                        <span className="text-2xl font-bold">{used.toFixed(2)} GB</span>
+                                        <span className="text-sm text-muted-foreground">/ {capacity.toFixed(2)} GB</span>
+                                    </div>
+                                    <Progress value={percent} className="h-2.5 mb-3 rounded-full" indicatorClassName={cn(sg.indicator, 'rounded-full')} />
+                                    <div className="flex justify-between text-xs">
+                                        <span className={sg.text}>Used: {percent.toFixed(1)}%</span>
+                                        <span className="text-muted-foreground">Free: {available.toFixed(2)} GB</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })()}
 
                     {/* Battery */}
-                    <Card className="border-t-4 border-t-warning flex-1">
-                        <CardHeader>
-                            <SectionHeader title="Battery" icon={Battery} />
-                        </CardHeader>
-                        <CardContent>
-                            {(() => {
-                                const raw = device.batteryLevel;
-                                const normalized = (raw !== undefined && raw !== null && raw >= 0)
-                                    ? (raw <= 1 ? Number((raw * 100).toFixed(2)) : Number(raw.toFixed(2)))
-                                    : -1;
-                                return (
-                                    <>
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 rounded-md bg-warning/10">
-                                                <Battery className="w-5 h-5 text-warning" />
-                                            </div>
-                                            <div className={cn("text-2xl font-bold", getBatteryColor(normalized))}>
-                                                {normalized >= 0 ? normalized : '-'}%
-                                            </div>
+                    {(() => {
+                        const raw = device.batteryLevel;
+                        const normalized = (raw !== undefined && raw !== null && raw >= 0)
+                            ? (raw <= 1 ? Number((raw * 100).toFixed(2)) : Number(raw.toFixed(2)))
+                            : -1;
+                        const bg = getBatteryGradient(normalized);
+
+                        return (
+                            <Card className={cn("border-t-4 flex-1", bg.border)}>
+                                <CardHeader>
+                                    <SectionHeader title="Battery" icon={Battery} />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className={cn("p-2 rounded-md", normalized > 50 ? 'bg-success/10' : normalized > 20 ? 'bg-warning/10' : 'bg-destructive/10')}>
+                                            <Battery className={cn("w-5 h-5", bg.text)} />
                                         </div>
-                                        <Progress value={normalized >= 0 ? normalized : 0} className="h-2 mb-3" />
-                                        <div className="text-xs text-muted-foreground">
-                                            {normalized >= 0 ? (normalized > 50 ? 'Good' : normalized > 20 ? 'Low' : 'Critical') : 'Unknown'}
+                                        <div className={cn("text-2xl font-bold", bg.text)}>
+                                            {normalized >= 0 ? normalized : '-'}%
                                         </div>
-                                    </>
-                                );
-                            })()}
-                        </CardContent>
-                    </Card>
+                                    </div>
+                                    <Progress value={normalized >= 0 ? normalized : 0} className="h-2.5 mb-3 rounded-full" indicatorClassName={cn(bg.indicator, 'rounded-full')} />
+                                    <div className={cn("text-xs font-medium", bg.text)}>
+                                        {bg.label}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })()}
                 </div>
 
                 {/* Status & Compliance */}
@@ -270,58 +331,63 @@ export function DeviceOverviewTab({ device }: DeviceOverviewTabProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Battery Status */}
-            <Card>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Battery className="w-4 h-4" /> Battery
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {(() => {
-                        const raw = device.batteryLevel;
-                        const normalized = (raw !== undefined && raw !== null && raw >= 0)
-                            ? (raw <= 1 ? Math.round(raw * 100) : Math.round(raw))
-                            : -1;
-                        return (
-                            <>
-                                <div className="flex items-center gap-4">
-                                    <div className={cn("text-4xl font-bold", getBatteryColor(normalized))}>
-                                        {normalized >= 0 ? normalized : '-'}%
-                                    </div>
-                                    <div className="space-y-1">
-                                        {device.isBatteryCharging && (
-                                            <Badge variant="outline" className="gap-1 text-success bg-success/10 border-success/30">
-                                                <BatteryCharging className="w-3 h-3" /> Charging
-                                            </Badge>
-                                        )}
-                                    </div>
+            {(() => {
+                const raw = device.batteryLevel;
+                const normalized = (raw !== undefined && raw !== null && raw >= 0)
+                    ? (raw <= 1 ? Math.round(raw * 100) : Math.round(raw))
+                    : -1;
+                const bg = getBatteryGradient(normalized);
+                return (
+                    <Card className={cn("border-t-4", bg.border)}>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Battery className={cn("w-4 h-4", bg.text)} /> Battery
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-4">
+                                <div className={cn("text-4xl font-bold", bg.text)}>
+                                    {normalized >= 0 ? normalized : '-'}%
                                 </div>
-                                <Progress value={normalized >= 0 ? normalized : 0} className="mt-4 h-2" />
-                            </>
-                        );
-                    })()}
-                </CardContent>
-            </Card>
+                                <div className="space-y-1">
+                                    {device.isBatteryCharging && (
+                                        <Badge variant="outline" className="gap-1 text-success bg-success/10 border-success/30">
+                                            <BatteryCharging className="w-3 h-3" /> Charging
+                                        </Badge>
+                                    )}
+                                    <span className={cn("text-xs font-medium block", bg.text)}>{bg.label}</span>
+                                </div>
+                            </div>
+                            <Progress value={normalized >= 0 ? normalized : 0} className="mt-4 h-2.5 rounded-full" indicatorClassName={cn(bg.indicator, 'rounded-full')} />
+                        </CardContent>
+                    </Card>
+                );
+            })()}
 
             {/* Storage */}
-            <Card>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Database className="w-4 h-4" /> Storage
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex justify-between items-baseline mb-2">
-                        <span className="text-2xl font-bold">{formatBytes(device.storageUsed || device.usedStorage)}</span>
-                        <span className="text-sm text-muted-foreground">of {formatBytes(device.storageCapacity || device.totalStorage || device.deviceCapacity)}</span>
-                    </div>
-                    <Progress value={storagePercent} className="h-2 mb-2" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Used: {storagePercent.toFixed(2)}%</span>
-                        <span>Free: {formatBytes(device.freeStorage || (device.availableDeviceCapacity))}</span>
-                    </div>
-                </CardContent>
-            </Card>
+            {(() => {
+                const sg = getStorageGradient(storagePercent);
+                return (
+                    <Card className={cn("border-t-4", sg.border)}>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Database className={cn("w-4 h-4", sg.text)} /> Storage
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex justify-between items-baseline mb-2">
+                                <span className="text-2xl font-bold">{formatBytes(device.storageUsed || device.usedStorage)}</span>
+                                <span className="text-sm text-muted-foreground">of {formatBytes(device.storageCapacity || device.totalStorage || device.deviceCapacity)}</span>
+                            </div>
+                            <Progress value={storagePercent} className="h-2.5 mb-2 rounded-full" indicatorClassName={cn(sg.indicator, 'rounded-full')} />
+                            <div className="flex justify-between text-xs">
+                                <span className={sg.text}>Used: {storagePercent.toFixed(2)}% — {sg.label}</span>
+                                <span className="text-muted-foreground">Free: {formatBytes(device.freeStorage || (device.availableDeviceCapacity))}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            })()}
 
             {/* RAM (Android mainly) */}
             {(device.ramCapacity || device.totalRam) && (

@@ -30,6 +30,23 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/recharts')) {
+              return 'recharts';
+            }
+            if (id.includes('node_modules/leaflet') || id.includes('node_modules/react-leaflet')) {
+              return 'leaflet';
+            }
+            if (id.includes('node_modules/framer-motion')) {
+              return 'framer-motion';
+            }
+          },
+        },
+      },
+    },
     // Make VITE_ prefixed env vars available to the app
     define: {
       'import.meta.env.VITE_DEPLOYMENT_PREFIX_PATH': JSON.stringify(env.VITE_DEPLOYMENT_PREFIX_PATH),

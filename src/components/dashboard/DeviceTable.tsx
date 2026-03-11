@@ -2,23 +2,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Smartphone, Laptop, Server } from 'lucide-react';
 
-interface Device {
+export interface Device {
   id: string;
   name: string;
   platform: 'Android' | 'iOS' | 'Windows' | 'macOS' | 'Linux';
   owner: string;
   lastSync: string;
   complianceStatus: 'compliant' | 'non-compliant' | 'pending';
+  status: 'online' | 'offline' | 'inactive';
 }
-
-const mockDevices: Device[] = [
-  { id: '1', name: 'CDOT-AND-001', platform: 'Android', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 14:32', complianceStatus: 'compliant' },
-  { id: '2', name: 'CDOT-IOS-042', platform: 'iOS', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 13:45', complianceStatus: 'compliant' },
-  { id: '3', name: 'CDOT-WIN-103', platform: 'Windows', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 12:18', complianceStatus: 'non-compliant' },
-  { id: '4', name: 'CDOT-MAC-067', platform: 'macOS', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-15 11:02', complianceStatus: 'pending' },
-  { id: '5', name: 'CDOT-LNX-021', platform: 'Linux', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-14 23:55', complianceStatus: 'compliant' },
-  { id: '6', name: 'CDOT-AND-088', platform: 'Android', owner: 'mdmadmin@cdot.in', lastSync: '2024-01-14 22:30', complianceStatus: 'non-compliant' },
-];
 
 const platformIcons = {
   Android: Smartphone,
@@ -40,7 +32,12 @@ const complianceLabels = {
   pending: 'Pending',
 };
 
-export function DeviceTable() {
+interface DeviceTableProps {
+  devices: Device[];
+  totalDevicesCount: number;
+}
+
+export function DeviceTable({ devices, totalDevicesCount }: DeviceTableProps) {
   const { t } = useLanguage();
 
   return (
@@ -48,7 +45,7 @@ export function DeviceTable() {
       <div className="panel__header flex items-center justify-between">
         <h3 className="panel__title">{t('dashboard.recentActivity')}</h3>
         <span className="text-sm text-muted-foreground">
-          Showing {mockDevices.length} of 6,560 devices
+          Showing {devices.length} of {totalDevicesCount.toLocaleString()} devices
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -67,7 +64,7 @@ export function DeviceTable() {
             </tr>
           </thead>
           <tbody>
-            {mockDevices.map((device) => {
+            {devices.map((device) => {
               const PlatformIcon = platformIcons[device.platform];
               return (
                 <tr 
@@ -105,6 +102,13 @@ export function DeviceTable() {
                 </tr>
               );
             })}
+            {devices.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No devices found matching the selected filters.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

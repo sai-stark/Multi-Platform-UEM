@@ -52,7 +52,7 @@ import {
     Shield,
     Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface PasscodePolicyProps {
     platform: Platform;
@@ -62,6 +62,24 @@ interface PasscodePolicyProps {
     onSave: () => void;
     onCancel: () => void;
 }
+
+// ── Helpers: seconds ↔ hours/minutes/seconds ──
+const secondsToHms = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return { h, m, s };
+};
+const hmsToSeconds = (h: number, m: number, s: number) => h * 3600 + m * 60 + s;
+const formatDuration = (totalSeconds: number) => {
+    if (totalSeconds === 0) return null; // never expires
+    const { h, m, s } = secondsToHms(totalSeconds);
+    const parts: string[] = [];
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}m`);
+    if (s > 0) parts.push(`${s}s`);
+    return parts.join(' ') || '0s';
+};
 
 export function PasscodePolicy({ platform, profileId, managementMode, initialData, onSave, onCancel }: PasscodePolicyProps) {
     const { t } = useLanguage();
@@ -133,15 +151,38 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
     const [enforcementEnabled, setEnforcementEnabled] = useState<boolean>(
         !!initialData?.enforcement
     );
+    const [blockImmediate, setBlockImmediate] = useState<boolean>(
+        (initialData?.enforcement?.blockAfterDays ?? 0) === 0
+    );
     const [blockAfterDays, setBlockAfterDays] = useState<number>(
-        initialData?.enforcement?.blockAfterDays ?? 0
+        Math.max(initialData?.enforcement?.blockAfterDays ?? 0, 1)
+    );
+    const [wipeImmediate, setWipeImmediate] = useState<boolean>(
+        (initialData?.enforcement?.wipeAfterDays ?? 0) === 0
     );
     const [wipeAfterDays, setWipeAfterDays] = useState<number>(
-        initialData?.enforcement?.wipeAfterDays ?? 0
+        Math.max(initialData?.enforcement?.wipeAfterDays ?? 0, 1)
     );
     const [preserveFrp, setPreserveFrp] = useState<boolean>(
         dedicatedData?.enforcement?.preserveFrp ?? false
     );
+
+    // Compute effective days (0 = immediate, otherwise the input value)
+    const effectiveBlockDays = blockImmediate ? 0 : blockAfterDays;
+    const effectiveWipeDays = wipeImmediate ? 0 : wipeAfterDays;
+
+    // Inline validation for enforcement
+    const enforcementWarning = useMemo(() => {
+        if (!enforcementEnabled) return '';
+        if (!wipeImmediate && !blockImmediate && blockAfterDays >= wipeAfterDays) {
+            return t('passcodePolicy.enforcementWarning');
+        }
+        if (!wipeImmediate && blockImmediate) {
+            // block immediate + wipe after days is fine
+            return '';
+        }
+        return '';
+    }, [enforcementEnabled, blockImmediate, wipeImmediate, blockAfterDays, wipeAfterDays, t]);
 
     const buildPolicy = (): AndroidPasscodePolicyType => {
         if (isDedicated) {
@@ -154,7 +195,7 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                 devicePolicyType: 'AndroidDedicatedDevicePasscodePolicy',
             };
             if (enforcementEnabled) {
-                policy.enforcement = { blockAfterDays, wipeAfterDays, preserveFrp };
+                policy.enforcement = { blockAfterDays: effectiveBlockDays, wipeAfterDays: effectiveWipeDays, preserveFrp };
             }
             return policy;
         }
@@ -172,7 +213,7 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
             devicePolicyType: 'AndroidPersonalDevicesPasscodePolicy',
         };
         if (enforcementEnabled) {
-            policy.enforcement = { blockAfterDays, wipeAfterDays };
+            policy.enforcement = { blockAfterDays: effectiveBlockDays, wipeAfterDays: effectiveWipeDays };
         }
         if (enableDevicePolicy) {
             policy.device = {
@@ -187,8 +228,8 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
     };
 
     const validatePolicy = (): { isValid: boolean; errorMessage: string } => {
-        if (enforcementEnabled && wipeAfterDays > 0 && blockAfterDays >= wipeAfterDays) {
-            return { isValid: false, errorMessage: t('passcodePolicy.validationError') };
+        if (enforcementEnabled && !wipeImmediate && !blockImmediate && blockAfterDays >= wipeAfterDays) {
+            return { isValid: false, errorMessage: t('passcodePolicy.enforcementWarning') };
         }
         return { isValid: true, errorMessage: '' };
     };
@@ -198,7 +239,11 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
 
         const validation = validatePolicy();
         if (!validation.isValid) {
-            alert(validation.errorMessage);
+            toast({
+                title: t('common.error'),
+                description: validation.errorMessage,
+                variant: 'destructive',
+            });
             return;
         }
 
@@ -213,7 +258,7 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
             }
             onSave();
         } catch (error) {
-            console.error('Failed to save passcode policy:', error);
+            if (import.meta.env.DEV) console.error('Failed to save passcode policy:', error);
             toast({
                 title: t('common.error'),
                 description: getErrorMessage(error, t('passcodePolicy.saveFailed')),
@@ -230,7 +275,7 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
             await policyAPI.deletePasscodePolicy(platform, profileId);
             onSave();
         } catch (error) {
-            console.error('Failed to delete passcode policy:', error);
+            if (import.meta.env.DEV) console.error('Failed to delete passcode policy:', error);
             toast({
                 title: t('common.error'),
                 description: getErrorMessage(error, t('passcodePolicy.deleteFailed')),
@@ -326,6 +371,19 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                     </CardContent>
                 </Card>
 
+                {/* Password Expiry Card */}
+                <Card className="border-l-4 border-l-amber-500">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Clock className="w-5 h-5 text-amber-500" />
+                            <span className="font-medium">{t('passcodePolicy.passwordExpiry')}</span>
+                        </div>
+                        <Badge variant="secondary">
+                            {formatDuration(isDedicated ? deviceChangeAfterSeconds : workChangeAfterSeconds) ?? t('passcodePolicy.neverExpiresLabel')}
+                        </Badge>
+                    </CardContent>
+                </Card>
+
                 {!isDedicated && (
                     <Card className={`border-l-4 ${workSeparateLock ? 'border-l-green-500' : 'border-l-gray-300'}`}>
                         <CardContent className="p-4">
@@ -348,8 +406,8 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                                 <span className="font-medium">{t('passcodePolicy.enforcement')}</span>
                             </div>
                             <div className="text-sm space-y-1">
-                                <p>{t('passcodePolicy.block')}: {blockAfterDays === 0 ? t('passcodePolicy.immediately') : `${blockAfterDays} ${t('passcodePolicy.days')}`}</p>
-                                <p>{t('passcodePolicy.wipe')}: {wipeAfterDays === 0 ? t('passcodePolicy.immediately') : `${wipeAfterDays} ${t('passcodePolicy.days')}`}</p>
+                                <p>{t('passcodePolicy.block')}: {effectiveBlockDays === 0 ? t('passcodePolicy.immediately') : `${effectiveBlockDays} ${t('passcodePolicy.days')}`}</p>
+                                <p>{t('passcodePolicy.wipe')}: {effectiveWipeDays === 0 ? t('passcodePolicy.immediately') : `${effectiveWipeDays} ${t('passcodePolicy.days')}`}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -479,7 +537,7 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                                 />
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 md:col-span-2">
                                 <Label className="flex items-center gap-2">
                                     <Clock className="h-4 w-4" />
                                     {t('passcodePolicy.passwordExpiry')}
@@ -492,13 +550,49 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                                         </TooltipContent>
                                     </Tooltip>
                                 </Label>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={deviceChangeAfterSeconds}
-                                    onChange={(e) => setDeviceChangeAfterSeconds(Number(e.target.value) || 0)}
-                                    placeholder={t('passcodePolicy.neverExpires')}
-                                />
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">{t('passcodePolicy.hours')}</Label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            value={secondsToHms(deviceChangeAfterSeconds).h}
+                                            onChange={(e) => {
+                                                const cur = secondsToHms(deviceChangeAfterSeconds);
+                                                setDeviceChangeAfterSeconds(hmsToSeconds(Number(e.target.value) || 0, cur.m, cur.s));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">{t('passcodePolicy.minutes')}</Label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            max={59}
+                                            value={secondsToHms(deviceChangeAfterSeconds).m}
+                                            onChange={(e) => {
+                                                const cur = secondsToHms(deviceChangeAfterSeconds);
+                                                setDeviceChangeAfterSeconds(hmsToSeconds(cur.h, Number(e.target.value) || 0, cur.s));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">{t('passcodePolicy.seconds')}</Label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            max={59}
+                                            value={secondsToHms(deviceChangeAfterSeconds).s}
+                                            onChange={(e) => {
+                                                const cur = secondsToHms(deviceChangeAfterSeconds);
+                                                setDeviceChangeAfterSeconds(hmsToSeconds(cur.h, cur.m, Number(e.target.value) || 0));
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {deviceChangeAfterSeconds === 0 && (
+                                    <p className="text-xs text-muted-foreground">{t('passcodePolicy.neverExpiresLabel')}</p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -607,7 +701,7 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                                 />
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 md:col-span-2">
                                 <Label className="flex items-center gap-2">
                                     <Clock className="h-4 w-4" />
                                     {t('passcodePolicy.passwordExpiry')}
@@ -620,13 +714,49 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                                         </TooltipContent>
                                     </Tooltip>
                                 </Label>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={workChangeAfterSeconds}
-                                    onChange={(e) => setWorkChangeAfterSeconds(Number(e.target.value) || 0)}
-                                    placeholder={t('passcodePolicy.neverExpires')}
-                                />
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">{t('passcodePolicy.hours')}</Label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            value={secondsToHms(workChangeAfterSeconds).h}
+                                            onChange={(e) => {
+                                                const cur = secondsToHms(workChangeAfterSeconds);
+                                                setWorkChangeAfterSeconds(hmsToSeconds(Number(e.target.value) || 0, cur.m, cur.s));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">{t('passcodePolicy.minutes')}</Label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            max={59}
+                                            value={secondsToHms(workChangeAfterSeconds).m}
+                                            onChange={(e) => {
+                                                const cur = secondsToHms(workChangeAfterSeconds);
+                                                setWorkChangeAfterSeconds(hmsToSeconds(cur.h, Number(e.target.value) || 0, cur.s));
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">{t('passcodePolicy.seconds')}</Label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            max={59}
+                                            value={secondsToHms(workChangeAfterSeconds).s}
+                                            onChange={(e) => {
+                                                const cur = secondsToHms(workChangeAfterSeconds);
+                                                setWorkChangeAfterSeconds(hmsToSeconds(cur.h, cur.m, Number(e.target.value) || 0));
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                {workChangeAfterSeconds === 0 && (
+                                    <p className="text-xs text-muted-foreground">{t('passcodePolicy.neverExpiresLabel')}</p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -703,31 +833,83 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                     </div>
 
                     {enforcementEnabled && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
-                            <div className="space-y-2">
+                        <div className="space-y-6 p-4 bg-muted/30 rounded-lg">
+                            {/* Block After Days */}
+                            <div className="space-y-3">
                                 <Label>{t('passcodePolicy.blockAfterDays')}</Label>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={blockAfterDays}
-                                    onChange={(e) => setBlockAfterDays(Number(e.target.value) || 0)}
-                                    placeholder={t('passcodePolicy.blockAfterDaysHint')}
-                                />
                                 <p className="text-xs text-muted-foreground">{t('passcodePolicy.blockAfterDaysHint')}</p>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        variant={blockImmediate ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setBlockImmediate(true)}
+                                    >
+                                        {t('passcodePolicy.actionImmediate')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant={!blockImmediate ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setBlockImmediate(false)}
+                                    >
+                                        {t('passcodePolicy.actionAfterDays')}
+                                    </Button>
+                                    {!blockImmediate && (
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            className="w-24"
+                                            value={blockAfterDays}
+                                            onChange={(e) => setBlockAfterDays(Math.max(1, Number(e.target.value) || 1))}
+                                        />
+                                    )}
+                                </div>
                             </div>
-                            <div className="space-y-2">
+
+                            {/* Wipe After Days */}
+                            <div className="space-y-3">
                                 <Label>{t('passcodePolicy.wipeAfterDays')}</Label>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={wipeAfterDays}
-                                    onChange={(e) => setWipeAfterDays(Number(e.target.value) || 0)}
-                                    placeholder={t('passcodePolicy.wipeAfterDaysHint')}
-                                />
                                 <p className="text-xs text-muted-foreground">{t('passcodePolicy.wipeAfterDaysHint')}</p>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        variant={wipeImmediate ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setWipeImmediate(true)}
+                                    >
+                                        {t('passcodePolicy.actionImmediate')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant={!wipeImmediate ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setWipeImmediate(false)}
+                                    >
+                                        {t('passcodePolicy.actionAfterDays')}
+                                    </Button>
+                                    {!wipeImmediate && (
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            className="w-24"
+                                            value={wipeAfterDays}
+                                            onChange={(e) => setWipeAfterDays(Math.max(1, Number(e.target.value) || 1))}
+                                        />
+                                    )}
+                                </div>
                             </div>
+
+                            {/* Inline validation warning */}
+                            {enforcementWarning && (
+                                <div className="flex items-center gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm">
+                                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                                    <span>{enforcementWarning}</span>
+                                </div>
+                            )}
+
                             {isDedicated && (
-                                <div className="col-span-2 space-y-2">
+                                <div className="space-y-2 pt-2 border-t">
                                     <div className="flex items-center justify-between">
                                         <Label className="flex items-center gap-2">
                                             <Shield className="h-4 w-4" />
@@ -815,15 +997,51 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
                                     />
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2">
                                     <Label>{t('passcodePolicy.devicePasswordExpiry')}</Label>
-                                    <Input
-                                        type="number"
-                                        min={0}
-                                        value={deviceChangeAfterSeconds}
-                                        onChange={(e) => setDeviceChangeAfterSeconds(Number(e.target.value) || 0)}
-                                        placeholder={t('passcodePolicy.neverExpires')}
-                                    />
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground">{t('passcodePolicy.hours')}</Label>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                value={secondsToHms(deviceChangeAfterSeconds).h}
+                                                onChange={(e) => {
+                                                    const cur = secondsToHms(deviceChangeAfterSeconds);
+                                                    setDeviceChangeAfterSeconds(hmsToSeconds(Number(e.target.value) || 0, cur.m, cur.s));
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground">{t('passcodePolicy.minutes')}</Label>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                max={59}
+                                                value={secondsToHms(deviceChangeAfterSeconds).m}
+                                                onChange={(e) => {
+                                                    const cur = secondsToHms(deviceChangeAfterSeconds);
+                                                    setDeviceChangeAfterSeconds(hmsToSeconds(cur.h, Number(e.target.value) || 0, cur.s));
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground">{t('passcodePolicy.seconds')}</Label>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                max={59}
+                                                value={secondsToHms(deviceChangeAfterSeconds).s}
+                                                onChange={(e) => {
+                                                    const cur = secondsToHms(deviceChangeAfterSeconds);
+                                                    setDeviceChangeAfterSeconds(hmsToSeconds(cur.h, cur.m, Number(e.target.value) || 0));
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    {deviceChangeAfterSeconds === 0 && (
+                                        <p className="text-xs text-muted-foreground">{t('passcodePolicy.neverExpiresLabel')}</p>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">

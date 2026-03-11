@@ -1,25 +1,32 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HardDrive } from 'lucide-react';
 
-const storageData = [
-  { label: 'System Files', used: 45.2, total: 100, unit: 'GB' },
-  { label: 'Applications', used: 28.7, total: 50, unit: 'GB' },
-  { label: 'User Data', used: 156.3, total: 200, unit: 'GB' },
-  { label: 'Logs & Backups', used: 12.1, total: 25, unit: 'GB' },
-];
+export interface StorageData {
+  label: string;
+  used: number;
+  total: number;
+  unit: string;
+}
 
-export function StorageUsage() {
+interface StorageUsageProps {
+  data: StorageData[];
+}
+
+export function StorageUsage({ data }: StorageUsageProps) {
   const { t } = useLanguage();
 
+  const totalUsed = data.reduce((acc, item) => acc + item.used, 0);
+  const totalCapacity = data.reduce((acc, item) => acc + item.total, 0);
+
   return (
-    <div className="panel">
+    <div className="panel flex flex-col h-full">
       <div className="panel__header">
         <h3 className="panel__title">{t('dashboard.storageUsage')}</h3>
       </div>
-      <div className="panel__content">
-        <div className="space-y-4" role="list" aria-label="Storage usage breakdown">
-          {storageData.map((item) => {
-            const percentage = (item.used / item.total) * 100;
+      <div className="panel__content flex-1 flex flex-col justify-between">
+        <div className="space-y-4 flex-1" role="list" aria-label="Storage usage breakdown">
+          {data.map((item) => {
+            const percentage = item.total > 0 ? (item.used / item.total) * 100 : 0;
             const isWarning = percentage > 80;
             const isCritical = percentage > 90;
 
@@ -31,7 +38,7 @@ export function StorageUsage() {
                     {item.label}
                   </span>
                   <span className="text-sm text-muted-foreground font-mono">
-                    {item.used} / {item.total} {item.unit}
+                    {item.used.toFixed(1)} / {item.total.toFixed(0)} {item.unit}
                   </span>
                 </div>
                 <div
@@ -40,7 +47,7 @@ export function StorageUsage() {
                   aria-valuenow={item.used}
                   aria-valuemin={0}
                   aria-valuemax={item.total}
-                  aria-label={`${item.label}: ${item.used} of ${item.total} ${item.unit} used (${percentage.toFixed(2)}%)`}
+                  aria-label={`${item.label}: ${item.used} of ${item.total} ${item.unit} used (${percentage.toFixed(1)}%)`}
                 >
                   <div
                     className={`h-full rounded-full transition-all ${isCritical
@@ -66,11 +73,11 @@ export function StorageUsage() {
         </div>
 
         {/* Total Summary */}
-        <div className="mt-6 pt-4 border-t border-border">
+        <div className="mt-6 pt-4 border-t border-border shrink-0">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Total Used</span>
             <span className="text-lg font-semibold text-foreground font-mono">
-              242.3 / 375 GB
+              {totalUsed.toFixed(1)} / {totalCapacity.toFixed(0)} GB
             </span>
           </div>
         </div>
