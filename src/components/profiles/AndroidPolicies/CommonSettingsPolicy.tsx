@@ -21,8 +21,9 @@ import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
-import { AppPermissionType, CommonSettingsPolicy as CommonSettingsPolicyType, Platform } from '@/types/models';
-import { Edit, EyeOff, Loader2, Save, Settings, Shield } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { AppPermissionType, CommonSettingsPolicy as CommonSettingsPolicyType, DatePeriod, Platform, SystemUpdatePolicy } from '@/types/models';
+import { Download, Edit, EyeOff, Loader2, Plus, Save, Settings, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // ============================================================================
@@ -53,8 +54,10 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
     const [formData, setFormData] = useState<Partial<CommonSettingsPolicyType>>({
         // WP-supported fields
         disableScreenCapture: initialData?.disableScreenCapture ?? false,
-        defaultAppPerms: initialData?.defaultAppPerms || 'PROMPT',
+        defaultAppPerms: initialData?.defaultAppPerms || 'ASKALL',
         
+        systemUpdatePolicy: initialData?.systemUpdatePolicy || { systemUpdate: 'DEFAULT' },
+
         // ------------------------------------------------------------------------
         // DO-ONLY FIELDS (Uncomment when Device Owner mode is implemented)
         // ------------------------------------------------------------------------
@@ -62,7 +65,6 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
         // keepAliveTime: initialData?.keepAliveTime ?? 30,
         // appUpdateSchedule: initialData?.appUpdateSchedule || { from: '02:00', to: '05:00' },
         // volumePolicy: initialData?.volumePolicy || { manageVolume: 'UnmanagedVolume' },
-        // systemUpdatePolicy: initialData?.systemUpdatePolicy || { systemUpdate: 'DEFAULT' },
         
         devicePolicyType: 'AndroidCommonSettingsPolicy',
         ...initialData
@@ -101,27 +103,56 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
 
     const getPermissionLabel = (perm?: AppPermissionType) => {
         switch (perm) {
-            case 'GRANT': return t('policies.commonSettings.autoGrant');
-            case 'DENY': return t('policies.commonSettings.autoDeny');
-            case 'PROMPT': return t('policies.commonSettings.promptUser');
-            default: return t('policies.commonSettings.promptUser');
+            case 'GRANTALL': return t('policies.commonSettings.grantAll');
+            case 'DENYLOCATION': return t('policies.commonSettings.denyLocation');
+            case 'ASKLOCATION': return t('policies.commonSettings.askLocation');
+            case 'ASKALL': return t('policies.commonSettings.askAll');
+            default: return t('policies.commonSettings.askAll');
         }
     };
 
-    // ========================================================================
-    // DO-ONLY HELPER FUNCTIONS (Uncomment when Device Owner mode is implemented)
-    // ========================================================================
-    // const getSystemUpdateLabel = (policy?: SystemUpdatePolicy) => {
-    //     if (!policy) return t('policies.commonSettings.default');
-    //     if (policy.systemUpdate === 'SCHEDULED') {
-    //         return `${t('policies.commonSettings.scheduled')} (${(policy as any).systemUpdateScheduleFrom} - ${(policy as any).systemUpdateScheduleTo})`;
-    //     }
-    //     switch (policy.systemUpdate) {
-    //         case 'IMMEDIATELY': return t('policies.commonSettings.installImmediately');
-    //         case 'POSTPONE': return t('policies.commonSettings.postpone');
-    //         default: return t('policies.commonSettings.default');
-    //     }
-    // };
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const addFreezePeriod = () => {
+        setFormData(prev => ({
+            ...prev,
+            systemUpdatePolicy: {
+                ...prev.systemUpdatePolicy as any,
+                freezePeriods: [
+                    ...((prev.systemUpdatePolicy as any).freezePeriods || []),
+                    { startDate: { day: 1, month: 1 }, endDate: { day: 28, month: 2 } }
+                ]
+            }
+        }));
+    };
+
+    const removeFreezePeriod = (idx: number) => {
+        setFormData(prev => {
+            const periods = [...((prev.systemUpdatePolicy as any).freezePeriods || [])];
+            periods.splice(idx, 1);
+            return { ...prev, systemUpdatePolicy: { ...prev.systemUpdatePolicy as any, freezePeriods: periods } };
+        });
+    };
+
+    const updateFreezePeriod = (idx: number, field: 'startDate' | 'endDate', key: 'day' | 'month', value: number) => {
+        setFormData(prev => {
+            const periods: DatePeriod[] = [...((prev.systemUpdatePolicy as any).freezePeriods || [])];
+            periods[idx] = { ...periods[idx], [field]: { ...periods[idx][field], [key]: value } };
+            return { ...prev, systemUpdatePolicy: { ...prev.systemUpdatePolicy as any, freezePeriods: periods } };
+        });
+    };
+
+    const getSystemUpdateLabel = (policy?: SystemUpdatePolicy) => {
+        if (!policy) return t('policies.commonSettings.default');
+        if (policy.systemUpdate === 'SCHEDULED') {
+            return `${t('policies.commonSettings.scheduled')} (${(policy as any).systemUpdateScheduleFrom} - ${(policy as any).systemUpdateScheduleTo})`;
+        }
+        switch (policy.systemUpdate) {
+            case 'IMMEDIATELY': return t('policies.commonSettings.installImmediately');
+            case 'POSTPONE': return t('policies.commonSettings.postpone');
+            default: return t('policies.commonSettings.default');
+        }
+    };
     //
     // const getVolumeLabel = (policy?: VolumePolicy) => {
     //     if (!policy) return t('policies.commonSettings.userControlled');
@@ -176,10 +207,32 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                 </Card>
             </div>
 
+            {/* System Update Policy */}
+                <Card className="border-l-4 border-l-orange-500">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Download className="w-5 h-5 text-orange-500" />
+                            <span className="font-medium">{t('policies.commonSettings.systemUpdates')}</span>
+                        </div>
+                        <Badge variant="secondary">{getSystemUpdateLabel(formData.systemUpdatePolicy)}</Badge>
+                        {formData.systemUpdatePolicy?.systemUpdate === 'SCHEDULED' &&
+                            ((formData.systemUpdatePolicy as any).freezePeriods as DatePeriod[] | undefined)?.length ? (
+                            <div className="mt-3 space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground">{t('policies.commonSettings.freezePeriods')}</p>
+                                {((formData.systemUpdatePolicy as any).freezePeriods as DatePeriod[]).map((p, i) => (
+                                    <p key={i} className="text-xs text-muted-foreground">
+                                        {p.startDate.day} {MONTH_NAMES[p.startDate.month - 1]} – {p.endDate.day} {MONTH_NAMES[p.endDate.month - 1]}
+                                    </p>
+                                ))}
+                            </div>
+                        ) : null}
+                    </CardContent>
+                </Card>
+
             {/* --------------------------------------------------------------------
                 DO-ONLY VIEW CARDS (Uncomment when Device Owner mode is implemented)
             -------------------------------------------------------------------- */}
-            {/* 
+            {/*
                 <Card className={`border-l-4 ${formData.locationTracking ? 'border-l-green-500' : 'border-l-gray-300'}`}>
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
@@ -287,9 +340,10 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                             <SelectValue placeholder={t('policies.commonSettings.selectPermission')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="GRANT">{t('policies.commonSettings.autoGrant')} - {t('policies.commonSettings.autoApprove')}</SelectItem>
-                            <SelectItem value="DENY">{t('policies.commonSettings.autoDeny')} - {t('policies.commonSettings.autoReject')}</SelectItem>
-                            <SelectItem value="PROMPT">{t('policies.commonSettings.promptUser')} - {t('policies.commonSettings.askUser')}</SelectItem>
+                            <SelectItem value="GRANTALL">{t('policies.commonSettings.grantAll')} - {t('policies.commonSettings.grantAllDesc')}</SelectItem>
+                            <SelectItem value="DENYLOCATION">{t('policies.commonSettings.denyLocation')} - {t('policies.commonSettings.denyLocationDesc')}</SelectItem>
+                            <SelectItem value="ASKLOCATION">{t('policies.commonSettings.askLocation')} - {t('policies.commonSettings.askLocationDesc')}</SelectItem>
+                            <SelectItem value="ASKALL">{t('policies.commonSettings.askAll')} - {t('policies.commonSettings.askAllDesc')}</SelectItem>
                         </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
@@ -297,10 +351,148 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                     </p>
                 </div>
 
+                {/* System Update Policy */}
+                <div className="space-y-2">
+                    <Label>{t('policies.commonSettings.systemUpdatePolicy')}</Label>
+                    <Select
+                        value={formData.systemUpdatePolicy?.systemUpdate || 'DEFAULT'}
+                        onValueChange={(value) => {
+                            if (value === 'SCHEDULED') {
+                                setFormData(prev => ({
+                                    ...prev,
+                                    systemUpdatePolicy: {
+                                        systemUpdate: 'SCHEDULED',
+                                        systemUpdateScheduleFrom: '02:00',
+                                        systemUpdateScheduleTo: '05:00'
+                                    }
+                                }));
+                            } else {
+                                setFormData(prev => ({
+                                    ...prev,
+                                    systemUpdatePolicy: { systemUpdate: value as 'DEFAULT' | 'IMMEDIATELY' | 'POSTPONE' }
+                                }));
+                            }
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={t('policies.commonSettings.selectUpdatePolicy')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="DEFAULT">{t('policies.commonSettings.default')} - {t('policies.commonSettings.followDevice')}</SelectItem>
+                            <SelectItem value="IMMEDIATELY">{t('policies.commonSettings.installImmediately')} - {t('policies.commonSettings.installAsap')}</SelectItem>
+                            <SelectItem value="POSTPONE">{t('policies.commonSettings.postpone')} - {t('policies.commonSettings.delayUpdates')}</SelectItem>
+                            <SelectItem value="SCHEDULED">{t('policies.commonSettings.scheduled')} - {t('policies.commonSettings.installDuringWindow')}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {formData.systemUpdatePolicy?.systemUpdate === 'SCHEDULED' && (
+                    <div className="grid grid-cols-2 gap-4 pl-4 border-l-2 border-primary/20">
+                        <div className="space-y-2">
+                            <Label>{t('policies.commonSettings.updateWindowStart')}</Label>
+                            <Input
+                                type="time"
+                                value={(formData.systemUpdatePolicy as any).systemUpdateScheduleFrom || '02:00'}
+                                onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    systemUpdatePolicy: {
+                                        ...prev.systemUpdatePolicy as any,
+                                        systemUpdateScheduleFrom: e.target.value
+                                    }
+                                }))}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t('policies.commonSettings.updateWindowEnd')}</Label>
+                            <Input
+                                type="time"
+                                value={(formData.systemUpdatePolicy as any).systemUpdateScheduleTo || '05:00'}
+                                onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    systemUpdatePolicy: {
+                                        ...prev.systemUpdatePolicy as any,
+                                        systemUpdateScheduleTo: e.target.value
+                                    }
+                                }))}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {formData.systemUpdatePolicy?.systemUpdate === 'SCHEDULED' && (
+                    <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <Label>{t('policies.commonSettings.freezePeriods')}</Label>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {t('policies.commonSettings.freezePeriodsDesc')}
+                                </p>
+                            </div>
+                            <Button type="button" variant="outline" size="sm" onClick={addFreezePeriod}>
+                                <Plus className="w-3.5 h-3.5 mr-1" />
+                                {t('policies.commonSettings.addFreezePeriod')}
+                            </Button>
+                        </div>
+                        {((formData.systemUpdatePolicy as any).freezePeriods as DatePeriod[] | undefined)?.map((period, idx) => (
+                            <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end p-3 border rounded-lg bg-muted/30">
+                                <div className="space-y-1">
+                                    <Label className="text-xs">{t('policies.commonSettings.freezePeriodStart')}</Label>
+                                    <div className="flex gap-1.5">
+                                        <Input
+                                            type="number" min={1} max={31}
+                                            placeholder={t('policies.commonSettings.freezePeriodDay')}
+                                            value={period.startDate.day}
+                                            className="w-16"
+                                            onChange={(e) => updateFreezePeriod(idx, 'startDate', 'day', Number(e.target.value))}
+                                        />
+                                        <Select
+                                            value={String(period.startDate.month)}
+                                            onValueChange={(v) => updateFreezePeriod(idx, 'startDate', 'month', Number(v))}
+                                        >
+                                            <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {MONTH_NAMES.map((m, i) => (
+                                                    <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">{t('policies.commonSettings.freezePeriodEnd')}</Label>
+                                    <div className="flex gap-1.5">
+                                        <Input
+                                            type="number" min={1} max={31}
+                                            placeholder={t('policies.commonSettings.freezePeriodDay')}
+                                            value={period.endDate.day}
+                                            className="w-16"
+                                            onChange={(e) => updateFreezePeriod(idx, 'endDate', 'day', Number(e.target.value))}
+                                        />
+                                        <Select
+                                            value={String(period.endDate.month)}
+                                            onValueChange={(v) => updateFreezePeriod(idx, 'endDate', 'month', Number(v))}
+                                        >
+                                            <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {MONTH_NAMES.map((m, i) => (
+                                                    <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeFreezePeriod(idx)}>
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {/* ============================================================
                     DO-ONLY FIELDS (Uncomment when Device Owner mode is implemented)
                 ============================================================ */}
-                
+
                 {/* Location Tracking - DO Only */}
                 {/*
                 <div className="p-4 rounded-xl border bg-card">

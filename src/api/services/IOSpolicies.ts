@@ -271,37 +271,29 @@ export const PolicyService = {
 
 
     // --- iOS PEM Certificate ---
-    getCertPemPolicy: async (profileId: string) => {
+    getCertPemPolicyList: async (profileId: string) => {
         const response = await apiClient.get<PagedResponse<IosPemCertificatePolicy>>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`);
-        return response.data?.content?.[0] ?? null;
+        return response.data;
     },
     createCertPemPolicy: async (profileId: string, policy: IosPemCertificatePolicy) => {
         const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`, policy);
         return response.data;
     },
-    updateCertPemPolicy: async (profileId: string, policy: IosPemCertificatePolicy) => {
-        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`, policy);
-        return response.data;
-    },
-    deleteCertPemPolicy: async (profileId: string) => {
-        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem`);
+    deleteCertPemPolicyById: async (profileId: string, certificateId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pem/${certificateId}`);
     },
 
     // --- iOS PKCS Certificate ---
-    getCertPkcsPolicy: async (profileId: string) => {
+    getCertPkcsPolicyList: async (profileId: string) => {
         const response = await apiClient.get<PagedResponse<IosPkcsCertificatePolicy>>(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`);
-        return response.data?.content?.[0] ?? null;
+        return response.data;
     },
     createCertPkcsPolicy: async (profileId: string, policy: IosPkcsCertificatePolicy) => {
         const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`, policy);
         return response.data;
     },
-    updateCertPkcsPolicy: async (profileId: string, policy: IosPkcsCertificatePolicy) => {
-        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`, policy);
-        return response.data;
-    },
-    deleteCertPkcsPolicy: async (profileId: string) => {
-        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs`);
+    deleteCertPkcsPolicyById: async (profileId: string, certificateId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/certificate-pkcs/${certificateId}`);
     },
 
     // --- iOS PKCS12 Certificate ---

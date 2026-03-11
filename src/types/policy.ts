@@ -9,7 +9,7 @@ export type ApplicationAction = 'INSTALL' | 'UNINSTALL' | 'ALLOW' | 'BLOCK';
 export type IconSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 export type ScreenOrientation = 'NONE' | 'PORTRAIT' | 'LANDSCAPE';
 export type Color = string; // Pattern: ^#[0-9a-f]{6}$
-export type AppPermissionType = 'GRANT' | 'DENY' | 'PROMPT';
+export type AppPermissionType = 'GRANTALL' | 'ASKLOCATION' | 'DENYLOCATION' | 'ASKALL';
 export type WifiSecurity = 'WPA' | 'WEP' | 'EAP';
 
 // Android Passcode Policy Enums (from OpenAPI)
@@ -50,12 +50,17 @@ export interface AndroidPersonalDevicesPasscodePolicy {
     devicePolicyType?: 'AndroidPersonalDevicesPasscodePolicy';
 }
 
-// Android Dedicated Device Passcode Policy
+// Android Dedicated Device Passcode Policy (non-BYOD: COBO, COSU, COPE)
+// Extends AndroidPersonalDevicesDevicePasscodePolicy — flat device-level fields, no work/device sub-objects
 export interface AndroidDedicatedDevicePasscodePolicy {
-    work: AndroidWorkPasscodePolicy; // required
-    device?: AndroidDevicePasscodePolicy;
+    id?: string; // read-only
+    complexity: PasscodeComplexity; // required
+    historyLength?: number; // minimum: 0
+    maxFailedAttemptsToWipe?: number; // minimum: 0
+    changeAfterSeconds?: number; // minimum: 0
+    strongAuthRequiredTimeout?: StrongAuthRequiredTimeout;
     enforcement?: DedicatedDeviceEnforcement;
-    devicePolicyType?: 'AndroidDedicatedDevicePasscodePolicy';
+    devicePolicyType: 'AndroidDedicatedDevicePasscodePolicy';
 }
 
 // AndroidPasscodePolicy — discriminated union covering both personal and dedicated

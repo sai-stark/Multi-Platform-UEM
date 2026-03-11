@@ -276,6 +276,16 @@
 
   .status-badge--pending {
     @apply bg-warning/10 text-warning;
+    animation: pending-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pending-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--warning) / 0);
+    }
+    50% {
+      box-shadow: 0 0 8px 3px hsl(var(--warning) / 0.35);
+    }
   }
 
   .status-badge--info {

@@ -23,20 +23,20 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // PEM State
-    const [pemPolicy, setPemPolicy] = useState<IosPemCertificatePolicy | null>(null);
+    // PEM State (list)
+    const [pemList, setPemList] = useState<IosPemCertificatePolicy[]>([]);
+    const [showPemForm, setShowPemForm] = useState(false);
     const [pemFile, setPemFile] = useState<File | null>(null);
     const [pemBase64, setPemBase64] = useState<string>("");
 
-    // PKCS State
-    const [pkcsPolicy, setPkcsPolicy] = useState<IosPkcsCertificatePolicy | null>(null);
+    // PKCS State (list)
+    const [pkcsList, setPkcsList] = useState<IosPkcsCertificatePolicy[]>([]);
+    const [showPkcsForm, setShowPkcsForm] = useState(false);
     const [pkcsFile, setPkcsFile] = useState<File | null>(null);
     const [pkcsBase64, setPkcsBase64] = useState<string>("");
 
     // PKCS12 State (List)
     const [pkcs12List, setPkcs12List] = useState<IosPkcs12CertificatePolicy[]>([]);
-
-    // New PKCS12 Form State
     const [showPkcs12Form, setShowPkcs12Form] = useState(false);
     const [p12File, setP12File] = useState<File | null>(null);
     const [p12Base64, setP12Base64] = useState<string>("");
@@ -54,32 +54,24 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
         const fetchPolicies = async () => {
             setLoading(true);
             try {
-                // Fetch PEM
                 try {
-                    const pem = await PolicyService.getCertPemPolicy(profileId);
-                    if (pem && pem.id) setPemPolicy(pem);
+                    const pemResp = await PolicyService.getCertPemPolicyList(profileId);
+                    if (pemResp?.content) setPemList(pemResp.content);
                 } catch (e) { /* ignore 404 */ }
 
-                // Fetch PKCS
                 try {
-                    const pkcs = await PolicyService.getCertPkcsPolicy(profileId);
-                    if (pkcs && pkcs.id) setPkcsPolicy(pkcs);
+                    const pkcsResp = await PolicyService.getCertPkcsPolicyList(profileId);
+                    if (pkcsResp?.content) setPkcsList(pkcsResp.content);
                 } catch (e) { /* ignore 404 */ }
 
-                // Fetch PKCS12 List
                 try {
                     const p12Resp = await PolicyService.getCertPkcs12PolicyList(profileId);
-                    if (p12Resp && p12Resp.content) {
-                        setPkcs12List(p12Resp.content);
-                    }
+                    if (p12Resp?.content) setPkcs12List(p12Resp.content);
                 } catch (e) { /* ignore */ }
 
-                // Fetch Root Certificates
                 try {
                     const rootResp = await PolicyService.getRootCertificatesPolicyList(profileId);
-                    if (rootResp && rootResp.content) {
-                        setRootCertsList(rootResp.content);
-                    }
+                    if (rootResp?.content) setRootCertsList(rootResp.content);
                 } catch (e) { /* ignore */ }
 
             } catch (error) {
@@ -90,6 +82,11 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
         };
         fetchPolicies();
     }, [profileId]);
+
+    const getNameFromFile = (file: File | null | undefined, fallbackFileName?: string): string => {
+        const filename = file?.name || fallbackFileName || "certificate";
+        return filename.replace(/\.[^/.]+$/, "");
+    };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setFile: (f: File) => void, setBase64: (s: string) => void) => {
         const file = e.target.files?.[0];
@@ -103,45 +100,41 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
         reader.readAsDataURL(file);
     };
 
-    const handleSavePem = async () => {
-        if (!pemBase64 && !pemPolicy?.id) {
+    // PEM handlers
+    const handleAddPem = async () => {
+        if (!pemBase64) {
             toast({ title: "Error", description: "Please upload a PEM file.", variant: "destructive" });
             return;
         }
         setSaving(true);
         try {
             const payload = {
-                id: pemPolicy?.id,
-                name: "ios",
+                name: getNameFromFile(pemFile),
                 policyType: "CertificatePEM",
                 certificatePayload: {
-                    PayloadContent: pemBase64 || pemPolicy?.certificatePayload?.PayloadContent || "",
-                    PayloadCertificateFileName: pemFile?.name || pemPolicy?.certificatePayload?.PayloadCertificateFileName
+                    PayloadContent: pemBase64,
+                    PayloadCertificateFileName: pemFile?.name,
                 }
             } as IosPemCertificatePolicy;
 
-            if (pemPolicy?.id) {
-                await PolicyService.updateCertPemPolicy(profileId, payload);
-            } else {
-                const res = await PolicyService.createCertPemPolicy(profileId, payload);
-                setPemPolicy(res);
-            }
-            toast({ title: "Success", description: "PEM Certificate saved." });
+            const res = await PolicyService.createCertPemPolicy(profileId, payload);
+            setPemList([...pemList, res]);
+            setShowPemForm(false);
+            setPemFile(null);
+            setPemBase64("");
+            toast({ title: "Success", description: "PEM Certificate added." });
         } catch (error) {
-            toast({ title: "Error", description: "Failed to save PEM certificate.", variant: "destructive" });
+            toast({ title: "Error", description: "Failed to add PEM certificate.", variant: "destructive" });
         } finally {
             setSaving(false);
         }
     };
 
-    const handleDeletePem = async () => {
-        if (!pemPolicy?.id) return;
+    const handleDeletePem = async (certId: string) => {
         setSaving(true);
         try {
-            await PolicyService.deleteCertPemPolicy(profileId);
-            setPemPolicy(null);
-            setPemFile(null);
-            setPemBase64("");
+            await PolicyService.deleteCertPemPolicyById(profileId, certId);
+            setPemList(pemList.filter(c => c.id !== certId));
             toast({ title: "Success", description: "PEM Certificate deleted." });
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete PEM certificate.", variant: "destructive" });
@@ -150,45 +143,41 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
         }
     };
 
-    const handleSavePkcs = async () => {
-        if (!pkcsBase64 && !pkcsPolicy?.id) {
+    // PKCS handlers
+    const handleAddPkcs = async () => {
+        if (!pkcsBase64) {
             toast({ title: "Error", description: "Please upload a PKCS file.", variant: "destructive" });
             return;
         }
         setSaving(true);
         try {
             const payload = {
-                id: pkcsPolicy?.id,
-                name: "ios",
+                name: getNameFromFile(pkcsFile),
                 policyType: "CertificatePKCS",
                 certificatePayload: {
-                    PayloadContent: pkcsBase64 || pkcsPolicy?.certificatePayload?.PayloadContent || "",
-                    PayloadCertificateFileName: pkcsFile?.name || pkcsPolicy?.certificatePayload?.PayloadCertificateFileName
+                    PayloadContent: pkcsBase64,
+                    PayloadCertificateFileName: pkcsFile?.name,
                 }
             } as IosPkcsCertificatePolicy;
 
-            if (pkcsPolicy?.id) {
-                await PolicyService.updateCertPkcsPolicy(profileId, payload);
-            } else {
-                const res = await PolicyService.createCertPkcsPolicy(profileId, payload);
-                setPkcsPolicy(res);
-            }
-            toast({ title: "Success", description: "PKCS Certificate saved." });
+            const res = await PolicyService.createCertPkcsPolicy(profileId, payload);
+            setPkcsList([...pkcsList, res]);
+            setShowPkcsForm(false);
+            setPkcsFile(null);
+            setPkcsBase64("");
+            toast({ title: "Success", description: "PKCS Certificate added." });
         } catch (error) {
-            toast({ title: "Error", description: "Failed to save PKCS certificate.", variant: "destructive" });
+            toast({ title: "Error", description: "Failed to add PKCS certificate.", variant: "destructive" });
         } finally {
             setSaving(false);
         }
     };
 
-    const handleDeletePkcs = async () => {
-        if (!pkcsPolicy?.id) return;
+    const handleDeletePkcs = async (certId: string) => {
         setSaving(true);
         try {
-            await PolicyService.deleteCertPkcsPolicy(profileId);
-            setPkcsPolicy(null);
-            setPkcsFile(null);
-            setPkcsBase64("");
+            await PolicyService.deleteCertPkcsPolicyById(profileId, certId);
+            setPkcsList(pkcsList.filter(c => c.id !== certId));
             toast({ title: "Success", description: "PKCS Certificate deleted." });
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete PKCS certificate.", variant: "destructive" });
@@ -205,7 +194,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
         setSaving(true);
         try {
             const payload = {
-                name: "ios",
+                name: getNameFromFile(p12File),
                 policyType: "CertificatePKCS12",
                 certificatePayload: {
                     PayloadContent: p12Base64,
@@ -218,7 +207,6 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
 
             const res = await PolicyService.createCertPkcs12Policy(profileId, payload);
             setPkcs12List([...pkcs12List, res]);
-            // Reset form
             setShowPkcs12Form(false);
             setP12File(null);
             setP12Base64("");
@@ -254,14 +242,13 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
         setSaving(true);
         try {
             const payload = {
-                name: "ios",
+                name: getNameFromFile(rootFile),
                 payloadCertificateFileName: rootFile?.name,
                 payloadContent: rootBase64,
             } as IosRootCertificatePolicy;
 
             const res = await PolicyService.createRootCertificatePolicy(profileId, payload);
             setRootCertsList([...rootCertsList, res]);
-            // Reset form
             setShowRootForm(false);
             setRootFile(null);
             setRootBase64("");
@@ -311,79 +298,141 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
 
             <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultTab}>
 
-                {/* PEM Certificate */}
+                {/* PEM Certificates */}
                 <AccordionItem value="pem" className="bg-card border rounded-xl overflow-hidden shadow-sm">
                     <AccordionTrigger className="px-4 text-sm font-semibold hover:no-underline [&[data-state=open]]:border-b">
-                        <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-muted-foreground" />
-                            <span>PEM Certificate</span>
-                            {pemPolicy?.id && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Configured</span>}
+                        <div className="flex items-center justify-between w-full pr-4">
+                            <div className="flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-muted-foreground" />
+                                <span>PEM Certificates</span>
+                                {pemList.length > 0 && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">{pemList.length} Active</span>}
+                            </div>
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-4 space-y-4 bg-muted/30">
-                        <div className="grid gap-2">
-                            <Label>Upload .pem file <span className="text-destructive">*</span></Label>
-                            <Input
-                                type="file"
-                                accept=".pem,.cer,.crt"
-                                onChange={(e) => handleFileUpload(e, setPemFile, setPemBase64)}
-                            />
-                            {(pemFile || pemPolicy?.certificatePayload?.PayloadCertificateFileName) && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                    <Info className="w-3 h-3" />
-                                    Current File: {pemFile?.name || pemPolicy?.certificatePayload?.PayloadCertificateFileName}
-                                </p>
-                            )}
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2 border-t">
-                            {pemPolicy?.id && (
-                                <Button variant="destructive" size="sm" onClick={handleDeletePem} disabled={saving}>
-                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                </Button>
-                            )}
-                            <Button size="sm" onClick={handleSavePem} disabled={saving || (!pemBase64 && !pemPolicy?.id)}>
-                                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                                {pemPolicy?.id ? 'Update' : 'Upload'}
+                    <AccordionContent className="p-4 space-y-6 bg-muted/30">
+
+                        {pemList.length > 0 ? (
+                            <div className="space-y-3">
+                                {pemList.map(cert => (
+                                    <Card key={cert.id} className="bg-background">
+                                        <div className="flex items-center justify-between p-3">
+                                            <div>
+                                                <p className="font-medium text-sm">{cert.certificatePayload?.PayloadCertificateFileName || cert.name || 'Unnamed Certificate'}</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">ID: {cert.id}</p>
+                                            </div>
+                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeletePem(cert.id!)} disabled={saving}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic text-center py-4">No PEM certificates uploaded.</p>
+                        )}
+
+                        {!showPemForm ? (
+                            <Button variant="outline" className="w-full border-dashed" onClick={() => setShowPemForm(true)}>
+                                <Plus className="w-4 h-4 mr-2" /> Add PEM Certificate
                             </Button>
-                        </div>
+                        ) : (
+                            <Card className="border-primary/20 bg-background shadow-sm">
+                                <CardContent className="p-4 space-y-4">
+                                    <div className="flex items-center justify-between mb-2 pb-2 border-b">
+                                        <h4 className="font-medium text-sm text-foreground">New PEM Certificate</h4>
+                                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { setShowPemForm(false); setPemFile(null); setPemBase64(""); }}>Cancel</Button>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Upload .pem file <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            type="file"
+                                            accept=".pem,.cer,.crt"
+                                            onChange={(e) => handleFileUpload(e, setPemFile, setPemBase64)}
+                                        />
+                                        {pemFile && (
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                                <Info className="w-3 h-3" />
+                                                {pemFile.name}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <Button className="w-full mt-2" onClick={handleAddPem} disabled={saving || !pemBase64}>
+                                        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                                        Upload & Save
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
+
                     </AccordionContent>
                 </AccordionItem>
 
-                {/* PKCS Certificate */}
+                {/* PKCS Certificates */}
                 <AccordionItem value="pkcs" className="bg-card border rounded-xl overflow-hidden shadow-sm">
                     <AccordionTrigger className="px-4 text-sm font-semibold hover:no-underline [&[data-state=open]]:border-b">
-                        <div className="flex items-center gap-2">
-                            <FileKey className="w-4 h-4 text-muted-foreground" />
-                            <span>PKCS Certificate</span>
-                            {pkcsPolicy?.id && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Configured</span>}
+                        <div className="flex items-center justify-between w-full pr-4">
+                            <div className="flex items-center gap-2">
+                                <FileKey className="w-4 h-4 text-muted-foreground" />
+                                <span>PKCS Certificates</span>
+                                {pkcsList.length > 0 && <span className="bg-success text-success-foreground text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">{pkcsList.length} Active</span>}
+                            </div>
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-4 space-y-4 bg-muted/30">
-                        <div className="grid gap-2">
-                            <Label>Upload PKCS file (DER/CER) <span className="text-destructive">*</span></Label>
-                            <Input
-                                type="file"
-                                accept=".der,.cer,.crt"
-                                onChange={(e) => handleFileUpload(e, setPkcsFile, setPkcsBase64)}
-                            />
-                            {(pkcsFile || pkcsPolicy?.certificatePayload?.PayloadCertificateFileName) && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                    <Info className="w-3 h-3" />
-                                    Current File: {pkcsFile?.name || pkcsPolicy?.certificatePayload?.PayloadCertificateFileName}
-                                </p>
-                            )}
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2 border-t">
-                            {pkcsPolicy?.id && (
-                                <Button variant="destructive" size="sm" onClick={handleDeletePkcs} disabled={saving}>
-                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                </Button>
-                            )}
-                            <Button size="sm" onClick={handleSavePkcs} disabled={saving || (!pkcsBase64 && !pkcsPolicy?.id)}>
-                                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                                {pkcsPolicy?.id ? 'Update' : 'Upload'}
+                    <AccordionContent className="p-4 space-y-6 bg-muted/30">
+
+                        {pkcsList.length > 0 ? (
+                            <div className="space-y-3">
+                                {pkcsList.map(cert => (
+                                    <Card key={cert.id} className="bg-background">
+                                        <div className="flex items-center justify-between p-3">
+                                            <div>
+                                                <p className="font-medium text-sm">{cert.certificatePayload?.PayloadCertificateFileName || cert.name || 'Unnamed Certificate'}</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">ID: {cert.id}</p>
+                                            </div>
+                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeletePkcs(cert.id!)} disabled={saving}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic text-center py-4">No PKCS certificates uploaded.</p>
+                        )}
+
+                        {!showPkcsForm ? (
+                            <Button variant="outline" className="w-full border-dashed" onClick={() => setShowPkcsForm(true)}>
+                                <Plus className="w-4 h-4 mr-2" /> Add PKCS Certificate
                             </Button>
-                        </div>
+                        ) : (
+                            <Card className="border-primary/20 bg-background shadow-sm">
+                                <CardContent className="p-4 space-y-4">
+                                    <div className="flex items-center justify-between mb-2 pb-2 border-b">
+                                        <h4 className="font-medium text-sm text-foreground">New PKCS Certificate</h4>
+                                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { setShowPkcsForm(false); setPkcsFile(null); setPkcsBase64(""); }}>Cancel</Button>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Upload PKCS file (DER/CER) <span className="text-destructive">*</span></Label>
+                                        <Input
+                                            type="file"
+                                            accept=".der,.cer,.crt"
+                                            onChange={(e) => handleFileUpload(e, setPkcsFile, setPkcsBase64)}
+                                        />
+                                        {pkcsFile && (
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                                <Info className="w-3 h-3" />
+                                                {pkcsFile.name}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <Button className="w-full mt-2" onClick={handleAddPkcs} disabled={saving || !pkcsBase64}>
+                                        {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                                        Upload & Save
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
+
                     </AccordionContent>
                 </AccordionItem>
 
@@ -400,7 +449,6 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                     </AccordionTrigger>
                     <AccordionContent className="p-4 space-y-6 bg-muted/30">
 
-                        {/* PKCS12 List */}
                         {pkcs12List.length > 0 ? (
                             <div className="space-y-3">
                                 {pkcs12List.map(cert => (
@@ -421,7 +469,6 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                             <p className="text-sm text-muted-foreground italic text-center py-4">No PKCS12 certificates uploaded.</p>
                         )}
 
-                        {/* Add New PKCS12 */}
                         {!showPkcs12Form ? (
                             <Button variant="outline" className="w-full border-dashed" onClick={() => setShowPkcs12Form(true)}>
                                 <Plus className="w-4 h-4 mr-2" /> Add PKCS12 Identity
@@ -489,7 +536,6 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-4 space-y-6 bg-muted/30">
-                        {/* Root Certs List */}
                         {rootCertsList.length > 0 ? (
                             <div className="space-y-3">
                                 {rootCertsList.map(cert => (
@@ -510,7 +556,6 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                             <p className="text-sm text-muted-foreground italic text-center py-4">No Root certificates uploaded.</p>
                         )}
 
-                        {/* Add New Root Cert */}
                         {!showRootForm ? (
                             <Button variant="outline" className="w-full border-dashed" onClick={() => setShowRootForm(true)}>
                                 <Plus className="w-4 h-4 mr-2" /> Add Root Certificate

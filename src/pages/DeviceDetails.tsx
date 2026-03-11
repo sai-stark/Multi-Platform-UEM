@@ -386,13 +386,13 @@ export default function DeviceDetails() {
                                 </div>
 
                                 <div className="flex gap-2 pt-2">
-                                    <Badge variant="outline" className={cn(
+                                    {/* <Badge variant="outline" className={cn(
                                         "gap-1",
                                         device.complianceStatus === 'compliant' ? "text-success border-success/30 bg-success/10" : "text-destructive border-destructive/30 bg-destructive/10"
                                     )}>
                                         {device.complianceStatus === 'compliant' ? <Shield className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
                                         {device.complianceStatus === 'compliant' ? 'Compliant' : 'Non-Compliant'}
-                                    </Badge>
+                                    </Badge> */}
 
                                     {device.isSupervised && (
                                         <Badge variant="outline" className="gap-1 text-accent border-accent/30 bg-accent/10">
@@ -664,7 +664,7 @@ export default function DeviceDetails() {
                             <Input
                                 value={lostModeData.phoneNumber}
                                 onChange={(e) => setLostModeData({ ...lostModeData, phoneNumber: e.target.value })}
-                                placeholder="+1 555-0199"
+                                placeholder="+91 1234567890"
                             />
                         </div>
                         <div className="space-y-2">
@@ -672,7 +672,7 @@ export default function DeviceDetails() {
                             <Input
                                 value={lostModeData.footnote}
                                 onChange={(e) => setLostModeData({ ...lostModeData, footnote: e.target.value })}
-                                placeholder="Property of ACME Corp"
+                                placeholder="Property of CDOT"
                             />
                         </div>
                     </div>

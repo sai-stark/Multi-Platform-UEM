@@ -27,6 +27,7 @@ export const profiles = {
     'profiles.table.created': 'Created',
     'profiles.table.createdBy': 'Created By',
     'profiles.table.lastModifiedBy': 'Last Modified By',
+    'profiles.table.managementMode': 'Mode',
 
     // Profile Actions
     'profiles.actions.edit': 'Edit Profile',

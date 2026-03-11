@@ -15,6 +15,7 @@ import {
     IosPasscodeRestrictionPolicy,
     IosWiFiConfiguration,
     LockScreenMessagePolicy as LockScreenMessagePolicyType,
+    ManagementMode,
     NotificationPolicy as NotificationPolicyType,
     PasscodeRestrictionPolicy, Platform, RestrictionsComposite,
     WebApplicationPolicy
@@ -83,6 +84,7 @@ interface PolicyEditDialogProps {
     activePolicyType: string | null;
     platform: Platform;
     profileId: string;
+    managementMode?: ManagementMode;
     // Policy Data Props
     passcodePolicy?: PasscodeRestrictionPolicy | IosPasscodeRestrictionPolicy;
     androidPasscodePolicy?: any;
@@ -117,6 +119,7 @@ export function PolicyEditDialog({
     activePolicyType,
     platform,
     profileId,
+    managementMode,
     passcodePolicy,
     androidPasscodePolicy,
     wifiPolicy,
@@ -518,6 +521,7 @@ export function PolicyEditDialog({
                         <AndroidPasscodePolicy
                             platform={platform}
                             profileId={profileId}
+                            managementMode={managementMode}
                             initialData={androidPasscodePolicy}
                             onSave={onSave}
                             onCancel={handleCancel}

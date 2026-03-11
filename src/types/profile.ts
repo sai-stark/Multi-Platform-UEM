@@ -63,6 +63,9 @@ export interface Profile {
     createdBy?: string;
     lastModifiedBy?: string;
     profileType?: ProfileType; // Required for API payload
+    managementMode?: ManagementMode; // Android only (BYOD, COPE, COBO, COSU)
+    shortSupportMessage?: string;
+    longSupportMessage?: string;
 
     // UI-specific fields (not in API response, used for routing/display)
     platform?: Platform; // Used for URL path routing

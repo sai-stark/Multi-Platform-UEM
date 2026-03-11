@@ -35,6 +35,7 @@ import {
     AndroidPasscodePolicy as AndroidPasscodePolicyType,
     AndroidPersonalDevicesPasscodePolicy,
     AndroidDedicatedDevicePasscodePolicy,
+    ManagementMode,
     PasscodeComplexity,
     Platform,
     StrongAuthRequiredTimeout,
@@ -56,17 +57,24 @@ import { useState } from 'react';
 interface PasscodePolicyProps {
     platform: Platform;
     profileId: string;
+    managementMode?: ManagementMode;
     initialData?: AndroidPasscodePolicyType;
     onSave: () => void;
     onCancel: () => void;
 }
 
-export function PasscodePolicy({ platform, profileId, initialData, onSave, onCancel }: PasscodePolicyProps) {
+export function PasscodePolicy({ platform, profileId, managementMode, initialData, onSave, onCancel }: PasscodePolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    const [isEditing, setIsEditing] = useState(!initialData?.work);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+    // Dedicated device = any non-BYOD management mode
+    const isDedicated = managementMode !== 'BYOD';
+    const dedicatedData = isDedicated ? (initialData as AndroidDedicatedDevicePasscodePolicy | undefined) : undefined;
+    const personalData = !isDedicated ? (initialData as AndroidPersonalDevicesPasscodePolicy | undefined) : undefined;
+
+    const [isEditing, setIsEditing] = useState(isDedicated ? !dedicatedData?.id : !personalData?.work);
 
     const complexityOptions: { value: PasscodeComplexity; label: string; description: string }[] = [
         { value: 'LOW', label: t('passcodePolicy.complexity.low'), description: t('passcodePolicy.complexity.lowDesc') },
@@ -79,24 +87,46 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
         { value: 'EVERY_DAY', label: t('passcodePolicy.strongAuth.everyDay') },
     ];
 
-    // Work Policy State
+    // Work Policy State (BYOD only)
     const [workComplexity, setWorkComplexity] = useState<PasscodeComplexity>(
-        initialData?.work?.complexity ?? 'MEDIUM'
+        personalData?.work?.complexity ?? 'MEDIUM'
     );
     const [workHistoryLength, setWorkHistoryLength] = useState<number>(
-        initialData?.work?.historyLength ?? 0
+        personalData?.work?.historyLength ?? 0
     );
     const [workMaxFailedAttempts, setWorkMaxFailedAttempts] = useState<number>(
-        initialData?.work?.maxFailedAttemptsToWipe ?? 0
+        personalData?.work?.maxFailedAttemptsToWipe ?? 0
     );
     const [workChangeAfterSeconds, setWorkChangeAfterSeconds] = useState<number>(
-        initialData?.work?.changeAfterSeconds ?? 0
+        personalData?.work?.changeAfterSeconds ?? 0
     );
     const [workStrongAuthTimeout, setWorkStrongAuthTimeout] = useState<StrongAuthRequiredTimeout>(
-        initialData?.work?.strongAuthRequiredTimeout ?? 'DEVICE_DEFAULT'
+        personalData?.work?.strongAuthRequiredTimeout ?? 'DEVICE_DEFAULT'
     );
     const [workSeparateLock, setWorkSeparateLock] = useState<boolean>(
-        initialData?.work?.separateLock ?? false
+        personalData?.work?.separateLock ?? false
+    );
+
+    // Device-level state — used directly for dedicated, as optional device sub-policy for personal
+    const [deviceComplexity, setDeviceComplexity] = useState<PasscodeComplexity>(
+        isDedicated ? (dedicatedData?.complexity ?? 'MEDIUM') : (personalData?.device?.complexity ?? 'MEDIUM')
+    );
+    const [deviceHistoryLength, setDeviceHistoryLength] = useState<number>(
+        isDedicated ? (dedicatedData?.historyLength ?? 0) : (personalData?.device?.historyLength ?? 0)
+    );
+    const [deviceMaxFailedAttempts, setDeviceMaxFailedAttempts] = useState<number>(
+        isDedicated ? (dedicatedData?.maxFailedAttemptsToWipe ?? 0) : (personalData?.device?.maxFailedAttemptsToWipe ?? 0)
+    );
+    const [deviceChangeAfterSeconds, setDeviceChangeAfterSeconds] = useState<number>(
+        isDedicated ? (dedicatedData?.changeAfterSeconds ?? 0) : (personalData?.device?.changeAfterSeconds ?? 0)
+    );
+    const [deviceStrongAuthTimeout, setDeviceStrongAuthTimeout] = useState<StrongAuthRequiredTimeout>(
+        isDedicated ? (dedicatedData?.strongAuthRequiredTimeout ?? 'DEVICE_DEFAULT') : (personalData?.device?.strongAuthRequiredTimeout ?? 'DEVICE_DEFAULT')
+    );
+
+    // Optional device policy section toggle (personal only)
+    const [enableDevicePolicy, setEnableDevicePolicy] = useState<boolean>(
+        !isDedicated && !!personalData?.device
     );
 
     // Enforcement State
@@ -110,67 +140,26 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
         initialData?.enforcement?.wipeAfterDays ?? 0
     );
     const [preserveFrp, setPreserveFrp] = useState<boolean>(
-        (initialData?.devicePolicyType === 'AndroidDedicatedDevicePasscodePolicy'
-            ? (initialData as AndroidDedicatedDevicePasscodePolicy).enforcement?.preserveFrp
-            : false) ?? false
-    );
-    const [policyVariant, setPolicyVariant] = useState<'personal' | 'dedicated'>(
-        initialData?.devicePolicyType === 'AndroidDedicatedDevicePasscodePolicy' ? 'dedicated' : 'personal'
-    );
-
-    // Device Policy State (optional)
-    const [enableDevicePolicy, setEnableDevicePolicy] = useState<boolean>(
-        !!initialData?.device
-    );
-    const [deviceComplexity, setDeviceComplexity] = useState<PasscodeComplexity>(
-        initialData?.device?.complexity ?? 'MEDIUM'
-    );
-    const [deviceHistoryLength, setDeviceHistoryLength] = useState<number>(
-        initialData?.device?.historyLength ?? 0
-    );
-    const [deviceMaxFailedAttempts, setDeviceMaxFailedAttempts] = useState<number>(
-        initialData?.device?.maxFailedAttemptsToWipe ?? 0
-    );
-    const [deviceChangeAfterSeconds, setDeviceChangeAfterSeconds] = useState<number>(
-        initialData?.device?.changeAfterSeconds ?? 0
-    );
-    const [deviceStrongAuthTimeout, setDeviceStrongAuthTimeout] = useState<StrongAuthRequiredTimeout>(
-        initialData?.device?.strongAuthRequiredTimeout ?? 'DEVICE_DEFAULT'
+        dedicatedData?.enforcement?.preserveFrp ?? false
     );
 
     const buildPolicy = (): AndroidPasscodePolicyType => {
-        if (policyVariant === 'dedicated') {
+        if (isDedicated) {
             const policy: AndroidDedicatedDevicePasscodePolicy = {
-                work: {
-                    complexity: workComplexity,
-                    historyLength: workHistoryLength,
-                    maxFailedAttemptsToWipe: workMaxFailedAttempts,
-                    changeAfterSeconds: workChangeAfterSeconds,
-                    strongAuthRequiredTimeout: workStrongAuthTimeout,
-                    separateLock: workSeparateLock,
-                },
+                complexity: deviceComplexity,
+                historyLength: deviceHistoryLength,
+                maxFailedAttemptsToWipe: deviceMaxFailedAttempts,
+                changeAfterSeconds: deviceChangeAfterSeconds,
+                strongAuthRequiredTimeout: deviceStrongAuthTimeout,
                 devicePolicyType: 'AndroidDedicatedDevicePasscodePolicy',
             };
             if (enforcementEnabled) {
-                policy.enforcement = {
-                    blockAfterDays,
-                    wipeAfterDays,
-                    preserveFrp,
-                };
-            }
-            if (enableDevicePolicy) {
-                policy.device = {
-                    complexity: deviceComplexity,
-                    historyLength: deviceHistoryLength,
-                    maxFailedAttemptsToWipe: deviceMaxFailedAttempts,
-                    changeAfterSeconds: deviceChangeAfterSeconds,
-                    strongAuthRequiredTimeout: deviceStrongAuthTimeout,
-                };
+                policy.enforcement = { blockAfterDays, wipeAfterDays, preserveFrp };
             }
             return policy;
         }
 
-        // Personal device variant (default)
+        // Personal device variant (BYOD)
         const policy: AndroidPersonalDevicesPasscodePolicy = {
             work: {
                 complexity: workComplexity,
@@ -182,14 +171,9 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
             },
             devicePolicyType: 'AndroidPersonalDevicesPasscodePolicy',
         };
-
         if (enforcementEnabled) {
-            policy.enforcement = {
-                blockAfterDays,
-                wipeAfterDays,
-            };
+            policy.enforcement = { blockAfterDays, wipeAfterDays };
         }
-
         if (enableDevicePolicy) {
             policy.device = {
                 complexity: deviceComplexity,
@@ -199,23 +183,19 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                 strongAuthRequiredTimeout: deviceStrongAuthTimeout,
             };
         }
-
         return policy;
     };
 
     const validatePolicy = (): { isValid: boolean; errorMessage: string } => {
         if (enforcementEnabled && wipeAfterDays > 0 && blockAfterDays >= wipeAfterDays) {
-            return {
-                isValid: false,
-                errorMessage: t('passcodePolicy.validationError'),
-            };
+            return { isValid: false, errorMessage: t('passcodePolicy.validationError') };
         }
         return { isValid: true, errorMessage: '' };
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         const validation = validatePolicy();
         if (!validation.isValid) {
             alert(validation.errorMessage);
@@ -225,7 +205,8 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
         setLoading(true);
         try {
             const policy = buildPolicy();
-            if (initialData?.work?.id) {
+            const hasExisting = isDedicated ? !!dedicatedData?.id : !!personalData?.work?.id;
+            if (hasExisting) {
                 await policyAPI.updatePasscodePolicy(platform, profileId, policy);
             } else {
                 await policyAPI.createPasscodePolicy(platform, profileId, policy);
@@ -261,7 +242,8 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
     };
 
     const handleCancel = () => {
-        if (isEditing && initialData?.work) {
+        const hasExisting = isDedicated ? !!dedicatedData?.id : !!personalData?.work;
+        if (isEditing && hasExisting) {
             setIsEditing(false);
         } else {
             onCancel();
@@ -322,9 +304,11 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Shield className="w-5 h-5 text-blue-500" />
-                            <span className="font-medium">{t('passcodePolicy.workProfileComplexity')}</span>
+                            <span className="font-medium">
+                                {isDedicated ? t('passcodePolicy.deviceComplexity') : t('passcodePolicy.workProfileComplexity')}
+                            </span>
                         </div>
-                        <Badge variant="default">{getComplexityLabel(workComplexity)}</Badge>
+                        <Badge variant="default">{getComplexityLabel(isDedicated ? deviceComplexity : workComplexity)}</Badge>
                     </CardContent>
                 </Card>
 
@@ -335,24 +319,26 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                             <span className="font-medium">{t('passcodePolicy.strongAuthTimeout')}</span>
                         </div>
                         <Badge variant="secondary">
-                            {workStrongAuthTimeout === 'DEVICE_DEFAULT' 
-                                ? t('passcodePolicy.strongAuth.deviceDefault') 
+                            {(isDedicated ? deviceStrongAuthTimeout : workStrongAuthTimeout) === 'DEVICE_DEFAULT'
+                                ? t('passcodePolicy.strongAuth.deviceDefault')
                                 : t('passcodePolicy.strongAuth.everyDay')}
                         </Badge>
                     </CardContent>
                 </Card>
 
-                <Card className={`border-l-4 ${workSeparateLock ? 'border-l-green-500' : 'border-l-gray-300'}`}>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Lock className="w-5 h-5 text-green-500" />
-                            <span className="font-medium">{t('passcodePolicy.separateWorkLock')}</span>
-                        </div>
-                        <Badge variant={workSeparateLock ? 'default' : 'secondary'}>
-                            {workSeparateLock ? t('form.enabled') : t('form.disabled')}
-                        </Badge>
-                    </CardContent>
-                </Card>
+                {!isDedicated && (
+                    <Card className={`border-l-4 ${workSeparateLock ? 'border-l-green-500' : 'border-l-gray-300'}`}>
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Lock className="w-5 h-5 text-green-500" />
+                                <span className="font-medium">{t('passcodePolicy.separateWorkLock')}</span>
+                            </div>
+                            <Badge variant={workSeparateLock ? 'default' : 'secondary'}>
+                                {workSeparateLock ? t('form.enabled') : t('form.disabled')}
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {enforcementEnabled && (
                     <Card className="border-l-4 border-l-orange-500">
@@ -369,7 +355,7 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     </Card>
                 )}
 
-                {enableDevicePolicy && (
+                {!isDedicated && enableDevicePolicy && (
                     <Card className="border-l-4 border-l-indigo-500">
                         <CardContent className="p-4">
                             <div className="flex items-center gap-2 mb-2">
@@ -403,7 +389,9 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                         </div>
                         <div>
                             <h3 className="text-lg font-medium">
-                                {initialData?.work ? t('passcodePolicy.editTitle') : t('passcodePolicy.configureTitle')}
+                                {(isDedicated ? dedicatedData?.id : personalData?.work?.id)
+                                    ? t('passcodePolicy.editTitle')
+                                    : t('passcodePolicy.configureTitle')}
                             </h3>
                             <p className="text-sm text-muted-foreground">
                                 {t('passcodePolicy.configureSubtitle')}
@@ -412,163 +400,284 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     </div>
                 </div>
 
-                {/* Work Profile Section */}
-                <div className="space-y-4">
-                    <h4 className="text-md font-semibold flex items-center gap-2 border-b pb-2">
-                        <Key className="h-5 w-5" />
-                        {t('passcodePolicy.workProfile')}
-                    </h4>
+                {/* Dedicated Device: flat device passcode section */}
+                {isDedicated ? (
+                    <div className="space-y-4">
+                        <h4 className="text-md font-semibold flex items-center gap-2 border-b pb-2">
+                            <Shield className="h-5 w-5" />
+                            {t('passcodePolicy.devicePolicy')}
+                        </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
-                        {/* Complexity */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                {t('passcodePolicy.passwordComplexity')}
-                                <span className="text-red-500">*</span>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="max-w-xs">
-                                        <p>{t('passcodePolicy.passwordComplexityTooltip')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <Select value={workComplexity} onValueChange={(v) => setWorkComplexity(v as PasscodeComplexity)}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {complexityOptions.map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value}>
-                                            {opt.label} - {opt.description}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4" />
+                                    {t('passcodePolicy.passwordComplexity')}
+                                    <span className="text-red-500">*</span>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.passwordComplexityTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Select value={deviceComplexity} onValueChange={(v) => setDeviceComplexity(v as PasscodeComplexity)}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {complexityOptions.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label} - {opt.description}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        {/* History Length */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                {t('passcodePolicy.passwordHistoryLength')}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="max-w-xs">
-                                        <p>{t('passcodePolicy.passwordHistoryTooltip')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <Input
-                                type="number"
-                                min={0}
-                                value={workHistoryLength}
-                                onChange={(e) => setWorkHistoryLength(Number(e.target.value) || 0)}
-                                placeholder={t('passcodePolicy.noRestriction')}
-                            />
-                        </div>
-
-                        {/* Max Failed Attempts */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                {t('passcodePolicy.maxFailedAttempts')}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="max-w-xs">
-                                        <p>{t('passcodePolicy.maxFailedAttemptsTooltip')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <Input
-                                type="number"
-                                min={0}
-                                value={workMaxFailedAttempts}
-                                onChange={(e) => setWorkMaxFailedAttempts(Number(e.target.value) || 0)}
-                                placeholder={t('passcodePolicy.noRestriction')}
-                            />
-                        </div>
-
-                        {/* Change After Seconds */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                {t('passcodePolicy.passwordExpiry')}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="max-w-xs">
-                                        <p>{t('passcodePolicy.passwordExpiryTooltip')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <Input
-                                type="number"
-                                min={0}
-                                value={workChangeAfterSeconds}
-                                onChange={(e) => setWorkChangeAfterSeconds(Number(e.target.value) || 0)}
-                                placeholder={t('passcodePolicy.neverExpires')}
-                            />
-                        </div>
-
-                        {/* Strong Auth Timeout */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                {t('passcodePolicy.strongAuthTimeout')}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="max-w-xs">
-                                        <p>{t('passcodePolicy.strongAuthTimeoutTooltip')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <Select value={workStrongAuthTimeout} onValueChange={(v) => setWorkStrongAuthTimeout(v as StrongAuthRequiredTimeout)}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {strongAuthTimeoutOptions.map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Separate Lock */}
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Lock className="h-4 w-4" />
-                                {t('passcodePolicy.separateWorkLock')}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="max-w-xs">
-                                        <p>{t('passcodePolicy.separateWorkLockTooltip')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </Label>
-                            <div className="flex items-center space-x-2 pt-2">
-                                <Switch
-                                    checked={workSeparateLock}
-                                    onCheckedChange={setWorkSeparateLock}
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    {t('passcodePolicy.passwordHistoryLength')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.passwordHistoryTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    value={deviceHistoryLength}
+                                    onChange={(e) => setDeviceHistoryLength(Number(e.target.value) || 0)}
+                                    placeholder={t('passcodePolicy.noRestriction')}
                                 />
-                                <span className="text-sm text-muted-foreground">
-                                    {workSeparateLock ? t('form.enabled') : t('form.disabled')}
-                                </span>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    {t('passcodePolicy.maxFailedAttempts')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.maxFailedAttemptsTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    value={deviceMaxFailedAttempts}
+                                    onChange={(e) => setDeviceMaxFailedAttempts(Number(e.target.value) || 0)}
+                                    placeholder={t('passcodePolicy.noRestriction')}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    {t('passcodePolicy.passwordExpiry')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.passwordExpiryTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    value={deviceChangeAfterSeconds}
+                                    onChange={(e) => setDeviceChangeAfterSeconds(Number(e.target.value) || 0)}
+                                    placeholder={t('passcodePolicy.neverExpires')}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    {t('passcodePolicy.strongAuthTimeout')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.strongAuthTimeoutTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Select value={deviceStrongAuthTimeout} onValueChange={(v) => setDeviceStrongAuthTimeout(v as StrongAuthRequiredTimeout)}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {strongAuthTimeoutOptions.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    /* Personal (BYOD): work profile section */
+                    <div className="space-y-4">
+                        <h4 className="text-md font-semibold flex items-center gap-2 border-b pb-2">
+                            <Key className="h-5 w-5" />
+                            {t('passcodePolicy.workProfile')}
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Shield className="h-4 w-4" />
+                                    {t('passcodePolicy.passwordComplexity')}
+                                    <span className="text-red-500">*</span>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.passwordComplexityTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Select value={workComplexity} onValueChange={(v) => setWorkComplexity(v as PasscodeComplexity)}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {complexityOptions.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label} - {opt.description}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    {t('passcodePolicy.passwordHistoryLength')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.passwordHistoryTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    value={workHistoryLength}
+                                    onChange={(e) => setWorkHistoryLength(Number(e.target.value) || 0)}
+                                    placeholder={t('passcodePolicy.noRestriction')}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    {t('passcodePolicy.maxFailedAttempts')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.maxFailedAttemptsTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    value={workMaxFailedAttempts}
+                                    onChange={(e) => setWorkMaxFailedAttempts(Number(e.target.value) || 0)}
+                                    placeholder={t('passcodePolicy.noRestriction')}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    {t('passcodePolicy.passwordExpiry')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.passwordExpiryTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    value={workChangeAfterSeconds}
+                                    onChange={(e) => setWorkChangeAfterSeconds(Number(e.target.value) || 0)}
+                                    placeholder={t('passcodePolicy.neverExpires')}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    {t('passcodePolicy.strongAuthTimeout')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.strongAuthTimeoutTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <Select value={workStrongAuthTimeout} onValueChange={(v) => setWorkStrongAuthTimeout(v as StrongAuthRequiredTimeout)}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {strongAuthTimeoutOptions.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Lock className="h-4 w-4" />
+                                    {t('passcodePolicy.separateWorkLock')}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-xs">
+                                            <p>{t('passcodePolicy.separateWorkLockTooltip')}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </Label>
+                                <div className="flex items-center space-x-2 pt-2">
+                                    <Switch checked={workSeparateLock} onCheckedChange={setWorkSeparateLock} />
+                                    <span className="text-sm text-muted-foreground">
+                                        {workSeparateLock ? t('form.enabled') : t('form.disabled')}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Enforcement Section */}
                 <div className="space-y-4">
@@ -617,7 +726,7 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                                 />
                                 <p className="text-xs text-muted-foreground">{t('passcodePolicy.wipeAfterDaysHint')}</p>
                             </div>
-                            {policyVariant === 'dedicated' && (
+                            {isDedicated && (
                                 <div className="col-span-2 space-y-2">
                                     <div className="flex items-center justify-between">
                                         <Label className="flex items-center gap-2">
@@ -646,94 +755,96 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     )}
                 </div>
 
-                {/* Device Policy Section */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b pb-2">
-                        <h4 className="text-md font-semibold flex items-center gap-2">
-                            <Shield className="h-5 w-5" />
-                            {t('passcodePolicy.devicePolicy')}
-                        </h4>
-                        <div className="flex items-center space-x-2">
-                            <Switch checked={enableDevicePolicy} onCheckedChange={setEnableDevicePolicy} />
-                            <span className="text-sm text-muted-foreground">
-                                {enableDevicePolicy ? t('form.enabled') : t('form.disabled')}
-                            </span>
+                {/* Optional Device Policy Section (personal/BYOD only) */}
+                {!isDedicated && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b pb-2">
+                            <h4 className="text-md font-semibold flex items-center gap-2">
+                                <Shield className="h-5 w-5" />
+                                {t('passcodePolicy.devicePolicy')}
+                            </h4>
+                            <div className="flex items-center space-x-2">
+                                <Switch checked={enableDevicePolicy} onCheckedChange={setEnableDevicePolicy} />
+                                <span className="text-sm text-muted-foreground">
+                                    {enableDevicePolicy ? t('form.enabled') : t('form.disabled')}
+                                </span>
+                            </div>
                         </div>
+
+                        {enableDevicePolicy && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2">
+                                        <Shield className="h-4 w-4" />
+                                        {t('passcodePolicy.deviceComplexity')}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={deviceComplexity} onValueChange={(v) => setDeviceComplexity(v as PasscodeComplexity)}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {complexityOptions.map((opt) => (
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label} - {opt.description}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>{t('passcodePolicy.deviceHistoryLength')}</Label>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        value={deviceHistoryLength}
+                                        onChange={(e) => setDeviceHistoryLength(Number(e.target.value) || 0)}
+                                        placeholder={t('passcodePolicy.noRestriction')}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>{t('passcodePolicy.deviceMaxFailedAttempts')}</Label>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        value={deviceMaxFailedAttempts}
+                                        onChange={(e) => setDeviceMaxFailedAttempts(Number(e.target.value) || 0)}
+                                        placeholder={t('passcodePolicy.noRestriction')}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>{t('passcodePolicy.devicePasswordExpiry')}</Label>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        value={deviceChangeAfterSeconds}
+                                        onChange={(e) => setDeviceChangeAfterSeconds(Number(e.target.value) || 0)}
+                                        placeholder={t('passcodePolicy.neverExpires')}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>{t('passcodePolicy.deviceStrongAuthTimeout')}</Label>
+                                    <Select value={deviceStrongAuthTimeout} onValueChange={(v) => setDeviceStrongAuthTimeout(v as StrongAuthRequiredTimeout)}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {strongAuthTimeoutOptions.map((opt) => (
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        )}
                     </div>
-
-                    {enableDevicePolicy && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2">
-                                    <Shield className="h-4 w-4" />
-                                    {t('passcodePolicy.deviceComplexity')}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Select value={deviceComplexity} onValueChange={(v) => setDeviceComplexity(v as PasscodeComplexity)}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {complexityOptions.map((opt) => (
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label} - {opt.description}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>{t('passcodePolicy.deviceHistoryLength')}</Label>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={deviceHistoryLength}
-                                    onChange={(e) => setDeviceHistoryLength(Number(e.target.value) || 0)}
-                                    placeholder={t('passcodePolicy.noRestriction')}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>{t('passcodePolicy.deviceMaxFailedAttempts')}</Label>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={deviceMaxFailedAttempts}
-                                    onChange={(e) => setDeviceMaxFailedAttempts(Number(e.target.value) || 0)}
-                                    placeholder={t('passcodePolicy.noRestriction')}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>{t('passcodePolicy.devicePasswordExpiry')}</Label>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={deviceChangeAfterSeconds}
-                                    onChange={(e) => setDeviceChangeAfterSeconds(Number(e.target.value) || 0)}
-                                    placeholder={t('passcodePolicy.neverExpires')}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>{t('passcodePolicy.deviceStrongAuthTimeout')}</Label>
-                                <Select value={deviceStrongAuthTimeout} onValueChange={(v) => setDeviceStrongAuthTimeout(v as StrongAuthRequiredTimeout)}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {strongAuthTimeoutOptions.map((opt) => (
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex justify-end gap-3 pt-6 border-t">

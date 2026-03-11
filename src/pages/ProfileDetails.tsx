@@ -891,12 +891,12 @@ export default function ProfileDetails() {
         let configCount = 0;
         
         try {
-          const pem = await PolicyService.getCertPemPolicy(id);
+          const pem = await PolicyService.getCertPemPolicyList(id);
           if (pem && pem.id) configCount++;
         } catch (e) { /* ignore 404 */ }
 
         try {
-          const pkcs = await PolicyService.getCertPkcsPolicy(id);
+          const pkcs = await PolicyService.getCertPkcsPolicyList(id);
           if (pkcs && pkcs.id) configCount++;
         } catch (e) { /* ignore 404 */ }
 
@@ -1085,7 +1085,21 @@ export default function ProfileDetails() {
               )}
             </div>
 
-            {/* Edit Policy Button (Top Right) */}
+            {/* Management Mode — right end */}
+            {profile.managementMode && (() => {
+              const modeConfig: Record<string, { label: string; className: string }> = {
+                BYOD: { label: "Work Profile (Personal Device)", className: "text-blue-600" },
+                COPE: { label: "Work Profile (Company Device)", className: "text-purple-600" },
+                COBO: { label: "Fully Managed Device", className: "text-orange-600" },
+                COSU: { label: "Dedicated Device (KIOSK)", className: "text-indigo-600" },
+              };
+              const cfg = modeConfig[profile.managementMode] || { label: profile.managementMode, className: "text-muted-foreground" };
+              return (
+                <div className="text-right shrink-0">
+                  <p className={cn("text-3xl font-bold tracking-tight leading-none", cfg.className)}>{cfg.label}</p>
+                </div>
+              );
+            })()}
 
           </div>
         </div>
@@ -1135,7 +1149,31 @@ export default function ProfileDetails() {
           </Card>
         </div>
 
-
+        {/* Support Messages (Android optional fields) */}
+        {(profile.shortSupportMessage || profile.longSupportMessage) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {profile.shortSupportMessage && (
+              <Card className="shadow-sm border-border/60">
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardDescription className="text-xs font-medium uppercase tracking-wide">Short Support Message</CardDescription>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <p className="text-sm text-foreground">{profile.shortSupportMessage}</p>
+                </CardContent>
+              </Card>
+            )}
+            {profile.longSupportMessage && (
+              <Card className="shadow-sm border-border/60">
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardDescription className="text-xs font-medium uppercase tracking-wide">Long Support Message</CardDescription>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <p className="text-sm text-foreground">{profile.longSupportMessage}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Policies (New Layout with Editors) */}
         {/* Policies */}
@@ -1174,6 +1212,7 @@ export default function ProfileDetails() {
           activePolicyType={activePolicyType}
           platform={platform as Platform}
           profileId={id!}
+          managementMode={(profile as AndroidFullProfile)?.managementMode}
           passcodePolicy={passcodePolicy}
           androidPasscodePolicy={androidPasscodePolicy}
           wifiPolicy={wifiPolicy}

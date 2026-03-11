@@ -403,6 +403,34 @@ const Profiles = () => {
         ),
       },
       {
+        key: "managementMode",
+        header: t('profiles.table.managementMode'),
+        accessor: (item) => {
+          const modeLabels: Record<string, string> = {
+            BYOD: "Work Profile (Personal Device)",
+            COPE: "Work Profile (Company Device)",
+            COBO: "Fully Managed Device",
+            COSU: "Dedicated Device (KIOSK)",
+          };
+          return item.managementMode ? (modeLabels[item.managementMode] || item.managementMode) : "";
+        },
+        hidden: platformFilter === "ios",
+        render: (value) => {
+          if (!value) return <span className="text-muted-foreground">-</span>;
+          const modeConfig: Record<string, string> = {
+            "Work Profile (Personal Device)": "text-blue-600",
+            "Work Profile (Company Device)": "text-purple-600",
+            "Fully Managed Device": "text-orange-600",
+            "Dedicated Device (KIOSK)": "text-indigo-600",
+          };
+          return (
+            <span className={cn("text-xs font-semibold", modeConfig[value] || "text-muted-foreground")}>
+              {value}
+            </span>
+          );
+        },
+      },
+      {
         key: "deviceCount",
         header: t('profiles.table.devices'),
         accessor: (item) => item.deviceCount || 0,
