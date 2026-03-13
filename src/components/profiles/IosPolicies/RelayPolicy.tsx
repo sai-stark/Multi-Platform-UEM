@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosRelayPolicy } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, Plus, Radio, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
@@ -79,11 +80,12 @@ export function RelayPolicy({ profileId, initialData, onSave, onCancel }: RelayP
         }
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosRelayPolicy;
             if (initialData?.id) {
-                await PolicyService.updateRelayPolicy(profileId, formData as IosRelayPolicy);
+                await PolicyService.updateRelayPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Relay policy updated' });
             } else {
-                await PolicyService.createRelayPolicy(profileId, formData as IosRelayPolicy);
+                await PolicyService.createRelayPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Relay policy created' });
             }
             onSave();

@@ -19,6 +19,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { Platform } from '@/types/common';
 import { ApplicationPolicy, IosApplicationPolicy, NotificationPolicy as NotificationPolicyType } from '@/types/policy';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { AlertTriangle, Bell, Car, CheckCircle2, Circle, Edit, Eye, Layout, Loader2, Lock, MessageSquare, Plus, Speaker, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -138,10 +139,10 @@ export function NotificationPolicy({ platform, profileId, initialData, applicati
             });
             return;
         }
-        const payload: NotificationPolicyType = {
+        const payload = cleanPayload({
             ...formData as NotificationPolicyType,
             policyType: 'IosNotificationSettings',
-        };
+        }) as NotificationPolicyType;
         try {
             if (editingPolicy?.id) {
                 await PolicyService.updateNotificationPolicy(platform, profileId, editingPolicy.id, payload);

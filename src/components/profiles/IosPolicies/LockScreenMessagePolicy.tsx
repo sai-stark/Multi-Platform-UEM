@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { LockScreenMessagePolicy as LockScreenMessagePolicyType, Platform } from '@/types/models';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, MessageSquare, Plus, Tag, Text, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -88,10 +89,12 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
         e.preventDefault();
         try {
             if (policy?.id) {
-                await PolicyService.updateLockScreenMessage(platform, profileId, { ...formData, id: policy.id } as LockScreenMessagePolicyType);
+                const payload = cleanPayload({ ...formData, id: policy.id }) as LockScreenMessagePolicyType;
+                await PolicyService.updateLockScreenMessage(platform, profileId, payload);
                 toast({ title: 'Success', description: 'Lock Screen Message updated successfully' });
             } else {
-                await PolicyService.createLockScreenMessage(platform, profileId, formData as LockScreenMessagePolicyType);
+                const payload = cleanPayload(formData) as LockScreenMessagePolicyType;
+                await PolicyService.createLockScreenMessage(platform, profileId, payload);
                 toast({ title: 'Success', description: 'Lock Screen Message created successfully' });
             }
             setIsDialogOpen(false);

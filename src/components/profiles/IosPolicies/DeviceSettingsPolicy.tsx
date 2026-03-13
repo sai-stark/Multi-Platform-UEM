@@ -12,6 +12,7 @@ import {
     IosMDMOptions,
     IosOrganizationInfo,
 } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import {
     Accessibility,
@@ -143,7 +144,7 @@ export function DeviceSettingsPolicy({ profileId, initialData, onSave, onCancel,
 
     const handleSave = async () => {
         setLoading(true);
-        const payload: IosDeviceSettingsPolicyType = {
+        const rawPayload: IosDeviceSettingsPolicyType = {
             ...initialData,
             name: initialData?.name || 'ios',
             policyType: 'IosDeviceSettingsPolicy',
@@ -151,6 +152,7 @@ export function DeviceSettingsPolicy({ profileId, initialData, onSave, onCancel,
                 Settings: buildSettingsArray(settings),
             },
         };
+        const payload = cleanPayload(rawPayload) as IosDeviceSettingsPolicyType;
         try {
             if (initialData?.id) {
                 await PolicyService.updateDeviceSettingsPolicy(profileId, payload);

@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
 import { EAPClientConfiguration, EAPType, IosWiFiConfiguration, TLSVersion, TTLSInnerAuth } from '@/types/models';
+import { cleanPayload } from '@/utils/cleanPayload';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Eye, EyeOff, Globe, Lock, Shield, Trash2, Wifi } from 'lucide-react';
 import { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WifiPolicyProps {
     profileId: string;
@@ -95,12 +96,13 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
 
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosWiFiConfiguration;
             // Use update if policy already has an ID (editing), otherwise create
             if (initialData?.id) {
-                await PolicyService.updateIosWiFiConfiguration(profileId, formData as IosWiFiConfiguration);
+                await PolicyService.updateIosWiFiConfiguration(profileId, payload);
                 toast({ title: "Success", description: "WiFi configuration updated successfully" });
             } else {
-                await PolicyService.createIosWiFiConfiguration(profileId, formData as IosWiFiConfiguration);
+                await PolicyService.createIosWiFiConfiguration(profileId, payload);
                 toast({ title: "Success", description: "WiFi configuration created successfully" });
             }
             onSave();
@@ -114,7 +116,7 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
 
     const handleDelete = async () => {
         if (!initialData?.id) return;
-        
+
         setLoading(true);
         try {
             await PolicyService.deleteIosWiFiConfiguration(profileId);

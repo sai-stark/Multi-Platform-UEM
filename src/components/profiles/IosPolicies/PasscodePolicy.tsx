@@ -14,6 +14,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { IosPasscodeRestrictionPolicy, PasscodeRestrictionPolicy, Platform } from '@/types/models';
+import { cleanPayload } from '@/utils/cleanPayload';
 import {
     AlertCircle,
     CaseLower,
@@ -97,11 +98,12 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
         try {
             // Determine update or create based on ID presence
             const hasId = formData.id || formData.passcodeId;
+            const payload = cleanPayload(formData);
 
             if (hasId) {
-                await PolicyService.updatePasscodeRestriction(platform, profileId, formData);
+                await PolicyService.updatePasscodeRestriction(platform, profileId, payload);
             } else {
-                await PolicyService.createPasscodeRestriction(platform, profileId, formData);
+                await PolicyService.createPasscodeRestriction(platform, profileId, payload);
             }
             onSave();
         } catch (error) {

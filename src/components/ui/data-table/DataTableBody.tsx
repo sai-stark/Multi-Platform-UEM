@@ -30,7 +30,7 @@ export function DataTableBody<T extends Record<string, any>>({
   rowActions,
   quickActions,
 }: DataTableBodyProps<T>) {
-  const { paginatedData, visibleColumnsList } = table;
+  const { paginatedData, visibleColumnsList, page } = table;
   const prefersReducedMotion = useReducedMotion();
 
   return (
@@ -49,7 +49,7 @@ export function DataTableBody<T extends Record<string, any>>({
       ) : (
         paginatedData.map((item, index) => (
           <motion.tr
-            key={item.id || `row-${index}`}
+            key={item.id || `page-${page}-row-${index}`}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -79,10 +79,10 @@ export function DataTableBody<T extends Record<string, any>>({
                 <TableCell
                   key={col.key}
                   className={`min-w-0 ${col.align === "center"
-                      ? "text-center"
-                      : col.align === "right"
-                        ? "text-right"
-                        : "text-left"
+                    ? "text-center"
+                    : col.align === "right"
+                      ? "text-right"
+                      : "text-left"
                     }`}
                 >
                   {tooltipText ? (

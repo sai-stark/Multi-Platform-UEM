@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { FolderIconItem, IconItem, IosHomeScreenLayoutPolicy } from "@/types/ios";
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from "@/utils/errorUtils";
 import { AppWindow, Edit, FolderOpen, Globe, GripVertical, Layout, Loader2, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -73,10 +74,11 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
         }
         setSaving(true);
         try {
+            const payload = cleanPayload(formData) as IosHomeScreenLayoutPolicy;
             if (initialData?.id) {
-                await PolicyService.updateHomeScreenLayoutPolicy(profileId, formData);
+                await PolicyService.updateHomeScreenLayoutPolicy(profileId, payload);
             } else {
-                await PolicyService.createHomeScreenLayoutPolicy(profileId, formData);
+                await PolicyService.createHomeScreenLayoutPolicy(profileId, payload);
             }
             toast({ title: "Success", description: "Home Screen Layout policy saved successfully." });
             onSave();

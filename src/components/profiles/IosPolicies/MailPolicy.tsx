@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosMailPolicy } from '@/types/models';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Mail, Server, Shield, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -72,12 +73,13 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
 
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosMailPolicy;
             // Use update if policy already has an ID (editing), otherwise create
             if (initialData?.id) {
-                await PolicyService.updateIosMailPolicy(profileId, formData as IosMailPolicy);
+                await PolicyService.updateIosMailPolicy(profileId, payload);
                 toast({ title: "Success", description: "Mail policy updated successfully" });
             } else {
-                await PolicyService.createIosMailPolicy(profileId, formData as IosMailPolicy);
+                await PolicyService.createIosMailPolicy(profileId, payload);
                 toast({ title: "Success", description: "Mail policy created successfully" });
             }
             onSave();

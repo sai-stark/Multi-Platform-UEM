@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosVpnPolicy } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { ChevronDown, ChevronRight, Edit, Loader2, Lock, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -80,11 +81,12 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
         }
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosVpnPolicy;
             if (initialData?.id) {
-                await PolicyService.updateVpnPolicy(profileId, formData as IosVpnPolicy);
+                await PolicyService.updateVpnPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'VPN policy updated' });
             } else {
-                await PolicyService.createVpnPolicy(profileId, formData as IosVpnPolicy);
+                await PolicyService.createVpnPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'VPN policy created' });
             }
             onSave();

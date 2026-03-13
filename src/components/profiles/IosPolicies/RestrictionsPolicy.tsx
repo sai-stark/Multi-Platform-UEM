@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { IosRestrictionsPayload } from '@/types/restrictions';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Ban, Edit, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -244,7 +245,7 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel, o
 
     const handleSave = async () => {
         setSaving(true);
-        const payload: IosRestrictionsPayload = { ...formData, policyType: 'IosDeviceRestrictions' };
+        const payload = cleanPayload({ ...formData, policyType: 'IosDeviceRestrictions' }) as IosRestrictionsPayload;
         try {
             if (initialData?.id) {
                 await PolicyService.updateRestrictionsPolicy(profileId, payload);

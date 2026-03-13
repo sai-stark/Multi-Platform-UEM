@@ -38,6 +38,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AndroidWebApplicationPolicy, IosWebApplicationPolicy, WebApplication } from "@/types/models";
+import { cleanPayload } from '@/utils/cleanPayload';
 import { Globe, Layout, Loader2, Pencil, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -184,6 +185,7 @@ export function WebApplicationPolicyEditor({
                     // Spec says oneOf screenOrder OR screenBottom. 
                 };
             }
+            payload = cleanPayload(payload);
 
             if (editingPolicy && editingPolicy.id) {
                 await PolicyService.updateWebApplicationPolicy(platform as any, profileId, editingPolicy.id, payload);

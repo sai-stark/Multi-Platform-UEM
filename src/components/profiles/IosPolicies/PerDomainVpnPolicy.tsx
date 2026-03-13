@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosPerDomainVpnPolicy } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { ChevronDown, ChevronRight, Edit, Globe, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
@@ -95,11 +96,12 @@ export function PerDomainVpnPolicy({ profileId, initialData, onSave, onCancel }:
         }
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosPerDomainVpnPolicy;
             if (initialData?.id) {
-                await PolicyService.updatePerDomainVpnPolicy(profileId, formData as IosPerDomainVpnPolicy);
+                await PolicyService.updatePerDomainVpnPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Per-Domain VPN policy updated' });
             } else {
-                await PolicyService.createPerDomainVpnPolicy(profileId, formData as IosPerDomainVpnPolicy);
+                await PolicyService.createPerDomainVpnPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Per-Domain VPN policy created' });
             }
             onSave();

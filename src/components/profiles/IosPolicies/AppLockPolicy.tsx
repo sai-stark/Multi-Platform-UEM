@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosAppLockPolicy } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, Lock, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -53,11 +54,12 @@ export function AppLockPolicy({ profileId, initialData, onSave, onCancel }: AppL
 
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosAppLockPolicy;
             if (initialData?.id) {
-                await PolicyService.updateAppLockPolicy(profileId, formData as IosAppLockPolicy);
+                await PolicyService.updateAppLockPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'App Lock policy updated' });
             } else {
-                await PolicyService.createAppLockPolicy(profileId, formData as IosAppLockPolicy);
+                await PolicyService.createAppLockPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'App Lock policy created' });
             }
             onSave();

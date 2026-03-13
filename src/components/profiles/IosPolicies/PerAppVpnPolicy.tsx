@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosPerAppVpnPolicy } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, Plus, Smartphone, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
@@ -52,11 +53,12 @@ export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: Pe
         }
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosPerAppVpnPolicy;
             if (initialData?.id) {
-                await PolicyService.updatePerAppVpnPolicy(profileId, formData as IosPerAppVpnPolicy);
+                await PolicyService.updatePerAppVpnPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Per-App VPN policy updated' });
             } else {
-                await PolicyService.createPerAppVpnPolicy(profileId, formData as IosPerAppVpnPolicy);
+                await PolicyService.createPerAppVpnPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Per-App VPN policy created' });
             }
             onSave();

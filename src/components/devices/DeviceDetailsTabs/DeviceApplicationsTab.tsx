@@ -31,15 +31,37 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
             if (!platform || !id) return;
             try {
                 setLoadingApps(true);
-                const apps = await DeviceService.getDeviceApplications(platform as Platform, id, { size: 1000 });
-                const appsAny = apps as any;
-                if (appsAny?.content && Array.isArray(appsAny.content)) {
-                    setApplications(appsAny.content);
-                } else if (Array.isArray(apps)) {
-                    setApplications(apps);
-                } else {
-                    setApplications([]);
+                // Fetch first page to get total page count
+                const PAGE_SIZE = 100;
+                const firstPage = await DeviceService.getDeviceApplications(platform as Platform, id, { page: 0, size: PAGE_SIZE });
+                const firstPageAny = firstPage as any;
+
+                let allApps: any[] = [];
+
+                if (firstPageAny?.content && Array.isArray(firstPageAny.content)) {
+                    allApps = [...firstPageAny.content];
+
+                    // If there are more pages, fetch them all
+                    const totalPages = firstPageAny?.page?.totalPages ?? 1;
+                    if (totalPages > 1) {
+                        const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 1);
+                        const remaining = await Promise.all(
+                            remainingPages.map(pageNum =>
+                                DeviceService.getDeviceApplications(platform as Platform, id, { page: pageNum, size: PAGE_SIZE })
+                            )
+                        );
+                        remaining.forEach(res => {
+                            const resAny = res as any;
+                            if (resAny?.content && Array.isArray(resAny.content)) {
+                                allApps = allApps.concat(resAny.content);
+                            }
+                        });
+                    }
+                } else if (Array.isArray(firstPage)) {
+                    allApps = firstPage;
                 }
+
+                setApplications(allApps);
             } catch (e) {
                 console.error("Failed to load apps", e);
                 setApplications([]);

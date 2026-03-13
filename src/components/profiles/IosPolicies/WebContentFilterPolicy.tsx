@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosWebContentFilterPolicy } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Filter, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
@@ -73,11 +74,12 @@ export function WebContentFilterPolicy({ profileId, initialData, onSave, onCance
         }
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosWebContentFilterPolicy;
             if (initialData?.id) {
-                await PolicyService.updateWebContentFilterPolicy(profileId, formData as IosWebContentFilterPolicy);
+                await PolicyService.updateWebContentFilterPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Web Content Filter policy updated' });
             } else {
-                await PolicyService.createWebContentFilterPolicy(profileId, formData as IosWebContentFilterPolicy);
+                await PolicyService.createWebContentFilterPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'Web Content Filter policy created' });
             }
             onSave();

@@ -5,6 +5,16 @@ import { ProfileDetailSkeleton } from "@/components/skeletons";
 import { PolicyService } from "@/api/services/IOSpolicies";
 import { PolicyEditDialog } from "@/components/profiles/PolicyEditDialog";
 import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,6 +89,7 @@ import {
   MapPin,
   MessageSquare,
   Monitor,
+  MoreVertical,
   Pencil,
   Phone,
   Plus,
@@ -91,6 +102,7 @@ import {
   ShieldCheck,
   Smartphone,
   TabletSmartphone,
+  Trash2,
   Users,
   Wifi,
   WifiOff,
@@ -241,6 +253,7 @@ interface PolicyCardGridProps {
   deviceThemePolicy?: DeviceThemePolicy;
   enrollmentPolicy?: EnrollmentPolicy;
   onSelectPolicy: (type: string) => void;
+  onDeletePolicy?: (type: string, title: string) => void;
 }
 
 // Uniform card wrapper component for consistent sizing
@@ -292,6 +305,8 @@ interface ConfiguredPolicyCardProps {
   colorClass?: string;
   borderClass?: string;
   onClick: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   badgeText?: string;
 }
 
@@ -303,17 +318,48 @@ function ConfiguredPolicyCard({
   colorClass = "text-primary",
   borderClass = "border-t-primary",
   onClick,
+  onEdit,
+  onDelete,
   badgeText = "Active"
 }: ConfiguredPolicyCardProps) {
   return (
     <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="h-full">
       <Card
         className={cn(
-          "cursor-pointer hover:shadow-lg transition-all h-full border-t-4 flex flex-col",
+          "cursor-pointer hover:shadow-lg transition-all h-full border-t-4 flex flex-col relative group",
           borderClass
         )}
         onClick={onClick}
       >
+        {/* Actions dropdown */}
+        {(onEdit || onDelete) && (
+          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                {onEdit && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Pencil className="w-4 h-4 mr-2" /> Edit
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
         <CardHeader className="pb-2">
           <CardTitle className={cn("text-lg flex items-center gap-2", colorClass)}>
             {icon}
@@ -358,6 +404,7 @@ function PolicyCardGrid({
   deviceThemePolicy,
   enrollmentPolicy,
   onSelectPolicy,
+  onDeletePolicy,
 }: PolicyCardGridProps) {
   const isIos = platform === "ios" || platform === "macos";
   const isAndroid = platform === "android";
@@ -384,6 +431,7 @@ function PolicyCardGrid({
     colorClass?: string;
     borderClass?: string;
     badgeText?: string;
+    hideActions?: boolean;
   };
 
   const allPolicies: PolicyItem[] = [];
@@ -570,13 +618,15 @@ function PolicyCardGrid({
 
     allPolicies.push({
       id: "mdm",
-      title: "MDM Settings",
-      description: "Mobile Device Management configuration.",
-      statusText: mdmPolicy ? `Server: ${mdmPolicy.serverURL?.substring(0, 20)}...` : undefined,
+      title: "MDM Configuration",
+      description: "Apple MDM server, identity certificates & enrollment settings.",
+      statusText: mdmPolicy ? `Server: ${mdmPolicy.serverURL?.substring(0, 30)}${(mdmPolicy.serverURL?.length || 0) > 30 ? '…' : ''}` : undefined,
       icon: <Server className="w-5 h-5" />,
       isConfigured: !!mdmPolicy,
-      colorClass: "text-primary",
-      borderClass: "border-t-primary"
+      colorClass: "text-indigo-600",
+      borderClass: "border-t-indigo-600",
+      badgeText: "View Only",
+      hideActions: true,
     });
 
     allPolicies.push({
@@ -733,6 +783,8 @@ function PolicyCardGrid({
                 borderClass={policy.borderClass}
                 badgeText={policy.badgeText}
                 onClick={() => onSelectPolicy(policy.id)}
+                onEdit={policy.hideActions ? undefined : () => onSelectPolicy(policy.id)}
+                onDelete={onDeletePolicy && !policy.hideActions ? () => onDeletePolicy(policy.id, policy.title) : undefined}
               />
             ))}
           </div>
@@ -781,6 +833,8 @@ export default function ProfileDetails() {
   const [error, setError] = useState<string | null>(null);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [activePolicyType, setActivePolicyType] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ policyType: string; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { setEntityName } = useBreadcrumb();
 
   // Set breadcrumb entity name when profile loads
@@ -1237,6 +1291,7 @@ export default function ProfileDetails() {
           deviceThemePolicy={deviceThemePolicy}
           enrollmentPolicy={enrollmentPolicy}
           onSelectPolicy={setActivePolicyType}
+          onDeletePolicy={(type, title) => setDeleteTarget({ policyType: type, title })}
         />
 
         <PolicyEditDialog
@@ -1366,6 +1421,59 @@ export default function ProfileDetails() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Policy Confirmation Dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-destructive" />
+                Delete Policy
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the <strong>{deleteTarget?.title}</strong> policy? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isDeleting}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (!deleteTarget || !id) return;
+                  setIsDeleting(true);
+                  try {
+                    const pt = deleteTarget.policyType;
+                    if (pt === "passcode") await PolicyService.deletePasscodeRestriction(platform as Platform, id);
+                    else if (pt === "wifi") await PolicyService.deleteIosWiFiConfiguration(id);
+                    else if (pt === "mail") await PolicyService.deleteIosMailPolicy(id);
+                    else if (pt === "restrictions") await PolicyService.deleteRestrictionsPolicy(id);
+                    else if (pt === "lockScreenMessage") await PolicyService.deleteLockScreenMessage(platform as Platform, id);
+                    else if (pt === "webContentFilter") await PolicyService.deleteWebContentFilterPolicy(id);
+                    else if (pt === "globalHttpProxy") await PolicyService.deleteGlobalHttpProxyPolicy(id);
+                    else if (pt === "vpn") await PolicyService.deleteVpnPolicy(id);
+                    else if (pt === "perAppVpn") await PolicyService.deletePerAppVpnPolicy(id);
+                    else if (pt === "perDomainVpn") await PolicyService.deletePerDomainVpnPolicy(id);
+                    else if (pt === "relay") await PolicyService.deleteRelayPolicy(id);
+                    else if (pt === "homeScreenLayout") await PolicyService.deleteHomeScreenLayoutPolicy(id);
+                    else if (pt === "appLock") await PolicyService.deleteAppLockPolicy(id);
+                    else if (pt === "mdm") await PolicyService.deleteMdmPolicy(id);
+                    else if (pt === "deviceSettings") await PolicyService.deleteDeviceSettingsPolicy(id);
+                    setDeleteTarget(null);
+                    fetchProfile();
+                  } catch (err) {
+                    console.error("Failed to delete policy:", err);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <Separator />
 

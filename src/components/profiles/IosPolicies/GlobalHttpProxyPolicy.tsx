@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { IosGlobalHttpProxyPolicy } from '@/types/ios';
+import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Globe, Loader2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -53,11 +54,12 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
         }
         setLoading(true);
         try {
+            const payload = cleanPayload(formData) as IosGlobalHttpProxyPolicy;
             if (initialData?.id) {
-                await PolicyService.updateGlobalHttpProxyPolicy(profileId, formData as IosGlobalHttpProxyPolicy);
+                await PolicyService.updateGlobalHttpProxyPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'HTTP Proxy policy updated' });
             } else {
-                await PolicyService.createGlobalHttpProxyPolicy(profileId, formData as IosGlobalHttpProxyPolicy);
+                await PolicyService.createGlobalHttpProxyPolicy(profileId, payload);
                 toast({ title: 'Success', description: 'HTTP Proxy policy created' });
             }
             onSave();
