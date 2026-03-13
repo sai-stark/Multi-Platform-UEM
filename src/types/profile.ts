@@ -95,7 +95,7 @@ export interface IosPasscodeRestrictionPolicy {
 }
 
 export interface IosFullProfile extends Profile {
-    profileType?: 'IosFullProfile';
+    profileType?: 'IosFullProfile' | 'MacosProfile';
     mailPolicy?: IosMailPolicy;
     passCodePolicy?: IosPasscodeRestrictionPolicy;
     scepPolicy?: IosScepConfiguration;

@@ -6,6 +6,7 @@ import {
 } from '@/types/models';
 import {
     IosApplication,
+    MacosApplication,
     ApplicationConfiguration,
     AppRequest
 } from '@/types/application';
@@ -249,6 +250,23 @@ export const ApplicationService = {
     ): Promise<ApplicationPermission[]> => {
         const response = await apiClient.get<ApplicationPermission[]>(
             `/${platform}/applications/${applicationId}/permissions`
+        );
+        return response.data;
+    },
+
+    // ============================================
+    // Package-based Application Upload APIs
+    // ============================================
+
+    // POST /{platform}/applications:file_upload - Upload a package-based application
+    uploadPackageApplication: async (
+        platform: Platform,
+        formData: FormData
+    ): Promise<MacosApplication> => {
+        const response = await apiClient.post<MacosApplication>(
+            `/${platform}/applications:file_upload`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
         );
         return response.data;
     },

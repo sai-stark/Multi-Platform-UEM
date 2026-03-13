@@ -9,6 +9,7 @@ import {
   Globe,
   Star,
   X,
+  Cpu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
 
 type MacosAddMode = 'search' | 'store-url' | 'upload' | 'app-url';
+type MacosArchitecture = 'intel_x86' | 'arm64';
 
 const MACOS_ACCEPTED_EXTENSIONS = '.pkg,.dmg,.mpkg,.app,.zip';
 
@@ -64,6 +73,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
   // Upload mode state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [architecture, setArchitecture] = useState<MacosArchitecture>('arm64');
 
   // App URL mode state
   const [appUrl, setAppUrl] = useState('');
@@ -74,7 +84,8 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
     name: string;
     identifier: string;
     mode: MacosAddMode;
-  }>({ open: false, name: '', identifier: '', mode: 'search' });
+    architecture: MacosArchitecture;
+  }>({ open: false, name: '', identifier: '', mode: 'search', architecture: 'arm64' });
 
   // ── Search ──────────────────────────────────────────────────────────
   const handleSearch = (term: string) => {
@@ -101,7 +112,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
     const url = `https://apps.apple.com/app/id${result.trackId}`;
     onOpenChange(false);
     setTimeout(
-      () => setConfirmDialog({ open: true, name: result.trackName, identifier: url, mode: 'search' }),
+      () => setConfirmDialog({ open: true, name: result.trackName, identifier: url, mode: 'search', architecture }),
       200
     );
   };
@@ -114,7 +125,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
     }
     onOpenChange(false);
     setTimeout(
-      () => setConfirmDialog({ open: true, name: storeUrl.trim(), identifier: storeUrl.trim(), mode: 'store-url' }),
+      () => setConfirmDialog({ open: true, name: storeUrl.trim(), identifier: storeUrl.trim(), mode: 'store-url', architecture }),
       200
     );
   };
@@ -132,7 +143,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
     }
     onOpenChange(false);
     setTimeout(
-      () => setConfirmDialog({ open: true, name: uploadFile.name, identifier: uploadFile.name, mode: 'upload' }),
+      () => setConfirmDialog({ open: true, name: uploadFile.name, identifier: uploadFile.name, mode: 'upload', architecture }),
       200
     );
   };
@@ -145,27 +156,32 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
     }
     onOpenChange(false);
     setTimeout(
-      () => setConfirmDialog({ open: true, name: appUrl.trim(), identifier: appUrl.trim(), mode: 'app-url' }),
+      () => setConfirmDialog({ open: true, name: appUrl.trim(), identifier: appUrl.trim(), mode: 'app-url', architecture }),
       200
     );
   };
 
   // ── Cancel / Confirm ────────────────────────────────────────────────
   const cancelConfirm = () => {
-    setConfirmDialog({ open: false, name: '', identifier: '', mode: 'search' });
+    setConfirmDialog({ open: false, name: '', identifier: '', mode: 'search', architecture: 'arm64' });
     setTimeout(() => onOpenChange(true), 200);
   };
 
   const confirmRegister = async () => {
-    const { name, identifier, mode } = confirmDialog;
-    setConfirmDialog({ open: false, name: '', identifier: '', mode: 'search' });
+    const { name, identifier, mode, architecture: arch } = confirmDialog;
+    setConfirmDialog({ open: false, name: '', identifier: '', mode: 'search', architecture: 'arm64' });
     setRegistering(true);
     try {
       if (mode === 'upload' && uploadFile) {
         const formData = new FormData();
         formData.append('file', uploadFile);
-        formData.append('name', uploadFile.name);
-        await ApplicationService.createApplication('macos', formData);
+        formData.append('architecture', arch);
+        await ApplicationService.uploadPackageApplication('macos', formData);
+      } else if (mode === 'app-url') {
+        const formData = new FormData();
+        formData.append('url', identifier);
+        formData.append('architecture', arch);
+        await ApplicationService.uploadPackageApplication('macos', formData);
       } else {
         await ApplicationService.registerApplication('macos', { identifier });
       }
@@ -190,6 +206,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
     setStoreUrl('');
     setUploadFile(null);
     setAppUrl('');
+    setArchitecture('arm64');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -396,6 +413,28 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
                     onChange={handleFileChange}
                   />
                 </div>
+
+                {/* Architecture Selector */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Cpu className="w-4 h-4" />
+                    Architecture
+                    <span className="text-destructive" aria-hidden="true">*</span>
+                  </Label>
+                  <Select value={architecture} onValueChange={(v) => setArchitecture(v as MacosArchitecture)}>
+                    <SelectTrigger id="upload-architecture">
+                      <SelectValue placeholder="Select architecture" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="arm64">Apple Silicon (ARM64)</SelectItem>
+                      <SelectItem value="intel_x86">Intel (x86)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select the target CPU architecture for this package.
+                  </p>
+                </div>
+
                 <Button
                   onClick={handleUpload}
                   disabled={!uploadFile || registering}
@@ -439,6 +478,27 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
                     Enter a direct URL to a macOS installer file (.pkg, .dmg, etc.). The file will be downloaded and deployed to managed devices.
                   </p>
                 </div>
+
+                {/* Architecture Selector */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <Cpu className="w-4 h-4" />
+                    Architecture
+                    <span className="text-destructive" aria-hidden="true">*</span>
+                  </Label>
+                  <Select value={architecture} onValueChange={(v) => setArchitecture(v as MacosArchitecture)}>
+                    <SelectTrigger id="appurl-architecture">
+                      <SelectValue placeholder="Select architecture" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="arm64">Apple Silicon (ARM64)</SelectItem>
+                      <SelectItem value="intel_x86">Intel (x86)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select the target CPU architecture for this package.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -455,7 +515,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
       <AlertDialog
         open={confirmDialog.open}
         onOpenChange={(open) => {
-          if (!open) setConfirmDialog({ open: false, name: '', identifier: '', mode: 'search' });
+          if (!open) setConfirmDialog({ open: false, name: '', identifier: '', mode: 'search', architecture: 'arm64' });
         }}
       >
         <AlertDialogContent>

@@ -343,6 +343,7 @@ export default function DeviceDetails() {
     const ramPercent = Math.min(100, (Number((((Number(device.ramUsed || device.usedRam) || 0) / (Number(device.ramCapacity || device.totalRam) || 1)) * 100).toFixed(2))));
 
     const isIos = device.platform === 'ios' || device.deviceType === 'IosDeviceInfo';
+    const isApplePlatform = isIos || device.platform === 'macos';
 
     return (
         <MainLayout>
@@ -437,7 +438,7 @@ export default function DeviceDetails() {
                                     </DropdownMenuItem>
                                     {/* Dangerous Actions */}
                                     <DropdownMenuSeparator />
-                                    {device.platform === 'ios' && (
+                                    {isApplePlatform && (
                                         <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
                                             <Unlock className="w-4 h-4 mr-2" /> Clear Passcode
                                         </DropdownMenuItem>
@@ -447,7 +448,7 @@ export default function DeviceDetails() {
                                         <Trash2 className="w-4 h-4 mr-2" /> Factory Reset
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    {platform === 'ios' && (
+                                    {isApplePlatform && (
                                         <>
                                             <DropdownMenuItem onClick={() => handleAction('clear_passcode', 'Clear Passcode')}>
                                                 <Unlock className="w-4 h-4 mr-2" /> Clear Passcode
@@ -480,13 +481,13 @@ export default function DeviceDetails() {
                             <Activity className="w-4 h-4" /> Overview
                         </TabsTrigger>
 
-                        {!isIos && (
+                        {!isApplePlatform && (
                             <TabsTrigger value="hardware" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Chip className="w-4 h-4" /> Hardware
                             </TabsTrigger>
                         )}
 
-                        {!isIos && (
+                        {!isApplePlatform && (
                             <TabsTrigger value="network" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Network className="w-4 h-4" /> Network
                             </TabsTrigger>
@@ -504,19 +505,19 @@ export default function DeviceDetails() {
                             <FileText className="w-4 h-4" /> Certificates
                         </TabsTrigger>
 
-                        {!isIos && (
+                        {!isApplePlatform && (
                             <TabsTrigger value="system" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Cpu className="w-4 h-4" /> System
                             </TabsTrigger>
                         )}
 
-                        {!isIos && (
+                        {!isApplePlatform && (
                             <TabsTrigger value="settings" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <Settings className="w-4 h-4" /> Settings
                             </TabsTrigger>
                         )}
 
-                        {!isIos && (
+                        {!isApplePlatform && (
                             <TabsTrigger value="user" className="flex-1 min-w-fit gap-2 px-4 py-2.5 rounded-lg hover:text-foreground hover:bg-muted/50 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-border/50">
                                 <User className="w-4 h-4" /> User
                             </TabsTrigger>
@@ -537,14 +538,14 @@ export default function DeviceDetails() {
                     </TabsContent>
 
                     {/* HARDWARE TAB - Only render for non-iOS or if forced */}
-                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                    {!isApplePlatform && (
                         <TabsContent value="hardware" className="space-y-6">
                             <DeviceHardwareTab device={device} />
                         </TabsContent>
                     )}
 
                     {/* NETWORK TAB - Only render for non-iOS */}
-                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                    {!isApplePlatform && (
                         <TabsContent value="network" className="space-y-6">
                             <DeviceNetworkTab device={device} />
                         </TabsContent>
@@ -566,14 +567,14 @@ export default function DeviceDetails() {
                     </TabsContent>
 
                     {/* SYSTEM TAB - Hide for iOS */}
-                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                    {!isApplePlatform && (
                         <TabsContent value="system" className="space-y-6">
                             <DeviceSystemTab device={device} />
                         </TabsContent>
                     )}
 
                     {/* SETTINGS TAB - Hide for iOS */}
-                    {device.platform !== 'ios' && device.deviceType !== 'IosDeviceInfo' && (
+                    {!isApplePlatform && (
                         <TabsContent value="settings" className="space-y-6">
                             <DeviceSettingsTab device={device} />
                         </TabsContent>

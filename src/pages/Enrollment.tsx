@@ -1,4 +1,5 @@
 import { EnrollmentProfile, EnrollmentService } from '@/api/services/enrollmentService';
+import { AndroidFullProfile } from '@/types/profile';
 import { TablePageSkeleton } from '@/components/skeletons';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -164,16 +165,19 @@ export default function Enrollment() {
                 details.webClipPolicies?.length ? `${details.webClipPolicies.length} Web Clips` : ''
               ].filter(Boolean)
             }
-            : {
-              // Android profile config
-              wifiSSID: p.config?.wifiSSID || 'Not Configured',
-              vpnEnabled: false,
-              vpnServer: 'N/A',
-              mandatoryApps: details.applicationPolicies?.filter(app => app.installType === 'INSTALL_NONREMOVABLE').map(app => app.applicationName || app.packageName || 'Unknown App') || [],
-              restrictions: [
-                details.passcodePolicy?.work?.complexity && details.passcodePolicy.work.complexity !== 'NONE' ? 'Passcode Required' : '',
-              ].filter(Boolean)
-            };
+            : (() => {
+              const androidDetails = details as AndroidFullProfile;
+              return {
+                // Android profile config
+                wifiSSID: p.config?.wifiSSID || 'Not Configured',
+                vpnEnabled: false,
+                vpnServer: 'N/A',
+                mandatoryApps: androidDetails.applicationPolicies?.filter(app => app.installType === 'INSTALL_NONREMOVABLE').map(app => app.applicationName || app.packageName || 'Unknown App') || [],
+                restrictions: [
+                  androidDetails.passcodePolicy?.work?.complexity && androidDetails.passcodePolicy.work.complexity !== 'NONE' ? 'Passcode Required' : '',
+                ].filter(Boolean)
+              };
+            })();
 
           return {
             ...p,

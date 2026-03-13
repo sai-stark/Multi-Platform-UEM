@@ -178,10 +178,11 @@ interface DeviceOverviewTabProps {
 
 export function DeviceOverviewTab({ device }: DeviceOverviewTabProps) {
     const isIos = device.platform === 'ios' || device.deviceType === 'IosDeviceInfo';
+    const isApplePlatform = isIos || device.platform === 'macos';
 
     // Android storage calculations
     let storagePercent = 0;
-    if (!isIos) {
+    if (!isApplePlatform) {
         const usedStorage = Number(device.storageUsed || device.usedStorage || 0);
         const totalStorage = Number(device.storageCapacity || device.totalStorage || device.deviceCapacity || 0);
         storagePercent = totalStorage > 0 ? Math.min(100, (usedStorage / totalStorage) * 100) : 0;
@@ -189,13 +190,13 @@ export function DeviceOverviewTab({ device }: DeviceOverviewTabProps) {
 
     // Android RAM calculations
     let ramPercent = 0;
-    if (!isIos) {
+    if (!isApplePlatform) {
         const usedRam = Number(device.ramUsed || device.usedRam || 0);
         const totalRam = Number(device.ramCapacity || device.totalRam || 0);
         ramPercent = totalRam > 0 ? Math.min(100, (usedRam / totalRam) * 100) : 0;
     }
 
-    if (isIos) {
+    if (isApplePlatform) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Device Information & Software */}

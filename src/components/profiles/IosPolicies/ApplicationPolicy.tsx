@@ -43,6 +43,7 @@ import {
     BarChart3,
     Globe,
     Grid,
+    Info,
     Loader2,
     Package,
     Plus,
@@ -128,12 +129,16 @@ export const ApplicationPolicyEditor = ({
         }
     }, [policies]);
 
+    const isMacOS = platform === 'macos';
+    const platformLabel = isMacOS ? 'macOS' : 'iOS';
+
     const fetchApplications = async () => {
         try {
-            const response = await ApplicationService.getApplications('ios');
+            const appPlatform = isMacOS ? 'macos' : 'ios';
+            const response = await ApplicationService.getApplications(appPlatform);
             setAvailableApps(response.content || []);
         } catch (error) {
-            console.error('Failed to fetch iOS applications:', error);
+            console.error(`Failed to fetch ${platformLabel} applications:`, error);
         }
     };
 
@@ -348,7 +353,7 @@ export const ApplicationPolicyEditor = ({
                     </div>
                     <div>
                         <h3 className="text-xl font-bold tracking-tight">Application Policies</h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">Manage app installation and configuration for iOS</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">Manage app installation and configuration for {platformLabel}</p>
                     </div>
                 </div>
                 <Button
@@ -368,7 +373,7 @@ export const ApplicationPolicyEditor = ({
                     <Alert className="max-w-md">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
-                            No iOS applications available. Please register iOS applications first.
+                            No {platformLabel} applications available. Please register {platformLabel} applications first.
                         </AlertDescription>
                     </Alert>
                 </div>
@@ -486,6 +491,7 @@ export const ApplicationPolicyEditor = ({
                                 policy={selectedPolicy}
                                 appInfo={getAppInfo(selectedPolicy)}
                                 onFieldChange={handleFieldChange}
+                                platform={platform}
                             />
                         ) : (
                             <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -512,7 +518,7 @@ export const ApplicationPolicyEditor = ({
                             </div>
                             <h4 className="font-semibold text-base mb-2">No application policies configured</h4>
                             <p className="text-sm text-muted-foreground mb-6 max-w-[260px] mx-auto leading-relaxed">
-                                Add iOS applications to configure install and management settings.
+                                Add {platformLabel} applications to configure install and management settings.
                             </p>
                             <Button
                                 onClick={() => setOpenAddModal(true)}
@@ -553,10 +559,10 @@ export const ApplicationPolicyEditor = ({
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Plus className="h-5 w-5" />
-                            Add iOS Application Policy
+                            Add {platformLabel} Application Policy
                         </DialogTitle>
                         <DialogDescription>
-                            Select a registered iOS application and configure its policy settings.
+                            Select a registered {platformLabel} application and configure its policy settings.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -565,12 +571,12 @@ export const ApplicationPolicyEditor = ({
                             <Alert>
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertDescription>
-                                    All available iOS applications have already been added, or no apps are registered.{' '}
+                                    All available {platformLabel} applications have already been added, or no apps are registered.{' '}
                                     <span
                                         className="text-sky-500 hover:text-sky-400 hover:underline cursor-pointer transition-colors"
                                         onClick={() => {
                                             setOpenAddModal(false);
-                                            navigate('/applications?platform=ios');
+                                            navigate(`/applications?platform=${isMacOS ? 'macos' : 'ios'}`);
                                         }}
                                     >
                                         Add Application.
@@ -587,7 +593,7 @@ export const ApplicationPolicyEditor = ({
                                         onValueChange={setSelectedAppId}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select an iOS application" />
+                                            <SelectValue placeholder={`Select a ${platformLabel} application`} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {availableForAdd.map((app) => (
@@ -614,21 +620,33 @@ export const ApplicationPolicyEditor = ({
                                 </div>
 
                                 {/* Purchase Method */}
-                                <div className="space-y-2">
-                                    <Label>Purchase Method</Label>
-                                    <Select
-                                        value={selectedPurchaseMethod.toString()}
-                                        onValueChange={(v) => setSelectedPurchaseMethod(parseInt(v))}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="0">Free / VPP with Redemption Code</SelectItem>
-                                            <SelectItem value="1">VPP App Assignment</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                {isMacOS ? (
+                                    <div className="flex items-start gap-3 p-3 rounded-lg border border-info/30 bg-info/5">
+                                        <Info className="w-4 h-4 text-info mt-0.5 shrink-0" />
+                                        <div>
+                                            <p className="text-sm font-medium">VPP App Assignment Only</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">
+                                                macOS only supports app distribution via VPP (Volume Purchase Program) assignment. The purchase method is automatically set to VPP App Assignment.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <Label>Purchase Method</Label>
+                                        <Select
+                                            value={selectedPurchaseMethod.toString()}
+                                            onValueChange={(v) => setSelectedPurchaseMethod(parseInt(v))}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="0">Free / VPP with Redemption Code</SelectItem>
+                                                <SelectItem value="1">VPP App Assignment</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
 
                                 {/* Enable Analytics */}
                                 <div className="flex items-center space-x-2">
@@ -699,10 +717,12 @@ interface IosDetailPanelProps {
     policy: ExtendedPolicy;
     appInfo: { name: string; bundleId: string; iconUrl: string };
     onFieldChange: (id: string, field: keyof IosApplicationPolicy, value: boolean | string | number | undefined | Record<string, object>) => void;
+    platform: Platform;
 }
 
-function IosDetailPanel({ policy, appInfo, onFieldChange }: IosDetailPanelProps) {
+function IosDetailPanel({ policy, appInfo, onFieldChange, platform }: IosDetailPanelProps) {
     const policyKey = policy.id || policy.applicationId;
+    const isMacOS = platform === 'macos';
 
     return (
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -740,21 +760,33 @@ function IosDetailPanel({ policy, appInfo, onFieldChange }: IosDetailPanelProps)
                     <h4 className="text-sm font-semibold uppercase tracking-wider">Configuration</h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2 p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors duration-200">
-                        <Label className="text-xs font-medium text-muted-foreground">Purchase Method</Label>
-                        <Select
-                            value={(policy.purchaseMethod ?? 1).toString()}
-                            onValueChange={(v) => onFieldChange(policyKey, 'purchaseMethod', parseInt(v))}
-                        >
-                            <SelectTrigger className="h-9 bg-background/80">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="0">Free / VPP Redemption</SelectItem>
-                                <SelectItem value="1">VPP Assignment</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {isMacOS ? (
+                        <div className="flex items-start gap-3 p-4 rounded-xl border border-info/30 bg-info/5">
+                            <Info className="w-4 h-4 text-info mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-sm font-medium">VPP App Assignment</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    macOS only supports VPP assignment for app distribution.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-2 p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors duration-200">
+                            <Label className="text-xs font-medium text-muted-foreground">Purchase Method</Label>
+                            <Select
+                                value={(policy.purchaseMethod ?? 1).toString()}
+                                onValueChange={(v) => onFieldChange(policyKey, 'purchaseMethod', parseInt(v))}
+                            >
+                                <SelectTrigger className="h-9 bg-background/80">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="0">Free / VPP Redemption</SelectItem>
+                                    <SelectItem value="1">VPP Assignment</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
 
                     <div
                         className="flex items-center justify-between p-4 border rounded-xl bg-card/50 hover:bg-card hover:shadow-sm transition-all duration-200 cursor-pointer group"

@@ -1127,8 +1127,8 @@ export default function ProfileDetails() {
               };
               const cfg = modeConfig[profile.managementMode] || { label: profile.managementMode, color: "" };
               return (
-                <div className="text-right shrink-0">
-                  <p className="text-3xl font-bold tracking-tight leading-none" style={{ color: cfg.color || undefined }}>{cfg.label}</p>
+                <div className="text-right shrink-0 self-center">
+                  <p className="text-md font-bold tracking-tight leading-none" style={{ color: cfg.color || undefined }}>{cfg.label}</p>
                 </div>
               );
             })()}
