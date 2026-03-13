@@ -37,7 +37,7 @@ import { useBreadcrumb } from "@/contexts/BreadcrumbContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePlatformValidation } from "@/hooks/usePlatformValidation";
 import { cn } from "@/lib/utils";
-import { IosAppLockPolicy, IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
+import { IosAppLockPolicy, IosDeviceSettingsPolicy, IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
 import {
   AndroidFullProfile,
   AndroidProfileRestrictions,
@@ -73,6 +73,7 @@ import {
   Globe,
   Grid,
   Image as ImageIcon,
+  KeyRound,
   Lock,
   Mail,
   MapPin,
@@ -93,7 +94,6 @@ import {
   Users,
   Wifi,
   WifiOff,
-  KeyRound,
   X
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -134,6 +134,8 @@ interface AddPolicyDropdownProps {
   relayPolicy?: IosRelayPolicy;
   homeScreenLayoutPolicy?: IosHomeScreenLayoutPolicy;
   appLockPolicy?: IosAppLockPolicy;
+  mdmPolicy?: IosMdmConfiguration;
+  deviceSettingsPolicy?: IosDeviceSettingsPolicy;
   certificatesConfigured?: boolean;
   certificatesCount?: number;
   onSelect: (type: string) => void;
@@ -157,6 +159,8 @@ function AddPolicyDropdown({
   relayPolicy,
   homeScreenLayoutPolicy,
   appLockPolicy,
+  mdmPolicy,
+  deviceSettingsPolicy,
   certificatesConfigured,
   certificatesCount,
   onSelect,
@@ -180,6 +184,8 @@ function AddPolicyDropdown({
   if (isIosOrMacos && !relayPolicy) dropdownItems.push({ id: "relay", label: "Relay Configuration", icon: <Wifi className="w-4 h-4 mr-2" /> });
   if (isIosOrMacos && !homeScreenLayoutPolicy) dropdownItems.push({ id: "homeScreenLayout", label: "Home Screen Layout", icon: <Smartphone className="w-4 h-4 mr-2" /> });
   if (isIosOrMacos && !appLockPolicy) dropdownItems.push({ id: "appLock", label: "App Lock / Kiosk Mode", icon: <Lock className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !mdmPolicy) dropdownItems.push({ id: "mdm", label: "MDM Configuration", icon: <Server className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !deviceSettingsPolicy) dropdownItems.push({ id: "deviceSettings", label: "Device Settings", icon: <Settings className="w-4 h-4 mr-2" /> });
   if (isIosOrMacos) dropdownItems.push({ id: "certificates", label: "Certificates", icon: <Shield className="w-4 h-4 mr-2" /> });
 
   dropdownItems.sort((a, b) => a.label.localeCompare(b.label));
@@ -220,6 +226,7 @@ interface PolicyCardGridProps {
   lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
   scepPolicy?: IosScepConfiguration;
   mdmPolicy?: IosMdmConfiguration;
+  deviceSettingsPolicy?: IosDeviceSettingsPolicy;
   webContentFilterPolicy?: IosWebContentFilterPolicy;
   globalHttpProxyPolicy?: IosGlobalHttpProxyPolicy;
   vpnPolicy?: IosVpnPolicy;
@@ -336,6 +343,7 @@ function PolicyCardGrid({
   lockScreenMessagePolicy,
   scepPolicy,
   mdmPolicy,
+  deviceSettingsPolicy,
   webContentFilterPolicy,
   globalHttpProxyPolicy,
   vpnPolicy,
@@ -559,18 +567,28 @@ function PolicyCardGrid({
         borderClass: "border-t-primary"
       });
     }
-    if (mdmPolicy) {
-      allPolicies.push({
-        id: "mdm",
-        title: "MDM Settings",
-        description: "Device management.",
-        statusText: `Server: ${mdmPolicy.serverURL?.substring(0, 20)}...`,
-        icon: <Server className="w-5 h-5" />,
-        isConfigured: true,
-        colorClass: "text-muted-foreground",
-        borderClass: "border-t-muted-foreground"
-      });
-    }
+
+    allPolicies.push({
+      id: "mdm",
+      title: "MDM Settings",
+      description: "Mobile Device Management configuration.",
+      statusText: mdmPolicy ? `Server: ${mdmPolicy.serverURL?.substring(0, 20)}...` : undefined,
+      icon: <Server className="w-5 h-5" />,
+      isConfigured: !!mdmPolicy,
+      colorClass: "text-primary",
+      borderClass: "border-t-primary"
+    });
+
+    allPolicies.push({
+      id: "deviceSettings",
+      title: "Device Settings",
+      description: "Configure iOS device settings like Bluetooth, device name, time zone & more.",
+      statusText: deviceSettingsPolicy ? 'Settings configured' : undefined,
+      icon: <Settings className="w-5 h-5" />,
+      isConfigured: !!deviceSettingsPolicy,
+      colorClass: "text-emerald-600",
+      borderClass: "border-t-emerald-600"
+    });
   }
 
   if (isAndroid) {
@@ -696,6 +714,8 @@ function PolicyCardGrid({
               relayPolicy={relayPolicy}
               homeScreenLayoutPolicy={homeScreenLayoutPolicy}
               appLockPolicy={appLockPolicy}
+              mdmPolicy={mdmPolicy}
+              deviceSettingsPolicy={deviceSettingsPolicy}
               certificatesConfigured={certificatesConfigured}
               certificatesCount={certificatesCount} // Added
               onSelect={onSelectPolicy}
@@ -804,6 +824,7 @@ export default function ProfileDetails() {
   const [mdmPolicy, setMdmPolicy] = useState<IosMdmConfiguration | undefined>(
     undefined
   );
+  const [deviceSettingsPolicy, setDeviceSettingsPolicy] = useState<IosDeviceSettingsPolicy | undefined>(undefined);
   // Android-specific policy state
   const [androidPasscodePolicy, setAndroidPasscodePolicy] = useState<
     any | undefined
@@ -823,8 +844,8 @@ export default function ProfileDetails() {
   const [appLockPolicy, setAppLockPolicy] = useState<IosAppLockPolicy | undefined>(undefined);
   const [certificatesConfigured, setCertificatesConfigured] = useState<boolean>(false);
   const [certificatesCount, setCertificatesCount] = useState<number>(0); // Added
-  const [ setRootCertificatesConfigured] = useState<boolean>(false);
-  const [ setRootCertificatesCount] = useState<number>(0);
+  const [setRootCertificatesConfigured] = useState<boolean>(false);
+  const [setRootCertificatesCount] = useState<number>(0);
 
   // Animation variants
   const containerVariants = {
@@ -888,17 +909,27 @@ export default function ProfileDetails() {
         setAppLockPolicy((iosData as any).iosAppLockPolicy || undefined);
         setRestrictionsPolicy((iosData as any).iosDeviceRestrictionsPolicy || undefined);
 
+        // Fetch Device Settings Policy
+        try {
+          const dsp = await PolicyService.getDeviceSettingsPolicy(id);
+          setDeviceSettingsPolicy(dsp || undefined);
+        } catch (e) { /* 404 = not configured */ }
+
         // Fetch Certificates to check configuration status
         let configCount = 0;
-        
+
         try {
           const pem = await PolicyService.getCertPemPolicyList(id);
-          if (pem && pem.id) configCount++;
+          if (pem && pem.content && pem.content.length > 0) {
+            configCount += pem.content.length;
+          }
         } catch (e) { /* ignore 404 */ }
 
         try {
           const pkcs = await PolicyService.getCertPkcsPolicyList(id);
-          if (pkcs && pkcs.id) configCount++;
+          if (pkcs && pkcs.content && pkcs.content.length > 0) {
+            configCount += pkcs.content.length;
+          }
         } catch (e) { /* ignore 404 */ }
 
         try {
@@ -1191,6 +1222,7 @@ export default function ProfileDetails() {
           lockScreenMessagePolicy={lockScreenMessagePolicy}
           scepPolicy={scepPolicy}
           mdmPolicy={mdmPolicy}
+          deviceSettingsPolicy={deviceSettingsPolicy}
           webContentFilterPolicy={webContentFilterPolicy}
           globalHttpProxyPolicy={globalHttpProxyPolicy}
           vpnPolicy={vpnPolicy}
@@ -1225,6 +1257,7 @@ export default function ProfileDetails() {
           lockScreenMessagePolicy={lockScreenMessagePolicy}
           scepPolicy={scepPolicy}
           mdmPolicy={mdmPolicy}
+          deviceSettingsPolicy={deviceSettingsPolicy}
           webContentFilterPolicy={webContentFilterPolicy}
           globalHttpProxyPolicy={globalHttpProxyPolicy}
           vpnPolicy={vpnPolicy}

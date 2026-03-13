@@ -1,22 +1,4 @@
-import { useNavigate } from 'react-router-dom';
-import {
-  Eye,
-  Trash2,
-  Shield,
-  Clock,
-  AlertTriangle,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
+import { AppActionType, Application, ApplicationService } from '@/api/services/applications';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,14 +9,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { DataTable, Column } from '@/components/ui/data-table';
-import { Application, ApplicationService, AppActionType } from '@/api/services/applications';
-import { Platform } from '@/types/models';
+import { Button } from '@/components/ui/button';
+import { Column, DataTable } from '@/components/ui/data-table';
+import {
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { getAssetUrl } from '@/config/env';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Platform } from '@/types/models';
 import { getErrorMessage } from '@/utils/errorUtils';
+import {
+  AlertTriangle,
+  Clock,
+  Eye,
+  Package,
+  Shield,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface AndroidAppManagerProps {
   applications: Application[];
@@ -54,7 +55,7 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
   // Handle delete
   const handleDelete = async () => {
     if (!deleteDialog.app?.id) return;
-    
+
     try {
       await ApplicationService.deleteApplication(platform, deleteDialog.app.id);
       toast({
@@ -77,7 +78,7 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
   // Handle action change
   const handleSetAction = async (app: Application, action: AppActionType) => {
     if (!app.id) return;
-    
+
     let body: Record<string, any>;
     switch (action) {
       case 'MANDATORY':
@@ -278,7 +279,15 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
         columns={columns}
         loading={loading}
         globalSearchPlaceholder="Search applications..."
-        emptyMessage={loading ? "Loading applications..." : "No applications found."}
+        emptyMessage={
+          loading ? "Loading applications..." : (
+            <EmptyState
+              icon={Package}
+              title="No Applications Found"
+              description="No applications found for Android."
+            />
+          )
+        }
         quickActions={quickActions}
         rowActions={rowActions}
         defaultPageSize={10}

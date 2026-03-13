@@ -1,22 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Eye,
-  Trash2,
-  ExternalLink,
-  Apple,
-  Star,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
+import { ApplicationService } from '@/api/services/applications';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,12 +9,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { DataTable, Column } from '@/components/ui/data-table';
-import { ApplicationService } from '@/api/services/applications';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Column, DataTable } from '@/components/ui/data-table';
+import {
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 import { IosApplication } from '@/types/application';
 import { Platform } from '@/types/models';
-import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
+import {
+  Apple,
+  ExternalLink,
+  Eye,
+  Star,
+  Trash2,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface IosAppManagerProps {
   applications: IosApplication[];
@@ -52,7 +53,7 @@ export const IosAppManager = ({ applications, loading, onRefresh, platform }: Io
   // Handle delete
   const handleDelete = async () => {
     if (!deleteDialog.app?.id) return;
-    
+
     try {
       await ApplicationService.deleteApplication(platform, deleteDialog.app.id);
       toast({
@@ -81,9 +82,9 @@ export const IosAppManager = ({ applications, loading, onRefresh, platform }: Io
       render: (_, item) => (
         <div className="flex items-center gap-3">
           {item.artworkUrl60 || item.artworkUrl100 ? (
-            <img 
-              src={item.artworkUrl60 || item.artworkUrl100} 
-              alt="" 
+            <img
+              src={item.artworkUrl60 || item.artworkUrl100}
+              alt=""
               className="w-10 h-10 rounded-lg"
               loading="lazy"
             />
@@ -211,7 +212,15 @@ export const IosAppManager = ({ applications, loading, onRefresh, platform }: Io
         columns={columns}
         loading={loading}
         globalSearchPlaceholder="Search iOS applications..."
-        emptyMessage={loading ? "Loading applications..." : "No iOS applications found. Click 'Add Application' to register apps."}
+        emptyMessage={
+          loading ? "Loading applications..." : (
+            <EmptyState
+              icon={Apple}
+              title="No iOS Applications Found"
+              description="Click 'Add Application' to register apps for iOS."
+            />
+          )
+        }
         quickActions={quickActions}
         rowActions={rowActions}
         defaultPageSize={10}

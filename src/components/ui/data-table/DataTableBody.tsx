@@ -1,24 +1,23 @@
-import React from "react";
-import { MoreHorizontal } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { Column } from "./types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { motion, useReducedMotion } from "framer-motion";
+import { MoreHorizontal } from "lucide-react";
+import React from "react";
 import { UseDataTableReturn } from "./useDataTable";
 
 interface DataTableBodyProps<T> {
   table: UseDataTableReturn<T>;
-  emptyMessage?: string;
+  emptyMessage?: React.ReactNode;
   onRowClick?: (item: T) => void;
   rowActions?: (item: T) => React.ReactNode;
   quickActions?: (item: T) => React.ReactNode;
@@ -58,9 +57,8 @@ export function DataTableBody<T extends Record<string, any>>({
               ease: "easeOut",
               delay: Math.min(index, 10) * 0.03,
             }}
-            className={`border-b transition-colors data-[state=selected]:bg-muted hover:bg-muted/50 ${
-              onRowClick ? "cursor-pointer" : ""
-            }`}
+            className={`border-b transition-colors data-[state=selected]:bg-muted hover:bg-muted/50 ${onRowClick ? "cursor-pointer" : ""
+              }`}
             onClick={() => onRowClick?.(item)}
             tabIndex={0}
             onKeyDown={(e) => {
@@ -73,20 +71,19 @@ export function DataTableBody<T extends Record<string, any>>({
             {visibleColumnsList.map((col) => {
               const cellValue = col.accessor(item);
               const displayValue = col.render ? col.render(cellValue, item) : cellValue;
-              const tooltipText = typeof cellValue === 'string' || typeof cellValue === 'number' 
-                ? String(cellValue) 
+              const tooltipText = typeof cellValue === 'string' || typeof cellValue === 'number'
+                ? String(cellValue)
                 : '';
-              
+
               return (
                 <TableCell
                   key={col.key}
-                  className={`min-w-0 ${
-                    col.align === "center"
+                  className={`min-w-0 ${col.align === "center"
                       ? "text-center"
                       : col.align === "right"
-                      ? "text-right"
-                      : "text-left"
-                  }`}
+                        ? "text-right"
+                        : "text-left"
+                    }`}
                 >
                   {tooltipText ? (
                     <Tooltip>

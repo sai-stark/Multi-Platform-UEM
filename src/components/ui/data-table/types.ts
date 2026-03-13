@@ -27,7 +27,7 @@ export interface DataTableProps<T> {
     resizable?: boolean;
     onRowClick?: (item: T) => void;
     className?: string;
-    emptyMessage?: string;
+    emptyMessage?: React.ReactNode;
     loading?: boolean;
     rowActions?: (item: T) => React.ReactNode;
     quickActions?: (item: T) => React.ReactNode;

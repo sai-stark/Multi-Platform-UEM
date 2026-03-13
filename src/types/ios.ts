@@ -160,6 +160,82 @@ export interface IosMdmConfiguration {
     promptUserToAllowBootstrapTokenForAuthentication?: boolean;
 }
 
+// ========================================
+// iOS Device Settings Policy (Settings command)
+// ========================================
+
+export interface IosAccessibilitySettings {
+    BoldTextEnabled?: boolean;
+    IncreaseContrastEnabled?: boolean;
+    ReduceMotionEnabled?: boolean;
+    ReduceTransparencyEnabled?: boolean;
+    TextSize?: number; // 0-11
+    TouchAccommodationsEnabled?: boolean;
+    VoiceOverEnabled?: boolean;
+    ZoomEnabled?: boolean;
+    GrayscaleEnabled?: boolean;
+    Item?: string;
+}
+
+export interface IosMDMOptions {
+    ActivationLockAllowedWhileSupervised?: boolean;
+    IdleRebootAllowed?: boolean;
+    PromptUserToAllowBootstrapTokenForAuthentication?: boolean;
+}
+
+export interface IosOrganizationInfo {
+    OrganizationName?: string;
+    OrganizationAddress?: string;
+    OrganizationPhone?: string;
+    OrganizationEmail?: string;
+    OrganizationMagic?: string;
+    OrganizationShortName?: string;
+}
+
+export interface IosSharedDeviceConfiguration {
+    TemporarySessionTimeout?: number;
+    UserSessionTimeout?: number;
+    MaximumResidentUsers?: number;
+    QuotaSize?: number;
+    PasscodePolicy?: {
+        PasscodeLockGracePeriod?: number;
+        AutoLockTime?: string;
+    };
+    TemporarySessionOnly?: boolean;
+    OnlineAuthenticationGracePeriod?: number;
+    AwaitUserConfiguration?: { Enabled?: boolean };
+    SkipLanguageAndLocaleSetupForNewUsers?: boolean;
+    ResidentUsers?: number;
+    ManagedAppleIDDefaultDomains?: string;
+    Item?: string;
+}
+
+export interface IosDeviceSettingItem {
+    AccessibilitySettings?: IosAccessibilitySettings;
+    Bluetooth?: { Enabled?: boolean; Item?: string };
+    DataRoaming?: { Enabled?: boolean; Item?: string };
+    DeviceName?: { DeviceName?: string; Item?: string };
+    DiagnosticSubmission?: { Enabled?: boolean; Item?: string };
+    HostName?: { HostName?: string; Item?: string };
+    MDMOptions?: { Item?: string; MDMOptions?: IosMDMOptions };
+    OrganizationInfo?: { Item?: string; OrganizationInfo?: IosOrganizationInfo };
+    PersonalHotspot?: { Enabled?: boolean; Item?: string };
+    SharedDeviceConfiguration?: IosSharedDeviceConfiguration;
+    TimeZone?: { TimeZone?: string; Item?: string };
+    Wallpaper?: { Image?: string; Item?: string; Where?: 1 | 2 | 3 };
+}
+
+export interface IosDeviceSettings {
+    Settings: IosDeviceSettingItem[];
+}
+
+export interface IosDeviceSettingsPolicy extends UserAuditData {
+    id?: string;
+    name?: string;
+    policyType?: 'IosDeviceSettingsPolicy';
+    iosDeviceSettings?: IosDeviceSettings;
+}
+
 export interface IosCertificateRootPolicy {
     id?: string;
     fileName: string;

@@ -1,5 +1,6 @@
-import { LucideIcon } from 'lucide-react';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -55,12 +56,14 @@ export function StatCard({
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="stat-card__value mt-1">{value}</p>
+          <p className="stat-card__value mt-1">
+            <AnimatedCounter value={value} />
+          </p>
           {description && (
             <p className="text-xs text-muted-foreground mt-1">{description}</p>
           )}
           {trend && (
-            <p 
+            <p
               className={cn(
                 'text-sm mt-2 font-medium',
                 trend.isPositive ? 'text-success' : 'text-destructive'
@@ -72,7 +75,7 @@ export function StatCard({
             </p>
           )}
         </div>
-        <div 
+        <div
           className={cn(
             'w-12 h-12 rounded-lg flex items-center justify-center',
             iconVariantStyles[variant]

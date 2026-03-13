@@ -48,7 +48,7 @@ export function RemoteControlTab({ roomToken, serverUrl, onDisconnect }: RemoteC
 }
 
 function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
-    const context = useRoomContext();
+    const room = useRoomContext();
     const { localParticipant } = useLocalParticipant();
 
     // Find any video track from the device (it might publish as ScreenShare, Camera, or Unknown)
@@ -65,7 +65,7 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
     const [isDragging, setIsDragging] = useState(false);
 
     // Verify room connection state
-    const isConnected = context.state === 'connected';
+    const isConnected = room.state === 'connected';
 
     const handlePointerEvent = (e: React.PointerEvent<HTMLVideoElement>, action: 'DOWN' | 'MOVE' | 'UP') => {
         if (!localParticipant) return;
@@ -103,11 +103,13 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
         xPercent = Math.max(0, Math.min(1, xPercent));
         yPercent = Math.max(0, Math.min(1, yPercent));
 
-        // Prepare JSON payload
+        // Prepare JSON payload: Format the action and coordinates into a JSON string
         const payload = JSON.stringify({
             action,
-            x: Number(xPercent.toFixed(4)),
-            y: Number(yPercent.toFixed(4))
+            coordinates: {
+                x: Number(xPercent.toFixed(4)),
+                y: Number(yPercent.toFixed(4))
+            }
         });
 
         // Encode and send via LiveKit Data Channel
@@ -117,7 +119,7 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
         if (import.meta.env.DEV) { console.log(`Sending pointer event: ${payload}`); }
 
         try {
-            localParticipant.publishData(data, { reliable: isReliable });
+            room.localParticipant.publishData(data, { reliable: isReliable });
         } catch (err) {
             if (import.meta.env.DEV) { console.error('Failed to send control payload:', err); }
         }
@@ -166,7 +168,7 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
                     </h3>
                 </div>
                 <Button variant="destructive" size="sm" onClick={() => {
-                    context.disconnect();
+                    room.disconnect();
                     onDisconnect?.();
                 }}>
                     Disconnect Session

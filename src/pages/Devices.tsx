@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   Tooltip,
   TooltipContent,
@@ -578,7 +579,19 @@ const Devices = () => {
             columns={columns}
             loading={loading}
             globalSearchPlaceholder="Search devices..."
-            emptyMessage={loading ? "Loading devices..." : "No devices match your filters."}
+            emptyMessage={
+              loading ? "Loading devices..." : (
+                <EmptyState
+                  icon={(platformFilter === "all" ? Layout : platformConfig[platformFilter]?.icon || Smartphone) as any}
+                  title="No Devices Found"
+                  description={
+                    platformFilter === "all"
+                      ? "There are no devices enrolled in the system matching your current filters."
+                      : `There are no ${platformConfig[platformFilter]?.label || platformFilter} devices enrolled.`
+                  }
+                />
+              )
+            }
             rowActions={rowActions}
             defaultPageSize={10}
             showExport={true}

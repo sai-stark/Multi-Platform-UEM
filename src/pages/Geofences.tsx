@@ -16,6 +16,7 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Geofence } from "@/types/models";
@@ -228,7 +229,21 @@ const Geofences = () => {
                         columns={columns}
                         loading={loading}
                         globalSearchPlaceholder={t('geofences.table.searchPlaceholder')}
-                        emptyMessage={loading ? "Loading geofences..." : t('geofences.table.emptyMessage')}
+                        emptyMessage={
+                            loading ? "Loading geofences..." : (
+                                <EmptyState
+                                    icon={MapPin}
+                                    title="No Geofences Found"
+                                    description={t('geofences.table.emptyMessage')}
+                                    action={
+                                        <Button variant="outline" onClick={() => navigate("/geofences/new")}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            {t('geofences.addGeofence')}
+                                        </Button>
+                                    }
+                                />
+                            )
+                        }
                         rowActions={rowActions}
                         defaultPageSize={10}
                         showExport={true}

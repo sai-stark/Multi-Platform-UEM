@@ -1,16 +1,18 @@
 import {
     IosAppLockPolicy,
+    IosDeviceSettingsPolicy,
     IosGlobalHttpProxyPolicy,
     IosHomeScreenLayoutPolicy,
+    IosMdmConfiguration,
+    IosPemCertificatePolicy,
     IosPerAppVpnPolicy,
     IosPerDomainVpnPolicy,
+    IosPkcs12CertificatePolicy,
+    IosPkcsCertificatePolicy,
     IosRelayPolicy,
+    IosRootCertificatePolicy,
     IosVpnPolicy,
     IosWebContentFilterPolicy,
-    IosPemCertificatePolicy,
-    IosPkcsCertificatePolicy,
-    IosPkcs12CertificatePolicy,
-    IosRootCertificatePolicy,
 } from '@/types/ios';
 import {
     ApplicationPolicy,
@@ -374,6 +376,23 @@ export const PolicyService = {
         await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/app-lock`);
     },
 
+    // --- iOS MDM Configuration ---
+    getMdmPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosMdmConfiguration>(`/ios${CORE_PATH}/${profileId}/policies/mdm`);
+        return response.data;
+    },
+    createMdmPolicy: async (profileId: string, policy: IosMdmConfiguration) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/mdm`, policy);
+        return response.data;
+    },
+    updateMdmPolicy: async (profileId: string, policy: IosMdmConfiguration) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/mdm`, policy);
+        return response.data;
+    },
+    deleteMdmPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/mdm`);
+    },
+
     // --- iOS Restrictions ---
     getRestrictionsPolicy: async (profileId: string) => {
         const response = await apiClient.get<IosRestrictionsPayload>(`/ios${CORE_PATH}/${profileId}/policies/restrictions`);
@@ -389,5 +408,22 @@ export const PolicyService = {
     },
     deleteRestrictionsPolicy: async (profileId: string) => {
         await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/restrictions`);
+    },
+
+    // --- iOS Device Settings ---
+    getDeviceSettingsPolicy: async (profileId: string) => {
+        const response = await apiClient.get<IosDeviceSettingsPolicy>(`/ios${CORE_PATH}/${profileId}/policies/device-settings`);
+        return response.data;
+    },
+    createDeviceSettingsPolicy: async (profileId: string, policy: IosDeviceSettingsPolicy) => {
+        const response = await apiClient.post(`/ios${CORE_PATH}/${profileId}/policies/device-settings`, policy);
+        return response.data;
+    },
+    updateDeviceSettingsPolicy: async (profileId: string, policy: IosDeviceSettingsPolicy) => {
+        const response = await apiClient.put(`/ios${CORE_PATH}/${profileId}/policies/device-settings`, policy);
+        return response.data;
+    },
+    deleteDeviceSettingsPolicy: async (profileId: string) => {
+        await apiClient.delete(`/ios${CORE_PATH}/${profileId}/policies/device-settings`);
     },
 };

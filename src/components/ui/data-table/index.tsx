@@ -1,12 +1,11 @@
-import React from "react";
 import { Table } from "@/components/ui/table";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { DataTableBody } from "./DataTableBody";
+import { DataTableHeader } from "./DataTableHeader";
+import { DataTablePagination } from "./DataTablePagination";
+import { DataTableToolbar } from "./DataTableToolbar";
 import { DataTableProps } from "./types";
 import { useDataTable } from "./useDataTable";
-import { DataTableToolbar } from "./DataTableToolbar";
-import { DataTableHeader } from "./DataTableHeader";
-import { DataTableBody } from "./DataTableBody";
-import { DataTablePagination } from "./DataTablePagination";
 
 // Re-export types for backward compatibility
 export type { Column, DataTableProps } from "./types";

@@ -26,6 +26,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -311,7 +312,21 @@ export default function Groups() {
                         columns={columns}
                         loading={loading}
                         globalSearchPlaceholder={t('groups.table.searchPlaceholder')}
-                        emptyMessage={t('groups.table.emptyMessage')}
+                        emptyMessage={
+                            loading ? "Loading groups..." : (
+                                <EmptyState
+                                    icon={Folder}
+                                    title="No Groups Found"
+                                    description={t('groups.table.emptyMessage')}
+                                    action={
+                                        <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            {t('groups.createGroup')}
+                                        </Button>
+                                    }
+                                />
+                            )
+                        }
                         rowActions={rowActions}
                         defaultPageSize={10}
                         showExport={true}

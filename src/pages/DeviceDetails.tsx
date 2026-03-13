@@ -56,7 +56,6 @@ import {
     Power, PowerOff, RefreshCw,
     Settings,
     Shield,
-    ShieldAlert,
     Smartphone,
     Trash2,
     Unlock,

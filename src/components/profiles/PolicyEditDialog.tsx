@@ -4,7 +4,7 @@ import {
     DialogTitle
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { IosAppLockPolicy, IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
+import { IosAppLockPolicy, IosDeviceSettingsPolicy, IosGlobalHttpProxyPolicy, IosHomeScreenLayoutPolicy, IosMdmConfiguration, IosPerAppVpnPolicy, IosPerDomainVpnPolicy, IosRelayPolicy, IosScepConfiguration, IosVpnPolicy, IosWebContentFilterPolicy } from "@/types/ios";
 import {
     AndroidProfileRestrictions,
     ApplicationPolicy,
@@ -30,10 +30,13 @@ import {
     Mail,
     MessageSquare,
     Radio,
+    Server,
+    Settings,
     Shield,
     Smartphone,
     Wifi,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 // Android Policy Imports
 import {
@@ -61,11 +64,13 @@ import {
 // iOS Policy Imports
 import { ApplicationPolicyEditor } from "@/components/profiles/IosPolicies/ApplicationPolicy";
 import { AppLockPolicy as AppLockPolicyEditor } from "@/components/profiles/IosPolicies/AppLockPolicy";
-import { GlobalHttpProxyPolicy as GlobalHttpProxyPolicyEditor } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
 import { CertificatesPolicy } from "@/components/profiles/IosPolicies/CertificatesPolicy";
+import { DeviceSettingsPolicy } from "@/components/profiles/IosPolicies/DeviceSettingsPolicy";
+import { GlobalHttpProxyPolicy as GlobalHttpProxyPolicyEditor } from "@/components/profiles/IosPolicies/GlobalHttpProxyPolicy";
 import { HomeScreenLayoutPolicy as HomeScreenLayoutPolicyEditor } from "@/components/profiles/IosPolicies/HomeScreenLayoutPolicy";
 import { LockScreenMessagePolicy } from "@/components/profiles/IosPolicies/LockScreenMessagePolicy";
 import { MailPolicy } from "@/components/profiles/IosPolicies/MailPolicy";
+import { MdmPolicy } from "@/components/profiles/IosPolicies/MdmPolicy";
 import { NotificationPolicy } from "@/components/profiles/IosPolicies/NotificationPolicy";
 import { PasscodePolicy } from "@/components/profiles/IosPolicies/PasscodePolicy";
 import { PerAppVpnPolicy as PerAppVpnPolicyEditor } from "@/components/profiles/IosPolicies/PerAppVpnPolicy";
@@ -76,7 +81,7 @@ import { VpnPolicy as VpnPolicyEditor } from "@/components/profiles/IosPolicies/
 import { WebApplicationPolicyEditor } from "@/components/profiles/IosPolicies/WebApplicationPolicy";
 import { WebContentFilterPolicy as WebContentFilterPolicyEditor } from "@/components/profiles/IosPolicies/WebContentFilterPolicy";
 import { WifiPolicy } from "@/components/profiles/IosPolicies/WifiPolicy";
-import { MdmPolicyView, ScepPolicyView } from "@/components/profiles/IosPolicyCards";
+import { ScepPolicyView } from "@/components/profiles/IosPolicyCards";
 
 interface PolicyEditDialogProps {
     open: boolean;
@@ -97,6 +102,7 @@ interface PolicyEditDialogProps {
     lockScreenMessagePolicy: LockScreenMessagePolicyType | null;
     scepPolicy?: IosScepConfiguration;
     mdmPolicy?: IosMdmConfiguration;
+    deviceSettingsPolicy?: IosDeviceSettingsPolicy;
     webContentFilterPolicy?: IosWebContentFilterPolicy;
     globalHttpProxyPolicy?: IosGlobalHttpProxyPolicy;
     vpnPolicy?: IosVpnPolicy;
@@ -131,6 +137,7 @@ export function PolicyEditDialog({
     lockScreenMessagePolicy,
     scepPolicy,
     mdmPolicy,
+    deviceSettingsPolicy,
     webContentFilterPolicy,
     globalHttpProxyPolicy,
     vpnPolicy,
@@ -146,6 +153,12 @@ export function PolicyEditDialog({
     enrollmentPolicy,
     onSave,
 }: PolicyEditDialogProps) {
+    const [isChildEditing, setIsChildEditing] = useState(false);
+
+    useEffect(() => {
+        setIsChildEditing(false);
+    }, [activePolicyType, profileId]);
+
     if (!activePolicyType) return null;
 
     const handleCancel = () => onOpenChange(false);
@@ -195,6 +208,10 @@ export function PolicyEditDialog({
                 return { title: "Relay", icon: <Radio className="w-5 h-5 text-amber-600" /> };
             case "homeScreenLayout":
                 return { title: "Home Screen Layout", icon: <Smartphone className="w-5 h-5 text-teal-600" /> };
+            case "mdm":
+                return { title: "MDM Configuration", icon: <Server className="w-5 h-5 text-slate-500" /> };
+            case "deviceSettings":
+                return { title: "Device Settings", icon: <Settings className="w-5 h-5 text-emerald-600" /> };
             // Add other cases as needed
             default:
                 return { title: "Edit Policy", icon: null };
@@ -205,11 +222,14 @@ export function PolicyEditDialog({
 
 
 
+    const isWidePolicy = activePolicyType === "androidApplication" || activePolicyType === "applications";
+    const isEditingWideContent = (activePolicyType === "restrictions" || activePolicyType === "deviceSettings") && isChildEditing;
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className={cn(
                 "max-h-[90vh] overflow-hidden flex flex-col p-0",
-                activePolicyType === "androidApplication" || activePolicyType === "applications" ? "max-w-[80vw]" : "max-w-4xl"
+                isWidePolicy || isEditingWideContent ? "max-w-[80vw]" : "max-w-4xl"
             )}>
                 <DialogTitle className="sr-only">{title}</DialogTitle>
                 <div className="flex-1 overflow-y-auto min-h-0 p-6 pt-0 pb-0">
@@ -245,6 +265,7 @@ export function PolicyEditDialog({
                             initialData={restrictionsPolicy as RestrictionsComposite | undefined}
                             onSave={onSave}
                             onCancel={handleCancel}
+                            onEditModeChange={setIsChildEditing}
                         />
                     )}
                     {activePolicyType === "applications" && (
@@ -285,8 +306,22 @@ export function PolicyEditDialog({
                     {activePolicyType === "scep" && scepPolicy && (
                         <ScepPolicyView policy={scepPolicy} onClose={handleCancel} />
                     )}
-                    {activePolicyType === "mdm" && mdmPolicy && (
-                        <MdmPolicyView policy={mdmPolicy} onClose={handleCancel} />
+                    {activePolicyType === "mdm" && (
+                        <MdmPolicy
+                            profileId={profileId}
+                            initialData={mdmPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                        />
+                    )}
+                    {activePolicyType === "deviceSettings" && (
+                        <DeviceSettingsPolicy
+                            profileId={profileId}
+                            initialData={deviceSettingsPolicy}
+                            onSave={onSave}
+                            onCancel={handleCancel}
+                            onEditModeChange={setIsChildEditing}
+                        />
                     )}
                     {activePolicyType === "certificates" && (
                         <CertificatesPolicy

@@ -61,8 +61,9 @@ export const DeviceService = {
     },
 
     // Corrected: Uses /{platform}/devices/{deviceId}/applications per OpenAPI spec
-    getDeviceApplications: async (platform: Platform, deviceId: string) => {
-        const response = await apiClient.get<DeviceApplicationList>(`/${platform}/devices/${deviceId}/applications`);
+    getDeviceApplications: async (platform: Platform, deviceId: string, pageable?: Pageable) => {
+        const params = { ...pageable };
+        const response = await apiClient.get<DeviceApplicationList>(`/${platform}/devices/${deviceId}/applications`, { params });
         return response.data;
     },
 

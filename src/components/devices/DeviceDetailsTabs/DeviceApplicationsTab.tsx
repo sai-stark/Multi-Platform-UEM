@@ -1,7 +1,7 @@
 import { DeviceService } from '@/api/services/devices';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { DataTable, Column } from '@/components/ui/data-table';
+import { Column, DataTable } from '@/components/ui/data-table';
 import { useToast } from '@/hooks/use-toast';
 import { DeviceApplicationList, Platform } from '@/types/models';
 import { getErrorMessage } from '@/utils/errorUtils';
@@ -31,7 +31,7 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
             if (!platform || !id) return;
             try {
                 setLoadingApps(true);
-                const apps = await DeviceService.getDeviceApplications(platform as Platform, id);
+                const apps = await DeviceService.getDeviceApplications(platform as Platform, id, { size: 1000 });
                 const appsAny = apps as any;
                 if (appsAny?.content && Array.isArray(appsAny.content)) {
                     setApplications(appsAny.content);

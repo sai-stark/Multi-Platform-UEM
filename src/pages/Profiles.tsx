@@ -1,3 +1,4 @@
+import { ProfileService } from "@/api/services/profiles";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AddProfileDialog } from "@/components/profiles/AddProfileDialog";
 import { CloneProfileDialog } from "@/components/profiles/CloneProfileDialog";
@@ -8,15 +9,18 @@ import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog
 import { Button } from "@/components/ui/button";
 import { Column, DataTable } from "@/components/ui/data-table";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getAssetUrl } from "@/config/env";
+import { useAndroidFeaturesEnabled } from "@/contexts/EnterpriseContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Profile } from "@/types/models";
+import { Platform, Profile } from "@/types/models";
 import {
   Apple,
   CheckCircle,
@@ -25,19 +29,14 @@ import {
   FileText,
   Layout,
   Monitor,
-  Pencil,
   Plus,
   Send,
   Shield,
   Smartphone,
-  Trash2,
+  Trash2
 } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ProfileService } from "@/api/services/profiles";
-import { Platform } from "@/types/models";
-import { useAndroidFeaturesEnabled } from "@/contexts/EnterpriseContext";
-import { toast } from "@/hooks/use-toast";
 
 const platformConfig: Record<
   string,
@@ -632,10 +631,10 @@ const Profiles = () => {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isActive && "bg-background text-foreground shadow-md border border-border/50 backdrop-blur-md",
                   !isActive &&
-                    !isDisabled &&
-                    "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                  !isDisabled &&
+                  "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   isDisabled &&
-                    "text-muted-foreground/50 cursor-not-allowed opacity-50"
+                  "text-muted-foreground/50 cursor-not-allowed opacity-50"
                 )}
               >
                 {config.image ? (
@@ -734,7 +733,21 @@ const Profiles = () => {
             columns={columns}
             loading={loading}
             globalSearchPlaceholder={t('profiles.searchPlaceholder')}
-            emptyMessage={t('profiles.noProfilesFound')}
+            emptyMessage={
+              loading ? "Loading profiles..." : (
+                <EmptyState
+                  icon={FileText}
+                  title="No Profiles Found"
+                  description={t('profiles.noProfilesFound')}
+                  action={
+                    <Button variant="outline" onClick={() => setAddDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t('profiles.createProfile')}
+                    </Button>
+                  }
+                />
+              )
+            }
             quickActions={quickActions}
             rowActions={rowActions}
             defaultPageSize={10}
