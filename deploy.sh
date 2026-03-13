@@ -3,7 +3,7 @@
 set -e
 
 SERVER="ubuntu@172.29.3.52"
-DEPLOY_DIR="~/ui_docker_uem"
+DEPLOY_DIR="~/ui/ui_docker_uem"
 
 echo "🔨 Building..."
 npm install

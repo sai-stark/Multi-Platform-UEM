@@ -37,6 +37,12 @@ export const platformConfig: Record<string, {
         disabled: true,
         image: getAssetUrl('/Assets/microsoft.png'),
     },
+    macos: {
+        label: 'macOS',
+        icon: Apple,
+        color: 'text-muted-foreground',
+        image: getAssetUrl('/Assets/mac_os.png'),
+    },
     linux: {
         label: 'Linux',
         icon: Monitor,

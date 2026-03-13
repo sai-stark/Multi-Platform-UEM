@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { MiscellaneousRestriction as MiscellaneousRestrictionType, Platform } from '@/types/models';
-import { Edit, Loader2, RefreshCw, Save, Settings, UserPlus } from 'lucide-react';
+import { Edit, Loader2, RefreshCw, Save, Settings, Trash2, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +56,20 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
             setFormData({ ...initialData });
         } else {
             onCancel();
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        setLoading(true);
+        try {
+            await restrictionAPI.deleteMiscellaneousRestriction(platform, profileId);
+            toast({ title: 'Success', description: 'Miscellaneous restriction removed.' });
+            onSave();
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to remove miscellaneous restriction'), variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -113,7 +127,12 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                 </Card>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
                 <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
@@ -171,14 +190,21 @@ export function MiscellaneousRestriction({ platform, profileId, initialData, onS
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    {t('common.cancel')}
-                </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {t('form.saveChanges')}
-                </Button>
+            <div className="flex justify-between gap-3 pt-6 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" type="button" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
+                <div className="flex gap-3">
+                    <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {t('form.saveChanges')}
+                    </Button>
+                </div>
             </div>
         </form>
     );

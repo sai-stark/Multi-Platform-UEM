@@ -13,7 +13,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ConnectivityRestriction as ConnectivityRestrictionType, ControlType, Platform } from '@/types/models';
-import { Bluetooth, Edit, Loader2, Nfc, Printer, Radio, Save, Send } from 'lucide-react';
+import { Bluetooth, Edit, Loader2, Nfc, Printer, Radio, Save, Send, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
@@ -65,6 +65,20 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
             setFormData({ ...initialData });
         } else {
             onCancel();
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        setLoading(true);
+        try {
+            await restrictionAPI.deleteConnectivityRestriction(platform, profileId);
+            toast({ title: 'Success', description: 'Connectivity restriction removed.' });
+            onSave();
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to remove connectivity restriction'), variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -149,7 +163,12 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                 </Card>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
                 <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
@@ -280,14 +299,21 @@ export function ConnectivityRestriction({ platform, profileId, initialData, onSa
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    {t('common.cancel')}
-                </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {t('form.saveChanges')}
-                </Button>
+            <div className="flex justify-between gap-3 pt-6 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" type="button" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
+                <div className="flex gap-3">
+                    <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {t('form.saveChanges')}
+                    </Button>
+                </div>
             </div>
         </form>
     );

@@ -163,23 +163,24 @@ function AddPolicyDropdown({
 }: AddPolicyDropdownProps) {
   const dropdownItems: { label: string; id: string; icon: React.ReactNode }[] = [];
 
+  const isIosOrMacos = platform === "ios" || platform === "macos";
   if (!passcodePolicy) dropdownItems.push({ id: "passcode", label: "Passcode Policy", icon: <Shield className="w-4 h-4 mr-2" /> });
   if (!wifiPolicy) dropdownItems.push({ id: "wifi", label: "WiFi Configuration", icon: <Wifi className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !mailPolicy) dropdownItems.push({ id: "mail", label: "Mail Configuration", icon: <Mail className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !mailPolicy) dropdownItems.push({ id: "mail", label: "Mail Configuration", icon: <Mail className="w-4 h-4 mr-2" /> });
   if (!restrictionsPolicy) dropdownItems.push({ id: "restrictions", label: "Device Restrictions", icon: <Ban className="w-4 h-4 mr-2" /> });
   if (applicationPolicy.length === 0) dropdownItems.push({ id: "applications", label: "Application Policy", icon: <Grid className="w-4 h-4 mr-2" /> });
   if (webApplicationPolicy.length === 0) dropdownItems.push({ id: "webApps", label: "Web Application Policy", icon: <Globe className="w-4 h-4 mr-2" /> });
   if (notificationPolicy.length === 0) dropdownItems.push({ id: "notifications", label: "Notification Policy", icon: <Bell className="w-4 h-4 mr-2" /> });
   if (!lockScreenMessagePolicy) dropdownItems.push({ id: "lockScreenMessage", label: "Lock Screen Message", icon: <MessageSquare className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !webContentFilterPolicy) dropdownItems.push({ id: "webContentFilter", label: "Web Content Filter", icon: <Filter className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !globalHttpProxyPolicy) dropdownItems.push({ id: "globalHttpProxy", label: "Global HTTP Proxy", icon: <Globe className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !vpnPolicy) dropdownItems.push({ id: "vpn", label: "VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !perAppVpnPolicy) dropdownItems.push({ id: "perAppVpn", label: "Per-App VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !perDomainVpnPolicy) dropdownItems.push({ id: "perDomainVpn", label: "Per-Domain VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !relayPolicy) dropdownItems.push({ id: "relay", label: "Relay Configuration", icon: <Wifi className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !homeScreenLayoutPolicy) dropdownItems.push({ id: "homeScreenLayout", label: "Home Screen Layout", icon: <Smartphone className="w-4 h-4 mr-2" /> });
-  if (platform === "ios" && !appLockPolicy) dropdownItems.push({ id: "appLock", label: "App Lock / Kiosk Mode", icon: <Lock className="w-4 h-4 mr-2" /> });
-  if (platform === "ios") dropdownItems.push({ id: "certificates", label: "Certificates", icon: <Shield className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !webContentFilterPolicy) dropdownItems.push({ id: "webContentFilter", label: "Web Content Filter", icon: <Filter className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !globalHttpProxyPolicy) dropdownItems.push({ id: "globalHttpProxy", label: "Global HTTP Proxy", icon: <Globe className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !vpnPolicy) dropdownItems.push({ id: "vpn", label: "VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !perAppVpnPolicy) dropdownItems.push({ id: "perAppVpn", label: "Per-App VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !perDomainVpnPolicy) dropdownItems.push({ id: "perDomainVpn", label: "Per-Domain VPN", icon: <Lock className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !relayPolicy) dropdownItems.push({ id: "relay", label: "Relay Configuration", icon: <Wifi className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !homeScreenLayoutPolicy) dropdownItems.push({ id: "homeScreenLayout", label: "Home Screen Layout", icon: <Smartphone className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos && !appLockPolicy) dropdownItems.push({ id: "appLock", label: "App Lock / Kiosk Mode", icon: <Lock className="w-4 h-4 mr-2" /> });
+  if (isIosOrMacos) dropdownItems.push({ id: "certificates", label: "Certificates", icon: <Shield className="w-4 h-4 mr-2" /> });
 
   dropdownItems.sort((a, b) => a.label.localeCompare(b.label));
 
@@ -350,7 +351,7 @@ function PolicyCardGrid({
   enrollmentPolicy,
   onSelectPolicy,
 }: PolicyCardGridProps) {
-  const isIos = platform === "ios";
+  const isIos = platform === "ios" || platform === "macos";
   const isAndroid = platform === "android";
   const { t } = useLanguage();
   const [policySearchQuery, setPolicySearchQuery] = useState("");
@@ -859,10 +860,10 @@ export default function ProfileDetails() {
         platform: platform as Platform,
       } as ProfileDetailsData);
 
-      const isIos = platform === "ios";
+      const isIos = platform === "ios" || platform === "macos";
       const isAndroid = platform === "android";
 
-      // Handle iOS
+      // Handle iOS / macOS
       if (isIos) {
         const iosData = data as IosFullProfile;
         setPasscodePolicy(iosData.passCodePolicy || undefined);
@@ -1087,16 +1088,16 @@ export default function ProfileDetails() {
 
             {/* Management Mode — right end */}
             {profile.managementMode && (() => {
-              const modeConfig: Record<string, { label: string; className: string }> = {
-                BYOD: { label: "Work Profile (Personal Device)", className: "text-blue-600" },
-                COPE: { label: "Work Profile (Company Device)", className: "text-purple-600" },
-                COBO: { label: "Fully Managed Device", className: "text-orange-600" },
-                COSU: { label: "Dedicated Device (KIOSK)", className: "text-indigo-600" },
+              const modeConfig: Record<string, { label: string; color: string }> = {
+                BYOD: { label: "Work Profile (Personal Device)", color: "#06B6D4" },
+                COPE: { label: "Work Profile (Company Device)", color: "#3B82F6" },
+                COBO: { label: "Fully Managed Device", color: "#1E3A8A" },
+                COSU: { label: "Dedicated Device (KIOSK)", color: "#2563EB" },
               };
-              const cfg = modeConfig[profile.managementMode] || { label: profile.managementMode, className: "text-muted-foreground" };
+              const cfg = modeConfig[profile.managementMode] || { label: profile.managementMode, color: "" };
               return (
                 <div className="text-right shrink-0">
-                  <p className={cn("text-3xl font-bold tracking-tight leading-none", cfg.className)}>{cfg.label}</p>
+                  <p className="text-3xl font-bold tracking-tight leading-none" style={{ color: cfg.color || undefined }}>{cfg.label}</p>
                 </div>
               );
             })()}

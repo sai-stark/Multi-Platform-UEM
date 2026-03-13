@@ -41,7 +41,7 @@ import {
 } from './restrictions';
 
 // Profile types as per OpenAPI spec
-export type ProfileType = 'AndroidProfile' | 'IosProfile' | 'IosFullProfile' | 'Android_Full_Profile';
+export type ProfileType = 'AndroidProfile' | 'IosProfile' | 'IosFullProfile' | 'Android_Full_Profile' | 'MacosProfile';
 
 // Profile status as per OpenAPI spec
 export type ProfileStatus = 'DRAFT' | 'PUBLISHED';

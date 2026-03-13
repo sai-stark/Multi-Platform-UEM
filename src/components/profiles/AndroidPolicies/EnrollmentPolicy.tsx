@@ -14,7 +14,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EnrollmentPolicy as EnrollmentPolicyType, Platform, WifiSecurity } from '@/types/models';
-import { Edit, Key, Loader2, Monitor, Save, Signal, Smartphone, UserPlus, Wifi } from 'lucide-react';
+import { Edit, Key, Loader2, Monitor, Save, Signal, Smartphone, Trash2, UserPlus, Wifi } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
@@ -71,6 +71,20 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
             setFormData({ ...initialData });
         } else {
             onCancel();
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        setLoading(true);
+        try {
+            await policyAPI.deleteEnrollmentPolicy(platform, profileId);
+            toast({ title: 'Success', description: 'Enrollment policy removed.' });
+            onSave();
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to remove enrollment policy'), variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -140,7 +154,12 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                 </Card>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
                 <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
@@ -298,14 +317,21 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
                 )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    {t('common.cancel')}
-                </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {t('common.save')}
-                </Button>
+            <div className="flex justify-between gap-3 pt-6 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" type="button" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
+                <div className="flex gap-3">
+                    <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {t('common.save')}
+                    </Button>
+                </div>
             </div>
         </form>
     );

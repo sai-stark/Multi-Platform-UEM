@@ -19,8 +19,11 @@ import { useToast } from '@/hooks/use-toast';
 import { platformConfig } from '@/components/applications/applicationConstants';
 import { GooglePlayIframe } from '@/components/applications/GooglePlayIframe';
 import { IosAddAppDialog } from '@/components/applications/IosAddAppDialog';
+import { MacosAddAppDialog } from '@/components/applications/MacosAddAppDialog';
 import { AndroidAppManager } from '@/components/applications/AndroidAppManager';
 import { IosAppManager } from '@/components/applications/IosAppManager';
+import { MacosAppManager } from '@/components/applications/MacosAppManager';
+import { MacosApplication } from '@/types/application';
 
 const Applications = () => {
   const { toast } = useToast();
@@ -31,7 +34,7 @@ const Applications = () => {
   // Read platform from URL search params (e.g., ?platform=ios)
   const getInitialPlatform = (): Platform => {
     const urlPlatform = searchParams.get('platform');
-    if (urlPlatform === 'ios' || urlPlatform === 'android') return urlPlatform;
+    if (urlPlatform === 'ios' || urlPlatform === 'android' || urlPlatform === 'macos') return urlPlatform;
     return shouldBlockAndroid ? 'ios' : 'android';
   };
 
@@ -44,6 +47,7 @@ const Applications = () => {
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [iosApplications, setIosApplications] = useState<IosApplication[]>([]);
+  const [macosApplications, setMacosApplications] = useState<MacosApplication[]>([]);
   const [loading, setLoading] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
@@ -55,9 +59,15 @@ const Applications = () => {
       if (platform === 'ios') {
         setIosApplications((response.content || []) as unknown as IosApplication[]);
         setApplications([]);
+        setMacosApplications([]);
+      } else if (platform === 'macos') {
+        setMacosApplications((response.content || []) as unknown as MacosApplication[]);
+        setApplications([]);
+        setIosApplications([]);
       } else {
         setApplications(response.content || []);
         setIosApplications([]);
+        setMacosApplications([]);
       }
     } catch (error) {
       console.error('Failed to fetch applications:', error);
@@ -76,7 +86,7 @@ const Applications = () => {
   }, [platform]);
 
   // Stats
-  const currentApps = platform === 'ios' ? iosApplications : applications;
+  const currentApps = platform === 'ios' ? iosApplications : platform === 'macos' ? macosApplications : applications;
   const stats = {
     total: currentApps.length,
     mandatory: applications.filter(a => a.action === 'MANDATORY').length,
@@ -105,7 +115,7 @@ const Applications = () => {
 
         {/* Platform Tabs */}
         <section
-          className="grid grid-cols-4 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
+          className="grid grid-cols-5 w-full rounded-xl border border-border/50 bg-muted/20 backdrop-blur-sm p-1.5 shadow-sm"
           role="tablist"
           aria-label="Filter by platform"
         >
@@ -222,6 +232,13 @@ const Applications = () => {
               onRefresh={fetchApplications}
               platform={platform}
             />
+          ) : platform === 'macos' ? (
+            <MacosAppManager
+              applications={macosApplications}
+              loading={loading}
+              onRefresh={fetchApplications}
+              platform={platform}
+            />
           ) : (
             <AndroidAppManager
               applications={applications}
@@ -241,6 +258,12 @@ const Applications = () => {
           />
         ) : platform === 'ios' ? (
           <IosAddAppDialog
+            open={addDialogOpen}
+            onOpenChange={setAddDialogOpen}
+            onAppRegistered={fetchApplications}
+          />
+        ) : platform === 'macos' ? (
+          <MacosAddAppDialog
             open={addDialogOpen}
             onOpenChange={setAddDialogOpen}
             onAppRegistered={fetchApplications}

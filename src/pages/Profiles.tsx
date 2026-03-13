@@ -78,7 +78,6 @@ const platformConfig: Record<
     label: "macOS",
     icon: Monitor,
     color: "text-info",
-    disabled: true,
     image: getAssetUrl("/Assets/mac_os.png"),
   },
   linux: {
@@ -138,8 +137,8 @@ const Profiles = () => {
     try {
       // In production, skip Android API call if enterprise is not set up
       const platforms: Platform[] = shouldBlockAndroid
-        ? ["ios", "windows"]
-        : ["android", "ios", "windows"];
+        ? ["ios", "windows", "macos"]
+        : ["android", "ios", "windows", "macos"];
 
       // Always fetch from all platforms for stats
       // Handle errors per platform to allow partial success
@@ -163,9 +162,9 @@ const Profiles = () => {
               error.message ||
               "";
             const isNotSupportedError =
-              error.response?.status === 400 &&
+              (error.response?.status === 400 || error.response?.status === 404) &&
               (typeof errorMessage === "string"
-                ? errorMessage.includes("not supported")
+                ? errorMessage.includes("not supported") || errorMessage.includes("does not exist")
                 : false);
 
             if (isNotSupportedError) {
@@ -238,7 +237,8 @@ const Profiles = () => {
       } else if (
         platformFilter === "android" ||
         platformFilter === "ios" ||
-        platformFilter === "windows"
+        platformFilter === "windows" ||
+        platformFilter === "macos"
       ) {
         // Use data already fetched for stats
         const platformData = successfulResults.find(
@@ -418,13 +418,13 @@ const Profiles = () => {
         render: (value) => {
           if (!value) return <span className="text-muted-foreground">-</span>;
           const modeConfig: Record<string, string> = {
-            "Work Profile (Personal Device)": "text-blue-600",
-            "Work Profile (Company Device)": "text-purple-600",
-            "Fully Managed Device": "text-orange-600",
-            "Dedicated Device (KIOSK)": "text-indigo-600",
+            "Work Profile (Personal Device)": "#06B6D4",
+            "Work Profile (Company Device)": "#3B82F6",
+            "Dedicated Device (KIOSK)": "#2563EB",
+            "Fully Managed Device": "#1E3A8A",
           };
           return (
-            <span className={cn("text-xs font-semibold", modeConfig[value] || "text-muted-foreground")}>
+            <span className="text-xs font-semibold" style={{ color: modeConfig[value] || undefined }}>
               {value}
             </span>
           );
@@ -750,8 +750,8 @@ const Profiles = () => {
         onOpenChange={setAddDialogOpen}
         onProfileAdded={fetchProfiles}
         defaultPlatform={
-          platformFilter !== "all" && platformFilter !== "windows"
-            ? (platformFilter as "android" | "ios")
+          platformFilter !== "all" && platformFilter !== "windows" && platformFilter !== "linux"
+            ? (platformFilter as "android" | "ios" | "macos")
             : "android"
         }
       />

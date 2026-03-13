@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Input } from '@/components/ui/input';
 import { AppPermissionType, CommonSettingsPolicy as CommonSettingsPolicyType, DatePeriod, Platform, SystemUpdatePolicy } from '@/types/models';
-import { Download, Edit, EyeOff, Loader2, Plus, Save, Settings, Shield, Trash2 } from 'lucide-react';
+import { Download, Edit, EyeOff, Loader2, Plus, Save, Settings, Shield, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
 // ============================================================================
@@ -98,6 +98,20 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
             setFormData({ ...initialData });
         } else {
             onCancel();
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        setLoading(true);
+        try {
+            await policyAPI.deleteCommonSettingsPolicy(platform, profileId);
+            toast({ title: 'Success', description: 'Common settings policy removed.' });
+            onSave();
+        } catch (error) {
+            toast({ title: t('common.error'), description: getErrorMessage(error, 'Failed to remove common settings policy'), variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -276,7 +290,12 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                 </Card>
             */}
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
                 <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
@@ -680,14 +699,21 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
                 */}
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    {t('common.cancel')}
-                </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {t('form.saveChanges')}
-                </Button>
+            <div className="flex justify-between gap-3 pt-6 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" type="button" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
+                <div className="flex gap-3">
+                    <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {t('form.saveChanges')}
+                    </Button>
+                </div>
             </div>
         </form>
     );

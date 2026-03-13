@@ -12,7 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { DeviceThemePolicy as DeviceThemePolicyType, IconSize, Platform, ScreenOrientation } from '@/types/models';
-import { Edit, Image, Loader2, Maximize, Palette, Save, Type } from 'lucide-react';
+import { Edit, Image, Loader2, Maximize, Palette, Save, Trash2, Type } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -76,6 +76,20 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
             setFormData({ ...initialData });
         } else {
             onCancel();
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        setLoading(true);
+        try {
+            await policyAPI.deleteDeviceThemePolicy(platform, profileId);
+            toast({ title: 'Success', description: 'Device theme policy removed.' });
+            onSave();
+        } catch (error) {
+            toast({ title: t('common.error'), description: getErrorMessage(error, 'Failed to remove device theme policy'), variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -185,7 +199,12 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                 )}
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
                 <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
@@ -357,14 +376,21 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    {t('common.cancel')}
-                </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {t('form.saveChanges')}
-                </Button>
+            <div className="flex justify-between gap-3 pt-6 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" type="button" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
+                <div className="flex gap-3">
+                    <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {t('form.saveChanges')}
+                    </Button>
+                </div>
             </div>
         </form>
     );

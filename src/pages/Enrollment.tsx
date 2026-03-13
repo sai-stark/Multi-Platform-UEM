@@ -149,9 +149,10 @@ export default function Enrollment() {
       setProfiles(prev => prev.map(p => {
         if (p.id === profileId) {
           const isIos = details.profileType === 'IosFullProfile';
+          const isMacos = details.profileType === 'MacosProfile';
 
           // Build config based on platform-specific profile type
-          const config = isIos
+          const config = (isIos || isMacos)
             ? {
               wifiSSID: details.wifiPolicy?.ssid || p.config?.wifiSSID || 'Not Configured',
               vpnEnabled: !!details.mailPolicy?.vpnUUID || !!details.wifiPolicy?.ssid || false,
@@ -190,7 +191,7 @@ export default function Enrollment() {
   const fetchQrCode = async (platform: Platform, profileId: string) => {
     try {
       const data = await EnrollmentService.getQrCode(platform, profileId);
-      if (platform === 'ios' && data && typeof data === 'object' && 'apple.enrollment.url' in data) {
+      if ((platform === 'ios' || platform === 'macos') && data && typeof data === 'object' && 'apple.enrollment.url' in data) {
         setQrCodeData(data['apple.enrollment.url']);
       } else if (platform === 'android' && data && typeof data === 'object' && 'enrollmentUrl' in data) {
         setQrCodeData(data['enrollmentUrl']);
@@ -216,7 +217,7 @@ export default function Enrollment() {
   };
 
   const getEnrollmentUrl = () => {
-    if ((selectedPlatform === 'ios' || selectedPlatform === 'android') && typeof qrCodeData === 'string') {
+    if ((selectedPlatform === 'ios' || selectedPlatform === 'macos' || selectedPlatform === 'android') && typeof qrCodeData === 'string') {
       return qrCodeData;
     }
     return `https://enroll.cdot.in/${selectedPlatform}/${currentProfile?.id}`;

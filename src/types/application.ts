@@ -7,7 +7,7 @@ export interface Application {
     version: string;
     description?: string;
     manufacturere?: string; // Note: typo in API spec
-    osType: 'MobileApplication' | 'WindowsApplication' | 'LinuxApplication' | 'FileDetail' | 'AndroidApplication' | 'IosApplication' | 'DmgFileDetail';
+    osType: 'MobileApplication' | 'WindowsApplication' | 'LinuxApplication' | 'FileDetail' | 'AndroidApplication' | 'IosApplication' | 'DmgFileDetail' | 'MacosApplication';
     creationTime?: string;
     modificationTime?: string;
     createdBy?: string;
@@ -99,6 +99,41 @@ export interface IosApplication extends Application {
     applicationConfigurations?: ApplicationConfiguration[];
 }
 
+// macOS Application extends Application (Mac App Store + package metadata)
+export interface MacosApplication extends Application {
+    osType: 'MacosApplication' | 'DmgFileDetail';
+    bundleId?: string;
+    // App Store identity
+    trackId?: number;
+    trackName?: string;
+    trackViewUrl?: string;
+    artistId?: number;
+    artistName?: string;
+    sellerName?: string;
+    // Artwork
+    artworkUrl60?: string;
+    artworkUrl100?: string;
+    // Ratings
+    averageUserRating?: number;
+    userRatingCount?: number;
+    // Pricing & store
+    price?: number;
+    formattedPrice?: string;
+    fileSizeBytes?: string;
+    minimumOsVersion?: string;
+    // Genre
+    primaryGenreName?: string;
+    // Release info
+    releaseDate?: string;
+    releaseNotes?: string;
+    // File-based install
+    fileName?: string;
+    fileUrl?: string;
+    // Enrollment & management
+    enrollmentStatus?: string;
+    applicationConfigurations?: ApplicationConfiguration[];
+}
+
 // Application Configuration (for managed app config)
 export interface ApplicationConfiguration {
     key: string;
@@ -112,7 +147,7 @@ export interface AppRequest {
 }
 
 // Union type for all application types
-export type ApplicationUnion = MobileApplication | WindowsApplication | LinuxApplication | DmgApplication | IosApplication;
+export type ApplicationUnion = MobileApplication | WindowsApplication | LinuxApplication | DmgApplication | IosApplication | MacosApplication;
 
 export interface WebApplication {
     id: string;

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ControlType, NetworkRestriction as NetworkRestrictionType, Platform } from '@/types/models';
-import { Edit, Globe, Loader2, Plane, Save, Settings, Shield, Wifi, WifiOff } from 'lucide-react';
+import { Edit, Globe, Loader2, Plane, Save, Settings, Shield, Trash2, Wifi, WifiOff } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -67,6 +67,20 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
             setFormData({ ...initialData });
         } else {
             onCancel();
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!initialData?.id) return;
+        setLoading(true);
+        try {
+            await restrictionAPI.deleteNetworkRestriction(platform, profileId);
+            toast({ title: 'Success', description: 'Network restriction removed.' });
+            onSave();
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Failed to remove network restriction'), variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -177,7 +191,12 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                 </Card>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
                 <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
             </div>
         </div>
@@ -321,14 +340,21 @@ export function NetworkRestriction({ platform, profileId, initialData, onSave, o
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    {t('common.cancel')}
-                </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {t('form.saveChanges')}
-                </Button>
+            <div className="flex justify-between gap-3 pt-6 border-t">
+                {initialData?.id ? (
+                    <Button variant="destructive" size="sm" type="button" onClick={handleDelete} disabled={loading}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
+                    </Button>
+                ) : <span />}
+                <div className="flex gap-3">
+                    <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+                        {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {t('form.saveChanges')}
+                    </Button>
+                </div>
             </div>
         </form>
     );

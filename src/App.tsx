@@ -8,30 +8,31 @@ import { BreadcrumbProvider } from "@/contexts/BreadcrumbContext";
 import { EnrollmentGuard, EnterpriseProvider } from "@/contexts/EnterpriseContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React, { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import ApplicationDetails from "./pages/ApplicationDetails";
-import Applications from "./pages/Applications";
-import DeviceDetails from "./pages/DeviceDetails";
-import Devices from "./pages/Devices";
 
-import Dashboard from "./pages/Dashboard";
-import Enrollment from "./pages/Enrollment";
-import EnterpriseSetup from "./pages/EnterpriseSetup";
-import GeofenceEditor from "./pages/GeofenceEditor";
-import Geofences from "./pages/Geofences";
-import GroupDetails from "./pages/GroupDetails";
-import Groups from "./pages/Groups";
-import Inventory from "./pages/Inventory";
-import InventoryEditor from "./pages/InventoryEditor";
-import NotFound from "./pages/NotFound";
-import Policies from "./pages/Policies";
-import PolicyConfigurationPage from "./pages/PolicyConfigurationPage";
-import ProfileDetails from "./pages/ProfileDetails";
-import Profiles from "./pages/Profiles";
-import Repositories from "./pages/Repositories";
-import RepositoryDetails from "./pages/RepositoryDetails";
-import WebApplications from "./pages/WebApplications";
+const ApplicationDetails = React.lazy(() => import("./pages/ApplicationDetails"));
+const Applications = React.lazy(() => import("./pages/Applications"));
+const DeviceDetails = React.lazy(() => import("./pages/DeviceDetails"));
+const Devices = React.lazy(() => import("./pages/Devices"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Enrollment = React.lazy(() => import("./pages/Enrollment"));
+const EnterpriseSetup = React.lazy(() => import("./pages/EnterpriseSetup"));
+const GeofenceEditor = React.lazy(() => import("./pages/GeofenceEditor"));
+const Geofences = React.lazy(() => import("./pages/Geofences"));
+const GroupDetails = React.lazy(() => import("./pages/GroupDetails"));
+const Groups = React.lazy(() => import("./pages/Groups"));
+const Inventory = React.lazy(() => import("./pages/Inventory"));
+const InventoryEditor = React.lazy(() => import("./pages/InventoryEditor"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const Policies = React.lazy(() => import("./pages/Policies"));
+const PolicyConfigurationPage = React.lazy(() => import("./pages/PolicyConfigurationPage"));
+const ProfileDetails = React.lazy(() => import("./pages/ProfileDetails"));
+const Profiles = React.lazy(() => import("./pages/Profiles"));
+const Repositories = React.lazy(() => import("./pages/Repositories"));
+const RepositoryDetails = React.lazy(() => import("./pages/RepositoryDetails"));
+const WebApplications = React.lazy(() => import("./pages/WebApplications"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ const queryClient = new QueryClient({
 function AppRoutes() {
   return (
     <EnrollmentGuard>
+      <Suspense fallback={null}>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/applications" element={<Applications />} />
@@ -75,6 +77,7 @@ function AppRoutes() {
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
     </EnrollmentGuard>
   );
 }

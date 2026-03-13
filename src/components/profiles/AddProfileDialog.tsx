@@ -38,6 +38,10 @@ const PLATFORM_CONFIG = {
     label: "iOS",
     image: getAssetUrl("/Assets/apple.png"),
   },
+  macos: {
+    label: "macOS",
+    image: getAssetUrl("/Assets/mac_os.png"),
+  },
   windows: {
     label: "Windows",
     image: getAssetUrl("/Assets/microsoft.png"),
@@ -49,7 +53,7 @@ interface AddProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onProfileAdded: () => void;
-  defaultPlatform?: "android" | "ios";
+  defaultPlatform?: "android" | "ios" | "macos";
 }
 
 // Validation constants from OpenAPI spec
@@ -65,6 +69,7 @@ const DESC_PATTERN = /^[a-zA-Z0-9\- ]{5,100}$/;
 const PROFILE_TYPE_MAP: Record<string, ProfileType> = {
   android: "AndroidProfile",
   ios: "IosProfile",
+  macos: "MacosProfile",
 };
 
 interface FormErrors {
@@ -76,7 +81,7 @@ interface FormErrors {
 interface FormData {
   name: string;
   description: string;
-  platform: "android" | "ios";
+  platform: "android" | "ios" | "macos";
   managementMode: ManagementMode;
   shortSupportMessage: string;
   longSupportMessage: string;
@@ -334,7 +339,7 @@ export function AddProfileDialog({
             <Select
               value={formData.platform}
               onValueChange={(v) =>
-                setFormData({ ...formData, platform: v as "android" | "ios" })
+                setFormData({ ...formData, platform: v as "android" | "ios" | "macos" })
               }
             >
               <SelectTrigger id="platform" aria-describedby="platform-hint">
@@ -359,6 +364,16 @@ export function AddProfileDialog({
                       className="w-5 h-5 object-contain"
                     />
                     {PLATFORM_CONFIG.ios.label}
+                  </div>
+                </SelectItem>
+                <SelectItem value="macos">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={PLATFORM_CONFIG.macos.image}
+                      alt={PLATFORM_CONFIG.macos.label}
+                      className="w-5 h-5 object-contain"
+                    />
+                    {PLATFORM_CONFIG.macos.label}
                   </div>
                 </SelectItem>
                 <SelectItem value="windows" disabled>
