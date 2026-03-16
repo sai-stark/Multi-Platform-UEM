@@ -61,7 +61,16 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
                     allApps = firstPage;
                 }
 
-                setApplications(allApps);
+                // Deduplicate by identifier (package name) to avoid API returning duplicate entries
+                const seen = new Set<string>();
+                const deduplicatedApps = allApps.filter((app: any) => {
+                    const key = app.identifier || app.packageName || app.name;
+                    if (!key) return true;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+                setApplications(deduplicatedApps);
             } catch (e) {
                 console.error("Failed to load apps", e);
                 setApplications([]);

@@ -253,36 +253,31 @@ const Profiles = () => {
 
       setProfiles(allProfiles);
 
-      // Calculate stats from already fetched data
+      // Calculate stats from filtered data
       let androidCount = 0;
       let iosCount = 0;
       let windowsCount = 0;
       let publishedCount = 0;
       let draftCount = 0;
 
-      successfulResults.forEach(({ platform, profiles }) => {
-        if (platform === "android") {
-          androidCount = profiles.length;
-        } else if (platform === "ios") {
-          iosCount = profiles.length;
-        } else if (platform === "windows") {
-          windowsCount = profiles.length;
+      allProfiles.forEach((profile) => {
+        if (profile.platform === "android") {
+          androidCount++;
+        } else if (profile.platform === "ios") {
+          iosCount++;
+        } else if (profile.platform === "windows") {
+          windowsCount++;
         }
 
-        profiles.forEach((profile) => {
-          if (profile.status === "PUBLISHED") {
-            publishedCount++;
-          } else if (profile.status === "DRAFT") {
-            draftCount++;
-          }
-        });
+        if (profile.status === "PUBLISHED") {
+          publishedCount++;
+        } else if (profile.status === "DRAFT") {
+          draftCount++;
+        }
       });
 
       setStats({
-        total: successfulResults.reduce(
-          (sum, { profiles }) => sum + profiles.length,
-          0
-        ),
+        total: allProfiles.length,
         android: androidCount,
         ios: iosCount,
         windows: windowsCount,

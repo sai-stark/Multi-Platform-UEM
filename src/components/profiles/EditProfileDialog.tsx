@@ -45,6 +45,10 @@ const PLATFORM_CONFIG: Record<string, { label: string; image: string }> = {
     label: "iOS",
     image: getAssetUrl("/Assets/apple.png"),
   },
+  macos: {
+    label: "macOS",
+    image: getAssetUrl("/Assets/mac_os.png"),
+  },
   windows: {
     label: "Windows",
     image: getAssetUrl("/Assets/microsoft.png"),
@@ -213,6 +217,7 @@ export function EditProfileDialog({
       const profileTypeMap: Record<string, ProfileType> = {
         android: "AndroidProfile",
         ios: "IosProfile",
+        macos: "IosProfile",
       };
 
       // Construct full Profile object as required by API

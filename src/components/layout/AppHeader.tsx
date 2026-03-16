@@ -18,6 +18,11 @@ import { Accessibility, Bell, Globe, Search, User } from 'lucide-react';
 import { useState } from 'react';
 import { CommandPalette } from './CommandPalette';
 
+export async function signOut(): Promise<void> {
+  // console.log('Signing out...');
+  window.location.href = '/uem/logout';
+}
+
 export function AppHeader() {
   const { language, setLanguage, t } = useLanguage();
   const [commandOpen, setCommandOpen] = useState(false);
@@ -136,7 +141,7 @@ export function AppHeader() {
               <DropdownMenuItem>Profile Settings</DropdownMenuItem>
               <DropdownMenuItem>Help & Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Sign Out</DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut} className="text-destructive">Sign Out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>

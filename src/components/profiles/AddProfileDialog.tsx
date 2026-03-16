@@ -69,7 +69,7 @@ const DESC_PATTERN = /^[a-zA-Z0-9\- ]{5,100}$/;
 const PROFILE_TYPE_MAP: Record<string, ProfileType> = {
   android: "AndroidProfile",
   ios: "IosProfile",
-  macos: "MacosProfile",
+  macos: "IosProfile",
 };
 
 interface FormErrors {

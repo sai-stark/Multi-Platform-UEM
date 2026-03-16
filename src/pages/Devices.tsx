@@ -220,20 +220,20 @@ const Devices = () => {
 
       const mappedAllDevices = allDevices.map(mapDevice);
 
-      // Update Stats (Global)
-      setStats({
-        total: mappedAllDevices.length,
-        online: mappedAllDevices.filter(d => d.connectionStatus === 'online').length,
-        compliant: mappedAllDevices.filter(d => d.complianceStatus === 'compliant').length,
-        nonCompliant: mappedAllDevices.filter(d => d.complianceStatus === 'non-compliant').length,
-      });
-
       // Filter for Table View
-      if (platformFilter === 'all') {
-        setData(mappedAllDevices);
-      } else {
-        setData(mappedAllDevices.filter(d => d.platform === platformFilter));
-      }
+      const filteredDevices = platformFilter === 'all' 
+        ? mappedAllDevices 
+        : mappedAllDevices.filter(d => d.platform === platformFilter);
+
+      setData(filteredDevices);
+
+      // Update Stats (Filtered)
+      setStats({
+        total: filteredDevices.length,
+        online: filteredDevices.filter(d => d.connectionStatus === 'online').length,
+        compliant: filteredDevices.filter(d => d.complianceStatus === 'compliant').length,
+        nonCompliant: filteredDevices.filter(d => d.complianceStatus === 'non-compliant').length,
+      });
 
     } catch (error) {
       console.error("Failed to fetch devices", error);

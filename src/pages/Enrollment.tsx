@@ -195,6 +195,15 @@ export default function Enrollment() {
   const fetchQrCode = async (platform: Platform, profileId: string) => {
     try {
       const data = await EnrollmentService.getQrCode(platform, profileId);
+      // For non-BYOD profiles, try to extract the raw config for the QR code
+      const isBYOD = currentProfile?.managementMode === 'BYOD';
+      
+      if (!isBYOD && platform === 'android') {
+        // For Android non-BYOD, use the full DPC extra payload from the QR code API response if available, or the whole data object
+        setQrCodeData(data);
+        return;
+      }
+
       if ((platform === 'ios' || platform === 'macos') && data && typeof data === 'object' && 'apple.enrollment.url' in data) {
         setQrCodeData(data['apple.enrollment.url']);
       } else if (platform === 'android' && data && typeof data === 'object' && 'enrollmentUrl' in data) {
@@ -221,6 +230,11 @@ export default function Enrollment() {
   };
 
   const getEnrollmentUrl = () => {
+    const isBYOD = currentProfile?.managementMode === 'BYOD';
+    if (!isBYOD && typeof qrCodeData === 'object' && qrCodeData !== null) {
+        return JSON.stringify(qrCodeData);
+    }
+
     if ((selectedPlatform === 'ios' || selectedPlatform === 'macos' || selectedPlatform === 'android') && typeof qrCodeData === 'string') {
       return qrCodeData;
     }
@@ -503,7 +517,7 @@ export default function Enrollment() {
                         </DialogContent>
                       </Dialog>
 
-                      <p className="text-xs text-muted-foreground mt-3 font-mono break-all px-2">
+                      <p className="text-xs text-muted-foreground mt-3 font-mono break-all px-2 max-h-32 overflow-y-auto w-full max-w-[200px] text-left mx-auto">
                         {getEnrollmentUrl()}
                       </p>
                     </div>
