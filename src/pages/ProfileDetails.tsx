@@ -657,18 +657,23 @@ function PolicyCardGrid({
       { id: "enrollment", title: "Enrollment", icon: <FileText className="w-5 h-5" />, check: !!enrollmentPolicy, desc: "Enrollment settings.", status: enrollmentPolicy ? "Enrollment settings active" : "", wpSupported: false },
       { id: "deviceTheme", title: "Theme", icon: <ImageIcon className="w-5 h-5" />, check: !!deviceThemePolicy, desc: "Device theme settings.", status: deviceThemePolicy ? "Theme settings active" : "", wpSupported: false },
 
-      // Restrictions
-      { id: "securityRestriction", title: "Security", icon: <Shield className="w-5 h-5" />, check: !!androidRestrictions?.security, desc: "Device security settings.", status: "Security restrictions active", wpSupported: true },
-      { id: "networkRestriction", title: "Network", icon: <WifiOff className="w-5 h-5" />, check: !!androidRestrictions?.network, desc: "Network restrictions.", status: "Network restrictions active", wpSupported: true },
-      { id: "locationRestriction", title: "Location", icon: <MapPin className="w-5 h-5" />, check: !!androidRestrictions?.location, desc: "Location services.", status: "Location settings active", wpSupported: true },
-      { id: "miscRestriction", title: "Miscellaneous", icon: <Settings className="w-5 h-5" />, check: !!androidRestrictions?.miscellaneous, desc: "System-level controls.", status: "Miscellaneous settings active", wpSupported: true },
-      { id: "kioskRestriction", title: "Kiosk", icon: <TabletSmartphone className="w-5 h-5" />, check: !!androidRestrictions?.kiosk, desc: "Kiosk mode settings.", status: "Kiosk mode active", wpSupported: true },
-      { id: "tetheringRestriction", title: "Tethering", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.tethering, desc: "Bluetooth & tethering.", status: "Tethering settings active", wpSupported: false },
-      { id: "phoneRestriction", title: "Phone", icon: <Phone className="w-5 h-5" />, check: !!androidRestrictions?.phone, desc: "Telephony restrictions.", status: "Phone restrictions active", wpSupported: false },
-      { id: "dateTimeRestriction", title: "Date/Time", icon: <Clock className="w-5 h-5" />, check: !!androidRestrictions?.dateTime, desc: "Date and time settings.", status: "Date/Time settings active", wpSupported: false },
-      { id: "displayRestriction", title: "Display", icon: <Monitor className="w-5 h-5" />, check: !!androidRestrictions?.display, desc: "Display settings.", status: "Display settings active", wpSupported: false },
-      { id: "storageRestriction", title: "Storage", icon: <Database className="w-5 h-5" />, check: !!androidRestrictions?.syncStorage, desc: "Storage & Sync.", status: "Storage settings active", wpSupported: true },
-      { id: "connectivityRestriction", title: "Connectivity", icon: <Bluetooth className="w-5 h-5" />, check: !!androidRestrictions?.connectivity, desc: "Bluetooth & NFC.", status: "Connectivity settings active", wpSupported: false },
+      // Restrictions (consolidated into one card)
+      {
+        id: "androidDeviceRestriction",
+        title: "Device Restrictions",
+        icon: <Ban className="w-5 h-5" />,
+        check: !!(
+          androidRestrictions?.security || androidRestrictions?.network ||
+          androidRestrictions?.location || androidRestrictions?.miscellaneous ||
+          androidRestrictions?.kiosk || androidRestrictions?.tethering ||
+          androidRestrictions?.phone || androidRestrictions?.dateTime ||
+          androidRestrictions?.display || androidRestrictions?.syncStorage ||
+          androidRestrictions?.connectivity
+        ),
+        desc: "Configure all device restrictions.",
+        status: "Restrictions active",
+        wpSupported: true,
+      },
     ];
 
     const visibleItems = androidItems;
@@ -1468,18 +1473,23 @@ export default function ProfileDetails() {
                     else if (pt === "commonSettings") await AndroidPolicyService.deleteCommonSettingsPolicy(platform as Platform, id);
                     else if (pt === "enrollment") await AndroidPolicyService.deleteEnrollmentPolicy(platform as Platform, id);
                     else if (pt === "deviceTheme") await AndroidPolicyService.deleteDeviceThemePolicy(platform as Platform, id);
-                    // Android restrictions
-                    else if (pt === "securityRestriction") await AndroidRestrictionService.deleteSecurityRestriction(platform as Platform, id);
-                    else if (pt === "networkRestriction") await AndroidRestrictionService.deleteNetworkRestriction(platform as Platform, id);
-                    else if (pt === "locationRestriction") await AndroidRestrictionService.deleteLocationRestriction(platform as Platform, id);
-                    else if (pt === "miscRestriction") await AndroidRestrictionService.deleteMiscellaneousRestriction(platform as Platform, id);
-                    else if (pt === "kioskRestriction") await AndroidRestrictionService.deleteKioskRestriction(platform as Platform, id);
-                    else if (pt === "tetheringRestriction") await AndroidRestrictionService.deleteTetheringRestriction(platform as Platform, id);
-                    else if (pt === "phoneRestriction") await AndroidRestrictionService.deletePhoneRestriction(platform as Platform, id);
-                    else if (pt === "dateTimeRestriction") await AndroidRestrictionService.deleteDateTimeRestriction(platform as Platform, id);
-                    else if (pt === "displayRestriction") await AndroidRestrictionService.deleteDisplayRestriction(platform as Platform, id);
-                    else if (pt === "storageRestriction") await AndroidRestrictionService.deleteSyncStorageRestriction(platform as Platform, id);
-                    else if (pt === "connectivityRestriction") await AndroidRestrictionService.deleteConnectivityRestriction(platform as Platform, id);
+                    // Android restrictions (consolidated)
+                    else if (pt === "androidDeviceRestriction") {
+                      const r = restrictionsPolicy as AndroidProfileRestrictions;
+                      const deletes: Promise<unknown>[] = [];
+                      if (r?.security) deletes.push(AndroidRestrictionService.deleteSecurityRestriction(platform as Platform, id));
+                      if (r?.network) deletes.push(AndroidRestrictionService.deleteNetworkRestriction(platform as Platform, id));
+                      if (r?.location) deletes.push(AndroidRestrictionService.deleteLocationRestriction(platform as Platform, id));
+                      if (r?.miscellaneous) deletes.push(AndroidRestrictionService.deleteMiscellaneousRestriction(platform as Platform, id));
+                      if (r?.kiosk) deletes.push(AndroidRestrictionService.deleteKioskRestriction(platform as Platform, id));
+                      if (r?.tethering) deletes.push(AndroidRestrictionService.deleteTetheringRestriction(platform as Platform, id));
+                      if (r?.phone) deletes.push(AndroidRestrictionService.deletePhoneRestriction(platform as Platform, id));
+                      if (r?.dateTime) deletes.push(AndroidRestrictionService.deleteDateTimeRestriction(platform as Platform, id));
+                      if (r?.display) deletes.push(AndroidRestrictionService.deleteDisplayRestriction(platform as Platform, id));
+                      if (r?.syncStorage) deletes.push(AndroidRestrictionService.deleteSyncStorageRestriction(platform as Platform, id));
+                      if (r?.connectivity) deletes.push(AndroidRestrictionService.deleteConnectivityRestriction(platform as Platform, id));
+                      await Promise.all(deletes);
+                    }
                     setDeleteTarget(null);
                     fetchProfile();
                   } catch (err) {

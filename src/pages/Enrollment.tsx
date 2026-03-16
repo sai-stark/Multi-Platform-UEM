@@ -129,11 +129,14 @@ export default function Enrollment() {
 
   const fetchProfiles = async (platform: Platform) => {
     setLoading(true);
+    // Clear previous state to prevent stale data on platform change or error
+    setProfiles([]);
+    setSelectedProfileId('');
+    setQrCodeData(null);
     try {
       const data = await EnrollmentService.getProfiles(platform);
       const publishedProfiles = data.filter(p => p.status === 'PUBLISHED');
       setProfiles(publishedProfiles);
-      setSelectedProfileId('');
     } catch (error) {
       console.error('Failed to fetch profiles', error);
       toast({

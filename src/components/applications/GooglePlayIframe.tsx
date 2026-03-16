@@ -7,11 +7,11 @@ import {
   Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
+
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -120,7 +120,7 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
     const fallbackIframe = document.createElement("iframe");
     fallbackIframe.src = url;
     fallbackIframe.style.cssText =
-      "width: 100%; min-height: 400px; border: none;";
+      "width: 100%; height: 100%; min-height: 500px; border: none;";
     fallbackIframe.scrolling = "yes";
 
     fallbackIframe.onload = () => {
@@ -151,7 +151,7 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
       url: `https://play.google.com/work/embedded/search?token=${token}&mode=SELECT`,
       where: container,
       attributes: {
-        style: "width: 100%; min-height: 400px; border: none;",
+        style: "width: 100%; height: 100%; min-height: 500px; border: none;",
         scrolling: "yes",
       },
     };
@@ -379,9 +379,10 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
 
-        await ApplicationService.createApplication('android', {
-          packageName: app.packageName,
-        });
+        const formData = new FormData();
+        formData.append('identifier', app.packageName);
+
+        await ApplicationService.createApplication('android', formData);
       } catch (error) {
         console.error(`Failed to add app ${app.packageName}:`, error);
       }
@@ -405,23 +406,14 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-y-auto flex flex-col w-[80vw] max-w-[80vw] max-h-[90vh]">
+      <DialogContent className="overflow-y-auto flex flex-col w-[80vw] max-w-[80vw] h-[90vh] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Add Applications from Google Play for Work</DialogTitle>
-          <DialogDescription>
-            Select applications from Google Play for Work to add to your organization.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Google Play for Work</Label>
-              <p className="text-xs text-muted-foreground">
-                Click "Select" on apps to add them to your selection
-              </p>
-            </div>
-            <div className="border border-border rounded-lg bg-card p-4">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="border border-border rounded-lg bg-card p-2 flex-1 flex flex-col min-h-0">
               {!isGoogleApiLoaded && !googleApiError && (
                 <div className="flex items-center justify-center py-12">
                   <div className="flex items-center gap-2">
@@ -489,7 +481,7 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
                     </div>
                   </div>
                 )}
-                <div id="play-store-container" className="w-full" />
+                <div id="play-store-container" className="w-full flex-1 min-h-[500px]" />
               </div>
             </div>
 

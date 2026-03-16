@@ -1,3 +1,5 @@
+// Consolidated restriction container
+export { AndroidDeviceRestrictions } from './AndroidDeviceRestrictions';
 // Individual restriction components
 export { SecurityRestriction } from './SecurityRestriction';
 export { KioskRestriction } from './KioskRestriction';

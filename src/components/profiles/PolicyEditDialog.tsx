@@ -48,17 +48,7 @@ import {
     EnrollmentPolicy as EnrollmentPolicyEditor,
 } from "@/components/profiles/AndroidPolicies";
 import {
-    ConnectivityRestriction,
-    DateTimeRestriction,
-    DisplayRestriction,
-    KioskRestriction,
-    LocationRestriction,
-    MiscellaneousRestriction,
-    NetworkRestriction,
-    PhoneRestriction,
-    SecurityRestriction,
-    SyncStorageRestriction,
-    TetheringRestriction,
+    AndroidDeviceRestrictions,
 } from "@/components/profiles/AndroidRestrictions";
 
 // iOS Policy Imports
@@ -408,101 +398,11 @@ export function PolicyEditDialog({
                     )}
 
                     {/* Android-specific policy editors */}
-                    {activePolicyType === "securityRestriction" && (
-                        <SecurityRestriction
+                    {activePolicyType === "androidDeviceRestriction" && (
+                        <AndroidDeviceRestrictions
                             platform={platform}
                             profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.security}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "kioskRestriction" && (
-                        <KioskRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.kiosk}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "locationRestriction" && (
-                        <LocationRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.location}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "tetheringRestriction" && (
-                        <TetheringRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.tethering}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "phoneRestriction" && (
-                        <PhoneRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.phone}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "dateTimeRestriction" && (
-                        <DateTimeRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.dateTime}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "displayRestriction" && (
-                        <DisplayRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.display}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "miscRestriction" && (
-                        <MiscellaneousRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.miscellaneous}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "connectivityRestriction" && (
-                        <ConnectivityRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.connectivity}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "networkRestriction" && (
-                        <NetworkRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.network}
-                            onSave={onSave}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                    {activePolicyType === "storageRestriction" && (
-                        <SyncStorageRestriction
-                            platform={platform}
-                            profileId={profileId}
-                            initialData={(restrictionsPolicy as AndroidProfileRestrictions)?.syncStorage}
+                            restrictions={restrictionsPolicy as AndroidProfileRestrictions}
                             onSave={onSave}
                             onCancel={handleCancel}
                         />

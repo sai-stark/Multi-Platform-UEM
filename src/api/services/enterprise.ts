@@ -53,7 +53,10 @@ export const EnterpriseService = {
     ): Promise<AndroidEnterpriseSignup> => {
         const response = await apiClient.post<AndroidEnterpriseSignup>(
             `/${platform}/enterprise:signup`,
-            signupData
+            {
+                ...signupData,
+                enterpriseSignupType: 'AndroidEnterpriseSignup',
+            }
         );
         return response.data;
     },
@@ -90,12 +93,10 @@ export const EnterpriseService = {
      * @returns Promise<AndroidEnterpriseWebToken> - Web token response
      */
     generateEnterpriseWebToken: async (
-        platform: Platform,
-        tokenRequest?: Partial<AndroidEnterpriseWebToken>
+        platform: Platform
     ): Promise<AndroidEnterpriseWebToken> => {
         const response = await apiClient.post<AndroidEnterpriseWebToken>(
-            `/${platform}/enterprise/webToken`,
-            tokenRequest || {}
+            `/${platform}/enterprise/webToken`
         );
         return response.data;
     },

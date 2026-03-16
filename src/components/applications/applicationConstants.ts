@@ -92,8 +92,14 @@ export const getIframeToken = async (
             ? now - parseInt(lastRefreshTime) > TOKEN_REFRESH_INTERVAL
             : true;
 
+        // Force refresh for token origin fix
+        if (!localStorage.getItem("iFrameOriginFixApplied")) {
+            localStorage.removeItem("iFrameWebToken");
+            localStorage.setItem("iFrameOriginFixApplied", "true");
+        }
+
         // First, try to get token from localStorage (unless forcing refresh or time-based refresh needed)
-        if (!forceRefresh && !shouldRefreshByTime) {
+        if (!forceRefresh && !shouldRefreshByTime && localStorage.getItem("iFrameOriginFixApplied")) {
             const storedToken = localStorage.getItem("iFrameWebToken");
             if (storedToken) {
                 if (import.meta.env.DEV) console.log("Using stored iframe token");
@@ -102,12 +108,6 @@ export const getIframeToken = async (
         }
 
         // If no token in localStorage, forcing refresh, or time-based refresh needed
-        const enterpriseName = localStorage.getItem("mdm_enterprise_display_name");
-        if (!enterpriseName) {
-            console.error("No enterprise display name found in localStorage");
-            return null;
-        }
-
         const refreshReason = forceRefresh
             ? "forced refresh"
             : shouldRefreshByTime
@@ -115,11 +115,11 @@ export const getIframeToken = async (
                 : "no stored token";
 
         if (import.meta.env.DEV) console.log(
-            `Fetching new iframe token from API for enterprise: ${enterpriseName} (${refreshReason})`
+            `Fetching new iframe token from API (${refreshReason})`
         );
 
-        // Fetch new token from API
-        const response = await EnterpriseService.generateEnterpriseWebToken('android', { parentFrameUrl: enterpriseName });
+        // Fetch new token from API (no request body per spec)
+        const response = await EnterpriseService.generateEnterpriseWebToken('android');
         if (import.meta.env.DEV) console.log("API response:", response);
         if (response?.webToken) {
             // Store the new token and refresh time in localStorage

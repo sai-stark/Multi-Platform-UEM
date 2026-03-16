@@ -31,6 +31,8 @@ interface KioskRestrictionProps {
     initialData?: KioskRestrictionType;
     onSave: () => void;
     onCancel: () => void;
+    hideFooter?: boolean;
+    formId?: string;
 }
 
 const NAVIGATION_OPTIONS: { value: SystemNavigationRestriction; label: string; desc: string }[] = [
@@ -51,7 +53,7 @@ const PLUGGED_MODES: { value: BatteryPluggedMode; label: string }[] = [
     { value: 'WIRELESS', label: 'Wireless' },
 ];
 
-export function KioskRestriction({ platform, profileId, initialData, onSave, onCancel }: KioskRestrictionProps) {
+export function KioskRestriction({ platform, profileId, initialData, onSave, onCancel, hideFooter, formId }: KioskRestrictionProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -243,7 +245,7 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                         <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
                     </Button>
                 ) : <span />}
-                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
+                {!hideFooter && <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>}
             </div>
         </div>
     );
@@ -253,7 +255,7 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mt-6">
+        <form onSubmit={handleSubmit} id={formId} className="space-y-6 max-w-4xl mt-6">
             <div className="flex items-center justify-between pb-4 border-b">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-orange-500/10 rounded-full">
@@ -446,15 +448,17 @@ export function KioskRestriction({ platform, profileId, initialData, onSave, onC
                         <Trash2 className="w-4 h-4 mr-2" /> Deinitialise
                     </Button>
                 ) : <span />}
-                <div className="flex gap-3">
-                    <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                        {t('common.cancel')}
-                    </Button>
-                    <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {t('form.saveChanges')}
-                    </Button>
-                </div>
+                {!hideFooter && (
+                    <div className="flex gap-3">
+                        <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {t('form.saveChanges')}
+                        </Button>
+                    </div>
+                )}
             </div>
         </form>
     );
