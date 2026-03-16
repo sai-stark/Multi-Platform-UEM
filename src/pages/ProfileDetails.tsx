@@ -3,6 +3,8 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { ProfileDetailSkeleton } from "@/components/skeletons";
 
 import { PolicyService } from "@/api/services/IOSpolicies";
+import { policyAPI as AndroidPolicyService } from "@/api/services/Androidpolicies";
+import { restrictionAPI as AndroidRestrictionService } from "@/api/services/Androidrestrictions";
 import { PolicyEditDialog } from "@/components/profiles/PolicyEditDialog";
 import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
 import {
@@ -1445,6 +1447,7 @@ export default function ProfileDetails() {
                   setIsDeleting(true);
                   try {
                     const pt = deleteTarget.policyType;
+                    // iOS / macOS policies
                     if (pt === "passcode") await PolicyService.deletePasscodeRestriction(platform as Platform, id);
                     else if (pt === "wifi") await PolicyService.deleteIosWiFiConfiguration(id);
                     else if (pt === "mail") await PolicyService.deleteIosMailPolicy(id);
@@ -1460,6 +1463,23 @@ export default function ProfileDetails() {
                     else if (pt === "appLock") await PolicyService.deleteAppLockPolicy(id);
                     else if (pt === "mdm") await PolicyService.deleteMdmPolicy(id);
                     else if (pt === "deviceSettings") await PolicyService.deleteDeviceSettingsPolicy(id);
+                    // Android policies
+                    else if (pt === "androidPasscode") await AndroidPolicyService.deletePasscodePolicy(platform as Platform, id);
+                    else if (pt === "commonSettings") await AndroidPolicyService.deleteCommonSettingsPolicy(platform as Platform, id);
+                    else if (pt === "enrollment") await AndroidPolicyService.deleteEnrollmentPolicy(platform as Platform, id);
+                    else if (pt === "deviceTheme") await AndroidPolicyService.deleteDeviceThemePolicy(platform as Platform, id);
+                    // Android restrictions
+                    else if (pt === "securityRestriction") await AndroidRestrictionService.deleteSecurityRestriction(platform as Platform, id);
+                    else if (pt === "networkRestriction") await AndroidRestrictionService.deleteNetworkRestriction(platform as Platform, id);
+                    else if (pt === "locationRestriction") await AndroidRestrictionService.deleteLocationRestriction(platform as Platform, id);
+                    else if (pt === "miscRestriction") await AndroidRestrictionService.deleteMiscellaneousRestriction(platform as Platform, id);
+                    else if (pt === "kioskRestriction") await AndroidRestrictionService.deleteKioskRestriction(platform as Platform, id);
+                    else if (pt === "tetheringRestriction") await AndroidRestrictionService.deleteTetheringRestriction(platform as Platform, id);
+                    else if (pt === "phoneRestriction") await AndroidRestrictionService.deletePhoneRestriction(platform as Platform, id);
+                    else if (pt === "dateTimeRestriction") await AndroidRestrictionService.deleteDateTimeRestriction(platform as Platform, id);
+                    else if (pt === "displayRestriction") await AndroidRestrictionService.deleteDisplayRestriction(platform as Platform, id);
+                    else if (pt === "storageRestriction") await AndroidRestrictionService.deleteSyncStorageRestriction(platform as Platform, id);
+                    else if (pt === "connectivityRestriction") await AndroidRestrictionService.deleteConnectivityRestriction(platform as Platform, id);
                     setDeleteTarget(null);
                     fetchProfile();
                   } catch (err) {

@@ -25,6 +25,9 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Platform } from '@/types/models';
 import { getErrorMessage } from '@/utils/errorUtils';
+import {  Tooltip,
+  TooltipContent,
+  TooltipTrigger} from '@/components/ui/tooltip';
 import {
   Check,
   Copy,
@@ -40,6 +43,7 @@ import {
   Settings2,
   Smartphone,
   UserPlus,
+
   ZoomIn
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -199,8 +203,8 @@ export default function Enrollment() {
       const isBYOD = currentProfile?.managementMode === 'BYOD';
       
       if (!isBYOD && platform === 'android') {
-        // For Android non-BYOD, use the full DPC extra payload from the QR code API response if available, or the whole data object
-        setQrCodeData(data);
+        // For Android non-BYOD, use the full DPC extra payload from the QR code API response if available
+        setQrCodeData(data.qrCode);
         return;
       }
 
@@ -511,15 +515,55 @@ export default function Enrollment() {
                               {renderQrContent()}
                             </div>
                           </div>
-                          <div className="text-center text-sm text-muted-foreground break-all px-4">
-                            {getEnrollmentUrl()}
+                          <div className="flex items-center justify-center gap-2 mt-3 px-4">
+                            <p className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">
+                              {getEnrollmentUrl()}
+                            </p>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-5 h-5 shrink-0 hover:bg-muted"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyEnrollmentData();
+                                  }}
+                                >
+                                  <Copy className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                {t('enrollment.copyData')}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </DialogContent>
                       </Dialog>
 
-                      <p className="text-xs text-muted-foreground mt-3 font-mono break-all px-2 max-h-32 overflow-y-auto w-full max-w-[200px] text-left mx-auto">
-                        {getEnrollmentUrl()}
-                      </p>
+                      <div className="flex items-center justify-center gap-2 mt-3 px-2">
+                        <p className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
+                          {getEnrollmentUrl()}
+                        </p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-5 h-5 shrink-0 hover:bg-muted"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyEnrollmentData();
+                              }}
+                            >
+                              <Copy className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            {t('enrollment.copyData')}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}

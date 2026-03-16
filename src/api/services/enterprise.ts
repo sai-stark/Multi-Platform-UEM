@@ -74,13 +74,13 @@ export const EnterpriseService = {
         signId: string,
         enterpriseToken: string
     ): Promise<void> => {
-        await apiClient.get(`/${platform}/bind/enterpriseToken/${signId}`, {
+        await apiClient.get(`/${platform}/enterprise/bind/enterpriseToken/${signId}`, {
             params: { enterpriseToken }
         });
     },
 
     /**
-     * POST /{platform}/webToken - Generate Enterprise Web Token
+     * POST /{platform}/enterprise/webToken - Generate Enterprise Web Token
      * 
      * Generates a web token for accessing Google Play iframe services.
      * This token is used to embed the Google Play store in the UEM console.
@@ -94,7 +94,7 @@ export const EnterpriseService = {
         tokenRequest?: Partial<AndroidEnterpriseWebToken>
     ): Promise<AndroidEnterpriseWebToken> => {
         const response = await apiClient.post<AndroidEnterpriseWebToken>(
-            `/${platform}/webToken`,
+            `/${platform}/enterprise/webToken`,
             tokenRequest || {}
         );
         return response.data;
