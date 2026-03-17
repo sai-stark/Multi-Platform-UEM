@@ -45,7 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
 
 type MacosAddMode = 'search' | 'store-url' | 'upload' | 'app-url';
-type MacosArchitecture = 'intel_x86' | 'arm64';
+type MacosArchitecture = 'intel_x86' | 'arm64' | 'Universal';
 
 const MACOS_ACCEPTED_EXTENSIONS = '.pkg,.dmg,.mpkg,.app,.zip';
 
@@ -58,7 +58,7 @@ interface MacosAddAppDialogProps {
 export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: MacosAddAppDialogProps) => {
   const { toast } = useToast();
 
-  const [addMode, setAddMode] = useState<MacosAddMode>('search');
+  const [addMode, setAddMode] = useState<MacosAddMode>('upload');
   const [registering, setRegistering] = useState(false);
 
   // Search mode state
@@ -217,10 +217,10 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
 
   // ── Mode tabs ───────────────────────────────────────────────────────
   const modes: { key: MacosAddMode; label: string; icon: React.ElementType }[] = [
-    { key: 'search', label: 'Search App Store', icon: Search },
-    { key: 'store-url', label: 'App Store URL', icon: Link2 },
     { key: 'upload', label: 'Upload File', icon: Upload },
     { key: 'app-url', label: 'App URL', icon: Globe },
+    { key: 'search', label: 'Search App Store', icon: Search },
+    { key: 'store-url', label: 'App Store URL', icon: Link2 },
   ];
 
   return (
@@ -237,17 +237,28 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
           <div className="flex-1 flex flex-col space-y-4">
             {/* Mode Tabs */}
             <div className="flex flex-wrap gap-2 border-b pb-3">
-              {modes.map(({ key, label, icon: Icon }) => (
-                <Button
-                  key={key}
-                  variant={addMode === key ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setAddMode(key)}
-                >
-                  <Icon className="w-4 h-4 mr-2" />
-                  {label}
-                </Button>
-              ))}
+              {modes.map(({ key, label, icon: Icon }) => {
+                const isDisabled = key === 'search' || key === 'store-url';
+                return (
+                  <div key={key} className="relative">
+                    <Button
+                      variant={addMode === key ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setAddMode(key)}
+                      disabled={isDisabled}
+                      className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {label}
+                      {isDisabled && (
+                        <span className="ml-1.5 text-[10px] uppercase tracking-wider opacity-70">
+                          (Coming Soon)
+                        </span>
+                      )}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
 
             {/* ── Search Mode ── */}
@@ -428,6 +439,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
                     <SelectContent>
                       <SelectItem value="arm64">Apple Silicon (ARM64)</SelectItem>
                       <SelectItem value="intel_x86">Intel (x86)</SelectItem>
+                      <SelectItem value="Universal">Universal</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
@@ -493,6 +505,7 @@ export const MacosAddAppDialog = ({ open, onOpenChange, onAppRegistered }: Macos
                     <SelectContent>
                       <SelectItem value="arm64">Apple Silicon (ARM64)</SelectItem>
                       <SelectItem value="intel_x86">Intel (x86)</SelectItem>
+                      <SelectItem value="Universal">Universal</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">

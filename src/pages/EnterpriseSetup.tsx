@@ -445,7 +445,7 @@ export default function EnterpriseSetup() {
             <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                     <img
-                        src={getAssetUrl('/Assets/android.png')}
+                        src={getAssetUrl('/Assets/android.svg')}
                         alt="Android"
                         className="w-10 h-10"
                     />

@@ -303,11 +303,11 @@ export default function DeviceDetails() {
         const p = plat?.toLowerCase() || '';
         let assetSrc = null;
 
-        if (p === 'android' || p.includes('android')) assetSrc = getAssetUrl('/Assets/android.png');
-        else if (p === 'ios' || p === 'iosdeviceinfo') assetSrc = getAssetUrl('/Assets/apple.png');
-        else if (p === 'macos') assetSrc = getAssetUrl('/Assets/mac_os.png');
-        else if (p === 'windows') assetSrc = getAssetUrl('/Assets/microsoft.png');
-        else if (p === 'linux') assetSrc = getAssetUrl('/Assets/linux.png');
+        if (p === 'android' || p.includes('android')) assetSrc = getAssetUrl('/Assets/android.svg');
+        else if (p === 'ios' || p === 'iosdeviceinfo') assetSrc = getAssetUrl('/Assets/apple.svg');
+        else if (p === 'macos') assetSrc = getAssetUrl('/Assets/mac_os.svg');
+        else if (p === 'windows') assetSrc = getAssetUrl('/Assets/microsoft.svg');
+        else if (p === 'linux') assetSrc = getAssetUrl('/Assets/linux.svg');
 
         if (assetSrc) {
             return <img src={assetSrc} alt={plat} className="w-16 h-16 object-contain" />;

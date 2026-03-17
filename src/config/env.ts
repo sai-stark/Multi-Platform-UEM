@@ -99,7 +99,7 @@ export const apiBaseUrl = getApiBaseUrl();
 /**
  * Get the full URL for a public asset
  * Prepends the deployment prefix path to asset URLs
- * @param assetPath - Path to the asset (e.g., '/Assets/android.png')
+ * @param assetPath - Path to the asset (e.g., '/Assets/android.svg')
  * @returns Full asset URL with base path
  */
 export function getAssetUrl(assetPath: string): string {

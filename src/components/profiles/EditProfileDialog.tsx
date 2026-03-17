@@ -39,19 +39,19 @@ const DESC_PATTERN = /^[a-zA-Z0-9\- ]{5,100}$/;
 const PLATFORM_CONFIG: Record<string, { label: string; image: string }> = {
   android: {
     label: "Android",
-    image: getAssetUrl("/Assets/android.png"),
+    image: getAssetUrl("/Assets/android.svg"),
   },
   ios: {
     label: "iOS",
-    image: getAssetUrl("/Assets/apple.png"),
+    image: getAssetUrl("/Assets/apple.svg"),
   },
   macos: {
     label: "macOS",
-    image: getAssetUrl("/Assets/mac_os.png"),
+    image: getAssetUrl("/Assets/mac_os.svg"),
   },
   windows: {
     label: "Windows",
-    image: getAssetUrl("/Assets/microsoft.png"),
+    image: getAssetUrl("/Assets/microsoft.svg"),
   },
 };
 

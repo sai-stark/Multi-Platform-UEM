@@ -65,11 +65,11 @@ const sectionIcons: Record<string, React.ElementType> = {
 
 // Platform segments get an image icon
 const platformImages: Record<string, string> = {
-  android: '/Assets/android.png',
-  ios: '/Assets/apple.png',
-  windows: '/Assets/microsoft.png',
-  macos: '/Assets/mac_os.png',
-  linux: '/Assets/linux.png',
+  android: '/Assets/android.svg',
+  ios: '/Assets/apple.svg',
+  windows: '/Assets/microsoft.svg',
+  macos: '/Assets/mac_os.svg',
+  linux: '/Assets/linux.svg',
 };
 
 // Segments that are known platforms

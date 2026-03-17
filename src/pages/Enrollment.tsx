@@ -91,11 +91,11 @@ const enrollmentSteps: Record<Platform, { en: string; hi: string }[]> = {
 };
 
 const platformConfig = {
-  android: { label: 'Android', asset: getAssetUrl('/Assets/android.png'), icon: Smartphone },
-  ios: { label: 'iOS', asset: getAssetUrl('/Assets/apple.png'), icon: Smartphone },
-  windows: { label: 'Windows', asset: getAssetUrl('/Assets/microsoft.png'), icon: Laptop },
-  macos: { label: 'macOS', asset: getAssetUrl('/Assets/mac_os.png'), icon: Laptop },
-  linux: { label: 'Linux', asset: getAssetUrl('/Assets/linux.png'), icon: Server },
+  android: { label: 'Android', asset: getAssetUrl('/Assets/android.svg'), icon: Smartphone },
+  ios: { label: 'iOS', asset: getAssetUrl('/Assets/apple.svg'), icon: Smartphone },
+  windows: { label: 'Windows', asset: getAssetUrl('/Assets/microsoft.svg'), icon: Laptop },
+  macos: { label: 'macOS', asset: getAssetUrl('/Assets/mac_os.svg'), icon: Laptop },
+  linux: { label: 'Linux', asset: getAssetUrl('/Assets/linux.svg'), icon: Server },
 };
 
 export default function Enrollment() {

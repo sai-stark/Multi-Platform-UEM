@@ -41,37 +41,37 @@ const platformConfig: Record<
     label: "All Platforms",
     icon: Layout,
     color: "text-primary",
-    image: getAssetUrl("/Assets/all_platforms.png"),
+    image: getAssetUrl("/Assets/all_platforms.svg"),
   },
   android: {
     label: "Android",
     icon: Smartphone,
     color: "text-success",
-    image: getAssetUrl("/Assets/android.png"),
+    image: getAssetUrl("/Assets/android.svg"),
   },
   ios: {
     label: "iOS",
     icon: Apple,
     color: "text-muted-foreground",
-    image: getAssetUrl("/Assets/apple.png"),
+    image: getAssetUrl("/Assets/apple.svg"),
   },
   windows: {
     label: "Windows",
     icon: Monitor,
     color: "text-info",
-    image: getAssetUrl("/Assets/microsoft.png"),
+    image: getAssetUrl("/Assets/microsoft.svg"),
   },
   linux: {
     label: "Linux",
     icon: Monitor,
     color: "text-info",
-    image: getAssetUrl("/Assets/linux.png"),
+    image: getAssetUrl("/Assets/linux.svg"),
   },
   macos: {
     label: "macOS",
     icon: Monitor,
     color: "text-info",
-    image: getAssetUrl("/Assets/mac_os.png"),
+    image: getAssetUrl("/Assets/mac_os.svg"),
   },
 };
 

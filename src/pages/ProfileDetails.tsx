@@ -1078,11 +1078,11 @@ export default function ProfileDetails() {
   const getPlatformIcon = (plat?: string) => {
     const iconClass = "w-8 h-8 object-contain";
     switch (plat?.toLowerCase()) {
-      case "android": return <img src={getAssetUrl("Assets/android.png")} alt="Android" className={iconClass} />;
-      case "ios": return <img src={getAssetUrl("Assets/apple.png")} alt="iOS" className={iconClass} />;
-      case "windows": return <img src={getAssetUrl("Assets/microsoft.png")} alt="Windows" className={iconClass} />;
-      case "macos": return <img src={getAssetUrl("Assets/mac_os.png")} alt="macOS" className={iconClass} />;
-      default: return <img src={getAssetUrl("Assets/all_platforms.png")} alt="Platform" className={iconClass} />;
+      case "android": return <img src={getAssetUrl("Assets/android.svg")} alt="Android" className={iconClass} />;
+      case "ios": return <img src={getAssetUrl("Assets/apple.svg")} alt="iOS" className={iconClass} />;
+      case "windows": return <img src={getAssetUrl("Assets/microsoft.svg")} alt="Windows" className={iconClass} />;
+      case "macos": return <img src={getAssetUrl("Assets/mac_os.svg")} alt="macOS" className={iconClass} />;
+      default: return <img src={getAssetUrl("Assets/all_platforms.svg")} alt="Platform" className={iconClass} />;
     }
   };
 

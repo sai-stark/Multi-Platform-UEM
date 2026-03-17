@@ -22,33 +22,33 @@ export const platformConfig: Record<string, {
         label: 'Android',
         icon: Smartphone,
         color: 'text-success',
-        image: getAssetUrl('/Assets/android.png'),
+        image: getAssetUrl('/Assets/android.svg'),
     },
     ios: {
         label: 'iOS',
         icon: Apple,
         color: 'text-muted-foreground',
-        image: getAssetUrl('/Assets/apple.png'),
+        image: getAssetUrl('/Assets/apple.svg'),
     },
     windows: {
         label: 'Windows',
         icon: Monitor,
         color: 'text-info',
         disabled: true,
-        image: getAssetUrl('/Assets/microsoft.png'),
+        image: getAssetUrl('/Assets/microsoft.svg'),
     },
     macos: {
         label: 'macOS',
         icon: Apple,
         color: 'text-muted-foreground',
-        image: getAssetUrl('/Assets/mac_os.png'),
+        image: getAssetUrl('/Assets/mac_os.svg'),
     },
     linux: {
         label: 'Linux',
         icon: Monitor,
         color: 'text-info',
         disabled: true,
-        image: getAssetUrl('/Assets/linux.png'),
+        image: getAssetUrl('/Assets/linux.svg'),
     },
 };
 

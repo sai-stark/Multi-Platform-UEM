@@ -260,7 +260,7 @@ const IosApplicationDetailsView = ({ id, navigate, toast }: IosDetailsProps) => 
                   <h1 className="text-2xl font-bold text-foreground">
                     {app.trackName || app.name}
                   </h1>
-                  <img src={getAssetUrl('/Assets/apple.png')} alt="iOS" className="w-5 h-5 object-contain" />
+                  <img src={getAssetUrl('/Assets/apple.svg')} alt="iOS" className="w-5 h-5 object-contain" />
                   {app.enrollmentStatus && (
                     <Badge variant={app.enrollmentStatus === 'REGISTERED' ? 'default' : 'secondary'}>
                       {app.enrollmentStatus}
@@ -886,7 +886,7 @@ const ApplicationDetails = () => {
                   <h1 className="text-2xl font-bold text-foreground">
                     {application.name}
                   </h1>
-                  <img src={getAssetUrl('/Assets/android.png')} alt="Android" className="w-5 h-5 object-contain" />
+                  <img src={getAssetUrl('/Assets/android.svg')} alt="Android" className="w-5 h-5 object-contain" />
                   {getAppTypeBadge(application)}
                 </div>
                 <div className="flex items-center gap-2 mt-1">

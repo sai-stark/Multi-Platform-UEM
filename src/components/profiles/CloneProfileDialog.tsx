@@ -25,15 +25,15 @@ import { useNavigate } from "react-router-dom";
 const PLATFORM_CONFIG: Record<string, { label: string; image: string }> = {
   android: {
     label: "Android",
-    image: getAssetUrl("/Assets/android.png"),
+    image: getAssetUrl("/Assets/android.svg"),
   },
   ios: {
     label: "iOS",
-    image: getAssetUrl("/Assets/apple.png"),
+    image: getAssetUrl("/Assets/apple.svg"),
   },
   windows: {
     label: "Windows",
-    image: getAssetUrl("/Assets/microsoft.png"),
+    image: getAssetUrl("/Assets/microsoft.svg"),
   },
 };
 

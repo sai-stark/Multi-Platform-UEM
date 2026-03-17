@@ -151,11 +151,11 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
       },
       render: (_, item) => {
         const flagDefs = [
-          { key: 'isEmmApp', label: 'EMM App', value: item.isEmmApp, activeImg: getAssetUrl('/Assets/App_True.png'), inactiveImg: getAssetUrl('/Assets/App.png') },
-          { key: 'isEmmAgent', label: 'EMM Agent', value: item.isEmmAgent, activeImg: getAssetUrl('/Assets/Agent_True.png'), inactiveImg: getAssetUrl('/Assets/Agent.png') },
-          { key: 'isLauncher', label: 'Launcher', value: item.isLauncher, activeImg: getAssetUrl('/Assets/Launcher_True.png'), inactiveImg: getAssetUrl('/Assets/Launcher.png') },
-          { key: 'isMandatory', label: 'Mandatory', value: item.isMandatory, activeImg: getAssetUrl('/Assets/Mandatory_True.png'), inactiveImg: getAssetUrl('/Assets/Mandatory.png') },
-          { key: 'isBlocked', label: 'Blocked', value: item.isBlocked, activeImg: getAssetUrl('/Assets/Block_True.png'), inactiveImg: getAssetUrl('/Assets/Block.png') },
+          { key: 'isEmmApp', label: 'EMM App', value: item.isEmmApp, activeImg: getAssetUrl('/Assets/App_True.svg'), inactiveImg: getAssetUrl('/Assets/App.png') },
+          { key: 'isEmmAgent', label: 'EMM Agent', value: item.isEmmAgent, activeImg: getAssetUrl('/Assets/Agent_True.svg'), inactiveImg: getAssetUrl('/Assets/Agent.png') },
+          { key: 'isLauncher', label: 'Launcher', value: item.isLauncher, activeImg: getAssetUrl('/Assets/Launcher_True.svg'), inactiveImg: getAssetUrl('/Assets/Launcher.png') },
+          { key: 'isMandatory', label: 'Mandatory', value: item.isMandatory, activeImg: getAssetUrl('/Assets/Mandatory_True.svg'), inactiveImg: getAssetUrl('/Assets/Mandatory.png') },
+          { key: 'isBlocked', label: 'Blocked', value: item.isBlocked, activeImg: getAssetUrl('/Assets/Block_True.svg'), inactiveImg: getAssetUrl('/Assets/Block.png') },
         ];
         return (
           <TooltipProvider delayDuration={200}>
