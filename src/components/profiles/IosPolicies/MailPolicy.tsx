@@ -1,4 +1,14 @@
 import { PolicyService } from '@/api/services/IOSpolicies';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -48,6 +58,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
     const [loading, setLoading] = useState(false);
     // If we have an ID, start in view mode. Otherwise, start in edit mode.
     const [isEditing, setIsEditing] = useState(!initialData?.id);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [formData, setFormData] = useState<Partial<IosMailPolicy>>(
         initialData || defaultMailPolicy
     );
@@ -98,6 +109,7 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
         try {
             await PolicyService.deleteIosMailPolicy(profileId);
             toast({ title: "Success", description: "Mail policy deleted successfully" });
+            setShowDeleteDialog(false);
             onSave(); // Refresh the parent
         } catch (error) {
             console.error("Failed to delete mail policy", error);
@@ -136,10 +148,26 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
                         Edit
                     </Button>
                     {initialData?.id && (
-                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                        </Button>
+                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                            <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={loading}>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                            </Button>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Policy</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Are you sure you want to delete this policy? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )}
                 </div>
             </div>

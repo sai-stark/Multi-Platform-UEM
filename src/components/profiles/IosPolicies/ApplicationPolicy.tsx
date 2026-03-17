@@ -283,6 +283,7 @@ export const ApplicationPolicyEditor = ({
                 setSelectedPolicyId(null);
             }
             toast({ title: 'Success', description: 'Application policy deleted.' });
+            if (onSave) onSave();
         } catch (error) {
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete application policy'), variant: 'destructive' });
         }
@@ -317,6 +318,7 @@ export const ApplicationPolicyEditor = ({
             setChangedPolicies([]);
             toast({ title: 'Success', description: 'Application policies saved successfully!' });
             await loadExistingPolicies();
+            if (onSave) onSave();
         } catch (error) {
             console.error('Error saving application policies:', error);
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to save application policies'), variant: 'destructive' });
@@ -344,7 +346,7 @@ export const ApplicationPolicyEditor = ({
     // Render
     // ====================================================================
     return (
-        <div className="flex flex-col h-[78vh]">
+        <div className="flex flex-col h-[78vh] mb-6">
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b shrink-0 pr-8">
                 <div className="flex items-center gap-4">

@@ -1,4 +1,14 @@
 import { PolicyService } from '@/api/services/IOSpolicies';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,6 +34,7 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
     const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const [formData, setFormData] = useState<Partial<IosGlobalHttpProxyPolicy>>({
         name: '',
@@ -75,6 +86,7 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
         try {
             await PolicyService.deleteGlobalHttpProxyPolicy(profileId);
             toast({ title: 'Success', description: 'HTTP Proxy policy deleted' });
+            setShowDeleteDialog(false);
             onSave();
         } catch (error) {
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete policy'), variant: 'destructive' });
@@ -100,9 +112,25 @@ export function GlobalHttpProxyPolicy({ profileId, initialData, onSave, onCancel
                         <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                             <Edit className="w-4 h-4 mr-1" /> Edit
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={loading}>
-                            <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
+                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                            <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={loading}>
+                                <Trash2 className="w-4 h-4 mr-1" /> Delete
+                            </Button>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Policy</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Are you sure you want to delete this policy? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

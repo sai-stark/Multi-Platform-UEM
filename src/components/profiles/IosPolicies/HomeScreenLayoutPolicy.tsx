@@ -1,4 +1,14 @@
 import { PolicyService } from "@/api/services/IOSpolicies";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +30,7 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
     const { toast } = useToast();
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [formData, setFormData] = useState<IosHomeScreenLayoutPolicy>(
         initialData || {
             name: "ios",
@@ -95,6 +106,7 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
         try {
             await PolicyService.deleteHomeScreenLayoutPolicy(profileId);
             toast({ title: "Success", description: "Home Screen Layout policy deleted." });
+            setShowDeleteDialog(false);
             onSave();
         } catch (error) {
             toast({ title: "Error", description: getErrorMessage(error, "Failed to delete policy."), variant: "destructive" });
@@ -426,9 +438,25 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
                         <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                             <Edit className="w-4 h-4 mr-1" /> Edit
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={saving}>
-                            <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
+                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                            <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={saving}>
+                                <Trash2 className="w-4 h-4 mr-1" /> Delete
+                            </Button>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Policy</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Are you sure you want to delete this policy? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
 
@@ -592,9 +620,25 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
             <div className="flex justify-between pt-4 border-t">
                 <div>
                     {initialData?.id && (
-                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={saving}>
-                            <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
+                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                            <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={saving}>
+                                <Trash2 className="w-4 h-4 mr-1" /> Delete
+                            </Button>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Policy</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Are you sure you want to delete this policy? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )}
                 </div>
                 <div className="flex gap-2">

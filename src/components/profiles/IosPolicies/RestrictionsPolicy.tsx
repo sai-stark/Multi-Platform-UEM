@@ -1,7 +1,17 @@
 
 import { PolicyService } from '@/api/services/IOSpolicies';
+import { PolicyCategory, PolicyMasterDetail } from '@/components/profiles/PolicyMasterDetail';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +19,8 @@ import { cn } from '@/lib/utils';
 import { IosRestrictionsPayload } from '@/types/restrictions';
 import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
-import { Ban, Edit, Loader2, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Edit, Loader2, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 // Category definitions with human-readable labels and descriptions
 const RESTRICTION_CATEGORIES: {
@@ -192,20 +202,14 @@ interface RestrictionsPolicyProps {
     initialData?: IosRestrictionsPayload;
     onSave: (data: IosRestrictionsPayload) => void;
     onCancel: () => void;
-    onEditModeChange?: (isEditing: boolean) => void;
 }
 
-export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel, onEditModeChange }: RestrictionsPolicyProps) {
+export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }: RestrictionsPolicyProps) {
     const { toast } = useToast();
-    const [isEditing, setIsEditing] = useState(!initialData?.id);
-
-    // Notify parent of edit mode changes
-    useEffect(() => {
-        onEditModeChange?.(isEditing);
-    }, [isEditing, onEditModeChange]);
     const [saving, setSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>(RESTRICTION_CATEGORIES[0].key);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const [formData, setFormData] = useState<IosRestrictionsPayload>(
         initialData || {
@@ -267,6 +271,7 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel, o
         try {
             await PolicyService.deleteRestrictionsPolicy(profileId);
             toast({ title: 'Success', description: 'Restrictions policy deleted' });
+            setShowDeleteDialog(false);
             onSave(formData);
         } catch (error) {
             toast({ title: 'Error', description: getErrorMessage(error, 'Failed to delete restrictions'), variant: 'destructive' });
@@ -288,200 +293,105 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel, o
         return count;
     }, [restrictions]);
 
-    // VIEW MODE
-    if (!isEditing && initialData) {
-        const modifiedFields = RESTRICTION_CATEGORIES.flatMap(cat =>
-            cat.fields
-                .filter(f => {
-                    const val = restrictions[f.key];
-                    const defaultVal = f.defaultValue ?? true;
-                    return val !== undefined && val !== defaultVal;
-                })
-                .map(f => ({ ...f, catTitle: cat.title, catIcon: cat.icon, value: restrictions[f.key] }))
-        );
+    // Helper: does a category have any non-default fields?
+    const categoryHasModified = (cat: typeof RESTRICTION_CATEGORIES[0]) =>
+        cat.fields.some(f => {
+            const val = restrictions[f.key];
+            return val !== undefined && val !== (f.defaultValue ?? true);
+        });
+
+    // Build categories for the shared layout
+    const categories = filteredCategories.map(cat => ({
+        key: cat.key,
+        title: cat.title,
+        subtitle: `${cat.fields.length} settings`,
+        icon: cat.icon as React.ReactNode,
+        hasModifications: categoryHasModified(cat),
+        dotColor: 'amber' as const,
+    }));
+
+    // Content renderer — shared between view and edit, only disabled state differs
+    const renderFieldsContent = (category: PolicyCategory) => {
+        const rawCat = RESTRICTION_CATEGORIES.find(c => c.key === category.key);
+        if (!rawCat) return null;
 
         return (
-            <div className="space-y-6 max-w-4xl mt-6">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-destructive/10 rounded-full">
-                            <Ban className="w-6 h-6 text-destructive" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold">Device Restrictions</h3>
-                            <p className="text-sm text-muted-foreground">
-                                {modifiedFields.length} restriction{modifiedFields.length !== 1 ? 's' : ''} modified from default
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
-                            <Edit className="w-4 h-4 mr-1" /> Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={saving}>
-                            <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
-                    </div>
-                </div>
-
-                {modifiedFields.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <p className="text-sm">All restrictions are set to their default values.</p>
-                    </div>
-                ) : (
-                    <div className="grid gap-2">
-                        {modifiedFields.map(f => (
-                            <div key={f.key} className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-md border">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-base">{f.catIcon}</span>
-                                    <div>
-                                        <span className="text-sm font-medium">{f.label}</span>
-                                        <p className="text-xs text-muted-foreground">{f.description}</p>
-                                    </div>
-                                </div>
-                                <span className={`text-sm font-semibold ${f.value ? 'text-green-600' : 'text-destructive'}`}>
-                                    {f.value ? '✓ Allowed' : '✗ Blocked'}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                <div className="flex justify-end pt-4 border-t">
-                    <Button variant="outline" onClick={onCancel}>Close</Button>
-                </div>
-            </div>
-        );
-    }
-
-    // EDIT MODE
-    const selectedCategory = filteredCategories.find(c => c.key === selectedCategoryKey) || filteredCategories[0];
-
-    return (
-        <div className="flex flex-col h-[78vh] mt-6">
-            <div className="flex items-center justify-between pb-4 border-b shrink-0 pr-8">
-                <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-gradient-to-br from-destructive/20 to-destructive/10 rounded-xl shadow-lg shadow-destructive/5">
-                        <Edit className="w-5 h-5 text-destructive" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold tracking-tight">{initialData?.id ? 'Edit' : 'Create'} Device Restrictions</h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                            Configure allowed features and limitations ({modifiedCount} modified)
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Master-Detail Layout */}
-            <div className="flex flex-1 min-h-0 mt-4 gap-0 border rounded-lg overflow-hidden">
-                {/* Left Panel — Category List */}
-                <div className="w-[280px] shrink-0 border-r bg-gradient-to-b from-muted/30 to-muted/10 flex flex-col">
-                    <div className="p-3 border-b bg-muted/20">
-                        <div className="relative group/search">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground transition-colors group-focus-within/search:text-blue-500" />
-                            <Input
-                                placeholder="Search restrictions..."
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                className="pl-8 h-8 text-xs bg-background/80 border-border/50 focus:border-blue-500/50 focus:bg-background transition-all duration-200"
+            <div className="grid gap-3">
+                {rawCat.fields.map(field => {
+                    const currentValue = restrictions[field.key];
+                    const defaultVal = field.defaultValue ?? true;
+                    const isModified = currentValue !== undefined && currentValue !== defaultVal;
+                    return (
+                        <div
+                            key={field.key}
+                            className={cn(
+                                "flex items-center justify-between p-4 border rounded-xl transition-all duration-200 bg-card/50",
+                                isModified
+                                    ? "border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10"
+                                    : "hover:bg-card hover:border-border/80 hover:shadow-sm"
+                            )}
+                        >
+                            <Label htmlFor={field.key} className={cn("flex flex-col gap-1 pr-4 cursor-pointer")}>
+                                <span className="text-sm font-semibold">{field.label}</span>
+                                <span className="font-normal text-xs text-muted-foreground leading-snug">{field.description}</span>
+                            </Label>
+                            <Switch
+                                id={field.key}
+                                checked={currentValue !== undefined ? !!currentValue : defaultVal}
+                                onCheckedChange={(v) => updateRestriction(field.key, v)}
                             />
                         </div>
-                    </div>
+                    );
+                })}
+            </div>
+        );
+    };
 
-                    <div className="flex-1 overflow-y-auto">
-                        {filteredCategories.map(cat => {
-                            const isSelected = selectedCategoryKey === cat.key;
-                            return (
-                                <div
-                                    key={cat.key}
-                                    className={cn(
-                                        'group flex items-center gap-3 px-3 py-3 cursor-pointer border-b border-border/30 transition-all duration-200',
-                                        isSelected
-                                            ? 'bg-blue-500/10 dark:bg-blue-500/15 border-l-[3px] border-l-blue-500 shadow-[inset_0_0_20px_-12px_rgba(59,130,246,0.3)]'
-                                            : 'hover:bg-muted/60 border-l-[3px] border-l-transparent hover:border-l-border'
-                                    )}
-                                    onClick={() => setSelectedCategoryKey(cat.key)}
-                                >
-                                    <span className="text-xl shrink-0 opacity-90">{cat.icon}</span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={cn("font-medium text-sm truncate transition-colors", isSelected && "text-blue-600 dark:text-blue-400")}>
-                                            {cat.title}
-                                        </p>
-                                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                                            {cat.fields.length} settings
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {filteredCategories.length === 0 && searchQuery.trim() && (
-                            <div className="text-center py-10 text-muted-foreground">
-                                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                                    <Search className="w-5 h-5 opacity-50" />
-                                </div>
-                                <p className="text-xs font-medium">No matches for "{searchQuery}"</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Panel — Settings for Category */}
-                <div className="flex-1 flex flex-col min-h-0 bg-background/50">
-                    {selectedCategory ? (
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                            <div className="flex items-center gap-3 pb-2 border-b">
-                                <span className="text-2xl">{selectedCategory.icon}</span>
-                                <div>
-                                    <h4 className="text-lg font-bold">{selectedCategory.title}</h4>
-                                    <p className="text-sm text-muted-foreground">Manage {selectedCategory.fields.length} policy settings</p>
-                                </div>
-                            </div>
-
-                            <div className="grid gap-3">
-                                {selectedCategory.fields.map(field => {
-                                    const currentValue = restrictions[field.key];
-                                    const defaultVal = field.defaultValue ?? true;
-                                    const isModified = currentValue !== undefined && currentValue !== defaultVal;
-                                    return (
-                                        <div
-                                            key={field.key}
-                                            className={cn(
-                                                "flex items-center justify-between p-4 border rounded-xl hover:shadow-sm transition-all duration-200 bg-card/50",
-                                                isModified ? "border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10" : "hover:bg-card hover:border-border/80"
-                                            )}
-                                        >
-                                            <Label htmlFor={field.key} className="flex flex-col gap-1 cursor-pointer pr-4">
-                                                <span className="text-sm font-semibold">{field.label}</span>
-                                                <span className="font-normal text-xs text-muted-foreground leading-snug">{field.description}</span>
-                                            </Label>
-                                            <Switch
-                                                id={field.key}
-                                                checked={currentValue !== undefined ? !!currentValue : defaultVal}
-                                                onCheckedChange={v => updateRestriction(field.key, v)}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                            <p className="text-sm font-semibold">No category selected</p>
-                        </div>
+    return (
+        <PolicyMasterDetail
+            headerIcon={<Edit className="w-5 h-5 text-destructive" />}
+            headerColorClass="destructive"
+            title={`${initialData?.id ? 'Edit' : 'Create'} Device Restrictions`}
+            subtitle={`Configure allowed features and limitations (${modifiedCount} modified)`}
+            categories={categories}
+            selectedCategoryKey={selectedCategoryKey}
+            onSelectCategory={setSelectedCategoryKey}
+            searchPlaceholder="Search restrictions..."
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            renderContent={renderFieldsContent}
+            footerActions={
+                <>
+                    {initialData?.id && (
+                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                            <Button variant="destructive" onClick={() => setShowDeleteDialog(true)} disabled={saving} className="mr-auto gap-2">
+                                <Trash2 className="w-4 h-4" /> Delete
+                            </Button>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Policy</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Are you sure you want to delete this policy? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )}
-                </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t shrink-0">
-                <Button variant="outline" onClick={initialData?.id ? () => setIsEditing(false) : onCancel} className="transition-all duration-200">
-                    Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={saving} className="gap-2 min-w-[140px] transition-all duration-200 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 hover:shadow-lg">
-                    {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Save Changes
-                </Button>
-            </div>
-        </div>
+                    <Button variant="outline" onClick={onCancel} className="transition-all duration-200">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSave} disabled={saving} className="gap-2 min-w-[140px] transition-all duration-200 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 hover:shadow-lg">
+                        {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Save Changes
+                    </Button>
+                </>
+            }
+        />
     );
 }

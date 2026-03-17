@@ -36,7 +36,6 @@ import {
     Smartphone,
     Wifi,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 
 // Android Policy Imports
 import {
@@ -143,11 +142,6 @@ export function PolicyEditDialog({
     enrollmentPolicy,
     onSave,
 }: PolicyEditDialogProps) {
-    const [isChildEditing, setIsChildEditing] = useState(false);
-
-    useEffect(() => {
-        setIsChildEditing(false);
-    }, [activePolicyType, profileId]);
 
     if (!activePolicyType) return null;
 
@@ -213,16 +207,16 @@ export function PolicyEditDialog({
 
 
     const isWidePolicy = activePolicyType === "androidApplication" || activePolicyType === "applications";
-    const isEditingWideContent = (activePolicyType === "restrictions" || activePolicyType === "deviceSettings") && isChildEditing;
+    const isMasterDetailPolicy = activePolicyType === "restrictions" || activePolicyType === "deviceSettings";
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className={cn(
                 "max-h-[90vh] overflow-hidden flex flex-col p-0",
-                isWidePolicy || isEditingWideContent ? "max-w-[80vw]" : "max-w-4xl"
+                isWidePolicy || isMasterDetailPolicy ? "max-w-[80vw]" : "max-w-4xl"
             )}>
                 <DialogTitle className="sr-only">{title}</DialogTitle>
-                <div className="flex-1 overflow-y-auto min-h-0 p-6 pt-0 pb-0">
+                <div className="flex-1 overflow-y-auto min-h-0 p-8 pt-6 pb-0">
                     {/* Render appropriate policy component based on activePolicyType */}
                     {activePolicyType === "passcode" && (
                         <PasscodePolicy
@@ -255,7 +249,6 @@ export function PolicyEditDialog({
                             initialData={restrictionsPolicy as RestrictionsComposite | undefined}
                             onSave={onSave}
                             onCancel={handleCancel}
-                            onEditModeChange={setIsChildEditing}
                         />
                     )}
                     {activePolicyType === "applications" && (
@@ -310,7 +303,6 @@ export function PolicyEditDialog({
                             initialData={deviceSettingsPolicy}
                             onSave={onSave}
                             onCancel={handleCancel}
-                            onEditModeChange={setIsChildEditing}
                         />
                     )}
                     {activePolicyType === "certificates" && (

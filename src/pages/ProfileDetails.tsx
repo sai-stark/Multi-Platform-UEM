@@ -2,9 +2,9 @@ import { ProfileService } from "@/api/services/profiles";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProfileDetailSkeleton } from "@/components/skeletons";
 
-import { PolicyService } from "@/api/services/IOSpolicies";
 import { policyAPI as AndroidPolicyService } from "@/api/services/Androidpolicies";
 import { restrictionAPI as AndroidRestrictionService } from "@/api/services/Androidrestrictions";
+import { PolicyService } from "@/api/services/IOSpolicies";
 import { PolicyEditDialog } from "@/components/profiles/PolicyEditDialog";
 import { PublishProfileDialog } from "@/components/profiles/PublishProfileDialog";
 import {
@@ -75,10 +75,8 @@ import { motion } from "framer-motion";
 import {
   Ban,
   Bell,
-  Bluetooth,
   CheckCircle,
   Clock,
-  Database,
   Edit,
   FileText,
   Filter,
@@ -88,12 +86,9 @@ import {
   KeyRound,
   Lock,
   Mail,
-  MapPin,
   MessageSquare,
-  Monitor,
   MoreVertical,
   Pencil,
-  Phone,
   Plus,
   Radio,
   Search,
@@ -103,11 +98,9 @@ import {
   Shield,
   ShieldCheck,
   Smartphone,
-  TabletSmartphone,
   Trash2,
   Users,
   Wifi,
-  WifiOff,
   X
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -214,11 +207,14 @@ function AddPolicyDropdown({
         </motion.div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {dropdownItems.map(item => (
-          <DropdownMenuItem key={item.id} onClick={() => onSelect(item.id)}>
-            {item.icon} {item.label}
-          </DropdownMenuItem>
-        ))}
+        {dropdownItems.map(item => {
+          const isDisabled = ["notifications", "perAppVpn", "relay"].includes(item.id);
+          return (
+            <DropdownMenuItem key={item.id} onClick={() => !isDisabled && onSelect(item.id)} disabled={isDisabled}>
+              {item.icon} {item.label}
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -274,14 +270,18 @@ interface AvailablePolicyCardProps {
   title: string;
   description: string;
   onClick: () => void;
+  isDisabled?: boolean;
 }
 
-function AvailablePolicyCard({ icon, title, description, onClick }: AvailablePolicyCardProps) {
+function AvailablePolicyCard({ icon, title, description, onClick, isDisabled }: AvailablePolicyCardProps) {
   return (
     <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="h-full">
       <Card
-        className="cursor-pointer hover:shadow-md transition-all h-full bg-muted/30 border-dashed border-2 hover:bg-muted/50 hover:border-solid flex flex-col"
-        onClick={onClick}
+        className={cn(
+          "h-full bg-muted/30 border-dashed border-2 flex flex-col transition-all",
+          isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:shadow-md hover:bg-muted/50 hover:border-solid"
+        )}
+        onClick={() => !isDisabled && onClick()}
       >
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2 text-muted-foreground">
@@ -291,7 +291,9 @@ function AvailablePolicyCard({ icon, title, description, onClick }: AvailablePol
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-end">
-          <Button variant="ghost" size="sm" className="w-full mt-2 border border-dashed">Configure</Button>
+          <Button variant="ghost" size="sm" className="w-full mt-2 border border-dashed" disabled={isDisabled}>
+            {isDisabled ? "Disabled" : "Configure"}
+          </Button>
         </CardContent>
       </Card>
     </motion.div>
@@ -310,6 +312,7 @@ interface ConfiguredPolicyCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   badgeText?: string;
+  isDisabled?: boolean;
 }
 
 function ConfiguredPolicyCard({
@@ -322,19 +325,21 @@ function ConfiguredPolicyCard({
   onClick,
   onEdit,
   onDelete,
-  badgeText = "Active"
+  badgeText = "Active",
+  isDisabled
 }: ConfiguredPolicyCardProps) {
   return (
     <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="h-full">
       <Card
         className={cn(
-          "cursor-pointer hover:shadow-lg transition-all h-full border-t-4 flex flex-col relative group",
+          "transition-all h-full border-t-4 flex flex-col relative group",
+          isDisabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:shadow-lg",
           borderClass
         )}
-        onClick={onClick}
+        onClick={() => !isDisabled && onClick()}
       >
         {/* Actions dropdown */}
-        {(onEdit || onDelete) && (
+        {(onEdit || onDelete) && !isDisabled && (
           <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -434,6 +439,7 @@ function PolicyCardGrid({
     borderClass?: string;
     badgeText?: string;
     hideActions?: boolean;
+    isDisabled?: boolean;
   };
 
   const allPolicies: PolicyItem[] = [];
@@ -513,7 +519,8 @@ function PolicyCardGrid({
       isConfigured: notificationPolicy.length > 0,
       colorClass: "text-primary",
       borderClass: "border-t-primary",
-      badgeText: `${notificationPolicy.length} Active`
+      badgeText: `${notificationPolicy.length} Active`,
+      isDisabled: true
     });
     allPolicies.push({
       id: "lockScreenMessage",
@@ -564,6 +571,7 @@ function PolicyCardGrid({
       isConfigured: !!perAppVpnPolicy,
       colorClass: "text-primary",
       borderClass: "border-t-primary",
+      isDisabled: true
     });
     allPolicies.push({
       id: "perDomainVpn",
@@ -584,6 +592,7 @@ function PolicyCardGrid({
       isConfigured: !!relayPolicy,
       colorClass: "text-primary",
       borderClass: "border-t-primary",
+      isDisabled: true
     });
     allPolicies.push({
       id: "homeScreenLayout",
@@ -790,8 +799,9 @@ function PolicyCardGrid({
                 borderClass={policy.borderClass}
                 badgeText={policy.badgeText}
                 onClick={() => onSelectPolicy(policy.id)}
-                onEdit={policy.hideActions ? undefined : () => onSelectPolicy(policy.id)}
-                onDelete={onDeletePolicy && !policy.hideActions ? () => onDeletePolicy(policy.id, policy.title) : undefined}
+                onEdit={policy.hideActions || policy.isDisabled ? undefined : () => onSelectPolicy(policy.id)}
+                onDelete={onDeletePolicy && !policy.hideActions && !policy.isDisabled ? () => onDeletePolicy(policy.id, policy.title) : undefined}
+                isDisabled={policy.isDisabled}
               />
             ))}
           </div>
@@ -812,6 +822,7 @@ function PolicyCardGrid({
                 title={policy.title}
                 description={policy.description}
                 onClick={() => onSelectPolicy(policy.id)}
+                isDisabled={policy.isDisabled}
               />
             ))}
           </div>
@@ -1489,6 +1500,25 @@ export default function ProfileDetails() {
                       if (r?.syncStorage) deletes.push(AndroidRestrictionService.deleteSyncStorageRestriction(platform as Platform, id));
                       if (r?.connectivity) deletes.push(AndroidRestrictionService.deleteConnectivityRestriction(platform as Platform, id));
                       await Promise.all(deletes);
+                    }
+                    else if (pt === "webApps" || pt === "androidWebApp") {
+                      const response = await PolicyService.getWebApplicationPolicies(platform as Platform, id);
+                      const items = response.content || [];
+                      for (const item of items) {
+                        if (item.id) await PolicyService.deleteWebApplicationPolicy(platform as Platform, id, item.id);
+                      }
+                    } else if (pt === "notifications") {
+                      const response = await PolicyService.getNotificationPolicies(platform as Platform, id);
+                      const items = response.content || [];
+                      for (const item of items) {
+                        if (item.id) await PolicyService.deleteNotificationPolicy(platform as Platform, id, item.id);
+                      }
+                    } else if (pt === "applications" || pt === "androidApplication") {
+                      const response = await PolicyService.getApplicationPolicies(platform as Platform, id);
+                      const items = (response as any).content || response || [];
+                      for (const item of items) {
+                        if (item.id) await PolicyService.deleteApplicationPolicy(platform as Platform, id, item.id);
+                      }
                     }
                     setDeleteTarget(null);
                     fetchProfile();

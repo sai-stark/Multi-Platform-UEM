@@ -1,5 +1,15 @@
 import { PolicyService } from "@/api/services/IOSpolicies";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +32,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
     const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'pem' | 'pkcs' | 'pkcs12' | 'root' } | null>(null);
 
     // PEM State (list)
     const [pemList, setPemList] = useState<IosPemCertificatePolicy[]>([]);
@@ -136,6 +147,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
             await PolicyService.deleteCertPemPolicyById(profileId, certId);
             setPemList(pemList.filter(c => c.id !== certId));
             toast({ title: "Success", description: "PEM Certificate deleted." });
+            setDeleteTarget(null);
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete PEM certificate.", variant: "destructive" });
         } finally {
@@ -179,6 +191,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
             await PolicyService.deleteCertPkcsPolicyById(profileId, certId);
             setPkcsList(pkcsList.filter(c => c.id !== certId));
             toast({ title: "Success", description: "PKCS Certificate deleted." });
+            setDeleteTarget(null);
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete PKCS certificate.", variant: "destructive" });
         } finally {
@@ -227,6 +240,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
             await PolicyService.deleteCertPkcs12Policy(profileId, certId);
             setPkcs12List(pkcs12List.filter(c => c.id !== certId));
             toast({ title: "Success", description: "PKCS12 Certificate deleted." });
+            setDeleteTarget(null);
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete PKCS12 certificate.", variant: "destructive" });
         } finally {
@@ -266,6 +280,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
             await PolicyService.deleteRootCertificatePolicy(profileId, certId);
             setRootCertsList(rootCertsList.filter(c => c.id !== certId));
             toast({ title: "Success", description: "Root Certificate deleted." });
+            setDeleteTarget(null);
         } catch (error) {
             toast({ title: "Error", description: "Failed to delete Root certificate.", variant: "destructive" });
         } finally {
@@ -320,7 +335,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                                                 <p className="font-medium text-sm">{cert.certificatePayload?.PayloadCertificateFileName || cert.name || 'Unnamed Certificate'}</p>
                                                 <p className="text-xs text-muted-foreground mt-0.5">ID: {cert.id}</p>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeletePem(cert.id!)} disabled={saving}>
+                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => setDeleteTarget({ id: cert.id!, type: 'pem' })} disabled={saving}>
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
@@ -389,7 +404,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                                                 <p className="font-medium text-sm">{cert.certificatePayload?.PayloadCertificateFileName || cert.name || 'Unnamed Certificate'}</p>
                                                 <p className="text-xs text-muted-foreground mt-0.5">ID: {cert.id}</p>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeletePkcs(cert.id!)} disabled={saving}>
+                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => setDeleteTarget({ id: cert.id!, type: 'pkcs' })} disabled={saving}>
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
@@ -458,7 +473,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                                                 <p className="font-medium text-sm">{cert.certificatePayload?.PayloadCertificateFileName || 'Unnamed Certificate'}</p>
                                                 <p className="text-xs text-muted-foreground mt-0.5">ID: {cert.id}</p>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeletePkcs12(cert.id!)} disabled={saving}>
+                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => setDeleteTarget({ id: cert.id!, type: 'pkcs12' })} disabled={saving}>
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
@@ -545,7 +560,7 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                                                 <p className="font-medium text-sm">{cert.payloadCertificateFileName || 'Unnamed Certificate'}</p>
                                                 <p className="text-xs text-muted-foreground mt-0.5">ID: {cert.id}</p>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => handleDeleteRootCert(cert.id!)} disabled={saving}>
+                                            <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => setDeleteTarget({ id: cert.id!, type: 'root' })} disabled={saving}>
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
@@ -588,6 +603,29 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                 </AccordionItem>
 
             </Accordion>
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Certificate</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this certificate? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+                            if (!deleteTarget) return;
+                            if (deleteTarget.type === 'pem') handleDeletePem(deleteTarget.id);
+                            if (deleteTarget.type === 'pkcs') handleDeletePkcs(deleteTarget.id);
+                            if (deleteTarget.type === 'pkcs12') handleDeletePkcs12(deleteTarget.id);
+                            if (deleteTarget.type === 'root') handleDeleteRootCert(deleteTarget.id);
+                        }}>
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
                 <Button variant="outline" onClick={onCancel} disabled={saving}>

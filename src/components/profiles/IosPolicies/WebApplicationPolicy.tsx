@@ -207,6 +207,7 @@ export function WebApplicationPolicyEditor({
             }
             setIsDialogOpen(false);
             fetchPolicies();
+            if (onSave) onSave();
         } catch (error) {
             console.error("Failed to save policy", error);
             toast.error("Failed to save policy");
@@ -219,6 +220,7 @@ export function WebApplicationPolicyEditor({
             await PolicyService.deleteWebApplicationPolicy(platform as any, profileId, deleteId);
             toast.success("Policy deleted successfully");
             fetchPolicies();
+            if (onSave) onSave();
         } catch (error) {
             console.error("Failed to delete policy", error);
             toast.error("Failed to delete policy");
