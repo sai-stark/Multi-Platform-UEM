@@ -23,7 +23,7 @@ interface DataTablePaginationProps<T> {
 
 export function DataTablePagination<T extends Record<string, any>>({
   table,
-  pageSizeOptions = [5, 10, 20, 50],
+  pageSizeOptions = [10, 20, 50, 100],
 }: DataTablePaginationProps<T>) {
   const {
     page,

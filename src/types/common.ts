@@ -2,8 +2,8 @@
 export type Platform = 'android' | 'ios' | 'windows' | 'macos' | 'linux';
 
 export interface Pageable {
-    page?: number;
-    size?: number;
+    pageNumber?: number;
+    pageSize?: number;
     sort?: string[];
 }
 

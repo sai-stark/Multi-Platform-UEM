@@ -10,10 +10,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getAssetUrl } from "@/config/env";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Apple,
   Database,
-  Edit,
   Layout,
   Monitor,
   Pencil,
@@ -21,7 +21,7 @@ import {
   Smartphone,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { RepositoryService } from "@/api/services/repository";
 import { PaginatedCustomRepoList } from "@/types/models";
 import { AddRepositoryDialog } from "@/components/repositories/AddRepositoryDialog";
@@ -106,104 +106,119 @@ const Repositories = () => {
     macos: 0,
   });
 
-  const fetchRepositories = async () => {
+  // Server-side pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const isServerSidePagination = platformFilter !== 'all' && platformFilter !== 'ios';
+
+  const fetchRepositories = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     setLoading(true);
     try {
-      const platforms: Platform[] = ["android", "windows", "linux", "macos"];
+      if (platformFilter === 'all' || platformFilter === 'ios') {
+        // Aggregate from all platforms (client-side pagination)
+        const platforms: Platform[] = ["android", "windows", "linux", "macos"];
 
-      // Always fetch from all platforms for stats
-      const statsResults = await Promise.all(
-        platforms.map(async (platform) => {
-          try {
-            const result = await RepositoryService.getCustomRepositories(
-              platform
-            );
-            // Handle various response structures - ensure we always return an array
-            const repos = Array.isArray(result?.content) ? result.content : [];
-            return { platform, repos };
-          } catch {
-            // API may not be implemented for all platforms - return empty
-            return { platform, repos: [] };
-          }
-        })
-      );
-
-      // Filter repos based on platformFilter
-      let allRepos: CustomRepository[] = [];
-      if (platformFilter === "all") {
-        // Use data already fetched for stats
-        allRepos = statsResults.flatMap(({ repos }) => repos || []);
-      } else if (
-        platformFilter === "android" ||
-        platformFilter === "windows" ||
-        platformFilter === "linux" ||
-        platformFilter === "macos"
-      ) {
-        // Use data already fetched for stats
-        const platformData = statsResults.find(
-          (r) => r.platform === platformFilter
+        const statsResults = await Promise.all(
+          platforms.map(async (platform) => {
+            try {
+              const result = await RepositoryService.getCustomRepositories(
+                platform
+              );
+              const repos = Array.isArray(result?.content) ? result.content : [];
+              return { platform, repos };
+            } catch {
+              return { platform, repos: [] };
+            }
+          })
         );
-        if (platformData) {
-          allRepos = platformData.repos || [];
+
+        let allRepos: CustomRepository[] = [];
+        if (platformFilter === "all") {
+          allRepos = statsResults.flatMap(({ repos }) => repos || []);
+        } else {
+          allRepos = [];
         }
+
+        setRepositories(allRepos);
+        setTotalElements(allRepos.length);
+        setTotalPages(1);
+
+        let androidCount = 0;
+        let windowsCount = 0;
+        let linuxCount = 0;
+        let macosCount = 0;
+
+        statsResults.forEach(({ platform, repos }) => {
+          const count = repos?.length || 0;
+          if (platform === "android") {
+            androidCount = count;
+          } else if (platform === "windows") {
+            windowsCount = count;
+          } else if (platform === "linux") {
+            linuxCount = count;
+          } else if (platform === "macos") {
+            macosCount = count;
+          }
+        });
+
+        setStats({
+          total: statsResults.reduce(
+            (sum, { repos }) => sum + (repos?.length || 0),
+            0
+          ),
+          android: androidCount,
+          ios: 0,
+          windows: windowsCount,
+          linux: linuxCount,
+          macos: macosCount,
+        });
       } else {
-        // iOS not supported by API
-        allRepos = [];
-      }
+        // Specific platform — server-side pagination
+        const platform = platformFilter as Platform;
+        try {
+          const result = await RepositoryService.getCustomRepositories(platform, { pageNumber: page - 1, pageSize: size });
+          const repos = Array.isArray(result?.content) ? result.content : [];
+          setRepositories(repos);
+          setTotalPages(result?.totalPages || 1);
+          setTotalElements(result?.totalElements || 0);
 
-      setRepositories(allRepos);
-
-      // Calculate stats from already fetched data
-      let androidCount = 0;
-      let windowsCount = 0;
-      let linuxCount = 0;
-      let macosCount = 0;
-
-      statsResults.forEach(({ platform, repos }) => {
-        const count = repos?.length || 0;
-        if (platform === "android") {
-          androidCount = count;
-        } else if (platform === "windows") {
-          windowsCount = count;
-        } else if (platform === "linux") {
-          linuxCount = count;
-        } else if (platform === "macos") {
-          macosCount = count;
+          setStats(prev => ({
+            ...prev,
+            total: result?.totalElements || 0,
+            [platform]: result?.totalElements || 0,
+          }));
+        } catch {
+          setRepositories([]);
+          setTotalPages(1);
+          setTotalElements(0);
         }
-      });
-
-      setStats({
-        total: statsResults.reduce(
-          (sum, { repos }) => sum + (repos?.length || 0),
-          0
-        ),
-        android: androidCount,
-        ios: 0,
-        windows: windowsCount,
-        linux: linuxCount,
-        macos: macosCount,
-      });
+      }
     } catch (error) {
       console.error("Error fetching repositories:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [platformFilter, currentPage, pageSize]);
 
+  // Reset to page 1 when platform filter changes
   useEffect(() => {
-    fetchRepositories();
+    setCurrentPage(1);
   }, [platformFilter]);
 
-  const getPlatformIcon = (platform?: string, filled = false) => {
-    const config = platformConfig[platform?.toLowerCase() || "all"];
-    const Icon = config.icon;
-    return (
-      <Icon
-        className={cn("w-5 h-5", config.color)}
-        fill={filled ? "currentColor" : "none"}
-        strokeWidth={filled ? 1.5 : 2}
-      />
-    );
+  useEffect(() => {
+    fetchRepositories(currentPage, pageSize);
+  }, [platformFilter, currentPage, pageSize]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
   };
 
   const getRepositoryName = (repo: CustomRepository): string => {
@@ -217,7 +232,6 @@ const Repositories = () => {
   };
 
   const getRepositoryType = (repo: CustomRepository): string => {
-    // Map repoType to display name
     const typeMap: Record<string, string> = {
       CustomWindowsRepo: t("repositories.types.windows"),
       CustomAndroidFileRepo: t("repositories.types.android"),
@@ -243,18 +257,6 @@ const Repositories = () => {
       return "macos";
     }
     return "all";
-  };
-
-  const getRepositoryDetails = (repo: CustomRepository): string => {
-    if (repo.customUbuntuRepo) {
-      const components = repo.customUbuntuRepo.components.join(", ");
-      const archs = repo.customUbuntuRepo.architectures.join(", ");
-      return `Components: ${components} | Architectures: ${archs}`;
-    }
-    if (repo.customRpmRepo) {
-      return t('repositories.rpmRepository');
-    }
-    return "-";
   };
 
   const getRepositoryId = (repo: CustomRepository): string => {
@@ -301,7 +303,6 @@ const Repositories = () => {
     return repo.lastModifiedBy || "";
   };
 
-  // Only show Components and Architectures columns for Linux platform
   const showLinuxColumns =
     platformFilter === "linux" || platformFilter === "all";
 
@@ -362,7 +363,6 @@ const Repositories = () => {
           );
         },
       },
-      // Only include Components and Architectures columns for Linux
       ...(showLinuxColumns
         ? [
             {
@@ -648,9 +648,17 @@ const Repositories = () => {
             emptyMessage={t("repositories.table.emptyMessage")}
             rowActions={rowActions}
             defaultPageSize={10}
+            pageSizeOptions={[10, 20, 50, 100]}
             showExport={true}
             exportTitle={t("repositories.table.exportTitle")}
             exportFilename="repositories"
+            serverSidePagination={isServerSidePagination}
+            currentPage={isServerSidePagination ? currentPage : undefined}
+            totalPages={isServerSidePagination ? totalPages : undefined}
+            totalElements={isServerSidePagination ? totalElements : undefined}
+            pageSize={isServerSidePagination ? pageSize : undefined}
+            onPageChange={isServerSidePagination ? handlePageChange : undefined}
+            onPageSizeChange={isServerSidePagination ? handlePageSizeChange : undefined}
           />
         </div>
       </div>
@@ -658,7 +666,7 @@ const Repositories = () => {
       <AddRepositoryDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onRepositoryAdded={fetchRepositories}
+        onRepositoryAdded={() => fetchRepositories(currentPage, pageSize)}
         defaultPlatform={
           platformFilter !== "all" && platformFilter !== "ios"
             ? (platformFilter as Platform)

@@ -53,6 +53,12 @@ const WebApplications = () => {
   const [appToDelete, setAppToDelete] = useState<WebApplication | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Server-side pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
   // Form fields
   const [formData, setFormData] = useState({
     name: '',
@@ -62,13 +68,15 @@ const WebApplications = () => {
   });
   const [iconPreview, setIconPreview] = useState<string | null>(null);
 
-  const fetchWebApps = useCallback(async (showLoading = true) => {
+  const fetchWebApps = useCallback(async (showLoading = true, page: number = currentPage, size: number = pageSize) => {
     if (showLoading) setLoading(true);
     else setRefreshing(true);
     
     try {
-      const response = await WebApplicationService.getWebApplications();
+      const response = await WebApplicationService.getWebApplications({ pageNumber: page - 1, pageSize: size });
       setWebApps(response.content || []);
+      setTotalPages(response.totalPages || 1);
+      setTotalElements(response.totalElements || 0);
     } catch (error) {
       console.error('Failed to fetch web applications:', error);
       toast({
@@ -80,11 +88,20 @@ const WebApplications = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [toast]);
+  }, [toast, currentPage, pageSize]);
 
   useEffect(() => {
-    fetchWebApps();
-  }, [fetchWebApps]);
+    fetchWebApps(true, currentPage, pageSize);
+  }, [currentPage, pageSize]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
 
   const resetFormData = () => {
     setFormData({
@@ -185,7 +202,7 @@ const WebApplications = () => {
         });
       }
       handleCloseModal();
-      fetchWebApps(false);
+      fetchWebApps(false, currentPage, pageSize);
     } catch (error) {
       console.error('Failed to save web application:', error);
       toast({
@@ -215,7 +232,7 @@ const WebApplications = () => {
       });
       setOpenDeleteModal(false);
       setAppToDelete(null);
-      fetchWebApps(false);
+      fetchWebApps(false, currentPage, pageSize);
     } catch (error) {
       console.error('Failed to delete web application:', error);
       toast({
@@ -229,7 +246,7 @@ const WebApplications = () => {
   };
 
   const stats = {
-    total: webApps.length,
+    total: totalElements,
     totalDevices: webApps.reduce((sum, app) => sum + (app.deviceCount || 0), 0),
   };
 
@@ -312,7 +329,7 @@ const WebApplications = () => {
     </>
   );
 
-  if (loading) {
+  if (loading && webApps.length === 0) {
     return (
       <MainLayout>
         <TablePageSkeleton />
@@ -337,7 +354,7 @@ const WebApplications = () => {
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => fetchWebApps(false)}
+              onClick={() => fetchWebApps(false, currentPage, pageSize)}
               disabled={refreshing}
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -384,9 +401,17 @@ const WebApplications = () => {
             emptyMessage={t('webApps.table.emptyMessage')}
             rowActions={rowActions}
             defaultPageSize={10}
+            pageSizeOptions={[10, 20, 50, 100]}
             showExport={true}
             exportTitle={t('webApps.table.exportTitle')}
             exportFilename="web-applications"
+            serverSidePagination={true}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
           />
         </div>
       </div>

@@ -406,7 +406,7 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-y-auto flex flex-col w-[80vw] max-w-[80vw] h-[90vh] max-h-[90vh]">
+      <DialogContent className="overflow-hidden flex flex-col w-[80vw] max-w-[80vw] h-[90vh] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Add Applications from Google Play for Work</DialogTitle>
         </DialogHeader>

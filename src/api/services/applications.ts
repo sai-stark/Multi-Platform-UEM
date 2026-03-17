@@ -87,8 +87,8 @@ export const ApplicationService = {
         filter?: { name?: string; ids?: string[] }
     ): Promise<PagedResponse<Application>> => {
         const params: Record<string, any> = {};
-        if (pageable?.page !== undefined) params.page = pageable.page;
-        if (pageable?.size !== undefined) params.size = pageable.size;
+        if (pageable?.pageNumber !== undefined) params.pageNumber = pageable.pageNumber;
+        if (pageable?.pageSize !== undefined) params.pageSize = pageable.pageSize;
         if (pageable?.sort) params.sort = pageable.sort;
         if (filter) params.applicationFilter = JSON.stringify(filter);
 

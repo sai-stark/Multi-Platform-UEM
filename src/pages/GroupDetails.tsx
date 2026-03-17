@@ -70,12 +70,12 @@ export default function GroupDetails() {
                 const groupData = await GroupService.getGroup(id);
                 setGroup(groupData);
 
-                const devicesData = await GroupService.getGroupDevices(id, { page: 0, size: 50 });
+                const devicesData = await GroupService.getGroupDevices(id, { pageNumber: 0, pageSize: 50 });
                 const groupDevs = devicesData.content || [];
                 setDevices(groupDevs);
 
                 // Fetch all devices for "available devices" list
-                const allDevsRes = await DeviceService.getDevices('all' as any, { page: 0, size: 100 });
+                const allDevsRes = await DeviceService.getDevices('all' as any, { pageNumber: 0, pageSize: 100 });
                 const allDevs = allDevsRes.content || [];
 
                 // Filter out devices already in the group

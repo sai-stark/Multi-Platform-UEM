@@ -27,7 +27,7 @@ export function DataTable<T extends Record<string, any>>({
   quickActions,
   globalSearch = true,
   globalSearchPlaceholder = "Search...",
-  pageSizeOptions = [5, 10, 20, 50],
+  pageSizeOptions = [10, 20, 50, 100],
   defaultPageSize = 10,
   defaultSort,
   showColumnToggle = true,

@@ -13,7 +13,7 @@ import {
     Package,
     Shield
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SectionHeader } from './DeviceOverviewTab';
 
 interface DeviceApplicationsTabProps {
@@ -26,66 +26,57 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
     const [applications, setApplications] = useState<DeviceApplicationList>([]);
     const [loadingApps, setLoadingApps] = useState(false);
 
-    useEffect(() => {
-        const loadApps = async () => {
-            if (!platform || !id) return;
-            try {
-                setLoadingApps(true);
-                // Fetch first page to get total page count
-                const PAGE_SIZE = 100;
-                const firstPage = await DeviceService.getDeviceApplications(platform as Platform, id, { page: 0, size: PAGE_SIZE });
-                const firstPageAny = firstPage as any;
+    // Server-side pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
 
-                let allApps: any[] = [];
+    const fetchApps = useCallback(async (page: number = currentPage, size: number = pageSize) => {
+        if (!platform || !id) return;
+        try {
+            setLoadingApps(true);
+            const result = await DeviceService.getDeviceApplications(platform as Platform, id, { pageNumber: page - 1, pageSize: size });
+            const resultAny = result as any;
 
-                if (firstPageAny?.content && Array.isArray(firstPageAny.content)) {
-                    allApps = [...firstPageAny.content];
-
-                    // If there are more pages, fetch them all
-                    const totalPages = firstPageAny?.page?.totalPages ?? 1;
-                    if (totalPages > 1) {
-                        const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 1);
-                        const remaining = await Promise.all(
-                            remainingPages.map(pageNum =>
-                                DeviceService.getDeviceApplications(platform as Platform, id, { page: pageNum, size: PAGE_SIZE })
-                            )
-                        );
-                        remaining.forEach(res => {
-                            const resAny = res as any;
-                            if (resAny?.content && Array.isArray(resAny.content)) {
-                                allApps = allApps.concat(resAny.content);
-                            }
-                        });
-                    }
-                } else if (Array.isArray(firstPage)) {
-                    allApps = firstPage;
-                }
-
-                // Deduplicate by identifier (package name) to avoid API returning duplicate entries
-                const seen = new Set<string>();
-                const deduplicatedApps = allApps.filter((app: any) => {
-                    const key = app.identifier || app.packageName || app.name;
-                    if (!key) return true;
-                    if (seen.has(key)) return false;
-                    seen.add(key);
-                    return true;
-                });
-                setApplications(deduplicatedApps);
-            } catch (e) {
-                console.error("Failed to load apps", e);
+            if (resultAny?.content && Array.isArray(resultAny.content)) {
+                setApplications(resultAny.content);
+                setTotalPages(resultAny?.page?.totalPages ?? resultAny?.totalPages ?? 1);
+                setTotalElements(resultAny?.page?.totalElements ?? resultAny?.totalElements ?? 0);
+            } else if (Array.isArray(result)) {
+                setApplications(result);
+                setTotalPages(1);
+                setTotalElements(result.length);
+            } else {
                 setApplications([]);
-                toast({
-                    title: "Warning",
-                    description: getErrorMessage(e, "Failed to load device applications."),
-                    variant: "destructive"
-                });
-            } finally {
-                setLoadingApps(false);
+                setTotalPages(1);
+                setTotalElements(0);
             }
-        };
+        } catch (e) {
+            console.error("Failed to load apps", e);
+            setApplications([]);
+            toast({
+                title: "Warning",
+                description: getErrorMessage(e, "Failed to load device applications."),
+                variant: "destructive"
+            });
+        } finally {
+            setLoadingApps(false);
+        }
+    }, [platform, id, toast, currentPage, pageSize]);
 
-        loadApps();
-    }, [platform, id, toast]);
+    useEffect(() => {
+        fetchApps(currentPage, pageSize);
+    }, [platform, id, currentPage, pageSize]);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const handlePageSizeChange = (size: number) => {
+        setPageSize(size);
+        setCurrentPage(1);
+    };
 
     const columns: Column<any>[] = [
         {
@@ -184,7 +175,7 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
                         <Card className="border-l-4 border-l-primary">
                             <CardContent className="p-4 flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-primary/10"><Package className="w-5 h-5 text-primary" /></div>
-                                <div><p className="text-2xl font-bold">{applications.length}</p><p className="text-xs text-muted-foreground">Total Apps</p></div>
+                                <div><p className="text-2xl font-bold">{totalElements}</p><p className="text-xs text-muted-foreground">Total Apps</p></div>
                             </CardContent>
                         </Card>
                         <Card className="border-l-4 border-l-success">
@@ -222,6 +213,15 @@ export function DeviceApplicationsTab({ platform, id }: DeviceApplicationsTabPro
                             globalSearchPlaceholder="Search applications..."
                             emptyMessage="No applications found."
                             defaultSort={{ key: 'management', dir: 'desc' }}
+                            defaultPageSize={10}
+                            pageSizeOptions={[10, 20, 50, 100]}
+                            serverSidePagination={true}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalElements={totalElements}
+                            pageSize={pageSize}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
                         />
                     </div>
                 </CardContent>

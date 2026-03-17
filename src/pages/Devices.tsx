@@ -41,7 +41,7 @@ import {
   WifiOff,
   XCircle
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface Device {
@@ -97,7 +97,7 @@ const platformConfig: Record<
     label: 'macOS',
     icon: Laptop,
     color: 'text-info',
-    image: getAssetUrl('/Assets/mac_os.png'), // Assuming asset exists
+    image: getAssetUrl('/Assets/mac_os.png'),
   },
   linux: {
     label: 'Linux',
@@ -111,6 +111,55 @@ const complianceConfig = {
   compliant: { label: 'Compliant', className: 'status-badge--compliant' },
   'non-compliant': { label: 'Non-Compliant', className: 'status-badge--non-compliant' },
   pending: { label: 'Pending', className: 'status-badge--pending' },
+};
+
+const mapDevice = (item: any): Device => {
+  let platform: any = 'android'; // Default
+  const dType = item.deviceType?.toLowerCase() || '';
+
+  if (dType.includes('ios') || dType.includes('apple') || dType.includes('ipad') || dType.includes('iphone')) {
+    platform = 'ios';
+  } else if (dType.includes('android')) {
+    platform = 'android';
+  } else if (item.platform) {
+    platform = item.platform.toLowerCase();
+  } else if (item.opSysInfo?.osType) {
+    platform = item.opSysInfo.osType.toLowerCase();
+  }
+
+  // Normalize platform for config lookups
+  if (!['android', 'ios', 'windows', 'macos', 'linux'].includes(platform)) {
+    if (platform.includes('mac')) platform = 'macos';
+    else if (platform.includes('win')) platform = 'windows';
+  }
+
+  // Calculate storage
+  let storageUsed = 0;
+  let storageTotal = 0;
+  if (item.storageCapacity) {
+    storageTotal = item.storageCapacity;
+    storageUsed = item.storageUsed || 0;
+  } else if (item.deviceCapacity) {
+    storageTotal = item.deviceCapacity;
+    storageUsed = (item.deviceCapacity - (item.availableDeviceCapacity || 0));
+  }
+
+  return {
+    id: item.id,
+    name: item.deviceName || item.name || item.model || 'Unknown',
+    model: item.model || item.modelName || 'Unknown',
+    platform: platform as any,
+    osVersion: item.osVersion || (item.opSysInfo ? item.opSysInfo.version : '-'),
+    owner: item.deviceUser || item.userEmail || '-',
+    lastSync: item.lastSyncTime ? new Date(item.lastSyncTime).toLocaleString() : (item.modificationTime ? new Date(item.modificationTime).toLocaleString() : '-'),
+    complianceStatus: item.complianceStatus === 'non-compliant' ? 'non-compliant' : 'compliant',
+    connectionStatus: (item.status === 'ONLINE' || item.connectionStatus === 'online') ? 'online' : 'offline',
+    batteryLevel: (item.batteryLevel !== undefined && item.batteryLevel !== null)
+      ? (item.batteryLevel >= 0 && item.batteryLevel <= 1 ? Number((item.batteryLevel * 100).toFixed(2)) : Number(item.batteryLevel.toFixed(2)))
+      : -1,
+    storageUsed: storageUsed,
+    storageTotal: storageTotal
+  };
 };
 
 const Devices = () => {
@@ -129,10 +178,19 @@ const Devices = () => {
       setSearchParams({ platform: platformFilter }, { replace: true });
     }
   }, [platformFilter, setSearchParams]);
+
   const [data, setData] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
   const [targetUnenrollDevice, setTargetUnenrollDevice] = useState<Device | null>(null);
+
+  // Server-side pagination state (used when a specific platform is selected)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const isServerSidePagination = platformFilter !== 'all';
 
   const [stats, setStats] = useState({
     total: 0,
@@ -141,110 +199,79 @@ const Devices = () => {
     nonCompliant: 0,
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     setLoading(true);
     try {
-      const platforms: Platform[] = ['android', 'ios', 'windows', 'macos', 'linux'];
+      if (platformFilter === 'all') {
+        // Fetch from all platforms — aggregate (client-side pagination)
+        const platforms: Platform[] = ['android', 'ios', 'windows', 'macos', 'linux'];
+        const results = await Promise.all(
+          platforms.map(async (p) => {
+            try {
+              const res = await DeviceService.getDevices(p, { pageNumber: 0, pageSize: 1000 });
+              return { platform: p, devices: res.content || [] };
+            } catch (err) {
+              console.warn(`Failed to fetch devices for platform ${p}`, err);
+              return { platform: p, devices: [] };
+            }
+          })
+        );
 
-      // Fetch from all platforms to build complete stats
-      const results = await Promise.all(
-        platforms.map(async (p) => {
-          try {
-            // Fetching a reasonable amount for the single-page view. 
-            // In a real large-scale scenario, we would use specific endpoints for stats and pagination.
-            const res = await DeviceService.getDevices(p, { page: 0, size: 100 });
-            return { platform: p, devices: res.content || [] };
-          } catch (err) {
-            console.warn(`Failed to fetch devices for platform ${p}`, err);
-            return { platform: p, devices: [] };
-          }
-        })
-      );
+        const allRawDevices = results.flatMap(r => r.devices);
+        const allDevices = Array.from(new Map(allRawDevices.map(item => [item.id, item])).values());
+        const mappedDevices = allDevices.map(mapDevice);
 
-      // Flatten all devices for specific filtering
-      const allRawDevices = results.flatMap(r => r.devices);
+        setData(mappedDevices);
+        setTotalElements(mappedDevices.length);
+        setTotalPages(1);
 
-      // Deduplicate by ID (handles potential backend issues where same device appears in multiple platform endpoints)
-      const allDevices = Array.from(new Map(allRawDevices.map(item => [item.id, item])).values());
+        setStats({
+          total: mappedDevices.length,
+          online: mappedDevices.filter(d => d.connectionStatus === 'online').length,
+          compliant: mappedDevices.filter(d => d.complianceStatus === 'compliant').length,
+          nonCompliant: mappedDevices.filter(d => d.complianceStatus === 'non-compliant').length,
+        });
+      } else {
+        // Specific platform — server-side pagination
+        const res = await DeviceService.getDevices(platformFilter as Platform, { pageNumber: page - 1, pageSize: size });
+        const rawDevices = res.content || [];
+        const mappedDevices = rawDevices.map(mapDevice);
 
-      // Client-side mapping
-      const mapDevice = (item: any): Device => {
-        let platform: any = 'android'; // Default
-        const dType = item.deviceType?.toLowerCase() || '';
+        setData(mappedDevices);
+        setTotalPages(res.totalPages || 1);
+        setTotalElements(res.totalElements || 0);
 
-        if (dType.includes('ios') || dType.includes('apple') || dType.includes('ipad') || dType.includes('iphone')) {
-          platform = 'ios';
-        } else if (dType.includes('android')) {
-          platform = 'android';
-        } else if (item.platform) {
-          platform = item.platform.toLowerCase();
-        } else if (item.opSysInfo?.osType) {
-          platform = item.opSysInfo.osType.toLowerCase();
-        }
-
-        // Normalize platform for config lookups
-        if (!['android', 'ios', 'windows', 'macos', 'linux'].includes(platform)) {
-          if (platform.includes('mac')) platform = 'macos';
-          else if (platform.includes('win')) platform = 'windows';
-        }
-
-        // Calculate storage
-        let storageUsed = 0;
-        let storageTotal = 0;
-        if (item.storageCapacity) {
-          storageTotal = item.storageCapacity;
-          storageUsed = item.storageUsed || 0;
-        } else if (item.deviceCapacity) {
-          storageTotal = item.deviceCapacity;
-          storageUsed = (item.deviceCapacity - (item.availableDeviceCapacity || 0));
-        }
-
-        return {
-          id: item.id,
-          name: item.deviceName || item.name || item.model || 'Unknown',
-          model: item.model || item.modelName || 'Unknown',
-          platform: platform as any,
-          osVersion: item.osVersion || (item.opSysInfo ? item.opSysInfo.version : '-'),
-          owner: item.deviceUser || item.userEmail || '-',
-          lastSync: item.lastSyncTime ? new Date(item.lastSyncTime).toLocaleString() : (item.modificationTime ? new Date(item.modificationTime).toLocaleString() : '-'),
-          complianceStatus: item.complianceStatus === 'non-compliant' ? 'non-compliant' : 'compliant', // Simple Mapping
-          connectionStatus: (item.status === 'ONLINE' || item.connectionStatus === 'online') ? 'online' : 'offline',
-          // Map -1.0...1.0 to -1...100
-          batteryLevel: (item.batteryLevel !== undefined && item.batteryLevel !== null)
-            ? (item.batteryLevel >= 0 && item.batteryLevel <= 1 ? Number((item.batteryLevel * 100).toFixed(2)) : Number(item.batteryLevel.toFixed(2)))
-            : -1,
-          storageUsed: storageUsed,
-          storageTotal: storageTotal
-        };
-      };
-
-      const mappedAllDevices = allDevices.map(mapDevice);
-
-      // Filter for Table View
-      const filteredDevices = platformFilter === 'all' 
-        ? mappedAllDevices 
-        : mappedAllDevices.filter(d => d.platform === platformFilter);
-
-      setData(filteredDevices);
-
-      // Update Stats (Filtered)
-      setStats({
-        total: filteredDevices.length,
-        online: filteredDevices.filter(d => d.connectionStatus === 'online').length,
-        compliant: filteredDevices.filter(d => d.complianceStatus === 'compliant').length,
-        nonCompliant: filteredDevices.filter(d => d.complianceStatus === 'non-compliant').length,
-      });
-
+        setStats({
+          total: res.totalElements || 0,
+          online: mappedDevices.filter(d => d.connectionStatus === 'online').length,
+          compliant: mappedDevices.filter(d => d.complianceStatus === 'compliant').length,
+          nonCompliant: mappedDevices.filter(d => d.complianceStatus === 'non-compliant').length,
+        });
+      }
     } catch (error) {
       console.error("Failed to fetch devices", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [platformFilter, currentPage, pageSize]);
 
   useEffect(() => {
-    fetchData();
-  }, [platformFilter]); // Refetch when filter changes or on mount (technically we could just filter client side if we store all, but simpler to refetch/recalc for now)
+    // Reset to page 1 when platform filter changes
+    setCurrentPage(1);
+  }, [platformFilter]);
+
+  useEffect(() => {
+    fetchData(currentPage, pageSize);
+  }, [platformFilter, currentPage, pageSize]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
 
   const handleLock = async (device: Device) => {
     try {
@@ -268,14 +295,7 @@ const Devices = () => {
       const response = await DeviceService.deleteDevice(device.platform as Platform, device.id);
       if (response && response.status >= 200 && response.status < 300) {
         toast({ title: "Success", description: "Device unenrolled successfully." });
-        setData((prevData) => prevData.filter((d) => d.id !== device.id));
-        setStats((prev) => ({
-          ...prev,
-          total: Math.max(0, prev.total - 1),
-          online: device.connectionStatus === 'online' ? Math.max(0, prev.online - 1) : prev.online,
-          compliant: device.complianceStatus === 'compliant' ? Math.max(0, prev.compliant - 1) : prev.compliant,
-          nonCompliant: device.complianceStatus === 'non-compliant' ? Math.max(0, prev.nonCompliant - 1) : prev.nonCompliant,
-        }));
+        fetchData(currentPage, pageSize);
       }
     } catch (error) {
       console.error("Failed to unenroll device", error);
@@ -468,7 +488,7 @@ const Devices = () => {
               View and manage all enrolled devices across platforms
             </p>
           </div>
-          <Button variant="outline" className="gap-2" onClick={fetchData}>
+          <Button variant="outline" className="gap-2" onClick={() => fetchData(currentPage, pageSize)}>
             <RefreshCw className="w-4 h-4" aria-hidden="true" />
             Sync All
           </Button>
@@ -594,9 +614,17 @@ const Devices = () => {
             }
             rowActions={rowActions}
             defaultPageSize={10}
+            pageSizeOptions={[10, 20, 50, 100]}
             showExport={true}
             exportTitle="Devices Report"
             exportFilename="devices"
+            serverSidePagination={isServerSidePagination}
+            currentPage={isServerSidePagination ? currentPage : undefined}
+            totalPages={isServerSidePagination ? totalPages : undefined}
+            totalElements={isServerSidePagination ? totalElements : undefined}
+            pageSize={isServerSidePagination ? pageSize : undefined}
+            onPageChange={isServerSidePagination ? handlePageChange : undefined}
+            onPageSizeChange={isServerSidePagination ? handlePageSizeChange : undefined}
           />
         </div>
       </div>

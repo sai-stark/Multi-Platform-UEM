@@ -35,7 +35,7 @@ import {
   Smartphone,
   Trash2
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const platformConfig: Record<
@@ -131,169 +131,184 @@ const Profiles = () => {
     draft: 0,
   });
 
-  const fetchProfiles = async () => {
+  // Server-side pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const isServerSidePagination = platformFilter !== 'all';
+
+  const fetchProfiles = useCallback(async (page: number = currentPage, size: number = pageSize) => {
     setLoading(true);
     try {
-      // In production, skip Android API call if enterprise is not set up
-      const platforms: Platform[] = shouldBlockAndroid
-        ? ["ios", "windows", "macos"]
-        : ["android", "ios", "windows", "macos"];
+      if (platformFilter === 'all') {
+        // Aggregate from all platforms (client-side pagination)
+        const platforms: Platform[] = shouldBlockAndroid
+          ? ["ios", "windows", "macos"]
+          : ["android", "ios", "windows", "macos"];
 
-      // Always fetch from all platforms for stats
-      // Handle errors per platform to allow partial success
-      const statsResults = await Promise.allSettled(
-        platforms.map(async (platform) => {
-          try {
-            const result = await ProfileService.getProfiles(platform);
-            // Ensure result and content exist
-            if (!result || !result.content) {
-              console.warn(
-                `Invalid response structure for platform: ${platform}`
-              );
-              return { platform, profiles: [] };
-            }
-            return { platform, profiles: result.content || [] };
-          } catch (error: any) {
-            // Check if it's a "not supported" error
-            const errorMessage =
-              error.response?.data?.message ||
-              error.response?.data ||
-              error.message ||
-              "";
-            const isNotSupportedError =
-              (error.response?.status === 400 || error.response?.status === 404) &&
-              (typeof errorMessage === "string"
-                ? errorMessage.includes("not supported") || errorMessage.includes("does not exist")
-                : false);
+        const statsResults = await Promise.allSettled(
+          platforms.map(async (platform) => {
+            try {
+              const result = await ProfileService.getProfiles(platform, { pageNumber: 0, pageSize: 1000 });
+              if (!result || !result.content) {
+                console.warn(
+                  `Invalid response structure for platform: ${platform}`
+                );
+                return { platform, profiles: [] };
+              }
+              return { platform, profiles: result.content || [] };
+            } catch (error: any) {
+              const errorMessage =
+                error.response?.data?.message ||
+                error.response?.data ||
+                error.message ||
+                "";
+              const isNotSupportedError =
+                (error.response?.status === 400 || error.response?.status === 404) &&
+                (typeof errorMessage === "string"
+                  ? errorMessage.includes("not supported") || errorMessage.includes("does not exist")
+                  : false);
 
-            if (isNotSupportedError) {
-              console.warn(
-                `Profile feature not supported for platform: ${platform}`
-              );
-              return { platform, profiles: [] };
+              if (isNotSupportedError) {
+                console.warn(
+                  `Profile feature not supported for platform: ${platform}`
+                );
+                return { platform, profiles: [] };
+              }
+              throw error;
             }
-            // Re-throw other errors
-            throw error;
-          }
-        })
-      );
-
-      // Extract successful results and handle failures
-      const successfulResults = statsResults
-        .map((result, index) => {
-          if (result.status === "fulfilled") {
-            // Ensure the value has the expected structure
-            const value = result.value;
-            if (
-              value &&
-              typeof value === "object" &&
-              "platform" in value &&
-              "profiles" in value
-            ) {
-              return {
-                platform: value.platform,
-                profiles: Array.isArray(value.profiles) ? value.profiles : [],
-              };
-            }
-            // Fallback if structure is unexpected
-            const platform = platforms[index];
-            console.warn(
-              `Unexpected response structure for platform: ${platform}`
-            );
-            return { platform, profiles: [] };
-          } else {
-            // Log error but continue with empty profiles for failed platform
-            const platform = platforms[index];
-            const errorReason = result.reason;
-            const errorMessage =
-              errorReason?.response?.data?.message ||
-              errorReason?.message ||
-              "Unknown error";
-            console.error(`Error fetching ${platform} profiles:`, errorMessage);
-            return { platform, profiles: [] };
-          }
-        })
-        .filter(
-          (result): result is { platform: Platform; profiles: Profile[] } =>
-            result !== null &&
-            result !== undefined &&
-            typeof result === "object" &&
-            "platform" in result &&
-            "profiles" in result &&
-            Array.isArray(result.profiles)
+          })
         );
 
-      // Filter profiles based on platformFilter
-      let allProfiles: Profile[] = [];
-      if (platformFilter === "all") {
-        // Use data already fetched for stats
-        allProfiles = successfulResults.flatMap(({ platform, profiles }) =>
+        const successfulResults = statsResults
+          .map((result, index) => {
+            if (result.status === "fulfilled") {
+              const value = result.value;
+              if (
+                value &&
+                typeof value === "object" &&
+                "platform" in value &&
+                "profiles" in value
+              ) {
+                return {
+                  platform: value.platform,
+                  profiles: Array.isArray(value.profiles) ? value.profiles : [],
+                };
+              }
+              const platform = platforms[index];
+              console.warn(
+                `Unexpected response structure for platform: ${platform}`
+              );
+              return { platform, profiles: [] };
+            } else {
+              const platform = platforms[index];
+              const errorReason = result.reason;
+              const errorMessage =
+                errorReason?.response?.data?.message ||
+                errorReason?.message ||
+                "Unknown error";
+              console.error(`Error fetching ${platform} profiles:`, errorMessage);
+              return { platform, profiles: [] };
+            }
+          })
+          .filter(
+            (result): result is { platform: Platform; profiles: Profile[] } =>
+              result !== null &&
+              result !== undefined &&
+              typeof result === "object" &&
+              "platform" in result &&
+              "profiles" in result &&
+              Array.isArray(result.profiles)
+          );
+
+        const allProfiles: Profile[] = successfulResults.flatMap(({ platform, profiles }) =>
           profiles.map((profile) => ({
             ...profile,
             platform,
           }))
         );
-      } else if (
-        platformFilter === "android" ||
-        platformFilter === "ios" ||
-        platformFilter === "windows" ||
-        platformFilter === "macos"
-      ) {
-        // Use data already fetched for stats
-        const platformData = successfulResults.find(
-          (r) => r.platform === platformFilter
-        );
-        if (platformData) {
-          allProfiles = platformData.profiles.map((profile) => ({
-            ...profile,
-            platform: platformFilter as Platform,
-          }));
-        }
+
+        setProfiles(allProfiles);
+        setTotalElements(allProfiles.length);
+        setTotalPages(1);
+
+        let androidCount = 0;
+        let iosCount = 0;
+        let windowsCount = 0;
+        let publishedCount = 0;
+        let draftCount = 0;
+
+        allProfiles.forEach((profile) => {
+          if (profile.platform === "android") androidCount++;
+          else if (profile.platform === "ios") iosCount++;
+          else if (profile.platform === "windows") windowsCount++;
+          if (profile.status === "PUBLISHED") publishedCount++;
+          else if (profile.status === "DRAFT") draftCount++;
+        });
+
+        setStats({
+          total: allProfiles.length,
+          android: androidCount,
+          ios: iosCount,
+          windows: windowsCount,
+          published: publishedCount,
+          draft: draftCount,
+        });
+      } else {
+        // Specific platform — server-side pagination
+        const platform = platformFilter as Platform;
+        const result = await ProfileService.getProfiles(platform, { pageNumber: page - 1, pageSize: size });
+        const platformProfiles = (result.content || []).map((profile: Profile) => ({
+          ...profile,
+          platform,
+        }));
+
+        setProfiles(platformProfiles);
+        setTotalPages(result.totalPages || 1);
+        setTotalElements(result.totalElements || 0);
+
+        let publishedCount = 0;
+        let draftCount = 0;
+        platformProfiles.forEach((profile: Profile) => {
+          if (profile.status === "PUBLISHED") publishedCount++;
+          else if (profile.status === "DRAFT") draftCount++;
+        });
+
+        setStats({
+          total: result.totalElements || 0,
+          android: platform === "android" ? (result.totalElements || 0) : 0,
+          ios: platform === "ios" ? (result.totalElements || 0) : 0,
+          windows: platform === "windows" ? (result.totalElements || 0) : 0,
+          published: publishedCount,
+          draft: draftCount,
+        });
       }
-
-      setProfiles(allProfiles);
-
-      // Calculate stats from filtered data
-      let androidCount = 0;
-      let iosCount = 0;
-      let windowsCount = 0;
-      let publishedCount = 0;
-      let draftCount = 0;
-
-      allProfiles.forEach((profile) => {
-        if (profile.platform === "android") {
-          androidCount++;
-        } else if (profile.platform === "ios") {
-          iosCount++;
-        } else if (profile.platform === "windows") {
-          windowsCount++;
-        }
-
-        if (profile.status === "PUBLISHED") {
-          publishedCount++;
-        } else if (profile.status === "DRAFT") {
-          draftCount++;
-        }
-      });
-
-      setStats({
-        total: allProfiles.length,
-        android: androidCount,
-        ios: iosCount,
-        windows: windowsCount,
-        published: publishedCount,
-        draft: draftCount,
-      });
     } catch (error) {
       console.error("Error fetching profiles:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [platformFilter, currentPage, pageSize, shouldBlockAndroid]);
+
+  // Reset to page 1 when platform filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [platformFilter]);
 
   useEffect(() => {
-    fetchProfiles();
-  }, [platformFilter]);
+    fetchProfiles(currentPage, pageSize);
+  }, [platformFilter, currentPage, pageSize]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
 
   const getPlatformIcon = (platform?: string, filled = false) => {
     const config = platformConfig[platform?.toLowerCase() || "all"];
@@ -609,7 +624,6 @@ const Profiles = () => {
                 disabled={isDisabled}
                 onClick={() => {
                   if (isDisabled) return;
-                  // If Android is selected and enterprise is not set up (production), redirect to setup
                   if (platform === 'android' && shouldBlockAndroid) {
                     toast({
                       title: 'Enterprise Setup Required',
@@ -746,9 +760,17 @@ const Profiles = () => {
             quickActions={quickActions}
             rowActions={rowActions}
             defaultPageSize={10}
+            pageSizeOptions={[10, 20, 50, 100]}
             showExport={true}
             exportTitle="Profiles Report"
             exportFilename="profiles"
+            serverSidePagination={isServerSidePagination}
+            currentPage={isServerSidePagination ? currentPage : undefined}
+            totalPages={isServerSidePagination ? totalPages : undefined}
+            totalElements={isServerSidePagination ? totalElements : undefined}
+            pageSize={isServerSidePagination ? pageSize : undefined}
+            onPageChange={isServerSidePagination ? handlePageChange : undefined}
+            onPageSizeChange={isServerSidePagination ? handlePageSizeChange : undefined}
           />
         </div>
       </div>
@@ -756,7 +778,7 @@ const Profiles = () => {
       <AddProfileDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onProfileAdded={fetchProfiles}
+        onProfileAdded={() => fetchProfiles(currentPage, pageSize)}
         defaultPlatform={
           platformFilter !== "all" && platformFilter !== "windows" && platformFilter !== "linux"
             ? (platformFilter as "android" | "ios" | "macos")
@@ -767,28 +789,28 @@ const Profiles = () => {
       <EditProfileDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        onProfileUpdated={fetchProfiles}
+        onProfileUpdated={() => fetchProfiles(currentPage, pageSize)}
         profile={selectedProfile}
       />
 
       <PublishProfileDialog
         open={publishDialogOpen}
         onOpenChange={setPublishDialogOpen}
-        onProfilePublished={fetchProfiles}
+        onProfilePublished={() => fetchProfiles(currentPage, pageSize)}
         profile={selectedPublishProfile}
       />
 
       <DeleteProfileDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        onProfileDeleted={fetchProfiles}
+        onProfileDeleted={() => fetchProfiles(currentPage, pageSize)}
         profile={selectedDeleteProfile}
       />
 
       <CloneProfileDialog
         open={cloneDialogOpen}
         onOpenChange={setCloneDialogOpen}
-        onProfileCloned={fetchProfiles}
+        onProfileCloned={() => fetchProfiles(currentPage, pageSize)}
         profile={selectedCloneProfile}
       />
     </MainLayout>

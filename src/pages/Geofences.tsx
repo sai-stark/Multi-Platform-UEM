@@ -21,7 +21,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Geofence } from "@/types/models";
 import { Circle, Hexagon, MapPin, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Geofences = () => {
@@ -33,25 +33,42 @@ const Geofences = () => {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
-    const fetchGeofences = async () => {
+    // Server-side pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
+
+    const fetchGeofences = useCallback(async (page: number = currentPage, size: number = pageSize) => {
         setLoading(true);
         try {
-            const res = await GeofenceService.getGeofences({ page: 0, size: 100 });
+            const res = await GeofenceService.getGeofences({ pageNumber: page - 1, pageSize: size });
             setGeofences(res.content || []);
+            setTotalPages(res.totalPages || 1);
+            setTotalElements(res.totalElements || 0);
         } catch (error) {
             console.error("Failed to fetch geofences", error);
             toast({ title: "Error", description: "Failed to fetch geofences", variant: "destructive" });
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, pageSize, toast]);
 
     useEffect(() => {
-        fetchGeofences();
-    }, []);
+        fetchGeofences(currentPage, pageSize);
+    }, [currentPage, pageSize]);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const handlePageSizeChange = (size: number) => {
+        setPageSize(size);
+        setCurrentPage(1);
+    };
 
     const stats = {
-        total: geofences.length,
+        total: totalElements,
         circle: geofences.filter(g => g.type === 'CIRCLE').length,
         polygon: geofences.filter(g => g.type === 'POLYGON').length,
     };
@@ -59,8 +76,8 @@ const Geofences = () => {
     const handleDelete = async (id: string) => {
         try {
             await GeofenceService.deleteGeofence(id);
-            setGeofences(prev => prev.filter(g => g.id !== id));
             toast({ title: t('geofences.toasts.success'), description: t('geofences.toasts.deleted') });
+            fetchGeofences(currentPage, pageSize);
         } catch (error) {
             console.error("Failed to delete geofence", error);
             toast({ title: "Error", description: "Failed to delete geofence", variant: "destructive" });
@@ -175,7 +192,7 @@ const Geofences = () => {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" className="gap-2" onClick={fetchGeofences} disabled={loading}>
+                        <Button variant="outline" className="gap-2" onClick={() => fetchGeofences(currentPage, pageSize)} disabled={loading}>
                             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                             Sync
                         </Button>
@@ -246,9 +263,17 @@ const Geofences = () => {
                         }
                         rowActions={rowActions}
                         defaultPageSize={10}
+                        pageSizeOptions={[10, 20, 50, 100]}
                         showExport={true}
                         exportTitle={t('geofences.table.exportTitle')}
                         exportFilename="geofences"
+                        serverSidePagination={true}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalElements={totalElements}
+                        pageSize={pageSize}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 </div>
             </div>

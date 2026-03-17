@@ -42,7 +42,7 @@ import {
     Trash2,
     Users
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -57,22 +57,39 @@ export default function Groups() {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [targetDeleteGroup, setTargetDeleteGroup] = useState<Group | null>(null);
 
-    const fetchGroups = async () => {
+    // Server-side pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
+
+    const fetchGroups = useCallback(async (page: number = currentPage, size: number = pageSize) => {
         setLoading(true);
         try {
-            const res = await GroupService.getGroups({ page: 0, size: 100 });
+            const res = await GroupService.getGroups({ pageNumber: page - 1, pageSize: size });
             setGroups(res.content || []);
+            setTotalPages(res.totalPages || 1);
+            setTotalElements(res.totalElements || 0);
         } catch (error) {
             console.error('Failed to fetch groups', error);
             toast({ title: 'Error', description: 'Failed to fetch groups', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, pageSize, toast]);
 
     useEffect(() => {
-        fetchGroups();
-    }, []);
+        fetchGroups(currentPage, pageSize);
+    }, [currentPage, pageSize]);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const handlePageSizeChange = (size: number) => {
+        setPageSize(size);
+        setCurrentPage(1);
+    };
 
     const handleCreateGroup = async () => {
         if (!newGroup.name) return;
@@ -83,7 +100,6 @@ export default function Groups() {
                 description: newGroup.description,
             } as any);
 
-            setGroups([...groups, created]);
             setIsCreateDialogOpen(false);
             setNewGroup({ name: '', description: '' });
 
@@ -91,6 +107,9 @@ export default function Groups() {
                 title: t('groups.toasts.created'),
                 description: t('groups.toasts.createdDesc').replace('{name}', created.name),
             });
+
+            // Refresh current page
+            fetchGroups(currentPage, pageSize);
         } catch (error) {
             console.error('Failed to create group', error);
             toast({ title: 'Error', description: 'Failed to create group', variant: 'destructive' });
@@ -101,11 +120,12 @@ export default function Groups() {
         if (!group.id) return;
         try {
             await GroupService.deleteGroup(group.id);
-            setGroups(groups.filter(g => g.id !== group.id));
             toast({
                 title: t('groups.toasts.deleted'),
                 description: t('groups.toasts.deletedDesc').replace('{name}', group.name),
             });
+            // Refresh current page
+            fetchGroups(currentPage, pageSize);
         } catch (error) {
             console.error('Failed to delete group', error);
             toast({ title: 'Error', description: 'Failed to delete group', variant: 'destructive' });
@@ -119,7 +139,7 @@ export default function Groups() {
 
     // Stats
     const stats = {
-        total: groups.length,
+        total: totalElements,
         devices: groups.reduce((acc, curr) => acc + (curr.deviceCount || 0), 0),
         empty: groups.filter(g => !g.deviceCount || g.deviceCount === 0).length,
         active: groups.filter(g => (g.deviceCount || 0) > 0).length
@@ -329,9 +349,17 @@ export default function Groups() {
                         }
                         rowActions={rowActions}
                         defaultPageSize={10}
+                        pageSizeOptions={[10, 20, 50, 100]}
                         showExport={true}
                         exportTitle={t('groups.table.exportTitle')}
                         exportFilename="groups"
+                        serverSidePagination={true}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalElements={totalElements}
+                        pageSize={pageSize}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                     />
                 </div>
             </div>

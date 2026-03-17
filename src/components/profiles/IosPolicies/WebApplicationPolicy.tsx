@@ -109,7 +109,7 @@ export function WebApplicationPolicyEditor({
         if (platform !== 'android') return;
         setWebAppsLoading(true);
         try {
-            const response = await WebApplicationService.getWebApplications({ page: 0, size: 100 });
+            const response = await WebApplicationService.getWebApplications({ pageNumber: 0, pageSize: 100 });
             setWebApps(response.content || []);
         } catch (error) {
             console.error("Failed to fetch web apps", error);

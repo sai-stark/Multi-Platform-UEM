@@ -42,8 +42,8 @@ export const RepositoryService = {
         pageable?: Pageable
     ): Promise<PaginatedCustomRepoList> => {
         const params: Record<string, any> = {};
-        if (pageable?.page !== undefined) params.page = pageable.page;
-        if (pageable?.size !== undefined) params.size = pageable.size;
+        if (pageable?.pageNumber !== undefined) params.pageNumber = pageable.pageNumber;
+        if (pageable?.pageSize !== undefined) params.pageSize = pageable.pageSize;
         if (pageable?.sort) params.sort = pageable.sort;
 
         const response = await apiClient.get<PaginatedCustomRepoList>(
@@ -85,8 +85,8 @@ export const RepositoryService = {
         searchTerm?: string
     ): Promise<PagedResponse<ApplicationUnion>> => {
         const params: Record<string, any> = {};
-        if (pageable?.page !== undefined) params.page = pageable.page;
-        if (pageable?.size !== undefined) params.size = pageable.size;
+        if (pageable?.pageNumber !== undefined) params.pageNumber = pageable.pageNumber;
+        if (pageable?.pageSize !== undefined) params.pageSize = pageable.pageSize;
         if (pageable?.sort) params.sort = pageable.sort;
         if (searchTerm) params.searchTerm = searchTerm;
 
@@ -152,8 +152,8 @@ export const RepositoryService = {
         pageable?: Pageable
     ): Promise<PaginatedPatchList> => {
         const params: Record<string, any> = {};
-        if (pageable?.page !== undefined) params.page = pageable.page;
-        if (pageable?.size !== undefined) params.size = pageable.size;
+        if (pageable?.pageNumber !== undefined) params.pageNumber = pageable.pageNumber;
+        if (pageable?.pageSize !== undefined) params.pageSize = pageable.pageSize;
         if (pageable?.sort) params.sort = pageable.sort;
 
         const response = await apiClient.get<PaginatedPatchList>(
