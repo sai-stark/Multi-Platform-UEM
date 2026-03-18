@@ -14,7 +14,7 @@ import {
     Settings,
     Shield,
     ShieldAlert,
-    User
+    User,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BooleanStatus } from './DeviceOverviewTab';
@@ -199,34 +199,7 @@ function MacOsSecurityView({ info }: { info: DeviceSecurityInfoMacOs }) {
             </CardContent>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 px-6 pb-6">
-                {/* Authentication & FileVault */}
-                <Card className="border-t-4 border-t-blue-500 shadow-sm border-x border-b h-full">
-                    <CardHeader className="pb-3 border-b border-border/50">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-blue-500/10">
-                                <Lock className="w-5 h-5 text-blue-500" />
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-foreground">Authentication & Storage</h4>
-                                <p className="text-xs text-muted-foreground">Disk encryption and boot state</p>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pt-4">
-                        <div className="space-y-3 p-4 rounded-xl border bg-card/50 hover:bg-muted/50 transition-colors">
-                            <BooleanStatus label="FileVault Enabled" value={info.fdeEnabled} />
-                            <BooleanStatus label="Auth Root Volume Enabled" value={info.authenticatedRootVolumeEnabled} />
-                            <div className="flex items-center justify-between border-t border-border pt-3 mt-3">
-                                <span className="text-sm text-muted-foreground font-medium">Bootstrap Token Allowed</span>
-                                <span className="text-sm font-semibold text-foreground">{info.bootstrapTokenAllowedForAuthentication ?? '-'}</span>
-                            </div>
-                            <BooleanStatus label="Bootstrap Token Required (Kext)" value={info.bootstrapTokenRequiredForKernelExtensionApproval} />
-                            <BooleanStatus label="Bootstrap Token Required (Updates)" value={info.bootstrapTokenRequiredForSoftwareUpdate} />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* System Integrity & Firewall */}
+                {/* Row 1 Left: System Integrity & Firewall */}
                 <Card className="border-t-4 border-t-violet-500 shadow-sm border-x border-b h-full">
                     <CardHeader className="pb-3 border-b border-border/50">
                         <div className="flex items-center gap-3">
@@ -262,30 +235,7 @@ function MacOsSecurityView({ info }: { info: DeviceSecurityInfoMacOs }) {
                     </CardContent>
                 </Card>
 
-                {/* Management Status */}
-                <Card className="border-t-4 border-t-amber-500 shadow-sm border-x border-b h-full">
-                    <CardHeader className="pb-3 border-b border-border/50">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-amber-500/10">
-                                <User className="w-5 h-5 text-amber-500" />
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-foreground">Management Status</h4>
-                                <p className="text-xs text-muted-foreground">Enrollment and activation lock</p>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pt-4">
-                        <div className="space-y-3 p-4 rounded-xl border bg-card/50 hover:bg-muted/50 transition-colors">
-                            <BooleanStatus label="Enrolled via DEP" value={info.managementStatus?.enrolledViaDEP} />
-                            <BooleanStatus label="Activation Lock Manageable" value={info.managementStatus?.isActivationLockManageable} />
-                            <BooleanStatus label="Is User Enrollment" value={info.managementStatus?.isUserEnrollment} />
-                            <BooleanStatus label="User Approved Enrollment" value={info.managementStatus?.userApprovedEnrollment} />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Secure Boot & Firmware */}
+                {/* Row 1 Right: Secure Boot & Firmware Password */}
                 <div className="flex flex-col gap-6 h-full">
                     <Card className="border-t-4 border-t-cyan-500 shadow-sm border-x border-b flex-grow">
                         <CardHeader className="pb-3 border-b border-border/50">
@@ -339,6 +289,56 @@ function MacOsSecurityView({ info }: { info: DeviceSecurityInfoMacOs }) {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Row 2 Left: Authentication & Storage */}
+                <Card className="border-t-4 border-t-blue-500 shadow-sm border-x border-b h-full">
+                    <CardHeader className="pb-3 border-b border-border/50">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-blue-500/10">
+                                <Lock className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Authentication & Storage</h4>
+                                <p className="text-xs text-muted-foreground">Disk encryption and boot state</p>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-4">
+                        <div className="space-y-3 p-4 rounded-xl border bg-card/50 hover:bg-muted/50 transition-colors">
+                            <BooleanStatus label="FileVault Enabled" value={info.fdeEnabled} />
+                            <BooleanStatus label="Auth Root Volume Enabled" value={info.authenticatedRootVolumeEnabled} />
+                            <div className="flex items-center justify-between border-t border-border pt-3 mt-3">
+                                <span className="text-sm text-muted-foreground font-medium">Bootstrap Token Allowed</span>
+                                <span className="text-sm font-semibold text-foreground">{info.bootstrapTokenAllowedForAuthentication ?? '-'}</span>
+                            </div>
+                            <BooleanStatus label="Bootstrap Token Required (Kext)" value={info.bootstrapTokenRequiredForKernelExtensionApproval} />
+                            <BooleanStatus label="Bootstrap Token Required (Updates)" value={info.bootstrapTokenRequiredForSoftwareUpdate} />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Row 2 Right: Management Status */}
+                <Card className="border-t-4 border-t-amber-500 shadow-sm border-x border-b h-full">
+                    <CardHeader className="pb-3 border-b border-border/50">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-amber-500/10">
+                                <User className="w-5 h-5 text-amber-500" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Management Status</h4>
+                                <p className="text-xs text-muted-foreground">Enrollment and activation lock</p>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-4">
+                        <div className="space-y-3 p-4 rounded-xl border bg-card/50 hover:bg-muted/50 transition-colors">
+                            <BooleanStatus label="Enrolled via DEP" value={info.managementStatus?.enrolledViaDEP} />
+                            <BooleanStatus label="Activation Lock Manageable" value={info.managementStatus?.isActivationLockManageable} />
+                            <BooleanStatus label="Is User Enrollment" value={info.managementStatus?.isUserEnrollment} />
+                            <BooleanStatus label="User Approved Enrollment" value={info.managementStatus?.userApprovedEnrollment} />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </>
     );
