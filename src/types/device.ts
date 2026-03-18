@@ -30,6 +30,7 @@ export interface DeviceInfo {
     connectionStatus?: 'online' | 'offline'; // UI helper
     lastSyncTime?: string;
     enrollmentTime?: string;
+    enrollmentStatus?: 'REGISTERED' | 'STALE' | string;
     creationTime?: string;
     batteryLevel?: number; // 0.0 - 1.0 (iOS) or 0-100 (Android) - UI should normalize
     isBatteryCharging?: boolean; // Normalized from isBatterCharging (Android) / isBatteryCharging (iOS)
@@ -238,30 +239,55 @@ export interface DeviceApplication {
 export type DeviceApplicationList = DeviceApplication[] | { content: DeviceApplication[] };
 
 // New Types for Security and Certificates
-export interface DeviceSecurityInfo {
-    FDE_Enabled?: boolean;
-    FDE_HasInstitutionalRecoveryKey?: boolean;
-    FDE_HasPersonalRecoveryKey?: boolean;
-    FDE_PersonalRecoveryKeyCMS?: string;
-    FDE_PersonalRecoveryKeyDeviceKey?: string;
-    HardwareEncryptionCaps?: number;
-    hardwareEncryptionCaps?: number;
-    IsUserEnrollment?: boolean;
+export interface DeviceSecurityInfoIos {
+    osType: 'DeviceSecurityInfoIos';
     passcodePresent?: boolean;
     passcodeCompliant?: boolean;
     passcodeCompliantWithProfiles?: boolean;
     passcodeLockGracePeriod?: number;
     passcodeLockGracePeriodEnforced?: number;
-    SecureBoot?: {
-        SecureBootLevel?: 'full' | 'medium' | 'off' | 'not supported';
-        ExternalBootLevel?: 'allowed' | 'disallowed' | 'not supported';
-        ReducedSecurity?: {
-            AllowsAnyAppleSignedOS?: 'true' | 'false';
-            AllowsMDM?: 'true' | 'false';
-            AllowsUserKextApproval?: 'true' | 'false';
-        };
+    autoLockTime?: number;
+    hardwareEncryptionCaps?: number;
+    IsUserEnrollment?: boolean;
+}
+
+export interface DeviceSecurityInfoMacOs {
+    osType: 'DeviceSecurityInfoMacOs';
+    authenticatedRootVolumeEnabled?: boolean;
+    bootstrapTokenAllowedForAuthentication?: string;
+    bootstrapTokenRequiredForKernelExtensionApproval?: boolean;
+    bootstrapTokenRequiredForSoftwareUpdate?: boolean;
+    fdeEnabled?: boolean;
+    remoteDesktopEnabled?: boolean;
+    systemIntegrityProtectionEnabled?: boolean;
+    firewallSettings?: {
+        firewallEnabled?: boolean;
+        blockAllIncoming?: boolean;
+        stealthMode?: boolean;
+        allowSigned?: boolean;
+        allowSignedApp?: boolean;
+        loggingEnabled?: boolean;
+        loggingOption?: string;
+    };
+    firmwarePasswordStatus?: {
+        allowOroms?: boolean;
+        passwordExists?: boolean;
+        changePending?: boolean;
+    };
+    managementStatus?: {
+        enrolledViaDEP?: boolean;
+        isActivationLockManageable?: boolean;
+        isUserEnrollment?: boolean;
+        userApprovedEnrollment?: boolean;
+    };
+    secureBoot?: {
+        secureBootLevel?: string;
+        externalBootLevel?: string;
+        windowsBootLevel?: string;
     };
 }
+
+export type DeviceSecurityInfo = DeviceSecurityInfoIos | DeviceSecurityInfoMacOs;
 
 export interface DeviceCertificateItem {
     CommonName?: string;

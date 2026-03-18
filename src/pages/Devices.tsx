@@ -13,10 +13,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Column, DataTable } from '@/components/ui/data-table';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Tooltip,
   TooltipContent,
@@ -184,6 +194,13 @@ const Devices = () => {
   const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
   const [targetUnenrollDevice, setTargetUnenrollDevice] = useState<Device | null>(null);
 
+  // Lock device state (macOS PIN)
+  const [showLockDialog, setShowLockDialog] = useState(false);
+  const [lockTargetDevice, setLockTargetDevice] = useState<Device | null>(null);
+  const [lockPin, setLockPin] = useState('');
+  const [lockMessage, setLockMessage] = useState('');
+  const [lockPhoneNumber, setLockPhoneNumber] = useState('');
+
   // Server-side pagination state (used when a specific platform is selected)
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -274,12 +291,44 @@ const Devices = () => {
   };
 
   const handleLock = async (device: Device) => {
+    if (device.platform === 'macos') {
+      setLockTargetDevice(device);
+      setLockPin('');
+      setLockMessage('');
+      setLockPhoneNumber('');
+      setShowLockDialog(true);
+      return;
+    }
     try {
       await DeviceService.lockDevice(device.platform as Platform, device.id);
       toast({
         title: "Success",
         description: "Lock command sent successfully.",
       });
+    } catch (error) {
+      console.error("Failed to lock device", error);
+      toast({
+        title: "Error",
+        description: "Failed to send lock command.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const executeMacosLock = async () => {
+    if (!lockTargetDevice) return;
+    try {
+      await DeviceService.lockDevice(lockTargetDevice.platform as Platform, lockTargetDevice.id, {
+        deviceActionType: 'ActionMacosDeviceLock',
+        PIN: lockPin,
+        message: lockMessage || undefined,
+        phoneNumber: lockPhoneNumber || undefined,
+      } as any);
+      toast({
+        title: "Success",
+        description: "Lock command sent successfully.",
+      });
+      setShowLockDialog(false);
     } catch (error) {
       console.error("Failed to lock device", error);
       toast({
@@ -479,6 +528,61 @@ const Devices = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Lock Device PIN Dialog (macOS) */}
+      <Dialog open={showLockDialog} onOpenChange={setShowLockDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lock Device</DialogTitle>
+            <DialogDescription>
+              Enter a 6-character PIN to lock this macOS device. The PIN will be required to unlock the device.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>PIN <span className="text-destructive">*</span></Label>
+              <Input
+                value={lockPin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9a-zA-Z]/g, '').slice(0, 6);
+                  setLockPin(val);
+                }}
+                placeholder="Enter 6-character PIN"
+                maxLength={6}
+                className={cn(lockPin.length === 6 ? "border-green-500" : "")}
+              />
+              {lockPin.length > 0 && lockPin.length < 6 && (
+                <p className="text-xs text-destructive">PIN must be exactly 6 characters</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Message <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input
+                value={lockMessage}
+                onChange={(e) => setLockMessage(e.target.value)}
+                placeholder="Message on lock screen"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone Number <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input
+                value={lockPhoneNumber}
+                onChange={(e) => setLockPhoneNumber(e.target.value)}
+                placeholder="+91 1234567890"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLockDialog(false)}>Cancel</Button>
+            <Button
+              onClick={executeMacosLock}
+              disabled={lockPin.length !== 6}
+            >
+              Lock Device
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="space-y-6">
         {/* Page Header */}
         <header className="flex items-center justify-between">

@@ -135,7 +135,16 @@ export const DeviceService = {
 
     lockDevice: async (platform: Platform, deviceId: string, payload?: ActionDeviceLock) => {
         let body: any = {};
-        if (platform === 'ios') {
+        if (platform === 'macos') {
+            body = {
+                commandReferenceId: (payload as any)?.commandReferenceId,
+                deviceActionType: 'ActionMacosDeviceLock',
+                message: (payload as any)?.message,
+                phoneNumber: (payload as any)?.phoneNumber,
+                PIN: (payload as any)?.PIN,
+                requestRequiresNetworkTether: (payload as any)?.requestRequiresNetworkTether
+            };
+        } else if (platform === 'ios') {
             body = {
                 commandReferenceId: (payload as any)?.commandReferenceId,
                 deviceActionType: 'ActionIosDeviceLock',

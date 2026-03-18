@@ -439,6 +439,7 @@ function PolicyCardGrid({
     borderClass?: string;
     badgeText?: string;
     hideActions?: boolean;
+    hideDelete?: boolean;
     isDisabled?: boolean;
   };
 
@@ -623,7 +624,8 @@ function PolicyCardGrid({
         icon: <FileText className="w-5 h-5" />,
         isConfigured: true,
         colorClass: "text-primary",
-        borderClass: "border-t-primary"
+        borderClass: "border-t-primary",
+        hideActions: true,
       });
     }
 
@@ -712,6 +714,7 @@ function PolicyCardGrid({
     colorClass: "text-primary",
     borderClass: "border-t-primary",
     badgeText: `${applicationPolicy.length} Active`,
+    hideDelete: true,
   });
 
 
@@ -800,7 +803,7 @@ function PolicyCardGrid({
                 badgeText={policy.badgeText}
                 onClick={() => onSelectPolicy(policy.id)}
                 onEdit={policy.hideActions || policy.isDisabled ? undefined : () => onSelectPolicy(policy.id)}
-                onDelete={onDeletePolicy && !policy.hideActions && !policy.isDisabled ? () => onDeletePolicy(policy.id, policy.title) : undefined}
+                onDelete={onDeletePolicy && !policy.hideActions && !policy.hideDelete && !policy.isDisabled ? () => onDeletePolicy(policy.id, policy.title) : undefined}
                 isDisabled={policy.isDisabled}
               />
             ))}

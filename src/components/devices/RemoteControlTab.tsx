@@ -9,7 +9,16 @@ import {
     VideoTrack
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import {
+    AlertCircle,
+    AppWindow,
+    ChevronLeft,
+    Home,
+    Loader2,
+    Power,
+    Volume1,
+    Volume2
+} from 'lucide-react';
 import { useState } from 'react';
 
 export interface RemoteControlTabProps {
@@ -144,6 +153,21 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
         handlePointerEvent(e, 'UP');
     };
 
+    const handleButtonEvent = (key: string) => {
+        if (!localParticipant) return;
+        const payload = JSON.stringify({
+            action: 'BUTTON',
+            key
+        });
+        const data = new TextEncoder().encode(payload);
+        if (import.meta.env.DEV) { console.log(`Sending button event: ${payload}`); }
+        try {
+            room.localParticipant.publishData(data, { reliable: true });
+        } catch (err) {
+            if (import.meta.env.DEV) { console.error('Failed to send button event:', err); }
+        }
+    };
+
     // Prevent default drag behaviors overlapping with pointer actions
     const preventDrag = (e: React.DragEvent<HTMLVideoElement>) => {
         e.preventDefault();
@@ -190,18 +214,44 @@ function RemoteControlInner({ onDisconnect }: { onDisconnect?: () => void }) {
                         </AlertDescription>
                     </Alert>
                 ) : (
-                    <div className="w-full h-full absolute inset-0 cursor-crosshair">
-                        <VideoTrack
-                            trackRef={screenTrack}
-                            onPointerDown={handlePointerDown}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={handlePointerUp}
-                            onPointerCancel={handlePointerUp}
-                            onDragStart={preventDrag}
-                            draggable={false}
-                            className="w-full h-full object-contain pointer-events-auto shadow-xl touch-none max-h-full"
-                        />
-                    </div>
+                    <>
+                        <div className="w-full h-full absolute inset-0 cursor-crosshair">
+                            <VideoTrack
+                                trackRef={screenTrack}
+                                onPointerDown={handlePointerDown}
+                                onPointerMove={handlePointerMove}
+                                onPointerUp={handlePointerUp}
+                                onPointerCancel={handlePointerUp}
+                                onDragStart={preventDrag}
+                                draggable={false}
+                                className="w-full h-full object-contain pointer-events-auto shadow-xl touch-none max-h-full"
+                            />
+                        </div>
+
+                        {/* Physical Device Controls Overlay */}
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-slate-900/80 p-2 rounded-xl backdrop-blur border border-slate-700/50 shadow-2xl z-10 pointer-events-auto">
+                            <Button variant="ghost" size="icon" onClick={() => handleButtonEvent('POWER')} title="Power" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                                <Power className="w-5 h-5" />
+                            </Button>
+                            <div className="h-px bg-slate-700/50 my-1 mx-2" />
+                            <Button variant="ghost" size="icon" onClick={() => handleButtonEvent('VOLUME_UP')} title="Volume Up" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                                <Volume2 className="w-5 h-5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleButtonEvent('VOLUME_DOWN')} title="Volume Down" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                                <Volume1 className="w-5 h-5" />
+                            </Button>
+                            <div className="h-px bg-slate-700/50 my-1 mx-2" />
+                            <Button variant="ghost" size="icon" onClick={() => handleButtonEvent('HOME')} title="Home" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                                <Home className="w-5 h-5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleButtonEvent('BACK')} title="Back" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                                <ChevronLeft className="w-5 h-5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleButtonEvent('RECENT')} title="Recent Apps" className="text-slate-300 hover:text-white hover:bg-slate-800">
+                                <AppWindow className="w-5 h-5" />
+                            </Button>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

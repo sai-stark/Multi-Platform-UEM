@@ -45,6 +45,7 @@ import { getErrorMessage } from '@/utils/errorUtils';
 import {
     Activity,
     AppWindow,
+    CheckCircle2,
     HardDrive as Chip,
     Cpu,
     FileText,
@@ -56,6 +57,7 @@ import {
     Power, PowerOff, RefreshCw,
     Settings,
     Shield,
+    ShieldAlert,
     Smartphone,
     Trash2,
     Unlock,
@@ -100,6 +102,12 @@ export default function DeviceDetails() {
     // Device Location State
     const [locationData, setLocationData] = useState<DeviceLocationResponse | null>(null);
     const [showLocationDialog, setShowLocationDialog] = useState(false);
+
+    // Lock Device State (macOS PIN)
+    const [lockDialog, setLockDialog] = useState(false);
+    const [lockPin, setLockPin] = useState('');
+    const [lockMessage, setLockMessage] = useState('');
+    const [lockPhoneNumber, setLockPhoneNumber] = useState('');
 
     // Delete User State
     const [deleteUserDialog, setDeleteUserDialog] = useState(false);
@@ -160,6 +168,14 @@ export default function DeviceDetails() {
                 requiredText: action === 'reboot' ? 'REBOOT' : 'RESET'
             });
             setConfirmInput('');
+            return;
+        }
+
+        if (action === 'lock' && device.platform === 'macos') {
+            setLockDialog(true);
+            setLockPin('');
+            setLockMessage('');
+            setLockPhoneNumber('');
             return;
         }
 
@@ -245,7 +261,16 @@ export default function DeviceDetails() {
                     await DeviceService.syncDevices(devicePlatform, [device.id]);
                     break;
                 case 'lock':
-                    await DeviceService.lockDevice(devicePlatform, device.id);
+                    if (devicePlatform === 'macos') {
+                        await DeviceService.lockDevice(devicePlatform, device.id, {
+                            deviceActionType: 'ActionMacosDeviceLock',
+                            PIN: lockPin,
+                            message: lockMessage || undefined,
+                            phoneNumber: lockPhoneNumber || undefined,
+                        } as any);
+                    } else {
+                        await DeviceService.lockDevice(devicePlatform, device.id);
+                    }
                     break;
                 case 'factory_reset':
                     await DeviceService.factoryResetDevice(devicePlatform, device.id);
@@ -384,14 +409,20 @@ export default function DeviceDetails() {
                                     )}
                                 </div>
 
-                                <div className="flex gap-2 pt-2">
-                                    {/* <Badge variant="outline" className={cn(
-                                        "gap-1",
-                                        device.complianceStatus === 'compliant' ? "text-success border-success/30 bg-success/10" : "text-destructive border-destructive/30 bg-destructive/10"
-                                    )}>
-                                        {device.complianceStatus === 'compliant' ? <Shield className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
-                                        {device.complianceStatus === 'compliant' ? 'Compliant' : 'Non-Compliant'}
-                                    </Badge> */}
+                                <div className="flex gap-2 pt-2 flex-wrap">
+                                    {device.enrollmentStatus && (
+                                        <Badge variant="outline" className={cn(
+                                            "gap-1",
+                                            device.enrollmentStatus === 'REGISTERED'
+                                                ? "text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-500/10"
+                                                : "text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 bg-amber-500/10"
+                                        )}>
+                                            {device.enrollmentStatus === 'REGISTERED'
+                                                ? <CheckCircle2 className="w-3 h-3" />
+                                                : <ShieldAlert className="w-3 h-3" />}
+                                            {device.enrollmentStatus === 'REGISTERED' ? 'Registered' : device.enrollmentStatus === 'STALE' ? 'Stale' : device.enrollmentStatus}
+                                        </Badge>
+                                    )}
 
                                     {device.isSupervised && (
                                         <Badge variant="outline" className="gap-1 text-accent border-accent/30 bg-accent/10">
@@ -681,6 +712,64 @@ export default function DeviceDetails() {
                             setLostModeDialog(false);
                             executeAction('enable_lost_mode', 'Enable Lost Mode');
                         }}>Content Enable Lost Mode</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Lock Device PIN Dialog (macOS) */}
+            <Dialog open={lockDialog} onOpenChange={setLockDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Lock Device</DialogTitle>
+                        <DialogDescription>
+                            Enter a 6-character PIN to lock this macOS device. The PIN will be required to unlock the device.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>PIN <span className="text-destructive">*</span></Label>
+                            <Input
+                                value={lockPin}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9a-zA-Z]/g, '').slice(0, 6);
+                                    setLockPin(val);
+                                }}
+                                placeholder="Enter 6-character PIN"
+                                maxLength={6}
+                                className={cn(lockPin.length === 6 ? "border-green-500" : "")}
+                            />
+                            {lockPin.length > 0 && lockPin.length < 6 && (
+                                <p className="text-xs text-destructive">PIN must be exactly 6 characters</p>
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Message <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                            <Input
+                                value={lockMessage}
+                                onChange={(e) => setLockMessage(e.target.value)}
+                                placeholder="Message on lock screen"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Phone Number <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                            <Input
+                                value={lockPhoneNumber}
+                                onChange={(e) => setLockPhoneNumber(e.target.value)}
+                                placeholder="+91 1234567890"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setLockDialog(false)}>Cancel</Button>
+                        <Button
+                            onClick={() => {
+                                setLockDialog(false);
+                                executeAction('lock', 'Lock');
+                            }}
+                            disabled={lockPin.length !== 6}
+                        >
+                            Lock Device
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
