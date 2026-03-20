@@ -32,7 +32,7 @@ export interface AdaptiveBrightness {
 
 export interface FixedBrightness {
     brightness: 'FixedBrightness';
-    brightnessLevel?: number;
+    brightnessPercentage?: number;
 }
 
 export type BrightnessPolicy = AdaptiveBrightness | FixedBrightness;

@@ -1115,19 +1115,13 @@ export default function ProfileDetails() {
       const profileTypeMap: Record<string, ProfileType> = {
         android: "AndroidProfile",
         ios: "IosProfile",
+        macos: "IosProfile",
       };
 
-      const updatedProfile: Profile = {
-        id: profile.id,
+      const updatedProfile = {
         name: editName,
         description: editDescription,
         profileType: profileTypeMap[profile.platform] || profile.profileType,
-        status: profile.status,
-        creationTime: profile.creationTime,
-        modificationTime: profile.modificationTime,
-        createdBy: profile.createdBy,
-        lastModifiedBy: profile.lastModifiedBy,
-        platform: profile.platform
       };
 
       await ProfileService.updateProfile(platform as Platform, id, updatedProfile);

@@ -33,7 +33,9 @@ import {
   Package,
   Shield,
   Trash2,
+  Settings,
 } from 'lucide-react';
+import { ManageConfigurationsDialog } from './ManageConfigurationsDialog';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -48,6 +50,10 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; app: Application | null }>({
+    open: false,
+    app: null
+  });
+  const [configDialog, setConfigDialog] = useState<{ open: boolean; app: Application | null }>({
     open: false,
     app: null
   });
@@ -79,7 +85,7 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
   const handleSetAction = async (app: Application, action: AppActionType) => {
     if (!app.id) return;
 
-    let body: Record<string, any>;
+    let body: Record<string, boolean>;
     switch (action) {
       case 'MANDATORY':
         body = { isMandatory: true };
@@ -256,6 +262,10 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
   // Row actions — 3-dot dropdown items
   const rowActions = (app: Application) => (
     <>
+      <DropdownMenuItem onClick={() => setConfigDialog({ open: true, app })}>
+        <Settings className="w-4 h-4 mr-2" />
+        Manage Configurations
+      </DropdownMenuItem>
       <DropdownMenuItem onClick={() => handleSetAction(app, 'MANDATORY')}>
         <Shield className="w-4 h-4 mr-2 text-success" />
         Set Mandatory
@@ -313,6 +323,12 @@ export const AndroidAppManager = ({ applications, loading, onRefresh, platform }
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ManageConfigurationsDialog
+        open={configDialog.open}
+        onOpenChange={(open) => setConfigDialog({ open, app: null })}
+        app={configDialog.app}
+      />
     </>
   );
 };

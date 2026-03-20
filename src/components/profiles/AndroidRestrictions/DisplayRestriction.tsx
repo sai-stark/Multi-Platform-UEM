@@ -131,7 +131,7 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                         </div>
                         <Badge variant="secondary">
                             {isFixedBrightness 
-                                ? `${t('restrictions.display.fixed')} (${(formData.brightnessPolicy as any)?.brightnessLevel || 50}%)`
+                                ? `${t('restrictions.display.fixed')} (${(formData.brightnessPolicy as any)?.brightnessPercentage || 50}%)`
                                 : t('restrictions.display.adaptive')}
                         </Badge>
                     </CardContent>
@@ -218,7 +218,7 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                             size="sm"
                             onClick={() => setFormData(prev => ({ 
                                 ...prev, 
-                                brightnessPolicy: { brightness: 'FixedBrightness', brightnessLevel: 50 } 
+                                brightnessPolicy: { brightness: 'FixedBrightness', brightnessPercentage: 50 } 
                             }))}
                         >
                             <Monitor className="w-4 h-4 mr-2" />
@@ -227,12 +227,12 @@ export function DisplayRestriction({ platform, profileId, initialData, onSave, o
                     </div>
                     {isFixedBrightness && (
                         <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                            <Label>{t('restrictions.display.brightnessLevel')}: {(formData.brightnessPolicy as any)?.brightnessLevel || 50}%</Label>
+                            <Label>{t('restrictions.display.brightnessLevel')}: {(formData.brightnessPolicy as any)?.brightnessPercentage || 50}%</Label>
                             <Slider
-                                value={[(formData.brightnessPolicy as any)?.brightnessLevel || 50]}
+                                value={[(formData.brightnessPolicy as any)?.brightnessPercentage || 50]}
                                 onValueChange={([value]) => setFormData(prev => ({
                                     ...prev,
-                                    brightnessPolicy: { brightness: 'FixedBrightness', brightnessLevel: value }
+                                    brightnessPolicy: { brightness: 'FixedBrightness', brightnessPercentage: value }
                                 }))}
                                 min={1}
                                 max={100}

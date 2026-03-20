@@ -24,6 +24,8 @@ interface SelectedApp {
   packageName: string;
   productId: string;
   action: string;
+  name?: string;
+  version?: string;
 }
 
 interface GooglePlayIframeProps {
@@ -98,6 +100,8 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
                     packageName: appData.packageName,
                     productId: appData.productId || appData.packageName,
                     action: appData.action || "selected",
+                    name: appData.name || appData.title || undefined,
+                    version: appData.version || appData.versionName || undefined,
                   },
                 ];
               }
@@ -208,6 +212,8 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
                         packageName: event.packageName,
                         productId: event.productId || event.packageName,
                         action: event.action,
+                        name: event.name || event.title || undefined,
+                        version: event.version || event.versionName || undefined,
                       },
                     ];
                   }
@@ -470,7 +476,7 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
                 </div>
               )}
 
-              <div className="relative w-full">
+              <div className="relative w-full flex-1 min-h-0 overflow-hidden">
                 {isIframeLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-10">
                     <div className="flex flex-col items-center space-y-4">
@@ -481,13 +487,13 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
                     </div>
                   </div>
                 )}
-                <div id="play-store-container" className="w-full flex-1 min-h-[500px]" />
+                <div id="play-store-container" className="w-full h-full" />
               </div>
             </div>
 
             {/* Selected Apps Display */}
             {selectedApps.length > 0 && (
-              <div className="mt-3 p-3 border border-success/30 rounded-lg bg-success/10">
+              <div className="mt-3 p-3 border border-success/30 rounded-lg bg-success/10 flex-shrink-0 max-h-[30%] overflow-y-auto">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-success" />
@@ -504,12 +510,24 @@ export const GooglePlayIframe = ({ open, onOpenChange, onAppsAdded }: GooglePlay
                       key={index}
                       className="flex items-center justify-between bg-white p-2 rounded border border-success/30 text-xs"
                     >
-                      <span
-                        className="font-mono text-foreground truncate flex-1 mr-2"
-                        title={app.packageName}
-                      >
-                        {app.packageName}
-                      </span>
+                      <div className="flex flex-col flex-1 min-w-0 mr-2">
+                        {app.name && (
+                          <span className="font-medium text-foreground truncate">
+                            {app.name}
+                          </span>
+                        )}
+                        <span
+                          className="font-mono text-muted-foreground truncate"
+                          title={app.packageName}
+                        >
+                          {app.packageName}
+                        </span>
+                        {app.version && (
+                          <span className="text-muted-foreground">
+                            v{app.version}
+                          </span>
+                        )}
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
