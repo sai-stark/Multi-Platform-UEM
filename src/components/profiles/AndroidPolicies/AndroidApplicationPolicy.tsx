@@ -127,7 +127,10 @@ export function AndroidApplicationPolicy({
     const [changedPolicies, setChangedPolicies] = useState<ExtendedPolicy[]>([]);
     const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [listSearchQuery, setListSearchQuery] = useState('');
 
     // Modal states
@@ -249,6 +252,8 @@ export function AndroidApplicationPolicy({
         setSelectedVersionId('');
         setSelectedInstallType('INSTALL_REMOVABLE');
     };
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleFieldChange = (
         id: string,

@@ -15,7 +15,8 @@ import {
     TabletSmartphone,
     WifiOff,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 import { ConnectivityRestriction } from './ConnectivityRestriction';
 import { DateTimeRestriction } from './DateTimeRestriction';
 import { DisplayRestriction } from './DisplayRestriction';
@@ -59,10 +60,11 @@ export function AndroidDeviceRestrictions({
     onSave,
     onCancel,
 }: AndroidDeviceRestrictionsProps) {
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
     const [selectedKey, setSelectedKey] = useState<CategoryKey>('security');
 
     return (
-        <div className="flex flex-col h-[78vh] mt-6">
+        <div className="flex flex-col h-[78vh]">
             {/* Header */}
             <div className="flex items-center gap-4 pb-4 border-b shrink-0 pr-8">
                 <div className="p-2.5 bg-gradient-to-br from-destructive/20 to-destructive/10 rounded-xl shadow-lg shadow-destructive/5">

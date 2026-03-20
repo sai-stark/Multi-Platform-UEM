@@ -62,7 +62,10 @@ export function WebApplicationPolicyEditor({
 }: WebApplicationPolicyProps) {
     const { t } = useLanguage();
     const [policies, setPolicies] = useState<(AndroidWebApplicationPolicy | IosWebApplicationPolicy)[]>(initialData || []);
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingPolicy, setEditingPolicy] = useState<(AndroidWebApplicationPolicy | IosWebApplicationPolicy) | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -127,6 +130,8 @@ export function WebApplicationPolicyEditor({
             fetchWebApps();
         }
     }, [profileId, platform]);
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleOpenDialog = (policy?: AndroidWebApplicationPolicy | IosWebApplicationPolicy) => {
         setEditingPolicy(policy || null);
@@ -542,9 +547,6 @@ export function WebApplicationPolicyEditor({
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
-            </div>
         </div>
     );
 }

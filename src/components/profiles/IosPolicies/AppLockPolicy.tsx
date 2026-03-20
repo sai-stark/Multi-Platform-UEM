@@ -18,7 +18,8 @@ import { IosAppLockPolicy } from '@/types/ios';
 import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, Lock, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface AppLockPolicyProps {
     profileId: string;
@@ -30,7 +31,10 @@ interface AppLockPolicyProps {
 export function AppLockPolicy({ profileId, initialData, onSave, onCancel }: AppLockPolicyProps) {
     const { toast } = useToast();
     const { t } = useLanguage();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -44,6 +48,9 @@ export function AppLockPolicy({ profileId, initialData, onSave, onCancel }: AppL
         },
         ...initialData,
     });
+
+    useEffect(() => { registerSave(handleSave); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleChange = (field: keyof IosAppLockPolicy, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -97,17 +104,8 @@ export function AppLockPolicy({ profileId, initialData, onSave, onCancel }: AppL
 
     if (!isEditing && initialData) {
         return (
-            <div className="space-y-6 max-w-4xl mt-6">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-500/10 rounded-full">
-                            <Lock className="w-6 h-6 text-indigo-500" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold">App Lock</h3>
-                            <p className="text-sm text-muted-foreground">Restrict device to a single application</p>
-                        </div>
-                    </div>
+            <div className="space-y-6 max-w-4xl">
+                <div className="flex items-center justify-end gap-2 pb-4 border-b">
                     <div className="flex items-center gap-2">
                         <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                             <Edit className="w-4 h-4 mr-1" /> Edit
@@ -143,24 +141,12 @@ export function AppLockPolicy({ profileId, initialData, onSave, onCancel }: AppL
                         <p className="font-medium">{formData.appLock?.App?.Identifier || '-'}</p>
                     </div>
                 </div>
-                <div className="flex justify-end pt-4 border-t">
-                    <Button variant="outline" onClick={onCancel}>Close</Button>
-                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center gap-3 pb-4 border-b">
-                <div className="p-2 bg-indigo-500/10 rounded-full">
-                    <Edit className="w-5 h-5 text-indigo-500" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-medium">{initialData?.id ? 'Edit' : 'Create'} App Lock Policy</h3>
-                    <p className="text-sm text-muted-foreground">Configure single app mode settings</p>
-                </div>
-            </div>
+        <div className="space-y-6 max-w-4xl">
 
             <div className="space-y-4">
                 <div>
@@ -186,13 +172,6 @@ export function AppLockPolicy({ profileId, initialData, onSave, onCancel }: AppL
                 </div>
             </div>
 
-            <CardFooter className="flex justify-between px-0 pt-6">
-                <Button variant="outline" onClick={initialData?.id ? () => setIsEditing(false) : onCancel}>Cancel</Button>
-                <Button onClick={handleSave} disabled={loading}>
-                    {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Save Changes
-                </Button>
-            </CardFooter>
         </div>
     );
 }

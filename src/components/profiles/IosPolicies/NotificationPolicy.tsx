@@ -23,6 +23,7 @@ import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { AlertTriangle, Bell, Car, CheckCircle2, Circle, Edit, Eye, Layout, Loader2, Lock, MessageSquare, Plus, Speaker, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface NotificationPolicyProps {
     platform: Platform;
@@ -54,7 +55,10 @@ export function NotificationPolicy({ platform, profileId, initialData, applicati
     const { t } = useLanguage();
     const { toast } = useToast();
     const [policies, setPolicies] = useState<NotificationPolicyType[]>(initialData || []);
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingPolicy, setEditingPolicy] = useState<NotificationPolicyType | null>(null);
     const [formData, setFormData] = useState<Partial<NotificationPolicyType>>({});
@@ -73,6 +77,8 @@ export function NotificationPolicy({ platform, profileId, initialData, applicati
         const app = iosApps.find(a => a.applicationId === appId);
         return app?.name || appId;
     };
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleViewPolicy = (policy: NotificationPolicyType) => {
         setViewingPolicy(policy);

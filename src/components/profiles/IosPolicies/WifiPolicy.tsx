@@ -22,7 +22,8 @@ import { EAPClientConfiguration, EAPType, IosWiFiConfiguration, TLSVersion, TTLS
 import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Eye, EyeOff, Globe, Lock, Shield, Trash2, Wifi } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface WifiPolicyProps {
     profileId: string;
@@ -61,7 +62,8 @@ const EAP_TYPE_LABELS: Record<EAPType, string> = {
 export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
     // If we have an ID, start in view mode. Otherwise, start in edit mode.
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -70,6 +72,11 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
     );
     const [showEnterprise, setShowEnterprise] = useState(!!initialData?.eapClientConfiguration);
     const [showPassword, setShowPassword] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
+
+    useEffect(() => { registerSave(handleSave); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleChange = <K extends keyof IosWiFiConfiguration>(field: K, value: IosWiFiConfiguration[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -156,47 +163,34 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
     const isAutoProxy = formData.proxyType === 'Auto';
 
     const renderView = () => (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-info/10 rounded-full">
-                        <Wifi className="w-6 h-6 text-info" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold">{formData.name || 'WiFi Policy'}</h3>
-                        <p className="text-sm text-muted-foreground">
-                            {formData.ssid ? `Network: ${formData.ssid}` : 'Configure WiFi settings'}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                    </Button>
-                    {initialData?.id && (
-                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                            <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={loading}>
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                            </Button>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Policy</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Are you sure you want to delete this policy? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    )}
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
+                <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                </Button>
+                {initialData?.id && (
+                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                        <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={loading}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </Button>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Policy</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to delete this policy? This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -315,9 +309,6 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
                 </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
-            </div>
         </div>
     );
 
@@ -326,20 +317,7 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-info/10 rounded-full">
-                        <Edit className="w-5 h-5 text-info" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-medium">Edit Configuration</h3>
-                        <p className="text-sm text-muted-foreground">
-                            Update WiFi settings for {formData.ssid || 'new network'}
-                        </p>
-                    </div>
-                </div>
-            </div>
+        <div className="space-y-6 max-w-4xl">
             {/* Basic Settings */}
             <div className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Basic Settings</h3>
@@ -742,14 +720,6 @@ export function WifiPolicy({ profileId, initialData, onSave, onCancel }: WifiPol
                 </div>
             </div>
 
-            <CardFooter className="flex justify-between px-0 pt-6">
-                <Button variant="outline" onClick={handleCancelClick} disabled={loading}>
-                    Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={loading}>
-                    {loading ? 'Saving...' : 'Save WiFi Configuration'}
-                </Button>
-            </CardFooter>
         </div>
     );
 }

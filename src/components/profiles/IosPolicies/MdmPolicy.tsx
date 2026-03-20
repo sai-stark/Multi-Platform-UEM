@@ -44,6 +44,7 @@ function DetailRow({ icon, label, value, mono = false }: { icon: React.ReactNode
 }
 
 export function MdmPolicy({ initialData, onCancel }: MdmPolicyProps) {
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
     const { t } = useLanguage();
     const data = initialData || {} as Partial<IosMdmConfiguration>;
 

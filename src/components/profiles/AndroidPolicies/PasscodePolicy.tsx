@@ -52,7 +52,8 @@ import {
     Shield,
     Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface PasscodePolicyProps {
     platform: Platform;
@@ -84,7 +85,10 @@ const formatDuration = (totalSeconds: number) => {
 export function PasscodePolicy({ platform, profileId, managementMode, initialData, onSave, onCancel }: PasscodePolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     // Dedicated device = any non-BYOD management mode
@@ -234,6 +238,9 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
         return { isValid: true, errorMessage: '' };
     };
 
+    useEffect(() => { registerSave(handleSubmit); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -316,17 +323,8 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
 
     // View Mode
     const renderView = () => (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                        <Key className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold">{t('passcodePolicy.title')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('passcodePolicy.subtitle')}</p>
-                    </div>
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
                 <div className="flex gap-2">
                     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                         <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
@@ -458,23 +456,8 @@ export function PasscodePolicy({ platform, profileId, managementMode, initialDat
     // Edit Mode
     return (
         <TooltipProvider>
-            <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mt-6">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-full">
-                            <Edit className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-medium">
-                                {(isDedicated ? dedicatedData?.id : personalData?.work?.id)
-                                    ? t('passcodePolicy.editTitle')
-                                    : t('passcodePolicy.configureTitle')}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                                {t('passcodePolicy.configureSubtitle')}
-                            </p>
-                        </div>
-                    </div>
+            <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+                <div className="flex items-center justify-end gap-2 pb-4 border-b">
                 </div>
 
                 {/* Dedicated Device: flat device passcode section */}

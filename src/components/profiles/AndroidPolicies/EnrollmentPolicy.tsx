@@ -15,7 +15,8 @@ import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EnrollmentPolicy as EnrollmentPolicyType, Platform, WifiSecurity } from '@/types/models';
 import { Edit, Key, Loader2, Monitor, Save, Signal, Smartphone, Trash2, UserPlus, Wifi } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
 
@@ -30,7 +31,10 @@ interface EnrollmentPolicyProps {
 export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onCancel }: EnrollmentPolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [configureWifi, setConfigureWifi] = useState(!!initialData?.wifiHotspot);
 
@@ -41,6 +45,9 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
         devicePolicyType: 'AndroidEnrollmentPolicy',
         ...initialData
     });
+
+    useEffect(() => { registerSave(handleSubmit); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -89,17 +96,8 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
     };
 
     const renderView = () => (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded-full">
-                        <UserPlus className="w-6 h-6 text-green-500" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold">{t('policies.android.enrollment')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('policies.android.enrollment.desc')}</p>
-                    </div>
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
                     {t('common.edit')}
@@ -170,17 +168,8 @@ export function EnrollmentPolicy({ platform, profileId, initialData, onSave, onC
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded-full">
-                        <Edit className="w-5 h-5 text-green-500" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-medium">{t('common.edit')} {t('policies.android.enrollment')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('policies.android.enrollment.desc')}</p>
-                    </div>
-                </div>
+        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
             </div>
 
             <div className="space-y-6 p-1">

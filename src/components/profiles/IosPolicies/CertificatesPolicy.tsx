@@ -30,7 +30,10 @@ interface CertificatesPolicyProps {
 
 export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, defaultTab }: CertificatesPolicyProps) {
     const { t } = useLanguage();
-    const [loading, setLoading] = useState(true);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(true);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [saving, setSaving] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: 'pem' | 'pkcs' | 'pkcs12' | 'root' } | null>(null);
 
@@ -98,6 +101,8 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
         const filename = file?.name || fallbackFileName || "certificate";
         return filename.replace(/\.[^/.]+$/, "");
     };
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setFile: (f: File) => void, setBase64: (s: string) => void) => {
         const file = e.target.files?.[0];
@@ -298,17 +303,8 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                        <Shield className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold">Certificates Policy</h3>
-                        <p className="text-sm text-muted-foreground">Manage PEM, PKCS, PKCS12, and Root Certificates for the device.</p>
-                    </div>
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
             </div>
 
             <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={defaultTab}>
@@ -626,12 +622,6 @@ export function CertificatesPolicy({ profileId, onSaveSuccess, onCancel, default
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
-                <Button variant="outline" onClick={onCancel} disabled={saving}>
-                    Close
-                </Button>
-            </div>
         </div>
     );
 }

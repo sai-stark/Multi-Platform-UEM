@@ -18,7 +18,8 @@ import { IosPerAppVpnPolicy } from '@/types/ios';
 import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, Plus, Smartphone, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface PerAppVpnPolicyProps {
     profileId: string;
@@ -30,7 +31,10 @@ interface PerAppVpnPolicyProps {
 export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: PerAppVpnPolicyProps) {
     const { toast } = useToast();
     const { t } = useLanguage();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -41,6 +45,9 @@ export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: Pe
     });
 
     const [newAppId, setNewAppId] = useState('');
+
+    useEffect(() => { registerSave(handleSave); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleChange = (field: keyof IosPerAppVpnPolicy, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -96,17 +103,8 @@ export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: Pe
 
     if (!isEditing && initialData) {
         return (
-            <div className="space-y-6 max-w-4xl mt-6">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-fuchsia-500/10 rounded-full">
-                            <Smartphone className="w-6 h-6 text-fuchsia-500" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold">Per-App VPN</h3>
-                            <p className="text-sm text-muted-foreground">App-specific VPN tunnel configuration</p>
-                        </div>
-                    </div>
+            <div className="space-y-6 max-w-4xl">
+                <div className="flex items-center justify-end gap-2 pb-4 border-b">
                     <div className="flex items-center gap-2">
                         <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                             <Edit className="w-4 h-4 mr-1" /> Edit
@@ -146,24 +144,12 @@ export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: Pe
                         </div>
                     </div>
                 )}
-                <div className="flex justify-end pt-4 border-t">
-                    <Button variant="outline" onClick={onCancel}>Close</Button>
-                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center gap-3 pb-4 border-b">
-                <div className="p-2 bg-fuchsia-500/10 rounded-full">
-                    <Edit className="w-5 h-5 text-fuchsia-500" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-medium">{initialData?.id ? 'Edit' : 'Create'} Per-App VPN</h3>
-                    <p className="text-sm text-muted-foreground">Configure app-specific VPN tunnels</p>
-                </div>
-            </div>
+        <div className="space-y-6 max-w-4xl">
 
             <div className="space-y-4">
                 <div>
@@ -188,13 +174,6 @@ export function PerAppVpnPolicy({ profileId, initialData, onSave, onCancel }: Pe
                 </div>
             </div>
 
-            <CardFooter className="flex justify-between px-0 pt-6">
-                <Button variant="outline" onClick={initialData?.id ? () => setIsEditing(false) : onCancel}>Cancel</Button>
-                <Button onClick={handleSave} disabled={loading}>
-                    {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Save Changes
-                </Button>
-            </CardFooter>
         </div>
     );
 }

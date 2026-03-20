@@ -50,6 +50,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface AndroidWebApplicationPolicyProps {
     platform: Platform;
@@ -67,7 +68,10 @@ interface ExtendedWebApplicationPolicy extends Partial<AndroidWebApplicationPoli
 export function AndroidWebApplicationPolicy({ platform, profileId, initialData = [], onSave, onCancel }: AndroidWebApplicationPolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [policies, setPolicies] = useState<ExtendedWebApplicationPolicy[]>(initialData || []);
     const [changedPolicies, setChangedPolicies] = useState<ExtendedWebApplicationPolicy[]>([]);
     const [availableWebApps, setAvailableWebApps] = useState<WebApplication[]>([]);
@@ -119,6 +123,8 @@ export function AndroidWebApplicationPolicy({ platform, profileId, initialData =
     const resetAddModalState = () => {
         setSelectedWebAppId('');
     };
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleAddWebApp = () => {
         if (!selectedWebAppId) {

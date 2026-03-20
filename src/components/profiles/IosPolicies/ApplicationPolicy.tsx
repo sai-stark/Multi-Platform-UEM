@@ -54,6 +54,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 import { useNavigate } from 'react-router-dom';
 
 // ====================================================================
@@ -92,7 +93,10 @@ export const ApplicationPolicyEditor = ({
     const [changedPolicies, setChangedPolicies] = useState<ExtendedPolicy[]>([]);
     const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [listSearchQuery, setListSearchQuery] = useState('');
 
     // Modal states
@@ -208,6 +212,8 @@ export const ApplicationPolicyEditor = ({
         setSelectedPurchaseMethod(1);
         setSelectedEnableAnalytics(false);
     };
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleFieldChange = (
         id: string,

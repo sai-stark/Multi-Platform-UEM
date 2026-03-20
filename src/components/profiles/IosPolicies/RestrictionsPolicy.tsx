@@ -206,7 +206,10 @@ interface RestrictionsPolicyProps {
 
 export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }: RestrictionsPolicyProps) {
     const { toast } = useToast();
-    const [saving, setSaving] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [saving, setSavingState] = useState(false);
+
+    const setSaving = (val: boolean) => { setSavingState(val); setContextLoading(val); };
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>(RESTRICTION_CATEGORIES[0].key);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -246,6 +249,8 @@ export function RestrictionsPolicy({ profileId, initialData, onSave, onCancel }:
             setSelectedCategoryKey(filteredCategories[0].key);
         }
     }, [filteredCategories, selectedCategoryKey]);
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleSave = async () => {
         setSaving(true);

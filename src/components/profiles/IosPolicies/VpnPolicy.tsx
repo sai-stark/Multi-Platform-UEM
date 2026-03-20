@@ -21,6 +21,7 @@ import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { ChevronDown, ChevronRight, Edit, Loader2, Lock, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface VpnPolicyProps {
     profileId: string;
@@ -34,10 +35,13 @@ const VPN_TYPES = ['L2TP', 'PPTP', 'IPSec', 'IKEv2', 'AlwaysOn', 'VPN', 'Transpa
 export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolicyProps) {
     const { toast } = useToast();
     const { t } = useLanguage();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [certificates, setCertificates] = useState<Array<{ id: string; name: string }>>([]);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
 
     useEffect(() => {
         const fetchCertificates = async () => {
@@ -69,6 +73,9 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
     // Collapsible sections
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
     const toggleSection = (section: string) => setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+
+    useEffect(() => { registerSave(handleSave); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleChange = (field: keyof IosVpnPolicy, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -134,41 +141,30 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
 
     if (!isEditing && initialData) {
         return (
-            <div className="space-y-6 max-w-4xl mt-6">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-violet-500/10 rounded-full">
-                            <Lock className="w-6 h-6 text-violet-500" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold">VPN Configuration</h3>
-                            <p className="text-sm text-muted-foreground">Virtual private network settings</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
-                            <Edit className="w-4 h-4 mr-1" /> Edit
+            <div className="space-y-6 max-w-4xl">
+                <div className="flex items-center justify-end gap-2 pb-4 border-b">
+                    <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
+                        <Edit className="w-4 h-4 mr-1" /> Edit
+                    </Button>
+                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                        <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={loading}>
+                            <Trash2 className="w-4 h-4 mr-1" /> Delete
                         </Button>
-                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                            <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={loading}>
-                                <Trash2 className="w-4 h-4 mr-1" /> Delete
-                            </Button>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Policy</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Are you sure you want to delete this policy? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Policy</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to delete this policy? This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div><span className="text-muted-foreground text-sm">Name</span><p className="font-medium">{formData.name}</p></div>
@@ -176,24 +172,12 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                     <div><span className="text-muted-foreground text-sm">Remote Address</span><p className="font-medium">{formData.remoteAddress || '-'}</p></div>
                     <div><span className="text-muted-foreground text-sm">Auth Name</span><p className="font-medium">{formData.authName || '-'}</p></div>
                 </div>
-                <div className="flex justify-end pt-4 border-t">
-                    <Button variant="outline" onClick={onCancel}>Close</Button>
-                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center gap-3 pb-4 border-b">
-                <div className="p-2 bg-violet-500/10 rounded-full">
-                    <Edit className="w-5 h-5 text-violet-500" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-medium">{initialData?.id ? 'Edit' : 'Create'} VPN Configuration</h3>
-                    <p className="text-sm text-muted-foreground">Configure VPN connection settings</p>
-                </div>
-            </div>
+        <div className="space-y-6 max-w-4xl">
 
             <div className="space-y-4">
                 {/* Basic Settings */}
@@ -443,13 +427,6 @@ export function VpnPolicy({ profileId, initialData, onSave, onCancel }: VpnPolic
                 </div>
             </div>
 
-            <CardFooter className="flex justify-between px-0 pt-6">
-                <Button variant="outline" onClick={initialData?.id ? () => setIsEditing(false) : onCancel}>Cancel</Button>
-                <Button onClick={handleSave} disabled={loading}>
-                    {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Save Changes
-                </Button>
-            </CardFooter>
         </div>
     );
 }

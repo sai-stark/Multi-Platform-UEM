@@ -28,7 +28,10 @@ interface HomeScreenLayoutPolicyProps {
 
 export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCancel }: HomeScreenLayoutPolicyProps) {
     const { toast } = useToast();
-    const [saving, setSaving] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [saving, setSavingState] = useState(false);
+
+    const setSaving = (val: boolean) => { setSavingState(val); setContextLoading(val); };
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [formData, setFormData] = useState<IosHomeScreenLayoutPolicy>(
@@ -76,6 +79,9 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
         }
         return null;
     };
+
+    useEffect(() => { registerSave(handleSave); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleSave = async () => {
         const error = validateForm();
@@ -421,19 +427,8 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
         const totalItems = (config.Dock?.length || 0) + (config.Pages || []).reduce((sum, p) => sum + p.length, 0);
 
         return (
-            <div className="space-y-6 max-w-4xl mt-6">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-teal-500/10 rounded-full">
-                            <Layout className="w-6 h-6 text-teal-500" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold">Home Screen Layout</h3>
-                            <p className="text-sm text-muted-foreground">
-                                {config.Pages?.length || 0} page{(config.Pages?.length || 0) !== 1 ? 's' : ''}, {totalItems} total item{totalItems !== 1 ? 's' : ''}
-                            </p>
-                        </div>
-                    </div>
+            <div className="space-y-6 max-w-4xl">
+                <div className="flex items-center justify-end gap-2 pb-4 border-b">
                     <div className="flex items-center gap-2">
                         <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                             <Edit className="w-4 h-4 mr-1" /> Edit
@@ -520,25 +515,13 @@ export function HomeScreenLayoutPolicy({ profileId, initialData, onSave, onCance
                     </div>
                 </div>
 
-                <div className="flex justify-end pt-4 border-t">
-                    <Button variant="outline" onClick={onCancel} disabled={saving}>Close</Button>
-                </div>
             </div>
         );
     }
 
     // === EDIT MODE ===
     return (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center gap-3 pb-4 border-b">
-                <div className="p-2 bg-teal-500/10 rounded-full">
-                    {initialData?.id ? <Edit className="w-5 h-5 text-teal-500" /> : <Layout className="w-5 h-5 text-teal-500" />}
-                </div>
-                <div>
-                    <h3 className="text-lg font-medium">{initialData?.id ? 'Edit' : 'Create'} Home Screen Layout</h3>
-                    <p className="text-sm text-muted-foreground">Configure the home screen layout for managed iOS devices</p>
-                </div>
-            </div>
+        <div className="space-y-6 max-w-4xl">
 
             {/* Dock Section */}
             <div className="space-y-3">

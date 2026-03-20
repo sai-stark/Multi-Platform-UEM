@@ -21,6 +21,7 @@ import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Loader2, MessageSquare, Plus, Tag, Text, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface LockScreenMessagePolicyProps {
     platform: Platform;
@@ -33,7 +34,10 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
     const { t } = useLanguage();
     const { toast } = useToast();
     const [policy, setPolicy] = useState<LockScreenMessagePolicyType | null>(null);
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -71,6 +75,8 @@ export function LockScreenMessagePolicy({ platform, profileId, initialData, onSa
             fetchPolicy();
         }
     }, [platform, profileId, initialData]);
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleOpenDialog = (existingPolicy?: LockScreenMessagePolicyType) => {
         if (existingPolicy) {

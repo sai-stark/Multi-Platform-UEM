@@ -35,7 +35,8 @@ import {
     Type,
     User
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface PasscodePolicyProps {
     platform: Platform;
@@ -54,7 +55,10 @@ const isIosPolicy = (data: any): data is IosPasscodeRestrictionPolicy => {
 
 export function PasscodePolicy({ platform, profileId, initialData, onSave, onCancel }: PasscodePolicyProps) {
     const { t } = useLanguage();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     // If we have an ID, start in view mode. Otherwise, start in edit mode.
     const [isEditing, setIsEditing] = useState(!initialData?.id && !(initialData as any)?.passcodeId);
 
@@ -91,6 +95,9 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
             ...initialData
         };
     });
+
+    useEffect(() => { registerSave(handleSubmit); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -479,19 +486,8 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
 
     if (!isEditing) {
         return (
-            <div className="space-y-6 max-w-4xl mt-6">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-full">
-                            {platform === 'ios' ? <Lock className="w-6 h-6 text-primary" /> : <Shield className="w-6 h-6 text-primary" />}
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-semibold">Passcode Policy</h3>
-                            <p className="text-sm text-muted-foreground">
-                                {platform === 'ios' ? 'iOS Passcode Requirements' : 'Android Security Layout'}
-                            </p>
-                        </div>
-                    </div>
+            <div className="space-y-6 max-w-4xl">
+                <div className="flex items-center justify-end gap-2 pb-4 border-b">
                     <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Configurations
@@ -532,42 +528,18 @@ export function PasscodePolicy({ platform, profileId, initialData, onSave, onCan
                     </div>
                 )}
 
-                <div className="flex justify-end pt-4 border-t">
-                    <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
-                </div>
             </div>
         );
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mt-6">
+        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
             <div className="space-y-4">
-                <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-full">
-                            <Edit className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-medium">Edit Configuration</h3>
-                            <p className="text-sm text-muted-foreground">
-                                {platform === 'ios' ? 'Modify iOS Passcode constraints' : 'Update Android security rules'}
-                            </p>
-                        </div>
-                    </div>
+                <div className="flex items-center justify-end gap-2 pb-4 border-b">
                 </div>
 
                 {platform === 'ios' ? renderIosEdit() : renderAndroidEdit()}
             </div>
-
-            <div className="flex justify-end gap-3 pt-6 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky bottom-0 z-10 py-4">
-                <Button variant="outline" type="button" onClick={handleCancel} disabled={loading}>
-                    Cancel
-                </Button>
-                <Button type="submit" disabled={loading} className="gap-2 min-w-[140px]">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Changes
-                </Button>
-            </div>
-        </form>
+            </form>
     );
 }

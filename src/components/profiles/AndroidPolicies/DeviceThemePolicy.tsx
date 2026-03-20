@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/select';
 import { DeviceThemePolicy as DeviceThemePolicyType, IconSize, Platform, ScreenOrientation } from '@/types/models';
 import { Edit, Image, Loader2, Maximize, Palette, Save, Trash2, Type } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
@@ -29,7 +30,10 @@ interface DeviceThemePolicyProps {
 export function DeviceThemePolicy({ platform, profileId, initialData, onSave, onCancel }: DeviceThemePolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [useBackgroundImage, setUseBackgroundImage] = useState(!!initialData?.backgroundImage);
 
@@ -43,6 +47,9 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
         devicePolicyType: 'AndroidDeviceThemePolicy',
         ...initialData
     });
+
+    useEffect(() => { registerSave(handleSubmit); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -112,17 +119,8 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
     };
 
     const renderView = () => (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-500/10 rounded-full">
-                        <Palette className="w-6 h-6 text-purple-500" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold">{t('deviceTheme.title')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('deviceTheme.subtitle')}</p>
-                    </div>
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
                     {t('deviceTheme.editTheme')}
@@ -215,17 +213,8 @@ export function DeviceThemePolicy({ platform, profileId, initialData, onSave, on
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-500/10 rounded-full">
-                        <Edit className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-medium">{t('deviceTheme.editTitle')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('deviceTheme.editSubtitle')}</p>
-                    </div>
-                </div>
+        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
             </div>
 
             <div className="space-y-6 p-1">

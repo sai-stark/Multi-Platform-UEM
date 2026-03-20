@@ -24,7 +24,8 @@ import { getErrorMessage } from '@/utils/errorUtils';
 import { Input } from '@/components/ui/input';
 import { AppPermissionType, CommonSettingsPolicy as CommonSettingsPolicyType, DatePeriod, Platform, SystemUpdatePolicy } from '@/types/models';
 import { Download, Edit, EyeOff, Loader2, Plus, Save, Settings, Shield, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 // ============================================================================
 // DO-ONLY IMPORTS (Uncomment when Device Owner mode is implemented)
@@ -45,7 +46,10 @@ interface CommonSettingsPolicyProps {
 export function CommonSettingsPolicy({ platform, profileId, initialData, onSave, onCancel }: CommonSettingsPolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [isEditing, setIsEditing] = useState(!initialData?.id);
 
     // ========================================================================
@@ -69,6 +73,9 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
         devicePolicyType: 'AndroidCommonSettingsPolicy',
         ...initialData
     });
+
+    useEffect(() => { registerSave(handleSubmit); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -177,17 +184,8 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
     // };
 
     const renderView = () => (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                        <Settings className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold">{t('policies.android.commonSettings')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('policies.commonSettings.subtitle')}</p>
-                    </div>
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
                 <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 mr-2" />
                     {t('common.edit')}
@@ -309,17 +307,8 @@ export function CommonSettingsPolicy({ platform, profileId, initialData, onSave,
     // EDIT MODE - WP Fields Only
     // ========================================================================
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                        <Edit className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-medium">{t('common.edit')} {t('policies.android.commonSettings')}</h3>
-                        <p className="text-sm text-muted-foreground">{t('policies.commonSettings.editDesc')}</p>
-                    </div>
-                </div>
+        <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
             </div>
 
             <div className="space-y-6 p-1">

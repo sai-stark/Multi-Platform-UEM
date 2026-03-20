@@ -45,8 +45,11 @@ export function PublishProfileDialog({
     setLoading(true);
     try {
       // Determine profileType based on platform
-      const profileType = profile.platform.toLowerCase() === "ios" 
+      const platformLower = profile.platform.toLowerCase();
+      const profileType = platformLower === "ios" 
         ? "IosPublishProfile" 
+        : platformLower === "macos"
+        ? "MacosPublishProfile"
         : "AndroidPublishProfile";
 
       await ProfileService.publishProfile(profile.platform as Platform, profile.id, {

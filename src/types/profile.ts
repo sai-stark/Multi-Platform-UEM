@@ -193,5 +193,5 @@ export type FullProfile = IosFullProfile | AndroidFullProfile;
 export interface PublishProfile {
     deviceIds?: string[];
     groupIds?: string[];
-    profileType?: 'AndroidPublishProfile' | 'IosPublishProfile';
+    profileType?: 'AndroidPublishProfile' | 'IosPublishProfile' | 'MacosPublishProfile';
 }

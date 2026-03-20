@@ -42,6 +42,7 @@ import {
     Wrench
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 // ====================================================================
 // Setting Category Definitions
@@ -106,7 +107,10 @@ function buildSettingsArray(flat: Record<string, any>): IosDeviceSettingItem[] {
 // ====================================================================
 export function DeviceSettingsPolicy({ profileId, initialData, onSave, onCancel }: DeviceSettingsPolicyProps) {
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>(SETTING_CATEGORIES[0].key);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -144,6 +148,8 @@ export function DeviceSettingsPolicy({ profileId, initialData, onSave, onCancel 
             return next;
         });
     };
+
+    useEffect(() => { registerSave(handleSave); }, []);
 
     const handleSave = async () => {
         setLoading(true);

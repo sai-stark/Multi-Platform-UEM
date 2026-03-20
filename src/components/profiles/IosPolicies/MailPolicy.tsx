@@ -22,7 +22,8 @@ import { IosMailPolicy } from '@/types/models';
 import { cleanPayload } from '@/utils/cleanPayload';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { Edit, Mail, Server, Shield, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
+import { useBaseDialogContext } from '@/components/common/BaseDialogContext';
 
 interface MailPolicyProps {
     profileId: string;
@@ -55,13 +56,19 @@ const defaultMailPolicy: Partial<IosMailPolicy> = {
 export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPolicyProps) {
     const { t } = useLanguage();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
+    const { registerSave, setLoading: setContextLoading, setSaveDisabled } = useBaseDialogContext();
+    const [loading, setLoadingState] = useState(false);
+
+    const setLoading = (val: boolean) => { setLoadingState(val); setContextLoading(val); };
     // If we have an ID, start in view mode. Otherwise, start in edit mode.
     const [isEditing, setIsEditing] = useState(!initialData?.id);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [formData, setFormData] = useState<Partial<IosMailPolicy>>(
         initialData || defaultMailPolicy
     );
+
+    useEffect(() => { registerSave(handleSave); }, []);
+    useEffect(() => { setSaveDisabled(!isEditing); }, [isEditing]);
 
     const handleChange = <K extends keyof IosMailPolicy>(field: K, value: IosMailPolicy[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -129,19 +136,8 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
     };
 
     const renderView = () => (
-        <div className="space-y-6 max-w-4xl mt-6">
-            <div className="flex items-center justify-between pb-4 border-b">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-500/10 rounded-full">
-                        <Mail className="w-6 h-6 text-purple-500" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-semibold">{formData.name || 'Mail Policy'}</h3>
-                        <p className="text-sm text-muted-foreground">
-                            {formData.emailAddress || 'Configure mail settings'}
-                        </p>
-                    </div>
-                </div>
+        <div className="space-y-6 max-w-4xl">
+            <div className="flex items-center justify-end gap-2 pb-4 border-b">
                 <div className="flex items-center gap-2">
                     <Button variant="default" size="sm" onClick={() => setIsEditing(true)}>
                         <Edit className="w-4 h-4 mr-2" />
@@ -266,9 +262,6 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
                 </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={onCancel}>{t('common.close')}</Button>
-            </div>
         </div>
     );
 
@@ -629,14 +622,6 @@ export function MailPolicy({ profileId, initialData, onSave, onCancel }: MailPol
                 </div>
             </div>
 
-            <CardFooter className="flex justify-between px-0 pt-6">
-                <Button variant="outline" onClick={handleCancelClick} disabled={loading}>
-                    Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={loading}>
-                    {loading ? 'Saving...' : 'Save Mail Policy'}
-                </Button>
-            </CardFooter>
         </>
     );
 }
