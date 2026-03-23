@@ -66,13 +66,41 @@ import {
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+// ============================================================================
+// TEMPORARY CHANGE:
+// A temporary modification has been added to show the entire page (all cards 
+// and tabs) even when a device is not found.
+// 
+// TO REVERT:
+// 1. Search for "TEMPORARY CHANGE" in this file.
+// 2. Further below, change `const [_device, setDevice]` back to `const [device, setDevice]`.
+// 3. Delete the mock `const device = _device || { ... }` object block.
+// 4. Uncomment the `if (!device) { ... }` block that shows the "Device Not Found" UI.
+// ============================================================================
+
 export default function DeviceDetails() {
     const { platform, id } = useParams<{ platform: string; id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
     const fromPlatform = (location.state as any)?.fromPlatform;
     const { toast } = useToast();
-    const [device, setDevice] = useState<DeviceInfo | null>(null);
+    const [_device, setDevice] = useState<DeviceInfo | null>(null);
+
+    // TEMPORARY CHANGE: Mock device if not found to show the UI without data.
+    const device = _device || {
+        id: id || 'mock-id',
+        platform: platform || 'android',
+        deviceType: platform === 'ios' ? 'IosDeviceInfo' : platform,
+        model: 'Mock Mode',
+        deviceName: 'No Data Available',
+        status: 'OFFLINE',
+        connectionStatus: 'offline',
+        storageCapacity: 100,
+        storageUsed: 0,
+        ramCapacity: 100,
+        ramUsed: 0,
+    } as any;
+
     const [loading, setLoading] = useState(true);
     const { setEntityName } = useBreadcrumb();
 
@@ -350,6 +378,8 @@ export default function DeviceDetails() {
         );
     }
 
+    // TEMPORARY CHANGE: Commented out to allow rendering the page without data. Revert later.
+    /*
     if (!device) {
         return (
             <MainLayout>
@@ -362,6 +392,7 @@ export default function DeviceDetails() {
             </MainLayout>
         );
     }
+    */
 
     // Calculations
     const storagePercent = Math.min(100, (Number((((Number(device.storageUsed || device.usedStorage) || 0) / (Number(device.storageCapacity || device.totalStorage || device.deviceCapacity) || 1)) * 100).toFixed(2))));
