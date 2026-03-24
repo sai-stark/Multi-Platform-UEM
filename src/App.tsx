@@ -1,6 +1,7 @@
 import { ErrorFallback } from "@/components/ErrorFallback";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { deploymentPrefixPath } from "@/config/env";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
@@ -98,7 +99,9 @@ const App = () => (
             <BrowserRouter basename={deploymentPrefixPath}>
               <BreadcrumbProvider>
                 <EnterpriseProvider>
-                  <AppRoutes />
+                  <SidebarProvider defaultOpen={true}>
+                    <AppRoutes />
+                  </SidebarProvider>
                 </EnterpriseProvider>
               </BreadcrumbProvider>
             </BrowserRouter>

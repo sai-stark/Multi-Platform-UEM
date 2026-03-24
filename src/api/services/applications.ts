@@ -75,6 +75,12 @@ export interface Application extends MobileApplication {
     isBlocked?: boolean;
 }
 
+// Android Managed Configuration Profile
+export interface AndroidManagedConfigProfile {
+    mcmId: string;
+    name: string;
+}
+
 export const ApplicationService = {
     // ============================================
     // Mobile Application CRUD APIs
@@ -269,5 +275,31 @@ export const ApplicationService = {
             { headers: { 'Content-Type': 'multipart/form-data' } }
         );
         return response.data;
+    },
+
+    // ============================================
+    // Config Templates APIs (Android Managed Configurations)
+    // ============================================
+
+    // GET /{platform}/applications/{applicationId}/configTemplates
+    getConfigTemplates: async (
+        platform: Platform,
+        applicationId: string
+    ): Promise<AndroidManagedConfigProfile[]> => {
+        const response = await apiClient.get<AndroidManagedConfigProfile[]>(
+            `/${platform}/applications/${applicationId}/configTemplates`
+        );
+        return response.data;
+    },
+
+    // DELETE /{platform}/applications/{applicationId}/configTemplates/{templateId}
+    deleteConfigTemplate: async (
+        platform: Platform,
+        applicationId: string,
+        templateId: string
+    ): Promise<void> => {
+        await apiClient.delete(
+            `/${platform}/applications/${applicationId}/configTemplates/${templateId}`
+        );
     },
 };

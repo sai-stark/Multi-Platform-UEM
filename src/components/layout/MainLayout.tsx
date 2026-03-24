@@ -13,37 +13,41 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   return (
-    <SidebarProvider defaultOpen={true}>
+    <>
       {/* Skip Link for Keyboard Users - WCAG 2.4.1 */}
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
 
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
+      <div className="min-h-screen flex flex-col w-full bg-background">
+        {/* Header — full width, above sidebar */}
+        <AppHeader />
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <AppHeader />
-          <AppBreadcrumb />
+        {/* Content area — sidebar + main */}
+        <div className="flex flex-1 min-h-0">
+          <AppSidebar />
 
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.main
-              key={location.pathname}
-              id="main-content"
-              className="flex-1 p-6 overflow-auto max-w-screen-2xl mx-auto w-full"
-              role="main"
-              tabIndex={-1}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-            >
-              {children}
-            </motion.main>
-          </AnimatePresence>
+          <div className="flex-1 flex flex-col min-w-0">
+            <AppBreadcrumb />
+
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.main
+                key={location.pathname}
+                id="main-content"
+                className="flex-1 p-6 overflow-auto max-w-screen-2xl mx-auto w-full"
+                role="main"
+                tabIndex={-1}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+              >
+                {children}
+              </motion.main>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
-    </SidebarProvider>
+    </>
   );
 }
-
