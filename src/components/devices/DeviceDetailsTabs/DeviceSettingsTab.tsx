@@ -9,7 +9,7 @@ interface DeviceSettingsTabProps {
 }
 
 export function DeviceSettingsTab({ device }: DeviceSettingsTabProps) {
-    if (device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') {
+    if ((device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') && device.osType !== 'MacosDeviceInfo' && device.platform !== 'macos') {
         return null; // Not shown for iOS
     }
 

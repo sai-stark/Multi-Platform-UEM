@@ -138,7 +138,7 @@ export const DeviceService = {
         if (platform === 'macos') {
             body = {
                 commandReferenceId: (payload as any)?.commandReferenceId,
-                deviceActionType: 'ActionMacosDeviceLock',
+                deviceActionType: 'MacosActionDeviceLock',
                 message: (payload as any)?.message,
                 phoneNumber: (payload as any)?.phoneNumber,
                 PIN: (payload as any)?.PIN,

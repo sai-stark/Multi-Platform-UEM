@@ -177,8 +177,9 @@ interface DeviceOverviewTabProps {
 }
 
 export function DeviceOverviewTab({ device }: DeviceOverviewTabProps) {
-    const isIos = device.platform === 'ios' || device.deviceType === 'IosDeviceInfo';
-    const isApplePlatform = isIos || device.platform === 'macos';
+    const isMacos = device.platform === 'macos' || device.osType === 'MacosDeviceInfo';
+    const isIos = (device.platform === 'ios' || device.osType === 'IosDeviceInfo' || device.deviceType === 'IosDeviceInfo') && !isMacos;
+    const isApplePlatform = isIos || isMacos;
 
     // Android storage calculations
     let storagePercent = 0;

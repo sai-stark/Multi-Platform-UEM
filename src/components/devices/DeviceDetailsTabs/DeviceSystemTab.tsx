@@ -8,7 +8,7 @@ interface DeviceSystemTabProps {
 }
 
 export function DeviceSystemTab({ device }: DeviceSystemTabProps) {
-    if (device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') {
+    if ((device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') && device.osType !== 'MacosDeviceInfo' && device.platform !== 'macos') {
         return null; // Hide for iOS
     }
 

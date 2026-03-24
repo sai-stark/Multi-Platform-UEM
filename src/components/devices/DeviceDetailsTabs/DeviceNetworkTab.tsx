@@ -8,7 +8,7 @@ interface DeviceNetworkTabProps {
 }
 
 export function DeviceNetworkTab({ device }: DeviceNetworkTabProps) {
-    if (device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') {
+    if ((device.platform === 'ios' || device.deviceType === 'IosDeviceInfo') && device.osType !== 'MacosDeviceInfo' && device.platform !== 'macos') {
         return null; // Not shown for iOS
     }
 

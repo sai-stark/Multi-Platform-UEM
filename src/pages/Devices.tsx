@@ -125,9 +125,16 @@ const complianceConfig = {
 
 const mapDevice = (item: any): Device => {
   let platform: any = 'android'; // Default
+
+  // Prioritize osType for platform detection (differentiates iOS from macOS)
+  const osType = item.osType?.toLowerCase() || '';
   const dType = item.deviceType?.toLowerCase() || '';
 
-  if (dType.includes('ios') || dType.includes('apple') || dType.includes('ipad') || dType.includes('iphone')) {
+  if (osType.includes('macos')) {
+    platform = 'macos';
+  } else if (osType.includes('ios') || osType.includes('iphone') || osType.includes('ipad')) {
+    platform = 'ios';
+  } else if (dType.includes('ios') || dType.includes('apple') || dType.includes('ipad') || dType.includes('iphone')) {
     platform = 'ios';
   } else if (dType.includes('android')) {
     platform = 'android';
@@ -319,7 +326,7 @@ const Devices = () => {
     if (!lockTargetDevice) return;
     try {
       await DeviceService.lockDevice(lockTargetDevice.platform as Platform, lockTargetDevice.id, {
-        deviceActionType: 'ActionMacosDeviceLock',
+        deviceActionType: 'MacosActionDeviceLock',
         PIN: lockPin,
         message: lockMessage || undefined,
         phoneNumber: lockPhoneNumber || undefined,

@@ -91,6 +91,7 @@ export default function DeviceDetails() {
         id: id || 'mock-id',
         platform: platform || 'android',
         deviceType: platform === 'ios' ? 'IosDeviceInfo' : platform,
+        osType: platform === 'macos' ? 'MacosDeviceInfo' : platform === 'ios' ? 'IosDeviceInfo' : undefined,
         model: 'Mock Mode',
         deviceName: 'No Data Available',
         status: 'OFFLINE',
@@ -199,7 +200,7 @@ export default function DeviceDetails() {
             return;
         }
 
-        if (action === 'lock' && device.platform === 'macos') {
+        if (action === 'lock' && (device.platform === 'macos' || device.osType === 'MacosDeviceInfo')) {
             setLockDialog(true);
             setLockPin('');
             setLockMessage('');
@@ -289,9 +290,9 @@ export default function DeviceDetails() {
                     await DeviceService.syncDevices(devicePlatform, [device.id]);
                     break;
                 case 'lock':
-                    if (devicePlatform === 'macos') {
+                    if (devicePlatform === 'macos' || device.osType === 'MacosDeviceInfo') {
                         await DeviceService.lockDevice(devicePlatform, device.id, {
-                            deviceActionType: 'ActionMacosDeviceLock',
+                            deviceActionType: 'MacosActionDeviceLock',
                             PIN: lockPin,
                             message: lockMessage || undefined,
                             phoneNumber: lockPhoneNumber || undefined,
@@ -357,8 +358,8 @@ export default function DeviceDetails() {
         let assetSrc = null;
 
         if (p === 'android' || p.includes('android')) assetSrc = getAssetUrl('/Assets/android.svg');
+        else if (p === 'macos' || p.includes('macos')) assetSrc = getAssetUrl('/Assets/mac_os.svg');
         else if (p === 'ios' || p === 'iosdeviceinfo') assetSrc = getAssetUrl('/Assets/apple.svg');
-        else if (p === 'macos') assetSrc = getAssetUrl('/Assets/mac_os.svg');
         else if (p === 'windows') assetSrc = getAssetUrl('/Assets/microsoft.svg');
         else if (p === 'linux') assetSrc = getAssetUrl('/Assets/linux.svg');
 
@@ -398,8 +399,9 @@ export default function DeviceDetails() {
     const storagePercent = Math.min(100, (Number((((Number(device.storageUsed || device.usedStorage) || 0) / (Number(device.storageCapacity || device.totalStorage || device.deviceCapacity) || 1)) * 100).toFixed(2))));
     const ramPercent = Math.min(100, (Number((((Number(device.ramUsed || device.usedRam) || 0) / (Number(device.ramCapacity || device.totalRam) || 1)) * 100).toFixed(2))));
 
-    const isIos = device.platform === 'ios' || device.deviceType === 'IosDeviceInfo';
-    const isApplePlatform = isIos || device.platform === 'macos';
+    const isMacos = device.platform === 'macos' || device.osType === 'MacosDeviceInfo';
+    const isIos = (device.platform === 'ios' || device.osType === 'IosDeviceInfo' || device.deviceType === 'IosDeviceInfo') && !isMacos;
+    const isApplePlatform = isIos || isMacos;
 
     return (
         <MainLayout>
@@ -410,7 +412,7 @@ export default function DeviceDetails() {
                     <div className="flex flex-col md:flex-row gap-6 justify-between">
                         <div className="flex gap-6 items-start">
                             <div className="p-4 rounded-xl bg-muted/30 border">
-                                {getPlatformIcon(device.deviceType || device.platform)}
+                                {getPlatformIcon(device.osType || device.deviceType || device.platform)}
                             </div>
 
                             <div className="space-y-1">

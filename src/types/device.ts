@@ -8,6 +8,7 @@ export interface DeviceInfo {
     modelName?: string; // Human readable
     manufacturer?: string;
     deviceType?: string; // 'AndroidDeviceInfo' | 'IosDeviceInfo'
+    osType?: string; // 'IosDeviceInfo' | 'MacosDeviceInfo' | 'AndroidDeviceInfo' — used to differentiate iOS from macOS
     platform?: Platform; // Injected helper
     serialNo?: string;
     udid?: string; // iOS
